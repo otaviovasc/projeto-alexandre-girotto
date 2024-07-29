@@ -7,7 +7,7 @@ class ItemsController < ApplicationController
 
   # GET /filials/:filial_id/items
   def index
-    @items = @filial.items
+    @items = @filial.items.order(:name)
   end
 
   # GET /filials/:filial_id/items/new
@@ -71,16 +71,16 @@ class ItemsController < ApplicationController
   end
 
   def item_params
-    params.require(:item).permit(:name, :quantity, :category)
+    params.require(:item).permit(:name, :quantity, :category, :image)
   end
 
   def authorize_admin_or_manager
-    redirect_to root_path, alert: 'You are not authorized to perform this action.' unless current_user.manager? || current_user.admin?
+    redirect_to root_path, alert: 'Você não tem permissão para fazer isso.' unless current_user.manager? || current_user.admin?
   end
 
   def authorize_manager_or_admin_for_filial
     if current_user.manager? && current_user.filial != @filial
-      redirect_to root_path, alert: 'You are not authorized to access this filial.'
+      redirect_to root_path, alert: 'Você não tem acesso à essa filial.'
     end
   end
 end
