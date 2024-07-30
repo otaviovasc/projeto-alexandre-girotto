@@ -8,10 +8,10 @@
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <% if user_signed_in? && current_user.admin? %>
           <li class="nav-item">
-            <%= link_to 'Filial 1', filial_items_path(Filial.find_by(name: 'Filial 1')), class: 'nav-link' %>
+            <%= link_to 'Serra da Mantiqueira', filial_items_path(Filial.find_by(name: 'Serra da Mantiqueira')), class: 'nav-link' %>
           </li>
           <li class="nav-item">
-            <%= link_to 'Filial 2', filial_items_path(Filial.find_by(name: 'Filial 2')), class: 'nav-link' %>
+            <%= link_to 'Fattoria di Braúna', filial_items_path(Filial.find_by(name: 'Fattoria di Braúna')), class: 'nav-link' %>
           </li>
         <% end %>
       </ul>
