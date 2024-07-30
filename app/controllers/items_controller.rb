@@ -11,7 +11,7 @@ class ItemsController < ApplicationController
   end
 
   def critical_stock
-    @items = @filial.items.where('quantity < ?', 5).order(:name)
+    @items = @filial.items.where('quantity <= critical_stock').order(:name)
     render :index
   end
 
@@ -76,7 +76,7 @@ class ItemsController < ApplicationController
   end
 
   def item_params
-    params.require(:item).permit(:name, :quantity, :category, :image)
+    params.require(:item).permit(:name, :quantity, :category, :image, :critical_stock)
   end
 
   def authorize_admin_or_manager
