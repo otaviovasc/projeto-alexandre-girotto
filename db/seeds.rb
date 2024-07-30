@@ -11,9 +11,9 @@ filial2 = Filial.create!(name: 'Fattoria di Brauna')
 
 # Create an admin user
 admin = User.create!(
-  email: 'admin@example.com',
-  password: 'password',
-  password_confirmation: 'password',
+  email: 'villaggiogirotto@gmail.com',
+  password: 'Aleserver10!',
+  password_confirmation: 'Aleserver10!',
   role: :admin
 )
 puts "Admin created: #{admin.email}"
