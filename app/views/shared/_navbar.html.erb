@@ -22,6 +22,11 @@
               <%= link_to 'Admin Dashboard', admin_users_path, class: 'nav-link' %>
             </li>
           <% end %>
+          <% if @filial %>
+            <li class="nav-item">
+              <%= link_to 'Itens com Estoque Crítico', critical_stock_filial_items_path(@filial), class: 'btn btn-warning' %>
+            </li>
+          <% end %>
           <li class="nav-item">
             <%= link_to 'Sign Out', destroy_user_session_path, data: { turbo_method: :delete }, class: 'nav-link' %>
           </li>

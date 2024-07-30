@@ -10,6 +10,11 @@ class ItemsController < ApplicationController
     @items = @filial.items.order(:name)
   end
 
+  def critical_stock
+    @items = @filial.items.where('quantity < ?', 5).order(:name)
+    render :index
+  end
+
   # GET /filials/:filial_id/items/new
   def new
     @item = @filial.items.build

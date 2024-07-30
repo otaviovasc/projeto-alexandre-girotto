@@ -1,3 +1,4 @@
+<p>Email: <%= current_user.email %></p>
 <h1>Estoque: <%= @filial.name %></h1>
 
 <%= link_to 'Cadastrar novo Item', new_filial_item_path(@filial) %>
@@ -5,7 +6,6 @@
 <div class="row">
   <% @items.each do |item| %>
     <div class="col-12">
-
         <div class="card-product my-3">
           <% if item.image.attached? %>
             <%= link_to edit_filial_item_path(@filial, item), class: 'card-product-link' do %>
@@ -16,14 +16,14 @@
               <img src="https://via.placeholder.com/120"/>
             <% end %>
           <% end %>
-          <div class="card-product-infos">
+          <div class="card-product-infos text-center m-3">
             <h2><strong><%= item.name %></strong></h2>
-            <h2 style="color: red;"><strong>Quantidade:</strong> <%= item.quantity %></h2>
+              <div class="d-flex justify-content-center align-items-center">
+                <%= link_to '+', increment_filial_item_path(@filial, item), data: { turbo_method: :patch }, class: 'increment-button btn btn-success' %>
+                <h2 style="color: red;"><%= item.quantity %></h2>
+                <%= link_to '-', decrement_filial_item_path(@filial, item), data: { turbo_method: :patch }, class: 'decrement-button btn btn-danger'%>
+              </div>
             <p><strong>Categoria:</strong> <%= item.category %></p>
-          </div>
-          <div class="card-product-infos d-flex">
-            <%= link_to '+', increment_filial_item_path(@filial, item), data: { turbo_method: :patch }, class: 'increment-button btn btn-success' %>
-            <%= link_to '-', decrement_filial_item_path(@filial, item), data: { turbo_method: :patch }, class: 'decrement-button btn btn-danger'%>
           </div>
         </div>
 

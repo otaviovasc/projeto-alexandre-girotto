@@ -1,9 +1,11 @@
-<p><%= link_to 'Voltar ao estoque', filial_items_path(@filial) %></p>
+<p><%= link_to 'Voltar ao estoque', filial_items_path(@filial), class: 'btn btn-secondary mb-3' %></p>
 
-<%= form_with(model: [@filial, @item], local: true) do |form| %>
+<h3>Editar o produto "<%= @item.name %>"</h3>
+
+<%= simple_form_for([@filial, @item], html: { class: 'form-horizontal py-4' }) do |form| %>
   <% if @item.errors.any? %>
-    <div id="error_explanation">
-      <h2><%= pluralize(@item.errors.count, "error") %> prohibited this item from being saved:</h2>
+    <div id="error_explanation" class="alert alert-danger">
+      <h2><%= pluralize(@item.errors.count, "erro") %> impediram este item de ser salvo:</h2>
       <ul>
         <% @item.errors.full_messages.each do |message| %>
           <li><%= message %></li>
@@ -12,27 +14,37 @@
     </div>
   <% end %>
 
-  <div class="field">
-    <%= form.label :name %>
-    <%= form.text_field :name %>
+  <div class="form-group row">
+    <%= form.label :name, 'Nome', class: 'col-sm-2 col-form-label' %>
+    <div class="col-sm-10">
+      <%= form.input_field :name, class: 'form-control' %>
+    </div>
   </div>
 
-  <div class="field">
-    <%= form.label :quantity %>
-    <%= form.number_field :quantity %>
+  <div class="form-group row">
+    <%= form.label :quantity, 'Quantidade', class: 'col-sm-2 col-form-label' %>
+    <div class="col-sm-10">
+      <%= form.input_field :quantity, class: 'form-control' %>
+    </div>
   </div>
 
-  <div class="field">
-    <%= form.label :category %>
-    <%= form.select :category, options_for_select(Item::CATEGORIES, @item.category) %>
+  <div class="form-group row">
+    <%= form.label :category, 'Categoria', class: 'col-sm-2 col-form-label' %>
+    <div class="col-sm-10">
+      <%= form.select :category, options_for_select(Item::CATEGORIES, @item.category), {}, class: 'form-control' %>
+    </div>
   </div>
 
-  <div class="field">
-    <%= form.label :image %>
-    <%= form.file_field :image %>
+  <div class="form-group row">
+    <%= form.label :image, 'Imagem', class: 'col-sm-2 col-form-label' %>
+    <div class="col-sm-10">
+      <%= form.file_field :image, class: 'form-control-file' %>
+    </div>
   </div>
 
-  <div class="actions">
-    <%= form.submit %>
+  <div class="form-group row">
+    <div class="col-sm-10 offset-sm-2">
+      <%= form.submit 'Salvar', class: 'btn btn-primary' %>
+    </div>
   </div>
 <% end %>
