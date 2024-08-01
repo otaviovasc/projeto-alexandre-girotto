@@ -55,3 +55,6 @@
     </div>
   </div>
 <% end %>
+
+<br>
+<p><%= link_to 'Excluir esse produto do estoque', filial_item_path(@filial, @item), data: { turbo_method: :delete, confirm: 'Are you sure?' }, class: 'btn btn-danger ml-2' %></p>
