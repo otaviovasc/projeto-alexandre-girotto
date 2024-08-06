@@ -1,32 +1,96 @@
 <p>Email: <%= current_user.email %></p>
 <h1>Estoque: <%= @filial.name %></h1>
 
-<%= link_to 'Cadastrar novo Item', new_filial_item_path(@filial) %>
+<%= link_to 'Cadastrar novo Item', new_filial_item_path(@filial), class: 'btn btn-primary' %>
 
 <div class="row">
   <% @items.each do |item| %>
     <div class="col-12">
-        <div class="card-product my-3">
-          <% if item.image.attached? %>
-            <%= link_to edit_filial_item_path(@filial, item), class: 'card-product-link' do %>
-              <%= image_tag item.image%>
-            <% end %>
-          <% else %>
-            <%= link_to edit_filial_item_path(@filial, item), class: 'card-product-link' do %>
-              <img src="https://via.placeholder.com/120"/>
-            <% end %>
+      <div class="card-product my-3">
+        <% if item.image.attached? %>
+          <%= link_to edit_filial_item_path(@filial, item), class: 'card-product-link' do %>
+            <%= image_tag item.image %>
           <% end %>
-          <div class="card-product-infos text-center m-3">
-            <h2><strong><%= item.name %></strong></h2>
-              <div class="d-flex justify-content-center align-items-center">
-                <%= link_to '+', increment_filial_item_path(@filial, item), data: { turbo_method: :patch }, class: 'increment-button btn btn-success' %>
-                <h2 style="color: red;"><%= item.quantity %></h2>
-                <%= link_to '-', decrement_filial_item_path(@filial, item), data: { turbo_method: :patch }, class: 'decrement-button btn btn-danger'%>
-              </div>
-            <p><strong>Categoria:</strong> <%= item.category %></p>
-          </div>
-        </div>
+        <% else %>
+          <%= link_to edit_filial_item_path(@filial, item), class: 'card-product-link' do %>
+            <img src="https://via.placeholder.com/120"/>
+          <% end %>
+        <% end %>
+        <div class="card-product-infos text-center m-3">
+          <h2><strong><%= item.name %></strong></h2>
 
+          <%= form_with model: [@filial, item], local: true, method: :put, html: { class: 'item-form' } do |f| %>
+            <div class="d-flex justify-content-center align-items-center flex-column gap-2">
+              <div class="d-flex flex-row">
+                <%= button_tag type: 'button', class: 'btn btn-success increment-button' do %>
+                  +
+                <% end %>
+                <%= f.number_field :quantity, value: item.quantity, class: 'form-control text-center quantity-field', style: 'width: 70px;' %>
+                <%= button_tag type: 'button', class: 'btn btn-danger decrement-button' do %>
+                  -
+                <% end %>
+              </div>
+
+              <div class="save-btn d-none">
+                <%= f.submit 'Salvar', class: 'btn btn-primary ml-2' %>
+              </div>
+            </div>
+          <% end %>
+
+          <p class="category-field"><strong>Categoria:</strong> <%= item.category %></p>
+        </div>
+      </div>
     </div>
   <% end %>
 </div>
+
+<%= javascript_tag do %>
+  function initializeEventListeners() {
+    // Ensure no duplicate event listeners
+    document.querySelectorAll('.increment-button').forEach(function(button) {
+      button.replaceWith(button.cloneNode(true));
+    });
+    document.querySelectorAll('.decrement-button').forEach(function(button) {
+      button.replaceWith(button.cloneNode(true));
+    });
+
+    // Function to show the save button and hide the category
+    function toggleElements(button) {
+      const cardInfos = button.closest('.card-product-infos');
+      const saveButtonContainer = cardInfos.querySelector('.save-btn');
+      const categoryField = cardInfos.querySelector('.category-field');
+
+      saveButtonContainer.classList.remove('d-none'); // Show the save button
+      categoryField.classList.add('d-none'); // Hide the category field
+    }
+
+    // Attach event listeners for increment buttons
+    document.querySelectorAll('.increment-button').forEach(function(button) {
+      button.addEventListener('click', function(event) {
+        const quantityField = button.closest('.d-flex').querySelector('.quantity-field');
+        quantityField.value = parseInt(quantityField.value) + 1;
+        toggleElements(button);
+      });
+    });
+
+    // Attach event listeners for decrement buttons
+    document.querySelectorAll('.decrement-button').forEach(function(button) {
+      button.addEventListener('click', function(event) {
+        const quantityField = button.closest('.d-flex').querySelector('.quantity-field');
+        if (parseInt(quantityField.value) > 0) {
+          quantityField.value = parseInt(quantityField.value) - 1;
+        }
+        toggleElements(button);
+      });
+    });
+  }
+
+  document.addEventListener('turbo:load', function() {
+    initializeEventListeners();
+  });
+
+  // Initialize event listeners on the first load as well
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeEventListeners();
+  });
+<% end %>

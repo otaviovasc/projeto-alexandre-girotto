@@ -24,7 +24,7 @@ class ItemsController < ApplicationController
   def create
     @item = @filial.items.build(item_params)
     if @item.save
-      redirect_to filial_items_path(@filial), notice: 'Item was successfully created.'
+      redirect_to filial_items_path(@filial), notice: "#{@item.name} criado com sucesso."
     else
       render :new
     end
@@ -37,7 +37,7 @@ class ItemsController < ApplicationController
   # PATCH/PUT /filials/:filial_id/items/:id
   def update
     if @item.update(item_params)
-      redirect_to filial_items_path(@filial), notice: 'Item was successfully updated.'
+      redirect_to filial_items_path(@filial), notice: "#{@item.name} foi atualizado para #{@item.quantity}"
     else
       render :edit
     end
@@ -45,8 +45,9 @@ class ItemsController < ApplicationController
 
   # DELETE /filials/:filial_id/items/:id
   def destroy
+    name = @item.name
     @item.destroy
-    redirect_to filial_items_path(@filial), notice: 'Item was successfully deleted.'
+    redirect_to filial_items_path(@filial), notice: "#{name} foi deletado com sucesso."
   end
 
   # PATCH /filials/:filial_id/items/:id/increment

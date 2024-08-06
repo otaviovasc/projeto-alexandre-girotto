@@ -25,9 +25,13 @@
 }
 
 .increment-button {
-  width: 80px;
+  /* width: 80px; */
 }
 
 .decrement-button {
-  width: 80px;
+  /* width: 80px; */
+}
+
+.card-product-info {
+  max-width: 80%;
 }
