@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  start_date: 2024-08-13
+  end_date: 2024-08-13
+  cabana: one
+  user: one
+  total_price: 9.99
+
+two:
+  start_date: 2024-08-13
+  end_date: 2024-08-13
+  cabana: two
+  user: two
+  total_price: 9.99

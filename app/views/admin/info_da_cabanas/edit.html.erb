@@ -1,0 +1,31 @@
+<h1>Edit Info for <%= @cabana.name %></h1>
+
+<%= form_with model: [:admin, @cabana, @info_da_cabana], local: true do |form| %>
+  <div>
+    <%= form.label :info_type %>
+    <%= form.select :info_type, InfoDaCabana::INFO_TYPES %>
+  </div>
+
+  <div>
+    <%= form.label :title %>
+    <%= form.text_field :title %>
+  </div>
+
+  <div>
+    <%= form.label :content %>
+    <%= form.text_area :content %>
+  </div>
+
+  <div>
+    <%= form.label :image %>
+    <%= form.file_field :image %>
+    <p>Existing image:</p>
+    <%= image_tag @info_da_cabana.image.variant(resize_to_limit: [100, 100]) if @info_da_cabana.image.attached? %>
+  </div>
+
+  <div>
+    <%= form.submit 'Update Info', class: 'btn btn-primary' %>
+  </div>
+<% end %>
+
+<%= link_to 'Back', admin_cabana_info_da_cabanas_path(@cabana) %>

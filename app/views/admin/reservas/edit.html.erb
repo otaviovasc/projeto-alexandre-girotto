@@ -1,0 +1,29 @@
+<h1>Edit Reserva</h1>
+
+<%= form_with model: [:admin, @reserva], local: true do |form| %>
+  <div>
+    <%= form.label :cabana %>
+    <%= form.collection_select :cabana_id, Cabana.all, :id, :name %>
+  </div>
+
+  <div>
+    <%= form.label :user %>
+    <%= form.collection_select :user_id, User.all, :id, :name %>
+  </div>
+
+  <div>
+    <%= form.label :start_date %>
+    <%= form.date_select :start_date %>
+  </div>
+
+  <div>
+    <%= form.label :end_date %>
+    <%= form.date_select :end_date %>
+  </div>
+
+  <div>
+    <%= form.submit 'Update Reserva', class: 'btn btn-primary' %>
+  </div>
+<% end %>
+
+<%= link_to 'Back', admin_reservas_path %>

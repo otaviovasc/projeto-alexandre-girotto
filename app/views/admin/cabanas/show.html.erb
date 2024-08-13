@@ -1,0 +1,23 @@
+<h1><%= @cabana.name %></h1>
+
+<p>
+  <strong>Price:</strong>
+  <%= number_to_currency(@cabana.price) %>
+</p>
+
+<p>
+  <strong>Filial:</strong>
+  <%= @cabana.filial.name %>
+</p>
+
+<p>
+  <strong>Images:</strong>
+  <ul>
+    <% @cabana.images.each do |image| %>
+      <li><%= image_tag image.variant(resize_to_limit: [300, 300]) %></li>
+    <% end %>
+  </ul>
+</p>
+
+<%= link_to 'Edit', edit_admin_cabana_path(@cabana), class: 'btn btn-primary' %> |
+<%= link_to 'Back', admin_cabanas_path %>

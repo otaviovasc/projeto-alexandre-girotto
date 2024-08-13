@@ -1,0 +1,32 @@
+<h1>All Info for <%= @cabana.name %></h1>
+
+<div class="navigation">
+  <%= link_to 'Back to Cabanas', admin_cabanas_path, class: 'btn btn-secondary' %> |
+  <%= link_to 'Admin Dashboard', authenticated_root_path, class: 'btn btn-secondary' %>
+</div>
+
+<%= link_to 'New Info', new_admin_cabana_info_da_cabana_path(@cabana), class: 'btn btn-primary' %>
+
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Title</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @info_da_cabanas.each do |info| %>
+      <tr>
+        <td><%= info.info_type %></td>
+        <td><%= info.title %></td>
+        <td>
+          <%= link_to 'Edit', edit_admin_cabana_info_da_cabana_path(@cabana, info) %> |
+          <%= link_to 'Delete', admin_cabana_info_da_cabana_path(@cabana, info), method: :delete, data: { confirm: 'Are you sure?' } %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<%= link_to 'Back to Cabana', admin_cabana_path(@cabana) %>

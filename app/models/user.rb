@@ -1,21 +1,21 @@
 class User < ApplicationRecord
-  # Include default devise modules. Others available are:
-  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
 
-  enum role: { manager: 0, admin: 1 }
+  # Assigning custom values to the roles
+  enum role: { manager: 0, admin: 1, client: 2 }
 
-  # Associations
   belongs_to :filial, optional: true
 
-  # Scopes
-  scope :manager, -> { where(role: :manager) }
+  # Scopes for each role
+  scope :clients, -> { where(role: :client) }
+  scope :managers, -> { where(role: :manager) }
+  scope :admins, -> { where(role: :admin) }
 
-  # Set default role
+  # Set default role to client
   after_initialize do
     if self.new_record?
-      self.role ||= :manager
+      self.role ||= :client
     end
   end
 end

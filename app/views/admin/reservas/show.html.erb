@@ -1,0 +1,29 @@
+<h1>Reserva Details</h1>
+
+<p>
+  <strong>Cabana:</strong>
+  <%= @reserva.cabana.name %>
+</p>
+
+<p>
+  <strong>User:</strong>
+  <%= @reserva.user.name %>
+</p>
+
+<p>
+  <strong>Start Date:</strong>
+  <%= @reserva.start_date %>
+</p>
+
+<p>
+  <strong>End Date:</strong>
+  <%= @reserva.end_date %>
+</p>
+
+<p>
+  <strong>Total Price:</strong>
+  <%= number_to_currency(@reserva.total_price) %>
+</p>
+
+<%= link_to 'Edit', edit_admin_reserva_path(@reserva), class: 'btn btn-primary' %> |
+<%= link_to 'Back', admin_reservas_path %>

@@ -1,0 +1,38 @@
+<h1>All Reservas</h1>
+
+<div class="navigation">
+  <%= link_to 'Admin Dashboard', authenticated_root_path, class: 'btn btn-secondary' %> |
+  <%= link_to 'Manage Cabanas', admin_cabanas_path, class: 'btn btn-secondary' %> |
+  <%= link_to 'Manage Users', admin_users_path, class: 'btn btn-secondary' %>
+</div>
+
+<%= link_to 'New Reserva', new_admin_reserva_path, class: 'btn btn-primary' %>
+
+<table>
+  <thead>
+    <tr>
+      <th>Cabana</th>
+      <th>User</th>
+      <th>Start Date</th>
+      <th>End Date</th>
+      <th>Total Price</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @reservas.each do |reserva| %>
+      <tr>
+        <td><%= reserva.cabana.name %></td>
+        <td><%= reserva.user.name %></td>
+        <td><%= reserva.start_date %></td>
+        <td><%= reserva.end_date %></td>
+        <td><%= number_to_currency(reserva.total_price) %></td>
+        <td>
+          <%= link_to 'Show', admin_reserva_path(reserva) %> |
+          <%= link_to 'Edit', edit_admin_reserva_path(reserva) %> |
+          <%= link_to 'Delete', admin_reserva_path(reserva), method: :delete, data: { confirm: 'Are you sure?' } %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
