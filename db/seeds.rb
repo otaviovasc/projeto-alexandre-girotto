@@ -33,21 +33,21 @@
 # puts "Manager created: #{manager2.email}"
 
 
-# mercadomg = Filial.create!(name: 'Mercadinho MG')
-# mercadosp = Filial.create!(name: 'Mercadinho SP')
+mercadomg = Filial.create!(name: 'Mercadinho MG')
+mercadosp = Filial.create!(name: 'Mercadinho SP')
 
-# manager3 = User.create!(
-#   email: 'estoque3@gmail.com',
-#   password: 'Estoque10!',
-#   password_confirmation: 'Estoque10!',
-#   role: :manager,
-#   filial: mercadomg
-# )
+manager3 = User.create!(
+  email: 'estoque3@gmail.com',
+  password: 'Estoque10!',
+  password_confirmation: 'Estoque10!',
+  role: :manager,
+  filial: mercadomg
+)
 
-# manager4 = User.create!(
-#   email: 'estoque4@gmail.com',
-#   password: 'Estoque10!',
-#   password_confirmation: 'Estoque10!',
-#   role: :manager,
-#   filial: mercadosp
-# )
+manager4 = User.create!(
+  email: 'estoque4@gmail.com',
+  password: 'Estoque10!',
+  password_confirmation: 'Estoque10!',
+  role: :manager,
+  filial: mercadosp
+)
