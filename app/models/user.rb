@@ -4,18 +4,20 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
 
-  enum role: { manager: 0, admin: 1 }
+  enum role: { client: 0, manager: 1, admin: 2 }
 
   # Associations
   belongs_to :filial, optional: true
 
   # Scopes
   scope :manager, -> { where(role: :manager) }
+  scope :client, -> { where(role: :client) }
+  scope :admin, -> { where(role: :admin) }
 
   # Set default role
   after_initialize do
     if self.new_record?
-      self.role ||= :manager
+      self.role ||= :client
     end
   end
 end
