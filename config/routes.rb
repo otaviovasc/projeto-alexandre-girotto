@@ -17,9 +17,14 @@ Rails.application.routes.draw do
     end
   end
 
+  # Admin route (authenticated as admin)
   authenticated :user do
     root to: 'dashboard#index', as: :authenticated_root
   end
 
+  # Client route (authenticated as clent)
+
+  # Lead root (unautheticated)
   root to: 'home#index'
+
 end
