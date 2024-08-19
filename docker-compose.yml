@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:14
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: villaggio_db
+      POSTGRES_USER: villaggio_db_user
+      POSTGRES_PASSWORD: <%= ENV['YOUR_APP_DATABASE_PASSWORD'] %>
+
+  web:
+    build: .
+    command: ["rails", "server", "-b", "0.0.0.0"]
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/myapp_development
+
+volumes:
+  postgres_data:
