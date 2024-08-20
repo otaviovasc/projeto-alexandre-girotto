@@ -1,23 +1,28 @@
-# Use the official Ruby image
+# Use the official Ruby 3.2.2 image as a base
 FROM ruby:3.2.2
 
 # Install dependencies
-RUN apt-get update -qq && apt-get install -y build-essential libpq-dev nodejs yarn
+RUN apt-get update -qq && apt-get install -y nodejs postgresql-client
 
-# Set up working directory
-WORKDIR /app
+# Set environment variable for gems
+ENV BUNDLE_PATH /gems
+
+# Set working directory inside the container
+WORKDIR /myapp
+
+# Copy the Gemfile and Gemfile.lock
+COPY Gemfile Gemfile.lock ./
 
 # Install gems
-COPY Gemfile Gemfile.lock ./
 RUN bundle install
 
-# Copy the rest of the application code
+# Copy the main application
 COPY . .
 
-# Precompile assets (optional, depending on your app setup)
-RUN bundle exec rake assets:precompile
+# Precompile assets (optional, for production)
+# RUN RAILS_ENV=production bundle exec rake assets:precompile
 
-# Expose the Rails server port
+# Expose port 3000 to the Docker host
 EXPOSE 3000
 
 # Start the Rails server
