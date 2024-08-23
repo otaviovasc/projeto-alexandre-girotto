@@ -1,4 +1,5 @@
 class ReservasController < ApplicationController
+  layout "clientside"
   before_action :set_reserva, only: [:show]
 
   def index

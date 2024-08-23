@@ -1,4 +1,5 @@
 class CabanasController < ApplicationController
+  layout "clientside"
   skip_before_action :authenticate_user!
   def index
     if params[:filial_id].present?

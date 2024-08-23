@@ -19,11 +19,8 @@ RUN bundle install
 # Copy the main application
 COPY . .
 
-# Precompile assets (optional, for production)
-# RUN RAILS_ENV=production bundle exec rake assets:precompile
-
 # Expose port 3000 to the Docker host
 EXPOSE 3000
 
-# Start the Rails server
-CMD ["rails", "server", "-b", "0.0.0.0"]
+# Start the development server with Tailwind
+CMD ["./bin/dev"]
