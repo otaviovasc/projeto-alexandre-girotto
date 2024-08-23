@@ -1,5 +1,4 @@
 class ReservasController < ApplicationController
-  before_action :authenticate_user!
   before_action :set_reserva, only: [:show]
 
   def index
@@ -22,8 +21,19 @@ class ReservasController < ApplicationController
     if @reserva.save
       redirect_to reserva_path(@reserva), notice: 'Reserva criada com sucesso.'
     else
-      render :new
+      redirect_to new_cabana_reserva_path(@cabana), alert: "ERRO: #{@reserva.errors.full_messages.join("\n")}"
     end
+  end
+
+  def unavailable_dates
+    @cabana = Cabana.find(params[:cabana_id])
+    reservas = @cabana.reservas
+
+    unavailable_dates = reservas.map do |reserva|
+      (reserva.start_date...reserva.end_date).to_a
+    end.flatten
+
+    render json: unavailable_dates
   end
 
   private

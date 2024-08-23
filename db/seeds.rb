@@ -1,6 +1,6 @@
-# db/seeds.rb
+# # db/seeds.rb
 
-# Create filials
+# # Create filials
 filial1 = Filial.create!(name: 'Serra da Mantiqueira')
 filial2 = Filial.create!(name: 'Fattoria di Brauna')
 
@@ -42,6 +42,7 @@ manager3 = User.create!(
   role: :manager,
   filial: mercadomg
 )
+puts "Manager created: #{manager3.email}"
 
 manager4 = User.create!(
   email: 'estoque4@gmail.com',
@@ -50,3 +51,20 @@ manager4 = User.create!(
   role: :manager,
   filial: mercadosp
 )
+puts "Manager created: #{manager4.email}"
+
+# Create an admin user
+otavioteste = User.create!(
+  email: 'otavio@teste.com',
+  password: '123123',
+  password_confirmation: '123123',
+  role: :admin
+)
+puts "Admin created: #{otavioteste.email}"
+
+cliente = User.create!(
+  email: 'client@teste.com',
+  password: '123123',
+  password_confirmation: '123123',
+)
+puts "Admin created: #{cliente.email}"

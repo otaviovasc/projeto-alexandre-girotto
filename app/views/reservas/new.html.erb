@@ -1,2 +1,47 @@
-<h1>Reservas#new</h1>
-<p>Find me in app/views/reservas/new.html.erb</p>
+<h1>Create a Reservation for <%= @cabana.name %></h1>
+
+<%= form_with model: [@cabana, @reserva], local: true do |form| %>
+  <div>
+    <%= form.hidden_field :start_date, id: "start_date" %>
+    <%= form.hidden_field :end_date, id: "end_date" %>
+    <input type="text" id="reservation_date_range" data-cabana-id="<%= @cabana.id %>" placeholder="Select Date Range" />
+  </div>
+  <div>
+    <%= form.submit 'Create Reservation' %>
+  </div>
+<% end %>
+
+<%= link_to 'Back to Cabana', cabana_path(@cabana) %>
+
+
+<script>
+  // Calendar flatpickr
+  document.addEventListener("DOMContentLoaded", function() {
+  const cabanaId = document.getElementById('reservation_date_range').dataset.cabanaId;
+
+  fetch(`/cabanas/${cabanaId}/unavailable_dates`)
+    .then(response => response.json())
+    .then(dates => {
+      flatpickr("#reservation_date_range", {
+        mode: "range",
+        minDate: "today",
+        dateFormat: "Y-m-d",
+        disable: dates
+      });
+    });
+});
+
+
+document.addEventListener("DOMContentLoaded", function() {
+  const dateRangeInput = document.getElementById("reservation_date_range");
+  const startDateInput = document.getElementById("start_date");
+  const endDateInput = document.getElementById("end_date");
+
+  dateRangeInput.addEventListener("change", function(event) {
+    const dates = event.target.value.split(" to ");
+    startDateInput.value = dates[0];
+    endDateInput.value = dates[1];
+  });
+});
+
+</script>

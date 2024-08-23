@@ -1,5 +1,4 @@
 class Admin::InfoDaCabanasController < ApplicationController
-  before_action :authenticate_user!
   before_action :authorize_admin
   before_action :set_cabana
   before_action :set_info_da_cabana, only: [:edit, :update, :destroy]

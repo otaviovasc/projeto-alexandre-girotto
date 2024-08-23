@@ -1,2 +1,8 @@
-<h1>Reservas#show</h1>
-<p>Find me in app/views/reservas/show.html.erb</p>
+<h1>Reservation Details</h1>
+
+<p><strong>Cabana:</strong> <%= @reserva.cabana.name %></p>
+<p><strong>Start Date:</strong> <%= @reserva.start_date %></p>
+<p><strong>End Date:</strong> <%= @reserva.end_date %></p>
+<p><strong>Total Price:</strong> <%= number_to_currency(@reserva.total_price) %></p>
+
+<%= link_to 'Back to Reservations', reservas_path %>

@@ -1,2 +1,10 @@
-<h1>Cabanas#show</h1>
-<p>Find me in app/views/cabanas/show.html.erb</p>
+<h1><%= @cabana.name %></h1>
+<p>Price per night: <%= number_to_currency(@cabana.price) %></p>
+
+<% @infos_da_cabana.each do |info| %>
+  <p><strong>info type: </strong> <%= info.info_type %></p>
+  <p><strong>Title: </strong> <%= info.title %></p>
+  <p><strong>Content:</strong> <%= info.content %></p>
+<% end %>
+
+<%= link_to 'Book this Cabana', new_cabana_reserva_path(@cabana) %>

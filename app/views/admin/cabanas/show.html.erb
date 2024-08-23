@@ -1,4 +1,5 @@
 <h1><%= @cabana.name %></h1>
+<%= link_to 'View all Infos da Cabana', admin_cabana_info_da_cabanas_path(@cabana), class: 'btn btn-primary' %> |
 
 <p>
   <strong>Price:</strong>
@@ -10,14 +11,5 @@
   <%= @cabana.filial.name %>
 </p>
 
-<p>
-  <strong>Images:</strong>
-  <ul>
-    <% @cabana.images.each do |image| %>
-      <li><%= image_tag image.variant(resize_to_limit: [300, 300]) %></li>
-    <% end %>
-  </ul>
-</p>
-
-<%= link_to 'Edit', edit_admin_cabana_path(@cabana), class: 'btn btn-primary' %> |
+<%= link_to 'Edit This Cabana', edit_admin_cabana_path(@cabana), class: 'btn btn-primary' %> |
 <%= link_to 'Back', admin_cabanas_path %>

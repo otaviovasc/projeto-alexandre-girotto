@@ -2,8 +2,11 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
 
+  # Reserva association
+  has_many :reservas
+
   # Assigning custom values to the roles
-  enum role: { manager: 0, admin: 1, client: 2 }
+  enum role: { manager: 2, admin: 1, client: 0 }
 
   belongs_to :filial, optional: true
 

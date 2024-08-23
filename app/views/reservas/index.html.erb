@@ -1,2 +1,22 @@
-<h1>Reservas#index</h1>
-<p>Find me in app/views/reservas/index.html.erb</p>
+<h1>My Reservations</h1>
+
+<% if @reservas.any? %>
+  <ul>
+    <% @reservas.each do |reserva| %>
+      <li>
+        <strong>Cabana:</strong> <%= reserva.cabana.name %>
+        <br>
+        <strong>From:</strong> <%= reserva.start_date %>
+        <br>
+        <strong>To:</strong> <%= reserva.end_date %>
+        <br>
+        <strong>Total Price:</strong> <%= number_to_currency(reserva.total_price) %>
+        <br>
+        <%= link_to 'View Details', reserva_path(reserva) %>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>You don't have any bookings.</p>
+  <%= link_to 'Book Now', cabanas_path %>
+<% end %>
