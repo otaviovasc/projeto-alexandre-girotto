@@ -1,5 +1,10 @@
 # # db/seeds.rb
 
+User.destroy_all
+Filial.destroy_all
+Cabana.destroy_all
+Reserva.destroy_all
+
 # # Create filials
 filial1 = Filial.create!(name: 'Serra da Mantiqueira')
 filial2 = Filial.create!(name: 'Fattoria di Brauna')

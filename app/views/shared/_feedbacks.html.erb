@@ -1,0 +1,126 @@
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+    <style>
+        /* Estilizando as bolinhas de navegação */
+        .swiper-pagination-bullet {
+            background-color: #ccc;
+            /* Cor das bolinhas inativas */
+            opacity: 1;
+        }
+
+        .swiper-pagination-bullet-active {
+            background-color: #ffbd59;
+            /* Cor da bolinha ativa */
+        }
+
+        .swiper-pagination,
+        .swiper-horizontal>.swiper-pagination-bullets,
+        .swiper-pagination-bullets.swiper-pagination-horizontal,
+        .swiper-pagination-custom,
+        .swiper-pagination-fraction {
+            position: absolute;
+            bottom: 1rem;
+        }
+
+        .swiper-container {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .swiper-wrapper {
+            display: flex;
+            flex-wrap: nowrap;
+            width: 100%;
+        }
+
+        .swiper-slide {
+            flex: 0 0 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-creme py-8 px-4 overflow-hidden relative sm:p-40">
+        <div class="swiper-container flex flex-col gap-6">
+            <div class="swiper-wrapper max-w-full mx-auto font-dm text-preto-fill">
+                <div class="swiper-slide px-4">
+                    <div class="flex flex-col gap-6">
+                        <p class="text-2xl font-alice">Feedback 1</p>
+                        <p class="text-base sm:max-w-8/10">Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                            Quaerat, aspernatur alias provident quis eum sequi mollitia magni aperiam aliquid voluptatem
+                            ullam porro, officia natus? Unde quo quod culpa a omnis?</p>
+                        <div class="flex flex-row gap-2 items-start hover:cursor-pointer">
+                            <p class="font-alice text-base uppercase">Autor - Cabana X</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="swiper-slide px-4">
+                    <div class="flex flex-col gap-6">
+                        <p class="text-2xl font-alice">Feedback 2</p>
+                        <p class="text-base sm:max-w-8/10">Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                            Quaerat, aspernatur alias provident quis eum sequi mollitia magni aperiam aliquid voluptatem
+                            ullam porro, officia natus? Unde quo quod culpa a omnis?</p>
+                        <div class="flex flex-row gap-2 items-start hover:cursor-pointer">
+                            <p class="font-alice text-base uppercase">Autor - Cabana X</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="swiper-slide px-4">
+                    <div class="flex flex-col gap-6">
+                        <p class="text-2xl font-alice">Feedback 3</p>
+                        <p class="text-base sm:max-w-8/10">Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                            Quaerat, aspernatur alias provident quis eum sequi mollitia magni aperiam aliquid voluptatem
+                            ullam porro, officia natus? Unde quo quod culpa a omnis?</p>
+                        <div class="flex flex-row gap-2 items-start hover:cursor-pointer">
+                            <p class="font-alice text-base uppercase">Autor - Cabana X</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="swiper-slide px-4">
+                    <div class="flex flex-col gap-6">
+                        <p class="text-2xl font-alice">Feedback 4</p>
+                        <p class="text-base sm:max-w-8/10">Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                            Quaerat, aspernatur alias provident quis eum sequi mollitia magni aperiam aliquid voluptatem
+                            ullam porro, officia natus? Unde quo quod culpa a omnis?</p>
+                        <div class="flex flex-row gap-2 items-start hover:cursor-pointer">
+                            <p class="font-alice text-base uppercase">Autor - Cabana X</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="swiper-slide px-4">
+                    <div class="flex flex-col gap-6">
+                        <p class="text-2xl font-alice">Feedback 5</p>
+                        <p class="text-base sm:max-w-8/10">Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                            Quaerat, aspernatur alias provident quis eum sequi mollitia magni aperiam aliquid voluptatem
+                            ullam porro, officia natus? Unde quo quod culpa a omnis?</p>
+                        <div class="flex flex-row gap-2 items-start hover:cursor-pointer">
+                            <p class="font-alice text-base uppercase">Autor - Cabana X</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="swiper-pagination"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var swiper = new Swiper('.swiper-container', {
+                loop: true,
+                autoplay: {
+                    delay: 3000,
+                },
+                speed: 2000,
+                pagination: {
+                    el: '.swiper-pagination',
+                    clickable: true,
+                },
+            });
+        });
+    </script>
+</body>
