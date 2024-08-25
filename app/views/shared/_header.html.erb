@@ -1,0 +1,76 @@
+<div id="menu-overlay"
+    class="fixed inset-0 bg-black opacity-0 pointer-events-none transition-opacity duration-1000 sm:hidden"></div>
+
+<div id="menu-container"
+    class="h-screen px-8 pt-32 pb-8 font-dm font-normal text-gray-500 sm:hidden fixed top-0 left-0 w-full bg-white z-50 transform -translate-x-full transition-transform duration-1000 ease-in-out flex flex-col justify-between">
+    <div class="fixed top-4 left-4">
+        <button id="close-menu"><i class="bi bi-x text-preto-fill text-5xl block sm:hidden"></i></button>
+    </div>
+    <div class="text-lg flex flex-col gap-4 leading-8">
+        <div>
+            <div class="flex gap-2 items-start">
+                <button id="toggle-cabanas" class="hover:text-terracota">
+                    <p class="hover:text-terracota">Cabanas</p>
+                </button>
+                <i id="arrow-cabanas" class="bi bi-arrow-down-short"></i>
+            </div>
+            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
+                <a href="#" class="hover:text-terracota">Ver Todas</a>
+            </div>
+            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
+                <a href="#" class="hover:text-terracota">Uma</a>
+            </div>
+            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
+                <a href="#" class="hover:text-terracota">Duas</a>
+            </div>
+        </div>
+        <a href="#">
+            <p class="hover:text-terracota">Sustentabilidade</p>
+        </a>
+        <a href="#">
+            <p class="hover:text-terracota">Experiências</p>
+        </a>
+        <a href="#">
+            <p class="hover:text-terracota">Sobre Nós</p>
+        </a>
+    </div>
+    <div class="flex items-center gap-4">
+        <a href="#">
+            <p class="font-alice text-lg hover:text-terracota font-bold">Minhas Reservas</p>
+        </a>
+    </div>
+</div>
+
+<div class="p-4 bg-terracota h-screen sm:hidden">
+    <button id="open-menu"><i class="bi bi-list-nested text-creme text-4xl"></i></button>
+</div>
+
+<script>
+    document.getElementById('open-menu').addEventListener('click', function () {
+        document.getElementById('menu-container').classList.remove('-translate-x-full');
+        document.getElementById('menu-overlay').classList.remove('opacity-0');
+        document.getElementById('menu-overlay').classList.remove('pointer-events-none');
+        document.body.classList.add('overflow-hidden');
+    });
+
+    document.getElementById('toggle-cabanas').addEventListener('click', function () {
+        const submenus = document.querySelectorAll('.submenu-cabanas');
+        const arrow = document.getElementById('arrow-cabanas');
+        submenus.forEach(submenu => {
+            if (submenu.style.maxHeight) {
+                submenu.style.maxHeight = null;
+                arrow.style.transform = 'rotate(0deg)';  
+            } else {
+                submenu.style.maxHeight = submenu.scrollHeight + "px";
+                arrow.style.transform = 'rotate(180deg)';  
+            }
+        });
+    });
+
+    document.getElementById('close-menu').addEventListener('click', function () {
+        document.getElementById('menu-container').classList.add('-translate-x-full');
+        document.getElementById('menu-overlay').classList.add('opacity-0');
+        document.getElementById('menu-overlay').classList.add('pointer-events-none');
+        document.body.classList.remove('overflow-hidden');
+    });
+</script>
