@@ -8,6 +8,9 @@ module.exports = {
   ],
   theme: {
     extend: {
+      backgroundImage: {
+        'bg-fundo': "url('/app/assets/images/fundo.png')",
+      },
       fontFamily: {
         alice: ['Alice', 'serif'],
         dm: ['DM Sans', 'sans-serif'],
@@ -43,6 +46,9 @@ module.exports = {
         "8/10": "80%",
         "9/10": "95%",
       },
+      backgroundImage: theme => ({
+                'fundo': "url('<%= asset_path('fundo.png') %>')"
+            }),
     },
   },
   plugins: [],

@@ -2,16 +2,13 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
     <style>
-        /* Estilizando as bolinhas de navegação */
         .swiper-pagination-bullet {
             background-color: #ccc;
-            /* Cor das bolinhas inativas */
             opacity: 1;
         }
 
         .swiper-pagination-bullet-active {
             background-color: #ffbd59;
-            /* Cor da bolinha ativa */
         }
 
         .swiper-pagination,
@@ -46,7 +43,7 @@
 
 <body>
     <div class="bg-creme py-8 px-4 overflow-hidden relative sm:p-40">
-        <div class="swiper-container flex flex-col gap-6">
+        <div class="swiper-container swiper-feedbacks flex flex-col gap-6">
             <div class="swiper-wrapper max-w-full mx-auto font-dm text-preto-fill">
                 <div class="swiper-slide px-4">
                     <div class="flex flex-col gap-6">
@@ -110,7 +107,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            var swiper = new Swiper('.swiper-container', {
+            var swiper = new Swiper('.swiper-feedbacks', {
                 loop: true,
                 autoplay: {
                     delay: 3000,
