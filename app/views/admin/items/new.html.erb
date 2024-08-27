@@ -1,6 +1,8 @@
 <p><%= link_to 'Voltar ao estoque', admin_filial_items_path(@filial), class: 'btn btn-secondary mb-3' %></p>
 
-<%= simple_form_for([@filial, @item], html: { class: 'form-horizontal' }) do |form| %>
+<h3>Adicionar Novo Item</h3>
+
+<%= form_with(model: [@filial, @item], url: admin_filial_items_path(@filial), local: true, method: :post, html: { class: 'form-horizontal py-4' }) do |form| %>
   <% if @item.errors.any? %>
     <div id="error_explanation" class="alert alert-danger">
       <h2><%= pluralize(@item.errors.count, "erro") %> impediram este item de ser salvo:</h2>
@@ -15,28 +17,28 @@
   <div class="form-group row">
     <%= form.label :name, 'Nome', class: 'col-sm-2 col-form-label' %>
     <div class="col-sm-10">
-      <%= form.input_field :name, class: 'form-control' %>
+      <%= form.text_field :name, class: 'form-control' %>
     </div>
   </div>
 
   <div class="form-group row">
     <%= form.label :quantity, 'Quantidade', class: 'col-sm-2 col-form-label' %>
     <div class="col-sm-10">
-      <%= form.input_field :quantity, class: 'form-control' %>
+      <%= form.number_field :quantity, class: 'form-control' %>
     </div>
   </div>
 
   <div class="form-group row">
     <%= form.label :category, 'Categoria', class: 'col-sm-2 col-form-label' %>
     <div class="col-sm-10">
-      <%= form.select :category, options_for_select(Item::CATEGORIES, @item.category), {}, class: 'form-control' %>
+      <%= form.select :category, options_for_select(Item::CATEGORIES), {}, class: 'form-control' %>
     </div>
   </div>
 
   <div class="form-group row">
     <%= form.label :critical_stock, 'Estoque Crítico', class: 'col-sm-2 col-form-label' %>
     <div class="col-sm-10">
-      <%= form.input_field :critical_stock, class: 'form-control' %>
+      <%= form.number_field :critical_stock, class: 'form-control' %>
     </div>
   </div>
 

@@ -40,7 +40,7 @@ class Admin::ItemsController < ApplicationController
   def update
     if @item.update(item_params)
       @item.image.attach(params[:item][:image]) if params[:item][:image].present?
-      redirect_to admin_filial_items_path(@filial), notice: "#{@item.name} foi atualizado para #{@item.quantity}"
+      redirect_to admin_filial_items_path(@filial), notice: "O item '#{@item.name}' foi atualizado!"
     else
       render :edit
     end
