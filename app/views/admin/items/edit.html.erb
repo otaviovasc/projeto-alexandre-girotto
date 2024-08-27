@@ -1,4 +1,4 @@
-<p><%= link_to 'Voltar ao estoque', filial_items_path(@filial), class: 'btn btn-secondary mb-3' %></p>
+<p><%= link_to 'Voltar ao estoque', admin_filial_items_path(@filial), class: 'btn btn-secondary mb-3' %></p>
 
 <h3>Editar o produto "<%= @item.name %>"</h3>
 
@@ -57,4 +57,4 @@
 <% end %>
 
 <br>
-<p><%= link_to 'Excluir esse produto do estoque', filial_item_path(@filial, @item), data: { turbo_method: :delete, confirm: 'Are you sure?' }, class: 'btn btn-danger ml-2' %></p>
+<p><%= link_to 'Excluir esse produto do estoque', admin_filial_item_path(@filial, @item), data: { turbo_method: :delete, confirm: 'Are you sure?' }, class: 'btn btn-danger ml-2' %></p>

@@ -1,4 +1,4 @@
-<p><%= link_to 'Voltar ao estoque', filial_items_path(@filial), class: 'btn btn-secondary mb-3' %></p>
+<p><%= link_to 'Voltar ao estoque', admin_filial_items_path(@filial), class: 'btn btn-secondary mb-3' %></p>
 
 <%= simple_form_for([@filial, @item], html: { class: 'form-horizontal' }) do |form| %>
   <% if @item.errors.any? %>

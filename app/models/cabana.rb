@@ -3,7 +3,6 @@ class Cabana < ApplicationRecord
   has_many :reservas
   has_many :info_da_cabanas
 
-  # Attach image using ActiveStorage
   has_many_attached :images
 
   validates :name, :price, presence: true

@@ -1,2 +1,0 @@
-class FilialsController < ApplicationController
-end

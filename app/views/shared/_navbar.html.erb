@@ -8,16 +8,10 @@
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <% if user_signed_in? && current_user.admin? %>
           <li class="nav-item">
-            <%= link_to 'Serra da Mantiqueira', filial_items_path(Filial.find_by(name: 'Serra da Mantiqueira')), class: 'nav-link' %>
+            <%= link_to 'Serra da Mantiqueira', admin_filial_items_path(Filial.find_by(name: 'Serra da Mantiqueira')), class: 'nav-link' %>
           </li>
           <li class="nav-item">
-            <%= link_to 'Fattoria di Braúna', filial_items_path(Filial.find_by(name: 'Fattoria di Brauna')), class: 'nav-link' %>
-          </li>
-          <li class="nav-item">
-            <%= link_to 'Mercadinho MG', filial_items_path(Filial.find_by(name: 'Mercadinho MG')), class: 'nav-link' %>
-          </li>
-          <li class="nav-item">
-            <%= link_to 'Mercadinho SP', filial_items_path(Filial.find_by(name: 'Mercadinho SP')), class: 'nav-link' %>
+            <%= link_to 'Fattoria di Braúna', admin_filial_items_path(Filial.find_by(name: 'Fattoria di Brauna')), class: 'nav-link' %>
           </li>
         <% end %>
       </ul>
@@ -30,7 +24,7 @@
           <% end %>
           <% if @filial %>
             <li class="nav-item">
-              <%= link_to 'Itens com Estoque Crítico', critical_stock_filial_items_path(@filial), class: 'btn btn-warning' %>
+              <%= link_to 'Itens com Estoque Crítico', critical_stock_admin_filial_items_path(@filial), class: 'btn btn-warning' %>
             </li>
           <% end %>
           <li class="nav-item">

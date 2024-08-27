@@ -1,25 +1,25 @@
 <p>Email: <%= current_user.email %></p>
 <h1>Estoque: <%= @filial.name %></h1>
 
-<%= link_to 'Cadastrar novo Item', new_filial_item_path(@filial), class: 'btn btn-primary' %>
+<%= link_to 'Cadastrar novo Item', new_admin_filial_item_path(@filial), class: 'btn btn-primary' %>
 
 <div class="row">
   <% @items.each do |item| %>
     <div class="col-12">
       <div class="card-product my-3">
         <% if item.image.attached? %>
-          <%= link_to edit_filial_item_path(@filial, item), class: 'card-product-link' do %>
+          <%= link_to edit_admin_filial_item_path(@filial, item), class: 'card-product-link' do %>
             <%= image_tag item.image %>
           <% end %>
         <% else %>
-          <%= link_to edit_filial_item_path(@filial, item), class: 'card-product-link' do %>
+          <%= link_to edit_admin_filial_item_path(@filial, item), class: 'card-product-link' do %>
             <img src="https://via.placeholder.com/120"/>
           <% end %>
         <% end %>
         <div class="card-product-infos text-center m-3">
           <h2><strong><%= item.name %></strong></h2>
 
-          <%= form_with model: [@filial, item], local: true, method: :put, html: { class: 'item-form' } do |f| %>
+          <%= form_with url: admin_filial_item_path(@filial, item), local: true, method: :put, html: { class: 'item-form' } do |f| %>
             <div class="d-flex justify-content-center align-items-center flex-column gap-2">
               <div class="d-flex flex-row">
                 <%= button_tag type: 'button', class: 'btn btn-success increment-button' do %>

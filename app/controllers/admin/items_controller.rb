@@ -1,9 +1,9 @@
-class ItemsController < ApplicationController
+class Admin::ItemsController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin_or_manager
   before_action :set_filial
   before_action :set_item, only: [:edit, :update, :destroy, :increment, :decrement]
-  before_action :authorize_manager_or_admin_for_filial
+  before_action :authorize_manager_for_filial
 
   # GET /filials/:filial_id/items
   def index
@@ -23,8 +23,10 @@ class ItemsController < ApplicationController
   # POST /filials/:filial_id/items
   def create
     @item = @filial.items.build(item_params)
+
     if @item.save
-      redirect_to filial_items_path(@filial), notice: "#{@item.name} criado com sucesso."
+      @item.image.attach(params[:item][:image]) if params[:item][:image].present?
+      redirect_to admin_filial_items_path(@filial), notice: "#{@item.name} criado com sucesso."
     else
       render :new
     end
@@ -37,7 +39,8 @@ class ItemsController < ApplicationController
   # PATCH/PUT /filials/:filial_id/items/:id
   def update
     if @item.update(item_params)
-      redirect_to filial_items_path(@filial), notice: "#{@item.name} foi atualizado para #{@item.quantity}"
+      @item.image.attach(params[:item][:image]) if params[:item][:image].present?
+      redirect_to admin_filial_items_path(@filial), notice: "#{@item.name} foi atualizado para #{@item.quantity}"
     else
       render :edit
     end
@@ -47,19 +50,19 @@ class ItemsController < ApplicationController
   def destroy
     name = @item.name
     @item.destroy
-    redirect_to filial_items_path(@filial), notice: "#{name} foi deletado com sucesso."
+    redirect_to admin_filial_items_path(@filial), notice: "#{name} foi deletado com sucesso."
   end
 
   # PATCH /filials/:filial_id/items/:id/increment
   def increment
     @item.increment!(:quantity)
-    redirect_to filial_items_path(@filial), notice: 'Item quantity was successfully increased.'
+    redirect_to admin_filial_items_path(@filial), notice: 'Item quantity was successfully increased.'
   end
 
   # PATCH /filials/:filial_id/items/:id/decrement
   def decrement
     @item.decrement!(:quantity) if @item.quantity > 0
-    redirect_to filial_items_path(@filial), notice: 'Item quantity was successfully decreased.'
+    redirect_to admin_filial_items_path(@filial), notice: 'Item quantity was successfully decreased.'
   end
 
   private
@@ -77,14 +80,14 @@ class ItemsController < ApplicationController
   end
 
   def item_params
-    params.require(:item).permit(:name, :quantity, :category, :image, :critical_stock)
+    params.require(:item).permit(:name, :quantity, :category, :critical_stock)
   end
 
   def authorize_admin_or_manager
     redirect_to root_path, alert: 'Você não tem permissão para fazer isso.' unless current_user.manager? || current_user.admin?
   end
 
-  def authorize_manager_or_admin_for_filial
+  def authorize_manager_for_filial
     if current_user.manager? && current_user.filial != @filial
       redirect_to root_path, alert: 'Você não tem acesso à essa filial.'
     end

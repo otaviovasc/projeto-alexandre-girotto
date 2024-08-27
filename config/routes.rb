@@ -13,10 +13,20 @@ Rails.application.routes.draw do
   # Admin namespace for full CRUD operations
   namespace :admin do
     resources :users, only: [:index, :new, :create, :edit, :update, :destroy]
+    
     resources :cabanas do
       resources :info_da_cabanas, only: [:index, :new, :create, :edit, :update, :destroy]
     end
+
     resources :reservas
+
+    resources :filials do
+      resources :items do
+        collection do
+          get 'critical_stock'
+        end
+      end
+    end
   end
 
   # Cabana listing and details
@@ -27,17 +37,6 @@ Rails.application.routes.draw do
   # My reservations and reservation details
   resources :reservas, only: [:index, :show]
 
-  resources :filials do
-    resources :items do
-      member do
-        patch 'increment'
-        patch 'decrement'
-      end
-      collection do
-        get 'critical_stock'
-      end
-    end
-  end
 
   authenticated :user, ->(u) { u.client? } do
     root to: 'home#index', as: :client_root

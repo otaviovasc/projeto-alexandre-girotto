@@ -5,7 +5,7 @@ class DashboardController < ApplicationController
     if current_user.admin?
       render :index
     elsif current_user.manager? && current_user.filial.present?
-      redirect_to filial_items_path(current_user.filial)
+      redirect_to admin_filial_items_path(current_user.filial)
     else
       redirect_to root_path, alert: 'Você não tem acesso de administrador.'
     end

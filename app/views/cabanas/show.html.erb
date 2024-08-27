@@ -7,4 +7,8 @@
   <p><strong>Content:</strong> <%= info.content %></p>
 <% end %>
 
-<%= link_to 'Book this Cabana', new_cabana_reserva_path(@cabana) %>
+<% @cabana.images.each do |image| %>
+  <img src="<%=image.url%>" alt="" class="">
+<% end %>
+
+<button><%= link_to 'Book this Cabana', new_cabana_reserva_path(@cabana) %></button>
