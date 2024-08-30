@@ -1,8 +1,7 @@
 <div>
-
     <%= render 'shared/header' %>
     <%= render 'shared/feedbacks' %>
     <%= render 'shared/footer' %>
     <%= render 'shared/wppButton' %>
+    <%= button_to "logout", destroy_user_session_path, method: :delete  %>
 </div>
-
