@@ -13,7 +13,7 @@ Rails.application.routes.draw do
   # Admin namespace for full CRUD operations
   namespace :admin do
     resources :users, only: [:index, :new, :create, :edit, :update, :destroy]
-    
+
     resources :cabanas do
       resources :info_da_cabanas, only: [:index, :new, :create, :edit, :update, :destroy]
     end
@@ -38,13 +38,16 @@ Rails.application.routes.draw do
   resources :reservas, only: [:index, :show]
 
 
+  # Client Auth route
   authenticated :user, ->(u) { u.client? } do
     root to: 'home#index', as: :client_root
   end
 
+  # Admin root
   authenticated :user, ->(u) { !u.client? } do
     root to: 'dashboard#index', as: :authenticated_root
   end
 
+  # Unlogged route
   root to: 'home#root'
 end

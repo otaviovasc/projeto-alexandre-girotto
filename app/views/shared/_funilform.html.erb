@@ -1,0 +1,18 @@
+<%= form_with(model: @funil_mailer, local: true) do |form| %>
+  <div>
+    <%= form.label :fullname, "Full Name" %>
+    <%= form.text_field :fullname %>
+  </div>
+
+  <div>
+    <%= form.label :number, "Number (Optional)" %>
+    <%= form.telephone_field :number %>
+  </div>
+
+  <div>
+    <%= form.label :email, "Email" %>
+    <%= form.email_field :email %>
+  </div>
+
+  <%= form.submit "Submit" %>
+<% end %>
