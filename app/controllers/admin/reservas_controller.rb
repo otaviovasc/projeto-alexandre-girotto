@@ -12,13 +12,27 @@ class Admin::ReservasController < ApplicationController
   end
 
   def create
-    @reserva = Reserva.new(reserva_params)
+    if params[:create_user] == "true"
+      generated_password = SecureRandom.alphanumeric(8)
+      @user = User.new(user_params.merge(password: generated_password, password_confirmation: generated_password))
+
+      if @user.save
+        @reserva = Reserva.new(reserva_params.merge(user_id: @user.id))
+      else
+        flash[:alert] = "User could not be created."
+        render :new and return
+      end
+    else
+      @reserva = Reserva.new(reserva_params)
+    end
+
     if @reserva.save
       redirect_to admin_reservas_path, notice: 'Reserva was successfully created.'
     else
       render :new
     end
   end
+
 
   def edit
   end
@@ -44,6 +58,10 @@ class Admin::ReservasController < ApplicationController
 
   def reserva_params
     params.require(:reserva).permit(:start_date, :end_date, :cabana_id, :user_id)
+  end
+
+  def user_params
+    params.require(:user).permit(:email, :password, :password_confirmation, :name)
   end
 
   def authorize_admin
