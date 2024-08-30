@@ -10,6 +10,12 @@ Rails.application.routes.draw do
   get 'cabanas/:cabana_id/unavailable_dates', to: 'reservas#unavailable_dates'
   devise_for :users
 
+  # Static page
+  get 'about', to: 'home#about'
+
+  # Funil mailer
+  post 'crete_mailer_entry', to: 'home#create_mailer_entry'
+
   # Admin namespace for full CRUD operations
   namespace :admin do
     resources :users, only: [:index, :new, :create, :edit, :update, :destroy]
