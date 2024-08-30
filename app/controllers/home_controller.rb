@@ -1,8 +1,12 @@
 class HomeController < ApplicationController
   layout "clientside"
-  skip_before_action :authenticate_user!, only: [:root]
+  skip_before_action :authenticate_user!, only: [:root, :create_mailer_entry]
 
   def root
+    @funil_mailer = FunilMailer.new
+  end
+  def index
+    @funil_mailer = FunilMailer.new
   end
 
   def create_mailer_entry
@@ -11,11 +15,16 @@ class HomeController < ApplicationController
     if @funil_mailer.save
       flash[:notice] = "Obrigado! Você recerá nossas ofertas a partir de agora."
     else
-      flash[:alert] = "Houve um erro tentando cadastrar, tente novamente"
+      if @funil_mailer.errors[:email].include?("has already been taken")
+        flash[:notice] = "Email já registrado."
+      else
+        flash[:alert] = "Houve um erro tentando cadastrar, tente novamente"
+      end
     end
   end
 
-  def index
+
+  def about
   end
 
   private
