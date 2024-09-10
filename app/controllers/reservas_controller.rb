@@ -18,6 +18,7 @@ class ReservasController < ApplicationController
     @cabana = Cabana.find(params[:cabana_id])
     @reserva = @cabana.reservas.new(reserva_params)
     @reserva.user = current_user
+    @reserva.total_price = @reserva.calculate_total_price
 
     if @reserva.save
       redirect_to reserva_path(@reserva), notice: 'Reserva criada com sucesso.'

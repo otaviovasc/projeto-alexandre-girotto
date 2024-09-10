@@ -22,7 +22,12 @@ Rails.application.routes.draw do
 
     resources :cabanas do
       resources :info_da_cabanas, only: [:index, :new, :create, :edit, :update, :destroy]
+      resources :price_rules, only: [:create, :destroy]  # For handling price rules within cabanas
+      member do
+        get 'price_rules_and_holidays'  # Route for the combined form
+      end
     end
+    resources :holidays, only: [:create, :destroy]  # Manage holidays globally within admin
 
     resources :reservas
 

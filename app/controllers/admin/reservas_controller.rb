@@ -27,6 +27,7 @@ class Admin::ReservasController < ApplicationController
       @reserva = Reserva.new(reserva_params)
     end
 
+    @reserva.total_price = @reserva.calculate_total_price
     if @reserva.save
       redirect_to admin_reservas_path, notice: 'Reserva was successfully created.'
     else

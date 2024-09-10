@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_08_30_165133) do
+ActiveRecord::Schema[7.0].define(version: 2024_09_10_091714) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -66,6 +66,13 @@ ActiveRecord::Schema[7.0].define(version: 2024_08_30_165133) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "holidays", force: :cascade do |t|
+    t.string "name"
+    t.date "date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "info_da_cabanas", force: :cascade do |t|
     t.bigint "cabana_id", null: false
     t.string "info_type"
@@ -85,6 +92,15 @@ ActiveRecord::Schema[7.0].define(version: 2024_08_30_165133) do
     t.datetime "updated_at", null: false
     t.integer "critical_stock"
     t.index ["filial_id"], name: "index_items_on_filial_id"
+  end
+
+  create_table "price_rules", force: :cascade do |t|
+    t.bigint "cabana_id", null: false
+    t.string "day_type"
+    t.decimal "price"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cabana_id"], name: "index_price_rules_on_cabana_id"
   end
 
   create_table "reservas", force: :cascade do |t|
@@ -120,6 +136,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_08_30_165133) do
   add_foreign_key "cabanas", "filials"
   add_foreign_key "info_da_cabanas", "cabanas"
   add_foreign_key "items", "filials"
+  add_foreign_key "price_rules", "cabanas"
   add_foreign_key "reservas", "cabanas"
   add_foreign_key "reservas", "users"
   add_foreign_key "users", "filials"

@@ -6,9 +6,31 @@ class Reserva < ApplicationRecord
   validate :end_date_after_start_date
   validate :dates_available
 
-  before_save :calculate_total_price
+  def calculate_total_price
+    total_price = 0
+    (start_date..end_date).each do |date|
+      total_price += find_price_for_day(date)
+    end
+    total_price
+  end
 
   private
+
+  def find_price_for_day(date)
+    if Holiday.holiday?(date)
+      price_rule = cabana.price_rules.find_by(day_type: 'holiday')
+    elsif weekend?(date)
+      price_rule = cabana.price_rules.find_by(day_type: 'weekend')
+    else
+      price_rule = cabana.price_rules.find_by(day_type: 'weekday')
+    end
+
+    price_rule ? price_rule.price : cabana.price || 0
+  end
+
+  def weekend?(date)
+    date.friday? || date.saturday? || date.sunday?
+  end
 
   def start_date_cannot_be_in_the_past
     if start_date.present? && start_date < Date.today
@@ -28,10 +50,6 @@ class Reserva < ApplicationRecord
     end
   end
 
-  def calculate_total_price
-    total_days = (end_date - start_date).to_i
-    self.total_price = cabana.price * total_days
-  end
 
   def available?(cabana, reserva)
     new_reserva_range = reserva.start_date..reserva.end_date

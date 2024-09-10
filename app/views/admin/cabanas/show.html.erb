@@ -1,5 +1,6 @@
 <h1><%= @cabana.name %></h1>
-<%= link_to 'View all Infos da Cabana', admin_cabana_info_da_cabanas_path(@cabana), class: 'btn btn-primary' %> |
+<%= link_to 'Manage this Cabana Infos', admin_cabana_info_da_cabanas_path(@cabana), class: 'btn btn-primary' %> |
+<%= link_to 'Manage this Cabana Price Rules', price_rules_and_holidays_admin_cabana_path(@cabana), class: 'btn btn-primary' %> |
 
 <p>
   <strong>Price:</strong>

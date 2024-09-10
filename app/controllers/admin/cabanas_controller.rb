@@ -1,7 +1,7 @@
 class Admin::CabanasController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin
-  before_action :set_cabana, only: [:edit, :update, :destroy, :show]
+  before_action :set_cabana, only: [:edit, :update, :destroy, :show, :price_rules_and_holidays]
 
   def index
     @cabanas = Cabana.all
@@ -22,7 +22,6 @@ class Admin::CabanasController < ApplicationController
     end
   end
 
-
   def edit
   end
 
@@ -35,10 +34,15 @@ class Admin::CabanasController < ApplicationController
     end
   end
 
-
   def destroy
     @cabana.destroy
     redirect_to admin_cabanas_path, notice: 'Cabana was successfully deleted.'
+  end
+
+  def price_rules_and_holidays
+    @price_rule = PriceRule.new
+    @holidays = Holiday.all
+    @holiday = Holiday.new
   end
 
   private
