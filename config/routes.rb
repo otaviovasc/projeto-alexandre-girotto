@@ -42,8 +42,9 @@ Rails.application.routes.draw do
 
   # Cabana listing and details
   resources :cabanas, only: [:index, :show] do
-    # Create a reserva from a cabana
-    resources :reservas, only: [:new, :create]
+    resources :reservas, only: [:new, :create] do # Create a reserva from a cabana
+      get 'calculate_price', on: :collection  # route for calculating price dynamicall
+    end
   end
   # My reservations and reservation details
   resources :reservas, only: [:index, :show]

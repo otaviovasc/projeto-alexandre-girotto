@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_09_10_091714) do
+ActiveRecord::Schema[7.0].define(version: 2024_09_11_122233) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -103,6 +103,16 @@ ActiveRecord::Schema[7.0].define(version: 2024_09_10_091714) do
     t.index ["cabana_id"], name: "index_price_rules_on_cabana_id"
   end
 
+  create_table "reserva_services", force: :cascade do |t|
+    t.bigint "reserva_id", null: false
+    t.bigint "service_id", null: false
+    t.integer "quantity"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reserva_id"], name: "index_reserva_services_on_reserva_id"
+    t.index ["service_id"], name: "index_reserva_services_on_service_id"
+  end
+
   create_table "reservas", force: :cascade do |t|
     t.date "start_date"
     t.date "end_date"
@@ -113,6 +123,19 @@ ActiveRecord::Schema[7.0].define(version: 2024_09_10_091714) do
     t.datetime "updated_at", null: false
     t.index ["cabana_id"], name: "index_reservas_on_cabana_id"
     t.index ["user_id"], name: "index_reservas_on_user_id"
+  end
+
+  create_table "services", force: :cascade do |t|
+    t.string "name"
+    t.text "description"
+    t.decimal "price"
+    t.string "duration"
+    t.time "start_time"
+    t.time "end_time"
+    t.bigint "filial_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["filial_id"], name: "index_services_on_filial_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -137,7 +160,10 @@ ActiveRecord::Schema[7.0].define(version: 2024_09_10_091714) do
   add_foreign_key "info_da_cabanas", "cabanas"
   add_foreign_key "items", "filials"
   add_foreign_key "price_rules", "cabanas"
+  add_foreign_key "reserva_services", "reservas"
+  add_foreign_key "reserva_services", "services"
   add_foreign_key "reservas", "cabanas"
   add_foreign_key "reservas", "users"
+  add_foreign_key "services", "filials"
   add_foreign_key "users", "filials"
 end

@@ -1,6 +1,8 @@
 class Reserva < ApplicationRecord
   belongs_to :cabana
   belongs_to :user
+  has_many :reserva_services, dependent: :destroy
+  has_many :services, through: :reserva_services
 
   validate :start_date_cannot_be_in_the_past
   validate :end_date_after_start_date
@@ -8,11 +10,22 @@ class Reserva < ApplicationRecord
 
   def calculate_total_price
     total_price = 0
-    (start_date..end_date).each do |date|
+    days_stayed = (start_date...end_date).count
+
+    # Calculate price for each day based on the cabana's price rules
+    (start_date...end_date).each do |date|
       total_price += find_price_for_day(date)
     end
+
+    # Calculate the total price of selected services (e.g., breakfast)
+    reserva_services.each do |reserva_service|
+      service = reserva_service.service
+      total_price += reserva_service.quantity * service.price * days_stayed
+    end
+
     total_price
   end
+
 
   private
 
@@ -49,7 +62,6 @@ class Reserva < ApplicationRecord
       errors.add(:base, "A Cabana esta indisponível na data selecionada.")
     end
   end
-
 
   def available?(cabana, reserva)
     new_reserva_range = reserva.start_date..reserva.end_date

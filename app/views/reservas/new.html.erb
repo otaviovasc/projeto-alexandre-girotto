@@ -1,11 +1,28 @@
-<h1>Create a Reservation for <%= @cabana.name %></h1>
+<h1><%= @cabana.name %></h1>
 
 <%= form_with model: [@cabana, @reserva], local: true do |form| %>
   <div>
     <%= form.hidden_field :start_date, id: "start_date" %>
     <%= form.hidden_field :end_date, id: "end_date" %>
-    <input type="text" id="reservation_date_range" data-cabana-id="<%= @cabana.id %>" placeholder="Select Date Range" />
+    <input type="text" id="reservation_date_range" data-cabana-id="<%= @cabana.id %>" placeholder="Selecione as datas" />
   </div>
+
+  <h3>Selecione Serviços adicionais</h3>
+  <div>
+    <label>Incluir café da manhã?</label>
+    <%= check_box_tag 'reserva[include_breakfast]', '1', false, id: 'include_breakfast' %> Sim
+  </div>
+  <div id="breakfast_quantity_container" style="display:none;">
+    <label>Quantidade de pessoas para café da manhã? R$<%= @breakfast_service.price %>/dia:</label>
+    <div>
+      <button type="button" id="quantity_down">-</button>
+      <%= number_field_tag 'reserva[breakfast_quantity]', 1, min: 0, id: 'breakfast_quantity' %>
+      <button type="button" id="quantity_up">+</button>
+    </div>
+  </div>
+
+  <h3>Total: <span id="total_price"></span></h3>
+
   <div>
     <%= form.submit 'Create Reservation' %>
   </div>
@@ -13,35 +30,78 @@
 
 <%= link_to 'Back to Cabana', cabana_path(@cabana) %>
 
-
 <script>
-  // Calendar flatpickr
   document.addEventListener("DOMContentLoaded", function() {
-  const cabanaId = document.getElementById('reservation_date_range').dataset.cabanaId;
+    const cabanaId = document.getElementById('reservation_date_range').dataset.cabanaId;
+    let includeBreakfast = false;
 
-  fetch(`/cabanas/${cabanaId}/unavailable_dates`)
-    .then(response => response.json())
-    .then(dates => {
-      flatpickr("#reservation_date_range", {
-        mode: "range",
-        minDate: "today",
-        dateFormat: "Y-m-d",
-        disable: dates
-      });
+    const includeBreakfastCheckbox = document.getElementById('include_breakfast');
+    const breakfastQuantityContainer = document.getElementById('breakfast_quantity_container');
+    const totalPriceElement = document.getElementById('total_price');
+
+    includeBreakfastCheckbox.addEventListener('change', function() {
+      includeBreakfast = includeBreakfastCheckbox.checked;
+      breakfastQuantityContainer.style.display = includeBreakfast ? 'block' : 'none';
+      updateTotalPrice();
     });
-});
 
+    const dateRangeInput = document.getElementById("reservation_date_range");
+    const startDateInput = document.getElementById("start_date");
+    const endDateInput = document.getElementById("end_date");
 
-document.addEventListener("DOMContentLoaded", function() {
-  const dateRangeInput = document.getElementById("reservation_date_range");
-  const startDateInput = document.getElementById("start_date");
-  const endDateInput = document.getElementById("end_date");
+    dateRangeInput.addEventListener("change", function(event) {
+      const dates = event.target.value.split(" to ");
+      // Ensure that both start and end dates are set
+      if (dates.length === 2) {
+        startDateInput.value = dates[0];
+        endDateInput.value = dates[1];
+        updateTotalPrice();  // Update the total price when both dates are set
+      }
+    });
 
-  dateRangeInput.addEventListener("change", function(event) {
-    const dates = event.target.value.split(" to ");
-    startDateInput.value = dates[0];
-    endDateInput.value = dates[1];
+    fetch(`/cabanas/${cabanaId}/unavailable_dates`)
+      .then(response => response.json())
+      .then(dates => {
+        flatpickr("#reservation_date_range", {
+          mode: "range",
+          minDate: "today",
+          dateFormat: "Y-m-d",
+          disable: dates
+        });
+      });
+
+    const quantityInput = document.getElementById("breakfast_quantity");
+    const quantityUpButton = document.getElementById("quantity_up");
+    const quantityDownButton = document.getElementById("quantity_down");
+
+    quantityUpButton.addEventListener("click", function() {
+      quantityInput.value = parseInt(quantityInput.value) + 1;
+      console.log(`Quantity Up: ${quantityInput.value}`);
+      updateTotalPrice();  // Update price after changing quantity
+    });
+
+    quantityDownButton.addEventListener("click", function() {
+      if (parseInt(quantityInput.value) > 0) {
+        quantityInput.value = parseInt(quantityInput.value) - 1;
+        console.log(`Quantity Down: ${quantityInput.value}`);
+        updateTotalPrice();  // Update price after changing quantity
+      }
+    });
+
+    function updateTotalPrice() {
+      const startDate = startDateInput.value;
+      const endDate = endDateInput.value;
+      const breakfastQuantity = parseInt(quantityInput.value); // Get breakfast quantity
+
+      if (startDate && endDate) {
+        const url = `/cabanas/${cabanaId}/reservas/calculate_price?start_date=${startDate}&end_date=${endDate}&include_breakfast=${includeBreakfast}&breakfast_quantity=${breakfastQuantity}`;
+
+        fetch(url)
+          .then(response => response.json())
+          .then(data => {
+            totalPriceElement.textContent = `R$${data.total_price.toFixed(2)}`;
+          });
+      }
+    }
   });
-});
-
 </script>
