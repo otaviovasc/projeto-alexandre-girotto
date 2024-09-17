@@ -3,6 +3,11 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <style>
+        .shadow-on-scroll {
+          box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+      </style>
 </head>
 <div id="menu-overlay"
     class="fixed inset-0 z-10 bg-black opacity-0 pointer-events-none transition-opacity duration-1000 sm:hidden">
@@ -73,9 +78,9 @@
 
 
 
-<div id="open-menu" class="z-10 fixed top-0 left-0 p-4 w-full header-bg bg-transparent">
+<div id="open-menu" class="z-10 fixed top-0 left-0 py-2 px-4 w-full header-bg bg-transparent">
     <button>
-        <i class="bi bi-list-nested text-creme text-4xl icon-color"></i>
+        <i class="bi bi-list-nested text-creme text-3xl icon-color"></i>
     </button>
 </div>
 
@@ -113,19 +118,17 @@
     document.addEventListener('DOMContentLoaded', function () {
         const openMenuButton = document.querySelector('.header-bg');
         const menuIcon = document.querySelector('.icon-color');
-
-        // Inicialmente, assegure-se de que o ícone seja creme e o fundo seja transparente
         menuIcon.classList.add('text-creme');
         openMenuButton.classList.add('bg-transparent');
 
         window.addEventListener('scroll', function () {
             if (window.scrollY > 50) {
                 openMenuButton.classList.remove('bg-transparent');
-                openMenuButton.classList.add('bg-creme', 'transition-colors', 'duration-1000', 'ease-in-out');
+                openMenuButton.classList.add('bg-creme', 'transition-colors', 'duration-1000', 'ease-in-out', 'shadow-on-scroll');
                 menuIcon.classList.remove('text-creme');
                 menuIcon.classList.add('text-terracota', 'transition-colors', 'duration-300', 'ease-in-out');
             } else {
-                openMenuButton.classList.remove('bg-creme');
+                openMenuButton.classList.remove('bg-creme', 'shadow-on-scroll');
                 openMenuButton.classList.add('bg-transparent', 'transition-colors', 'duration-1000', 'ease-in-out');
                 menuIcon.classList.remove('text-terracota');
                 menuIcon.classList.add('text-creme', 'transition-colors', 'duration-300', 'ease-in-out');
@@ -147,6 +150,8 @@
             },
             pagination: false,
             navigation: false,
+            allowTouchMove: false,
+            disableOnInteraction: true
         });
     });
 
