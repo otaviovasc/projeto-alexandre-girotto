@@ -1,0 +1,89 @@
+<div>
+    <%= form_with url: cabanas_path, method: :get, local: true do %>
+        <div class="custom-dropdown">
+            <%= hidden_field_tag :filial_id, params[:filial_id], id: 'selected_filial_id' %>
+                <div id="dropdown_display" class="dropdown-display text-white">Selecione uma Filial</div>
+                <div id="dropdown_list" class="dropdown-list">
+                    <% Filial.all.each do |filial| %>
+                        <div class="dropdown-item" data-id="<%= filial.id %>">
+                            <h2>
+                                <%= filial.name %>
+                            </h2>
+                            <p>
+                                <%= filial.address %>
+                            </p>
+                        </div>
+                        <% end %>
+                </div>
+        </div>
+        <%= submit_tag 'Pesquisar' , class: 'btn btn-primary text-white' %>
+            <% end %>
+</div>
+
+<style>
+    .custom-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-display {
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    .dropdown-list {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+
+
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .dropdown-item {
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f1f1f1;
+    }
+
+    .dropdown-list::-webkit-scrollbar {
+        display: none;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const dropdownDisplay = document.getElementById("dropdown_display");
+        const dropdownList = document.getElementById("dropdown_list");
+        const selectedFilialId = document.getElementById("selected_filial_id");
+
+        dropdownDisplay.addEventListener("click", function () {
+            dropdownList.style.display = dropdownList.style.display === "block" ? "none" : "block";
+        });
+
+        document.querySelectorAll(".dropdown-item").forEach(function (item) {
+            item.addEventListener("click", function () {
+                const filialId = this.getAttribute("data-id");
+                const filialName = this.querySelector("h2").innerText;
+                dropdownDisplay.innerHTML = filialName;
+                selectedFilialId.value = filialId;
+                dropdownList.style.display = "none";
+            });
+        });
+
+
+        document.addEventListener("click", function (e) {
+            if (!dropdownDisplay.contains(e.target) && !dropdownList.contains(e.target)) {
+                dropdownList.style.display = "none";
+            }
+        });
+    });
+</script>

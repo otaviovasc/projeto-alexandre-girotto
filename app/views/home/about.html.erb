@@ -1,0 +1,93 @@
+<div>
+
+    <%= render 'shared/nav' %>
+
+        <div class="bg-creme">
+            <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-4 px-6 pt-16">
+                    <div class="swiper-container swiper-exp h-96 ">
+                        <div class="swiper-wrapper relative">
+                            <div class="swiper-slide p-4 sm:hidden"
+                                style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="uppercase font-dm text-gray-500 text-base leading-10">Sobre Nós</p>
+                    </div>
+
+                </div>
+                <div class="flex flex-col px-6 pb-16 gap-16">
+                    <div class="flex flex-col gap-4">
+                        <p class="font-alice text-preto-fill font-light text-2xl">Lorem ipsum dolor sit amet,
+                            consectetur adipisicing elit.</p>
+                        <p class="font-dm text-gray-500 text-base">Lorem ipsum dolor sit amet consectetur adipisicing
+                            elit. Recusandae nulla voluptas sit ullam aliquid facere quas. Obcaecati commodi laudantium
+                            nobis fugiat repellat inventore nihil incidunt ipsam minima, expedita porro atque.</p>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <p class="text-laranja font-dm text-base leading-10">Quais são as experiênicias?</p>
+                        <i class="fa-solid fa-chevron-right text-laranja text-xs"></i>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="h-screen"></div>
+
+        <%= render 'shared/values' %>
+
+        <div class="h-screen"></div>
+        <div class="bg-creme">
+            <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-4 px-6 pt-16">
+                    <div class="swiper-container swiper-exp h-96 ">
+                        <div class="swiper-wrapper relative">
+                            <div class="swiper-slide p-4 sm:hidden"
+                                style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="uppercase font-dm text-gray-500 text-base leading-10">Sobre Nós</p>
+                    </div>
+
+                </div>
+                <div class="flex flex-col px-6 pb-16 gap-16">
+                    <div class="flex flex-col gap-4">
+                        <p class="font-alice text-preto-fill font-light text-2xl">Lorem ipsum dolor sit amet,
+                            consectetur adipisicing elit.</p>
+                        <p class="font-dm text-gray-500 text-base">Lorem ipsum dolor sit amet consectetur
+                            adipisicing elit. Recusandae nulla voluptas sit ullam aliquid facere quas. Obcaecati
+                            commodi laudantium nobis fugiat repellat inventore nihil incidunt ipsam minima, expedita
+                            porro atque.</p>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <p class="text-laranja font-dm text-base leading-10">Quais são as experiênicias?</p>
+                        <i class="fa-solid fa-chevron-right text-laranja text-xs"></i>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <%= render 'shared/funilform' %>
+            <%= render 'shared/footer' %>
+                <%= render 'shared/wppButton' %>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var swiper = new Swiper('.swiper-exp', {
+            loop: true,
+            autoplay: {
+                delay: 3000,
+            },
+            speed: 2000,
+            pagination: false,
+            clickable: false,
+            allowTouchMove: false,
+            disableOnInteraction: true
+        });
+    });
+</script>

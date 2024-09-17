@@ -3,7 +3,15 @@
   <%= submit_tag 'Filter' %>
 <% end %>
 
-<% @cabanas.each do |cabana| %>
-  <h2><%= link_to cabana.name, cabana_path(cabana) %></h2>
-  <p>Price per night: <%= number_to_currency(cabana.price) %></p>
+<% if @cabanas.any? %>
+  <h2>Search Results:</h2>
+  <% @cabanas.each do |cabana| %>
+    <div>
+      <h3><%= cabana.name %></h3>
+      <p><%= cabana.description %></p>
+      <%= link_to 'View Cabana', cabana_path(cabana) %>
+    </div>
+  <% end %>
+<% else %>
+  <p>No cabanas found for the selected filial.</p>
 <% end %>
