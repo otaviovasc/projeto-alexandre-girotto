@@ -1,0 +1,57 @@
+<div>
+    <div class="bg-creme">
+        <div class="flex flex-col gap-2">
+            <div class="flex flex-col gap-4 px-6 pt-16">
+                <div class="swiper-container swiper-exp h-96 ">
+                    <div class="swiper-wrapper relative">
+                        <div class="swiper-slide p-4 sm:hidden"
+                            style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
+                        </div>
+                        <div class="swiper-slide p-4 sm:hidden"
+                            style="background-image: url('<%= asset_path('2.png') %>'); background-size: cover; background-position: center;">
+                        </div>
+                        <div class="swiper-slide p-4 sm:hidden"
+                            style="background-image: url('<%= asset_path('3.png') %>'); background-size: cover; background-position: center;">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <p class="uppercase font-dm text-gray-500 text-base leading-10">Experiências</p>
+                </div>
+
+            </div>
+            <div class="flex flex-col px-6 pb-16 gap-16">
+                <div class="flex flex-col gap-4">
+                    <p class="font-alice text-preto-fill font-light text-2xl">Mindfulness, conexão com a natureza e uma vida
+                        muito melhor.</p>
+                    <p class="font-dm text-gray-500 text-base">Nós somos comprometidos com o bem-estar, sustentabilidade e uma obrigação em transformar a sua vida. Lorem ipsum dolor sit amet consectetur adipisicing elit. Obcaecati neque eum quam quisquam itaque culpa, omnis corporis consequatur eligendi sint!</p>
+                </div>
+                <div class="flex items-center gap-1">
+                    <p class="text-laranja font-dm text-base leading-10">Quais são as experiênicias?</p>
+                    <i class="fa-solid fa-chevron-right text-laranja text-xs"></i>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    <div>
+
+    </div>
+</div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var swiper = new Swiper('.swiper-exp', {
+                loop: true,
+                autoplay: {
+                    delay: 3000,
+                },
+                speed: 2000,
+                pagination: false,
+                clickable: false,
+                allowTouchMove: false,
+                disableOnInteraction: true
+            });
+    });
+</script>

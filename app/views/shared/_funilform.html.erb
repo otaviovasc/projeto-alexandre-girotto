@@ -1,18 +1,49 @@
-<%= form_with(url: crete_mailer_entry_path, model: @funil_mailer, method: :post, local: true) do |form| %>
+<head>
+  <style>
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      box-shadow: none;
+    }
+  </style>
+</head>
+<div class="px-6 py-10 text-preto-fill flex flex-col gap-8">
   <div>
-    <%= form.label :fullname, "Full Name" %>
-    <%= form.text_field :fullname %>
+    <p class="font-alice font-bold text-3xl leading-tight">Quer receber ofertas e ficar por dentro de oportunidades únicas?</p>
+    <p class="font-dm font-light text-base leading-relaxed">Preencha os campos abaixo para ficar por dentro.</p>
   </div>
-
-  <div>
-    <%= form.label :number, "Whatsapp" %>
-    <%= form.telephone_field :number %>
-  </div>
-
-  <div>
-    <%= form.label :email, "Email" %>
-    <%= form.email_field :email %>
-  </div>
-
-  <%= form.submit "Submit" %>
-<% end %>
+  <%= form_with(url: crete_mailer_entry_path, model: @funil_mailer, method: :post, local: true) do |form| %>
+    <div class="font-dm text-base flex flex-col gap-12 max-w-9/10">
+      <div class="font-dm text-base flex flex-col gap-4 max-w-9/10">
+        <div class="flex flex-row items-center gap-4 border rounded p-2">
+          <div class="whitespace-nowrap pl-2">
+            <%= form.label :fullname, "Nome Completo: " %>
+          </div>
+          <div class='w-full'>
+            <%= form.text_field :fullname, class: "w-full border-gray-300 rounded p-2" %>
+          </div>
+        </div>
+        <div class="flex flex-row items-center gap-4 border rounded p-2">
+          <div class="whitespace-nowrap pl-2">
+            <%= form.label :number, "Whatsapp: " %>
+          </div>
+          <div class="w-full">
+            <%= form.telephone_field :number, class: "w-full border-gray-300 rounded p-2" %>
+          </div>
+        </div>
+        <div class="flex flex-row items-center gap-4 border rounded p-2">
+          <div class="whitespace-nowrap pl-2">
+            <%= form.label :email, "Email: " %>
+          </div>
+          <div class="w-full">
+            <%= form.email_field :email, class: "w-full border-gray-300 rounded p-2" %>
+          </div>
+        </div>
+      </div>
+      <div>
+        <%= form.submit "Enviar", class: "bg-verde-escuro text-xl text-white px-6 py-2 rounded-xl uppercase" %>
+      </div>
+    </div>
+  <% end %>
+</div>

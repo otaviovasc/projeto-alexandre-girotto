@@ -1,14 +1,15 @@
 <div class="bg-black relative">
-    <div class="p-4 sm:hidden relative z-10 min-h-96 flex flex-col items-center justify-center"
-         style="background-image: url('<%= asset_path('foto_comunidade.png') %>'); background-size: cover; background-position: center;">
+    <div class="p-4 sm:hidden relative z-10 flex flex-col items-center justify-center"
+         style="background-image: url('<%= asset_path('foto_comunidade.png') %>'); background-size: cover; background-position: center; min-height: 28rem;">
         <div class="absolute inset-0 bg-black opacity-50 z-0"></div>
 
         <div class="relative z-10 text-white text-center flex flex-col gap-4">
             <p class="uppercase font-dm text-xl">as comunidades locais</p>
             <p class="font-bold font-alice text-2xl">Fazer parte da vida de pessoas que sempre estiveram por aqui e que merecem o mundo.</p>
         </div>
-        <div class="absolute bottom-10 bg-verde-escuro text-white px-8 py-2 rounded-3xl">
-            <%= link_to 'SAIBA MAIS', '/about'%>
+        <div class="absolute bottom-10 text-white px-8 py-2 rounded-3xl overflow-hidden">
+            <%= link_to 'SAIBA MAIS', '/about', class: 'relative z-10' %>
+            <div class="absolute inset-0 bg-verde-escuro opacity-80 z-0 rounded-3xl"></div>
         </div>
 
     </div>
