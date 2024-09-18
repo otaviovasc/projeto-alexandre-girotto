@@ -30,6 +30,7 @@ Rails.application.routes.draw do
     resources :holidays, only: [:create, :destroy]  # Manage holidays globally within admin
 
     resources :reservas
+    resources :services
 
     resources :filials do
       resources :items do
@@ -46,9 +47,20 @@ Rails.application.routes.draw do
       get 'calculate_price', on: :collection  # route for calculating price dynamicall
     end
   end
-  # My reservations and reservation details
-  resources :reservas, only: [:index, :show]
 
+  # My reservations and reservation details
+  resources :reservas, only: [:index, :show] do
+    resources :reserva_services, only: [:create]
+    resources :reserva_items, only: [:create]
+  end
+
+  # Marketplace
+  resources :marketplace, only: [] do
+    collection do
+      get 'services'
+      get 'items'
+    end
+  end
 
   # Client Auth route
   authenticated :user, ->(u) { u.client? } do

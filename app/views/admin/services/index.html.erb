@@ -1,0 +1,60 @@
+<h1>Services</h1>
+<%= link_to 'New Service', new_admin_service_path, class: 'btn btn-primary' %>
+
+<div class="service-cards-container">
+  <% @services.each do |service| %>
+    <div class="service-card">
+      <div class="service-image">
+        <% if service.images.attached? %>
+          <% service.images.each do |image| %>
+            <img src="<%=image.url%>" alt="" class="" style="max-height: 200px; max-width: 200px;">
+          <% end %>
+        <% else %>
+          <p>No Image Available</p>
+        <% end %>
+      </div>
+
+      <div class="service-details">
+        <h2><%= service.name %></h2>
+        <p><%= service.description %></p>
+        <p><strong>Price:</strong> <%= number_to_currency(service.price) %></p>
+        <p><strong>Filial:</strong> <%= service.filial ? service.filial.name : "None" %></p>
+        <p><strong>Responsável:</strong> <%= service.user ? service.user.email : "None" %></p>
+      </div>
+
+      <div class="service-actions">
+        <%= link_to 'Edit', edit_admin_service_path(service), class: 'btn btn-secondary' %>
+        <%= link_to 'Delete', admin_service_path(service), data: { turbo_method: :delete, confirm: 'Are you sure?' }, class: 'btn btn-danger' %>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<style>
+  .service-cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .service-card {
+    border: 1px solid #ccc;
+    padding: 20px;
+    width: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .service-image {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+
+  .service-details {
+    margin-bottom: 15px;
+  }
+
+  .service-actions {
+    display: flex;
+    justify-content: space-between;
+  }
+</style>

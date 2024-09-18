@@ -1,0 +1,30 @@
+<h1>Available Services</h1>
+<div class="service-cards-container">
+  <% @services.each do |service| %>
+    <div class="service-card">
+      <div class="service-image">
+        <% if service.images.attached? %>
+          <% service.images.each do |image| %>
+            <img src="<%=image.url%>" alt="" class="" style="max-height: 200px; max-width: 200px">
+          <% end %>
+        <% else %>
+          <p>No Image Available</p>
+        <% end %>
+      </div>
+
+      <div class="service-details">
+        <h2><%= service.name %></h2>
+        <p><%= service.description %></p>
+        <p><strong>Price:</strong> <%= number_to_currency(service.price) %></p>
+      </div>
+
+      <div class="service-actions">
+        <%= form_with url: reserva_reserva_services_path(@reserva), method: :post do |f| %>
+          <%= hidden_field_tag :service_id, service.id %>
+          <%= number_field_tag :quantity, 1, min: 1 %>
+          <%= f.submit 'Add to Reservation', class: 'btn btn-primary' %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

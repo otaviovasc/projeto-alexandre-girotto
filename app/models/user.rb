@@ -6,11 +6,12 @@ class User < ApplicationRecord
   has_many :reservas
 
   # Assigning custom values to the roles
-  enum role: { manager: 2, admin: 1, client: 0 }
+  enum role: { service_provider: 3, manager: 2, admin: 1, client: 0 }
 
   belongs_to :filial, optional: true
 
   # Scopes for each role
+  scope :service_providers, -> { where(role: :service_provider) }
   scope :clients, -> { where(role: :client) }
   scope :managers, -> { where(role: :manager) }
   scope :admins, -> { where(role: :admin) }

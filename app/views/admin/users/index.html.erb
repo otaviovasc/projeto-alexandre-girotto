@@ -1,4 +1,4 @@
-<h1>Manage Managers</h1>
+<h1>Manage Workers</h1>
 
 <%= link_to 'New Manager', new_admin_user_path %>
 
@@ -6,6 +6,8 @@
   <thead>
     <tr>
       <th>Email</th>
+      <th>Role</th>
+      <th>Filial</th>
       <th>Actions</th>
     </tr>
   </thead>
@@ -13,9 +15,11 @@
     <% @users.each do |user| %>
       <tr>
         <td><%= user.email %></td>
+        <td><%= user.role %></td>
+        <td><%= user.filial ? user.filial.name : 'None' %></td>
         <td>
           <%= link_to 'Edit', edit_admin_user_path(user) %>
-          <%= link_to 'Delete', admin_user_path(user), data: { turbo_method: :delete, confirm: 'Are you sure?' } %>
+          <%= link_to 'Delete', admin_user_path(user), data: { turbo_method: :delete } %>
         </td>
       </tr>
     <% end %>

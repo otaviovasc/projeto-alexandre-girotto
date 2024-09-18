@@ -26,7 +26,6 @@ class Reserva < ApplicationRecord
     total_price
   end
 
-
   private
 
   def find_price_for_day(date)
