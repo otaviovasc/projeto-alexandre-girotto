@@ -1,120 +1,107 @@
-<head>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
-    <style>
-        .swiper-pagination-bullet {
-            background-color: #ccc;
-            opacity: 1;
-        }
+<head></head>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+<style>
+    .swiper-pagination-bullet {
+        background-color: #ccc;
+        opacity: 1;
+    }
 
-        .swiper-pagination-bullet-active {
-            background-color: #ffbd59;
-        }
+    .swiper-pagination-bullet-active {
+        background-color: #ffbd59;
+    }
 
-        .swiper-pagination,
-        .swiper-horizontal>.swiper-pagination-bullets,
-        .swiper-pagination-bullets.swiper-pagination-horizontal,
-        .swiper-pagination-custom,
-        .swiper-pagination-fraction {
-            position: absolute;
-            bottom: 1rem;
-        }
+    .swiper-pagination,
+    .swiper-horizontal>.swiper-pagination-bullets,
+    .swiper-pagination-bullets.swiper-pagination-horizontal,
+    .swiper-pagination-custom,
+    .swiper-pagination-fraction {
+        position: absolute;
+        bottom: 1rem;
+    }
 
-        .swiper-container {
-            width: 100%;
-            max-width: 100%;
-            overflow: hidden;
-        }
+    .swiper-container {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
 
-        .swiper-wrapper {
-            display: flex;
-            flex-wrap: nowrap;
-            width: 100%;
-        }
+    .swiper-wrapper {
+        display: flex;
+        flex-wrap: nowrap;
+        width: 100%;
+    }
 
-        .swiper-slide {
-            flex: 0 0 100%;
-            max-width: 100%;
-            box-sizing: border-box;
-            overflow: hidden;
-        }
-    </style>
+    .swiper-slide {
+        flex: 0 0 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+</style>
 </head>
 
 <body>
-    <div class="py-8 px-4 overflow-hidden relative sm:p-40">
+    <div class=" py-8 px-4 overflow-hidden relative sm:p-40">
+        <div class="px-2 pb-16 flex flex-col gap-4">
+            <p class="text-3xl text-center font-alice">Nossos valores</p>
+            <p class="text-center text-sm font-dm">É assim que fazemos: como cumprimos a promessa do nosso nome e reavivamos seus sentidos com ofertas e experiências de bem-estar que são fora do comum.</p>
+        </div>
         <div class="swiper-container swiper-feedbacks flex flex-col gap-6">
             <div class="swiper-wrapper max-w-full mx-auto font-dm text-preto-fill">
-                <div class="swiper-slide px-4" >
+                <div class="swiper-slide px-4">
                     <div class="flex flex-col gap-6">
-                        <div style="background-image: url('<%= asset_path('Responsible_Caring.png') %>'); background-size: cover; background-position: center; height: 300px;"></div>
-                        <p class="text-2xl font-alice">Feedback 1</p>
-                        <p class="text-base sm:max-w-8/10">Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                            Quaerat, aspernatur alias provident quis eum sequi mollitia magni aperiam aliquid voluptatem
-                            ullam porro, officia natus? Unde quo quod culpa a omnis?</p>
-                        <div class="flex flex-row gap-2 items-start hover:cursor-pointer">
-                            <p class="font-alice text-base uppercase">Autor - Cabana X</p>
+                        <div
+                            style="background-image: url('<%= asset_path('Local_sensitivity_global_sensibility.png') %>'); background-size: cover; background-position: center; height: 300px;">
                         </div>
+
+                        <p class="text-2xl font-alice font-bold">Sensibilidade local, sensibilidade global</p>
+                        <p class="text-base sm:max-w-8/10">Parte do tecido local e da cultura, mas em sintonia com o mundo mais amplo.</p>
                     </div>
                 </div>
                 <div class="swiper-slide px-4">
                     <div class="flex flex-col gap-6">
-                        <div style="background-image: url('<%= asset_path('Responsible_Caring.png') %>'); background-size: cover; background-position: center; height: 300px;"></div>
-                        <p class="text-2xl font-alice">Feedback 1</p>
-                        <p class="text-base sm:max-w-8/10">Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                            Quaerat, aspernatur alias provident quis eum sequi mollitia magni aperiam aliquid voluptatem
-                            ullam porro, officia natus? Unde quo quod culpa a omnis?</p>
-                        <div class="flex flex-row gap-2 items-start hover:cursor-pointer">
-                            <p class="font-alice text-base uppercase">Autor - Cabana X</p>
+                        <div
+                            style="background-image: url('<%= asset_path('Responsible_Caring.png') %>'); background-size: cover; background-position: center; height: 300px;">
                         </div>
+                        <p class="text-2xl font-alice font-bold">Responsáveis e atenciosos</p>
+                        <p class="text-base sm:max-w-8/10">Cuidando dos anfitriões e das comunidades locais. Comprometido com a preservação do meio ambiente e operações sustentáveis.</p>
                     </div>
                 </div>
-                <div class="swiper-slide px-4" >
+                <div class="swiper-slide px-4">
                     <div class="flex flex-col gap-6">
-                        <div style="background-image: url('<%= asset_path('Responsible_Caring.png') %>'); background-size: cover; background-position: center; height: 300px;"></div>
-                        <p class="text-2xl font-alice">Feedback 1</p>
-                        <p class="text-base sm:max-w-8/10">Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                            Quaerat, aspernatur alias provident quis eum sequi mollitia magni aperiam aliquid voluptatem
-                            ullam porro, officia natus? Unde quo quod culpa a omnis?</p>
-                        <div class="flex flex-row gap-2 items-start hover:cursor-pointer">
-                            <p class="font-alice text-base uppercase">Autor - Cabana X</p>
+                        <div
+                            style="background-image: url('<%= asset_path('Crafted_Experiences.png') %>'); background-size: cover; background-position: center; height: 300px;">
                         </div>
+                        <p class="text-2xl font-alice font-bold">Experiências criadas sob medida</p>
+                        <p class="text-base sm:max-w-8/10">Uma gama abrangente e única de experiências para estimular, energizar e restaurar.</p>
                     </div>
                 </div>
-                <div class="swiper-slide px-4" >
+                <div class="swiper-slide px-4">
                     <div class="flex flex-col gap-6">
-                        <div style="background-image: url('<%= asset_path('Responsible_Caring.png') %>'); background-size: cover; background-position: center; height: 300px;"></div>
-                        <p class="text-2xl font-alice">Feedback 1</p>
-                        <p class="text-base sm:max-w-8/10">Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                            Quaerat, aspernatur alias provident quis eum sequi mollitia magni aperiam aliquid voluptatem
-                            ullam porro, officia natus? Unde quo quod culpa a omnis?</p>
-                        <div class="flex flex-row gap-2 items-start hover:cursor-pointer">
-                            <p class="font-alice text-base uppercase">Autor - Cabana X</p>
+                        <div
+                            style="background-image: url('<%= asset_path('Pioneering_Wellness.png') %>'); background-size: cover; background-position: center; height: 300px;">
                         </div>
+                        <p class="text-2xl font-alice font-bold">Pioneiros em Bem-estar</p>
+                        <p class="text-base sm:max-w-8/10">Oferecendo os mais recentes e eficazes programas e experiências de bem-estar em parceria com especialistas renomados.</p>
                     </div>
                 </div>
-                <div class="swiper-slide px-4" >
+                <div class="swiper-slide px-4">
                     <div class="flex flex-col gap-6">
-                        <div style="background-image: url('<%= asset_path('Responsible_Caring.png') %>'); background-size: cover; background-position: center; height: 300px;"></div>
-                        <p class="text-2xl font-alice">Feedback 1</p>
-                        <p class="text-base sm:max-w-8/10">Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                            Quaerat, aspernatur alias provident quis eum sequi mollitia magni aperiam aliquid voluptatem
-                            ullam porro, officia natus? Unde quo quod culpa a omnis?</p>
-                        <div class="flex flex-row gap-2 items-start hover:cursor-pointer">
-                            <p class="font-alice text-base uppercase">Autor - Cabana X</p>
+                        <div
+                            style="background-image: url('<%= asset_path('Emotional_Hospitality.png') %>'); background-size: cover; background-position: center; height: 300px;">
                         </div>
+                        <p class="text-2xl font-alice font-bold">Hospitalidade emocional</p>
+                        <p class="text-base sm:max-w-8/10">Uma abordagem emocionalmente inteligente para o serviço que começa com empatia.</p>
                     </div>
                 </div>
-                <div class="swiper-slide px-4" >
+                <div class="swiper-slide px-4">
                     <div class="flex flex-col gap-6">
-                        <div style="background-image: url('<%= asset_path('Responsible_Caring.png') %>'); background-size: cover; background-position: center; height: 300px;"></div>
-                        <p class="text-2xl font-alice">Feedback 1</p>
-                        <p class="text-base sm:max-w-8/10">Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                            Quaerat, aspernatur alias provident quis eum sequi mollitia magni aperiam aliquid voluptatem
-                            ullam porro, officia natus? Unde quo quod culpa a omnis?</p>
-                        <div class="flex flex-row gap-2 items-start hover:cursor-pointer">
-                            <p class="font-alice text-base uppercase">Autor - Cabana X</p>
+                        <div
+                            style="background-image: url('<%= asset_path('Fun_and_Quirky.png') %>'); background-size: cover; background-position: center; height: 300px;">
                         </div>
+                        <p class="text-2xl font-alice font-bold">Divertido e peculiar</p>
+                        <p class="text-base sm:max-w-8/10">Estética e experiências que são sempre únicas, muitas vezes inesperadas e às vezes incomuns. Entregue a partir de nossa curiosidade constante e disposição para experimentar.</p>
                     </div>
                 </div>
             </div>
