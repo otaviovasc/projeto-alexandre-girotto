@@ -1,0 +1,59 @@
+<head>
+    
+</head>
+<div>
+    <%= render 'shared/nav' %>
+
+        <div class="px-4 py-16 flex flex-col gap-8">
+            <p class="text-3xl text-center font-alice">Experiências</p>
+            <p class="text-center text-sm font-dm">Desde fazer a grande pergunta até celebrações familiares, se é
+                importante para você, é uma prioridade para nós. Com uma escolha de destinos fora do comum, além da
+                atenção intuitiva e empática de nossos anfitriões para garantir que você fique satisfeito com cada
+                detalhe, deixe a Six Senses responder à pergunta: <span class="font-bold">“Para onde iremos para o nosso…?”</span></p>
+        </div>
+        <div class="px-8 flex flex-col gap-6">
+            <div class="relative h-96"
+                style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
+            </div>
+            <div>
+                <div class="flex flex-col gap-4 mb-12 text-gray-500">
+                    <p class="font-dm text-lg">Experiência 1</p>
+                    <p class="font-dm text-sm">Lorem ipsum, dolor sit amet consectetur adipisicing elit. Fugit dolorem,
+                        veniam velit maxime harum rem dolor magni, nobis sunt eum asperiores odit dolorum sequi unde,
+                        eos neque molestias dicta mollitia.</p>
+                </div>
+            </div>
+        </div>
+        <div class="px-8 flex flex-col gap-6">
+            <div class="relative h-96"
+                style="background-image: url('<%= asset_path('foto_comunidade.png') %>'); background-size: cover; background-position: center;">
+            </div>
+            <div>
+                <div class="flex flex-col gap-4 mb-12 text-gray-500">
+                    <p class="font-dm text-lg">Experiência 2</p>
+                    <p class="font-dm text-sm">Lorem ipsum, dolor sit amet consectetur adipisicing elit. Fugit dolorem,
+                        veniam velit maxime harum rem dolor magni, nobis sunt eum asperiores odit dolorum sequi unde,
+                        eos neque molestias dicta mollitia.</p>
+                </div>
+            </div>
+        </div>
+        <div class="px-8 flex flex-col gap-6">
+            <div class="relative h-96"
+                style="background-image: url('<%= asset_path('3.png') %>'); background-size: cover; background-position: center;">
+            </div>
+            <div>
+                <div class="flex flex-col gap-4 mb-12 text-gray-500">
+                    <p class="font-dm text-lg">Experiência 3</p>
+                    <p class="font-dm text-sm">Lorem ipsum, dolor sit amet consectetur adipisicing elit. Fugit dolorem,
+                        veniam velit maxime harum rem dolor magni, nobis sunt eum asperiores odit dolorum sequi unde,
+                        eos neque molestias dicta mollitia.</p>
+                </div>
+            </div>
+        </div>
+
+
+
+        <%= render 'shared/funilform' %>
+            <%= render 'shared/footer' %>
+                <%= render 'shared/wppButton' %>
+</div>

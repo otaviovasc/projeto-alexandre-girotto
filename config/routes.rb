@@ -12,6 +12,9 @@ Rails.application.routes.draw do
 
   # Static page
   get 'about', to: 'home#about'
+  get 'experiencias', to: 'home#experiencias'
+
+
 
   # Funil mailer
   post 'crete_mailer_entry', to: 'home#create_mailer_entry'
