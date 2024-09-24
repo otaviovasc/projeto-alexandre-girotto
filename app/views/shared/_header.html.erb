@@ -9,56 +9,12 @@
         }
     </style>
 </head>
-<div id="menu-overlay"
-    class="fixed inset-0 z-10 bg-black opacity-0 pointer-events-none transition-opacity duration-1000 sm:hidden">
-</div>
 
-<div id="menu-container"
-    class="h-screen px-8 pt-32 pb-8 font-dm font-normal text-gray-500 sm:hidden fixed top-0 left-0 w-full bg-white z-50 transform -translate-x-full transition-transform duration-1000 ease-in-out flex flex-col justify-between">
-    <div class="fixed top-4 left-4">
-        <button id="close-menu"><i class="bi bi-x text-preto-fill text-5xl block sm:hidden"></i></button>
-    </div>
-    <div class="text-lg flex flex-col gap-4 leading-8">
-        <div>
-            <div id="toggle-cabanas" class="flex gap-2 items-center">
-                <button class="hover:text-terracota">
-                    <p class="hover:text-terracota">Cabanas</p>
-                </button>
-                <i id="arrow-cabanas" class="fa-solid fa-arrow-down text-sm"></i>
-            </div>
-            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
-                <a href="#" class="hover:text-terracota underline">Ver Todas</a>
-            </div>
-            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
-                <a href="#" class="hover:text-terracota">Nuvolo</a>
-            </div>
-            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
-                <a href="#" class="hover:text-terracota">Valle</a>
-            </div>
-            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
-                <a href="#" class="hover:text-terracota">Collina</a>
-            </div>
-        </div>
-        <a href="#">
-            <p class="hover:text-terracota">Sustentabilidade</p>
-        </a>
-        <a href="#">
-            <p class="hover:text-terracota">Experiências</p>
-        </a>
-        <a href="#">
-            <p class="hover:text-terracota"><%= link_to "Sobre Nós", "/about" %></p>
-        </a>
-    </div>
-    <div class="flex items-center gap-4">
-        <a href="#">
-            <p class="font-alice text-lg hover:text-terracota font-bold">Minhas Reservas</p>
-        </a>
-    </div>
-</div>
+
 
 <div class="swiper-container swiper-header h-screen">
     <div class="swiper-wrapper relative">
-        <div data-aos="fade-up" class="absolute inset-0 flex flex-col gap-2 items-center justify-center z-10">
+        <div class="absolute inset-0 flex flex-col gap-2 items-center justify-center z-10">
             <p class="text-base text-creme font-alice">Villaggio Girotto</p>
             <p class="text-xl text-creme font-dm text-center">Lorem, ipsum dolor sit amet consectetur adipisicing elit.
                 Illo delectus explicabo in? Officiis similique iste inventore commodi voluptas, alias repellendus?</p>
@@ -76,15 +32,6 @@
             style="background-image: url('<%= asset_path('3.png') %>'); background-size: cover; background-position: center;">
         </div>
     </div>
-</div>
-
-
-
-
-<div id="open-menu" class="z-10 fixed top-0 left-0 py-2 px-4 w-full header-bg bg-transparent">
-    <button>
-        <i class="bi bi-list-nested text-creme text-3xl icon-color"></i>
-    </button>
 </div>
 
 

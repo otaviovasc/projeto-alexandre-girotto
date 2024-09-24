@@ -1,4 +1,5 @@
 class MarketplaceController < ApplicationController
+  layout "clientside"
   before_action :check_active_reserva
 
   def services
