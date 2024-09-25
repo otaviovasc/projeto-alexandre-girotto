@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   # Static page
   get 'about', to: 'home#about'
   get 'experiencias', to: 'home#experiencias'
+  get 'sustentabilidade', to: 'home#sustentabilidade'
 
 
 
