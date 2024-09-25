@@ -1,33 +1,60 @@
 <div>
-        <div class=" h-screen">
-            <div class="flex flex-col gap-2">
-                <div class="flex flex-col gap-4 pt-14">
-                    <div class="swiper-container swiper-exp h-120">
-                        <div class="swiper-wrapper relative"
-                            style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
-                        </div>
+    <div class="">
+        <div class="flex flex-col gap-2 pb-8">
+            <div class="flex flex-col gap-4 pt-14">
+                <div class="swiper-container swiper-exp h-120">
+                    <div class="swiper-wrapper relative"
+                        style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
                     </div>
                 </div>
-                <div class="flex flex-col px-6 py-6">
-                    <div class="flex flex-col gap-4">
-                        <div class="">
-                            <p class="uppercase font-dm text-gray-500 text-sm">Sobre Nós</p>
-                        </div>
-                        <div class="flex flex-col gap-8">
-                            <p class="font-alice text-preto-fill font-light text-4xl">Lorem ipsum dolor sit amet,
-                                consectetur adipisicing elit.</p>
-                            <p class="font-dm text-gray-500 text-base">Lorem ipsum dolor sit amet consectetur
-                                adipisicing
-                                elit. Recusandae nulla voluptas sit ullam aliquid facere quas. Obcaecati commodi
-                                laudantium
-                                nobis fugiat repellat inventore nihil incidunt ipsam minima, expedita porro atque.</p>
-                        </div>
-                    </div>
-                </div>
-
             </div>
+            <div class="flex flex-col px-6 py-6">
+                <div class="flex flex-col gap-4">
+                    <div class="">
+                        <p class="uppercase font-dm text-gray-500 text-sm">Sobre Nós</p>
+                    </div>
+                    <div class="flex flex-col gap-8">
+                        <div class="flex flex-col gap-4">
+                            <p class="font-alice text-preto-fill font-light text-4xl">Uma paixão por bem-estar,
+                                comunidade, design sustentável e sorrisos.</p>
+                            <p class="font-alice text-preto-fill font-light text-4xl">Por que fazemos o que fazemos?</p>
+                        </div>
+                        <div class="flex flex-col gap-4">
+                            <p class="font-dm text-gray-500 text-base">Porque entendemos que, assim como nós, você
+                                acredita que viajar pode ter um propósito. Você busca autenticidade, honestidade e ações
+                                genuínas que conectem bem-estar e sustentabilidade, promovendo a sua saúde e a do
+                                planeta.
+                            </p>
+                            <p class="font-dm text-gray-500 text-base">Viva algo fora do comum, sinta-se mais conectado
+                                e faça parte de uma comunidade.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
-        <%= render 'shared/values' %>
+        <div class="flex flex-col gap-2 bg-creme">
+            <div class="flex flex-col gap-4">
+                <div class="swiper-container swiper-exp h-120">
+                    <div class="swiper-wrapper relative"
+                        style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col px-6 py-6">
+                <div class="flex flex-col gap-4">
+
+                    <div class="flex flex-col gap-4">
+                        <p class="text-xl font-alice text-gray-500">"Hospitalidade vai muito além de um simples lugar para ficar. Nosso objetivo é que os espaços que oferecemos ajudem você a se reconectar e descobrir o que significa ser verdadeiramente feliz em todos os aspectos: mental, físico, espiritual e emocional."
+                        </p>
+                        <p class="font-dm text-preto-fill text-base">Alexandre Girotto, Diretor Executivo</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <%= render 'shared/values' %>
         <div class="pb-20">
             <div class="flex flex-col gap-2">
                 <div class="flex flex-col gap-4 pt-12">
@@ -43,16 +70,49 @@
                             <p class="uppercase font-alice text-gray-500 text-xl">A História da Logo</p>
                         </div>
                         <div class="flex flex-col gap-8">
-                            <p class="font-dm text-gray-500 text-base">Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis illum in dolor aspernatur quaerat perferendis molestiae soluta nostrum eum consequatur. In exercitationem vitae, alias necessitatibus, soluta voluptas eos, libero laboriosam cum vel qui nesciunt atque cumque perferendis. Neque, et ipsa culpa incidunt sunt temporibus odit amet ipsum eum aut suscipit!</p>
+                            <p class="font-dm text-gray-500 text-base">O logo do Villaggio Girotto reflete a essência do
+                                refúgio que inspirou sua criação. Na primeira acomodação, a vista para o nascer do sol
+                                trouxe uma nova percepção: na vida agitada, momentos simples como observar o pôr do sol
+                                muitas vezes passam despercebidos. Essa descoberta guiou Alexandre Girotto e sua equipe
+                                a criar um símbolo que representa a tranquilidade e a beleza de apreciar o tempo e o que
+                                ele nos oferece de melhor.</p>
                         </div>
                     </div>
                 </div>
 
             </div>
         </div>
-            <%= render 'shared/funilform' %>
-                <%= render 'shared/footer' %>
-                    <%= render 'shared/wppButton' %>
+        <div class="pb-8">
+            <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-4">
+                    <div class="swiper-container swiper-exp h-120">
+                        <div class="swiper-wrapper relative"
+                            style="background-image: url('<%= asset_path('2.png') %>'); background-size: cover; background-position: center;">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col px-6 py-6">
+                    <div class="flex flex-col gap-8">
+                        <div class="">
+                            <p class="uppercase font-alice text-gray-500 text-xl">Como surgiu o Villaggio</p>
+                        </div>
+                        <div class="flex flex-col gap-8">
+                            <p class="font-dm text-gray-500 text-base">O Villaggio Girotto foi criado para trazer uma
+                                pausa no ritmo acelerado da vida moderna. Inspirado nas viagens ao redor do mundo e nas
+                                raízes italianas de seu fundador, Alexandre Girotto, o espaço reflete a busca por
+                                serenidade e conexão com a natureza. Após anos de uma vida intensa entre cidades e
+                                continentes, surgiu a ideia de criar um refúgio, um lugar onde a simplicidade se
+                                encontra com o conforto, e cada detalhe foi pensado para desacelerar o tempo e valorizar
+                                o que realmente importa.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <%= render 'shared/funilform' %>
+            <%= render 'shared/footer' %>
+                <%= render 'shared/wppButton' %>
 
 </div>
 
