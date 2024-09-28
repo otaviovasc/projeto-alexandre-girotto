@@ -4,7 +4,7 @@
             <div class="flex flex-col gap-4 pt-14">
                 <div class="swiper-container swiper-exp h-120">
                     <div class="swiper-wrapper relative"
-                        style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
+                        style="background-image: url('<%= asset_path('sobre1.png') %>'); background-size: 100%; background-position: center;">
                     </div>
                 </div>
             </div>
@@ -31,21 +31,19 @@
                     </div>
                 </div>
             </div>
-
         </div>
         <div class="flex flex-col gap-2 bg-creme">
-            <div class="flex flex-col gap-4">
-                <div class="swiper-container swiper-exp h-120">
-                    <div class="swiper-wrapper relative"
-                        style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
-                    </div>
-                </div>
+            <div class="swiper-container swiper-exp h-48"
+                style="background-image: url('<%= asset_path('sobre4.png') %>'); background-size: 65%; background-position: center; background-repeat: no-repeat;">
             </div>
             <div class="flex flex-col px-6 py-6">
                 <div class="flex flex-col gap-4">
 
                     <div class="flex flex-col gap-4">
-                        <p class="text-xl font-alice text-gray-500">"Hospitalidade vai muito além de um simples lugar para ficar. Nosso objetivo é que os espaços que oferecemos ajudem você a se reconectar e descobrir o que significa ser verdadeiramente feliz em todos os aspectos: mental, físico, espiritual e emocional."
+                        <p class="text-xl font-alice text-gray-500">"Hospitalidade vai muito além de um simples lugar
+                            para ficar. Nosso objetivo é que os espaços que oferecemos ajudem você a se reconectar e
+                            descobrir o que significa ser verdadeiramente feliz em todos os aspectos: mental, físico,
+                            espiritual e emocional."
                         </p>
                         <p class="font-dm text-preto-fill text-base">Alexandre Girotto, Diretor Executivo</p>
                     </div>
@@ -55,12 +53,12 @@
         </div>
     </div>
     <%= render 'shared/values' %>
-        <div class="pb-20">
+        <div class="pb-12 bg-creme">
             <div class="flex flex-col gap-2">
-                <div class="flex flex-col gap-4 pt-12">
+                <div class="flex flex-col gap-4">
                     <div class="swiper-container swiper-exp h-120">
                         <div class="swiper-wrapper relative"
-                            style="background-image: url('<%= asset_path('2.png') %>'); background-size: cover; background-position: center;">
+                            style="background-image: url('<%= asset_path('sobre2.png') %>'); background-size: 100%; background-position: center;">
                         </div>
                     </div>
                 </div>
@@ -84,13 +82,6 @@
         </div>
         <div class="pb-8">
             <div class="flex flex-col gap-2">
-                <div class="flex flex-col gap-4">
-                    <div class="swiper-container swiper-exp h-120">
-                        <div class="swiper-wrapper relative"
-                            style="background-image: url('<%= asset_path('2.png') %>'); background-size: cover; background-position: center;">
-                        </div>
-                    </div>
-                </div>
                 <div class="flex flex-col px-6 py-6">
                     <div class="flex flex-col gap-8">
                         <div class="">
@@ -105,9 +96,11 @@
                                 encontra com o conforto, e cada detalhe foi pensado para desacelerar o tempo e valorizar
                                 o que realmente importa.</p>
                         </div>
+                        <div class="swiper-container swiper-exp h-96"
+                        style="background-image: url('<%= asset_path('sobre3.png') %>'); background-size:150%; background-position: bottom;">
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
         <%= render 'shared/funilform' %>
