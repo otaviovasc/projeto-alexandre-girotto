@@ -1,20 +1,21 @@
 <div>
-    <div class="swiper-container swiper-header h-screen">
+    <div class="swiper-container swiper-header h-screen relative">
         <div class="swiper-wrapper relative">
             <div class="absolute inset-0 flex flex-col gap-2 items-center justify-end z-10 pb-32">
                 <p class="text-2xl text-creme font-alice text-center max-w-9/10">Não há designer melhor que a natureza,
                     e temos o dever de respeitá-la. Mas quem disse que o sustentável não pode ser suntuoso? Ou que
                     viajar não pode ter propósito? No nosso mundo, isso é possível.</p>
             </div>
-            <div class="swiper-slide p-4 sm:hidden"
-                style="background-image: url('<%= asset_path('1.png') %>'); background-size: cover; background-position: center;">
+            <div class="swiper-slide p-4 sm:hidden relative"
+                style="background-image: url('<%= asset_path('sus1.png') %>'); background-size: cover; background-position: center;">
+                <div class="absolute inset-0 bg-black bg-opacity-30 z-0"></div>
             </div>
         </div>
     </div>
     <div class="flex flex-col-reverse gap-8 pt-8">
         <div class="swiper-container swiper-exp h-120">
             <div class="swiper-wrapper relative"
-                style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
+                style="background-image: url('<%= asset_path('sus3.png') %>'); background-size: cover; background-position: center;">
             </div>
         </div>
         <div class="flex flex-col px-6 py-6">
@@ -34,7 +35,7 @@
             </div>
         </div>
     </div>
-    <div class="flex flex-col px-6 py-10 bg-creme">
+    <div class="flex flex-col px-6 py-12">
         <div class="flex flex-col gap-4">
             <p class="font-alice text-preto-fill text-2xl">Conectando-se às comunidades locais</p>
             <p class="text-base font-alice text-gray-500">"Hospitalidade vai muito além de um simples lugar para ficar.
@@ -46,7 +47,7 @@
     <div class="flex flex-col gap-4">
         <div class="swiper-container swiper-exp h-120">
             <div class="swiper-wrapper relative"
-                style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
+                style="background-image: url('<%= asset_path('sus2.png') %>'); background-size: cover; background-position: center;">
             </div>
         </div>
         <div class="flex flex-col px-6 py-6">
