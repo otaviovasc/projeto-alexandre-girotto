@@ -1,0 +1,70 @@
+<div>
+    <div class="swiper-container swiper-header h-screen">
+        <div class="swiper-wrapper relative">
+            <div class="absolute inset-0 flex flex-col gap-2 items-center justify-end z-10 pb-32">
+                <p class="text-2xl text-creme font-alice text-center max-w-9/10">Não há designer melhor que a natureza,
+                    e temos o dever de respeitá-la. Mas quem disse que o sustentável não pode ser suntuoso? Ou que
+                    viajar não pode ter propósito? No nosso mundo, isso é possível.</p>
+            </div>
+            <div class="swiper-slide p-4 sm:hidden"
+                style="background-image: url('<%= asset_path('1.png') %>'); background-size: cover; background-position: center;">
+            </div>
+        </div>
+    </div>
+    <div class="flex flex-col-reverse gap-8 pt-8">
+        <div class="swiper-container swiper-exp h-120">
+            <div class="swiper-wrapper relative"
+                style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
+            </div>
+        </div>
+        <div class="flex flex-col px-6 py-6">
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-8">
+                    <div class="flex flex-col gap-4">
+                        <p class="font-alice text-preto-fill font-light text-4xl">Sustentabilidade não é algo que
+                            fazemos, é quem somos.</p>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <p class="font-dm text-gray-500 text-base">Para nós, ser ambientalmente responsável e
+                            socialmente consciente pode estar perfeitamente aliado a refúgios deslumbrantes. Livres de
+                            desperdício, toxinas e plástico, e cheios de espiritualidade, celebração e alegria.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="flex flex-col px-6 py-10 bg-creme">
+        <div class="flex flex-col gap-4">
+            <p class="font-alice text-preto-fill text-2xl">Conectando-se às comunidades locais</p>
+            <p class="text-base font-alice text-gray-500">"Hospitalidade vai muito além de um simples lugar para ficar.
+                Nosso objetivo é que os espaços que oferecemos ajudem você a se reconectar e descobrir o que significa
+                ser verdadeiramente feliz em todos os aspectos: mental, físico, espiritual e emocional."
+            </p>
+        </div>
+    </div>
+    <div class="flex flex-col gap-4">
+        <div class="swiper-container swiper-exp h-120">
+            <div class="swiper-wrapper relative"
+                style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
+            </div>
+        </div>
+        <div class="flex flex-col px-6 py-6">
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-8">
+                    <div class="flex flex-col gap-4">
+                        <p class="font-alice text-preto-fill font-light text-4xl">Da fazenda à mesa</p>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <p class="font-dm text-gray-500 text-base">Cada propriedade possui uma horta orgânica que abastece a nossa cozinha com ervas frescas, legumes e frutas, além de uma variedade de ingredientes para as nossas cabanas. As galinhas produzem ovos frescos em seus confortáveis galinheiros com "som ambiente". Coloque a mão na terra e colher alimentos limpos diretamente da fonte.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<%= render 'shared/funilform' %>
+    <%= render 'shared/footer' %>
+        <%= render 'shared/wppButton' %>

@@ -1,6 +1,6 @@
 class HomeController < ApplicationController
   layout "clientside"
-  skip_before_action :authenticate_user!, only: [:root, :create_mailer_entry, :about, :experiencias]
+  skip_before_action :authenticate_user!, only: [:root, :create_mailer_entry, :about, :experiencias, :sustentabilidade]
 
   def root
     @funil_mailer = FunilMailer.new
@@ -30,6 +30,9 @@ class HomeController < ApplicationController
   def experiencias
   end
 
+  def sustentabilidade
+  end
+  
   private
 
   def funil_mailer_params
