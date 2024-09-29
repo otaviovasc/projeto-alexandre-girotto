@@ -25,14 +25,17 @@ class HomeController < ApplicationController
 
 
   def about
+    @funil_mailer = FunilMailer.new
   end
 
   def experiencias
+    @funil_mailer = FunilMailer.new
   end
 
   def sustentabilidade
+    @funil_mailer = FunilMailer.new
   end
-  
+
   private
 
   def funil_mailer_params
