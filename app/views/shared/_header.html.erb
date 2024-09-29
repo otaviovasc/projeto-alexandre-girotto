@@ -14,21 +14,15 @@
 
 <div class="swiper-container swiper-header h-screen">
     <div class="swiper-wrapper relative">
-        <div class="absolute inset-0 flex flex-col gap-2 items-center justify-center z-10">
+        <div class="absolute inset-0 flex flex-col gap-4 items-center justify-center z-10">
             <p class="text-base text-creme font-alice">Villaggio Girotto</p>
             <p class="text-xl text-creme font-dm text-center max-w-9/10">Reconecte-se e revigore seus sentidos em cenários de beleza natural incomparável. Com experiências cheias de significado, uma hospitalidade atenta e práticas de bem-estar inovadoras, tudo isso faz parte da essência de cada Villaggio</p>
-            <%= render 'shared/formCabanas' %>
-
-        </div>
-
-        <div class="swiper-slide p-4 sm:hidden"
-            style="background-image: url('<%= asset_path('1.png') %>'); background-size: cover; background-position: center;">
+            <div class="w-full flex justify-center">
+                <%= render 'shared/formCabanas' %>
+            </div>
         </div>
         <div class="swiper-slide p-4 sm:hidden"
-            style="background-image: url('<%= asset_path('2.png') %>'); background-size: cover; background-position: center;">
-        </div>
-        <div class="swiper-slide p-4 sm:hidden"
-            style="background-image: url('<%= asset_path('3.png') %>'); background-size: cover; background-position: center;">
+            style="background-image: url('<%= asset_path('home1.png') %>'); background-size: cover; background-position: center;">
         </div>
     </div>
 </div>

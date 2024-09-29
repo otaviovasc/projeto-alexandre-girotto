@@ -39,15 +39,9 @@
                 <a href="#" class="hover:text-terracota">Collina</a>
             </div>
         </div>
-        <a href="#">
-            <p class="hover:text-terracota">Sustentabilidade</p>
-        </a>
-        <a href="#">
-            <p class="hover:text-terracota">Experiências</p>
-        </a>
-        <a href="#">
+            <p class="hover:text-terracota"><%= link_to "Sustentabilidade", "/sustentabilidade" %></p>
+            <p class="hover:text-terracota"><%= link_to "Experiências", "/experiencias" %></p>
             <p class="hover:text-terracota"><%= link_to "Sobre Nós", "/about" %></p>
-        </a>
     </div>
     <div class="flex items-center gap-4">
         <a href="#">
@@ -58,12 +52,13 @@
 
 
 
-<div id="open-menu" class="z-10 fixed top-0 left-0 py-2 px-4 w-full header-bg bg-transparent">
+<div id="open-menu" class="z-10 fixed top-0 left-0 py-2 px-4 w-full header-bg bg-transparent flex items-center justify-between">
     <button>
         <i class="bi bi-list-nested text-terracota text-3xl icon-color"></i>
     </button>
+    <p class="font-dm text-creme uppercase text-base ml-auto">Reservar</p>
+    <i class="fa-solid fa-chevron-right text-white text-xs"></i>
 </div>
-
 
 <script>
     document.getElementById('open-menu').addEventListener('click', function () {

@@ -1,23 +1,32 @@
-<div>
+<div class="bg-creme rounded-md flex flex-col w-full max-w-9/10 p-2 gap-6">
+    <p class="text-center font-alice text-verde-escuro">Checar Disponibilidade</p>
     <%= form_with url: cabanas_path, method: :get, local: true do %>
-        <div class="custom-dropdown">
-            <%= hidden_field_tag :filial_id, params[:filial_id], id: 'selected_filial_id' %>
-                <div id="dropdown_display" class="dropdown-display text-white">Selecione uma Filial</div>
+        <div class="custom-dropdown flex flex-col w-full">
+            <%= hidden_field_tag :filial_id, params[:filial_id], id: 'selected_filial_id', class: 'w-full' %>
+                <div class="flex items-center gap-6 px-2 text-lg">
+                    <i class="fa-regular fa-map text-verde-escuro"></i>
+                    <div id="dropdown_display" class="dropdown-display">
+                        <p class="font-dm text-terracota">Selecione uma Filial</p>
+                    </div>
+                </div>
                 <div id="dropdown_list" class="dropdown-list">
                     <% Filial.all.each do |filial| %>
                         <div class="dropdown-item" data-id="<%= filial.id %>">
-                            <h2>
+                            <p>
                                 <%= filial.name %>
-                            </h2>
+                            </p>
                             <p>
                                 <%= filial.address %>
                             </p>
                         </div>
                         <% end %>
                 </div>
-        </div>
-        <%= submit_tag 'Pesquisar' , class: 'btn btn-primary text-white' %>
-            <% end %>
+            </div>
+            <hr class="w-full my-4"> 
+            <div class="font-dm bg-verde-escuro rounded-3xl flex justify-center items-center gap-4 p-3">
+                <%= submit_tag 'Pesquisar' , class: 'uppercase font-light text-creme' %>
+            </div>
+        <% end %>
 </div>
 
 <style>
@@ -27,7 +36,6 @@
     }
 
     .dropdown-display {
-        padding: 10px;
         cursor: pointer;
     }
 
