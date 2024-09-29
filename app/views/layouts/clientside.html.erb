@@ -18,11 +18,11 @@
   </head>
 
   <body>
-    <% if current_user.present? %>
-      <%= render 'shared/navclient' %>
-    <%else%>
-      <%= render 'shared/navlead' %>
-    <% end %>
+      <% if current_user.present? %>
+        <%= render 'shared/navclient' %>
+      <%else%>
+        <%= render 'shared/navlead' %>
+      <% end %>
       <div class="container-fluid">
         <%= render "shared/flashes" %>
         <div class="row">
@@ -33,3 +33,9 @@
       </div>
   </body>
 </html>
+
+<style>
+  .container-fluid {
+    padding-top: 80px
+  }
+</style>

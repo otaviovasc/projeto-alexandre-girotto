@@ -1,0 +1,19 @@
+<h1>Payment Confirmation</h1>
+
+<% if @cart_items.present? %>
+  <ul>
+    <% @cart_items.each do |cart_item| %>
+      <li>
+        <strong><%= cart_item.item&.name || cart_item.service&.name %></strong>
+        - Quantity: <%= cart_item.quantity %>
+        - Price: <%= number_to_currency(cart_item.item&.price || cart_item.service&.price) %>
+      </li>
+    <% end %>
+  </ul>
+
+  <%= form_with url: checkout_process_path, method: :post do %>
+    <%= submit_tag 'Pay Now', class: "btn btn-primary" %>
+  <% end %>
+<% else %>
+  <p>Your cart is empty.</p>
+<% end %>

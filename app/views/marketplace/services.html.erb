@@ -19,12 +19,30 @@
       </div>
 
       <div class="service-actions">
-        <%= form_with url: reserva_reserva_services_path(@reserva), method: :post do |f| %>
-          <%= hidden_field_tag :service_id, service.id %>
-          <%= number_field_tag :quantity, 1, min: 1 %>
-          <%= f.submit 'Add to Reservation', class: 'btn btn-primary' %>
-        <% end %>
+        <%= link_to 'View Service', service_path(service) %>
       </div>
     </div>
   <% end %>
 </div>
+
+<h2>Your Cart</h2>
+
+<% if @cart_items.present? %>
+  <% @cart_items.each do |cart_item| %>
+    <div class="cart-item">
+      <h4><%= cart_item.item&.name || cart_item.service&.name %></h4>
+      <p>Price: <%= number_to_currency(cart_item.item&.price || cart_item.service&.price) %></p>
+
+      <%= form_with url: add_item_path, method: :post, local: true do |f| %>
+        <%= hidden_field_tag :item_id, cart_item.item_id if cart_item.item.present? %>
+        <%= hidden_field_tag :service_id, cart_item.service_id if cart_item.service.present? %>
+        <%= number_field_tag :quantity, cart_item.quantity, min: 1 %>
+        <%= submit_tag "Update Quantity", class: "btn btn-secondary" %>
+      <% end %>
+
+      <%= button_to "Remove", remove_item_path(cart_item), method: :delete, class: "btn btn-danger" %>
+    </div>
+  <% end %>
+<% else %>
+  <p>Your cart is empty.</p>
+<% end %>

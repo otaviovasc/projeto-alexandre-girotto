@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  get 'services/show'
+  get 'items/show'
   # Reservas
   get 'reservas/index'
   get 'reservas/show'
@@ -13,8 +15,6 @@ Rails.application.routes.draw do
   # Static page
   get 'about', to: 'home#about'
   get 'experiencias', to: 'home#experiencias'
-
-
 
   # Funil mailer
   post 'crete_mailer_entry', to: 'home#create_mailer_entry'
@@ -57,6 +57,13 @@ Rails.application.routes.draw do
     resources :reserva_items, only: [:create]
   end
 
+  # Cart
+  post 'cart/add_item', to: 'carts#add_item', as: 'add_item'
+  delete 'cart/remove_item/:id', to: 'carts#remove_item', as: 'remove_item'
+  get 'cart/checkout', to: 'carts#checkout', as: 'checkout_cart'
+  get 'cart/payment', to: 'carts#payment', as: 'payment_cart'  # Payment page
+  post 'cart/checkout', to: 'carts#checkout_process', as: 'checkout_process'
+
   # Marketplace
   resources :marketplace, only: [] do
     collection do
@@ -64,6 +71,10 @@ Rails.application.routes.draw do
       get 'items'
     end
   end
+
+  # Use the actual item and service controllers for show actions
+  resources :items, only: [:show]
+  resources :services, only: [:show]
 
   # Client Auth route
   authenticated :user, ->(u) { u.client? } do

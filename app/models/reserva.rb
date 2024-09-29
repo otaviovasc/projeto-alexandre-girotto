@@ -1,8 +1,12 @@
 class Reserva < ApplicationRecord
   belongs_to :cabana
   belongs_to :user
+
   has_many :reserva_services, dependent: :destroy
   has_many :services, through: :reserva_services
+
+  has_many :reserva_items, dependent: :destroy
+  has_many :items, through: :reserva_items
 
   validate :start_date_cannot_be_in_the_past
   validate :end_date_after_start_date

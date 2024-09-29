@@ -1,0 +1,15 @@
+<!-- app/views/services/show.html.erb -->
+<h1><%= @service.name %></h1>
+<p>Description: <%= @service.description %></p>
+<p>Price: <%= number_to_currency(@service.price) %></p>
+
+<%= form_with url: add_item_path, method: :post, local: true do %>
+  <%= hidden_field_tag :service_id, @service.id %>  <!-- Or :item_id depending on the context -->
+  <div>
+    <label>Quantity:</label>
+    <%= number_field_tag :quantity, 1, min: 1 %>
+  </div>
+  <%= submit_tag "Add to Cart", class: "btn btn-primary" %>
+<% end %>
+
+<%= link_to 'Back to Services', services_marketplace_index_path %>

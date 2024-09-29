@@ -7,6 +7,8 @@ class ReservasController < ApplicationController
   end
 
   def show
+    @reserva_services = @reserva.reserva_services.includes(:service)
+    @reserva_items = @reserva.reserva_items.includes(:item)
   end
 
   def new

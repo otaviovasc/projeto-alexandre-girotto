@@ -1,0 +1,17 @@
+<h1>Checkout</h1>
+
+<% if @cart_items.present? %>
+  <ul>
+    <% @cart_items.each do |cart_item| %>
+      <li>
+        <strong><%= cart_item.item&.name || cart_item.service&.name %></strong>
+        - Quantity: <%= cart_item.quantity %>
+        - Price: <%= number_to_currency(cart_item.item&.price || cart_item.service&.price) %>
+      </li>
+    <% end %>
+  </ul>
+
+  <%= link_to 'Go to Payment', payment_cart_path, class: "btn btn-primary" %>
+<% else %>
+  <p>Your cart is empty. <%= link_to 'Back to Marketplace', marketplace_items_path %></p>
+<% end %>

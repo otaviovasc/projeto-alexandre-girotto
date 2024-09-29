@@ -5,6 +5,9 @@ class User < ApplicationRecord
   # Reserva association
   has_many :reservas
 
+  # Cart association
+  has_one :cart
+
   # Assigning custom values to the roles
   enum role: { service_provider: 3, manager: 2, admin: 1, client: 0 }
 

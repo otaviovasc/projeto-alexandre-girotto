@@ -3,13 +3,21 @@ class MarketplaceController < ApplicationController
   before_action :check_active_reserva
 
   def services
-    filial_id = @reserva.cabana.filial_id
-    @services = Service.where(filial_id: filial_id)
+    @services = Service.where(filial_id: @reserva.cabana.filial_id)
+    load_cart_items
   end
 
   def items
-    filial_id = @reserva.cabana.filial_id
-    @items = Item.where(filial_id: filial_id, show_in_marketplace: true).where('quantity > 0')
+    @items = Item.where(filial_id: @reserva.cabana.filial_id, show_in_marketplace: true)
+    load_cart_items
+  end
+
+  def show_service
+    @service = Service.find(params[:id])
+  end
+
+  def show_item
+    @item = Item.find(params[:id])
   end
 
   private
@@ -19,5 +27,9 @@ class MarketplaceController < ApplicationController
     unless @reserva
       redirect_to root_path, alert: 'Você precisa de uma reserva ativa para acessar a loja.'
     end
+  end
+
+  def load_cart_items
+    @cart_items = current_user.cart.cart_items.includes(:item, :service)
   end
 end

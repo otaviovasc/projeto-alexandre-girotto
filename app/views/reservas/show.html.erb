@@ -5,4 +5,27 @@
 <p><strong>End Date:</strong> <%= @reserva.end_date %></p>
 <p><strong>Total Price:</strong> <%= number_to_currency(@reserva.total_price) %></p>
 
+<h2>Reserva Services</h2>
+<% if @reserva_services.any? %>
+  <% @reserva_services.each do |reserva_service| %>
+    <p>Service: <%= reserva_service.service.name %></p>
+    <p>Price: <%= number_to_currency(reserva_service.service.price) %> each</p>
+    <p>Quantity: <%= reserva_service.quantity %></p>
+  <% end %>
+<% else %>
+  <p>No services purchased for this reservation.</p>
+<% end %>
+
+<h2>Reserva Items</h2>
+<% if @reserva_items.any? %>
+  <% @reserva_items.each do |reserva_item| %>
+    <p>Item: <%= reserva_item.item.name %></p>
+    <p>Price: <%= number_to_currency(reserva_item.item.price) %> each</p>
+    <p>Quantity: <%= reserva_item.quantity %></p>
+  <% end %>
+<% else %>
+  <p>No items purchased for this reservation.</p>
+<% end %>
+
+
 <%= link_to 'Back to Reservations', reservas_path %>
