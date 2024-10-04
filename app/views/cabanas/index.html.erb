@@ -1,16 +1,52 @@
-<%= form_with url: cabanas_path, method: :get, local: true do %>
-  <%= select_tag :filial_id, options_from_collection_for_select(Filial.all, :id, :name, params[:filial_id]) %>
-  <%= submit_tag 'Filter' %>
-<% end %>
+<div class="!m-0">
+  <div class="bg-white rounded-md flex flex-col w-full mx-auto max-w-9/10 p-2 gap-6">
+    <p class="text-center text-2xl font-alice text-verde-escuro">Filtrar Cabanas</p>
+    <%= form_with url: cabanas_path, method: :get, local: true do %>
+      <div class="custom-dropdown flex flex-col w-full">
+        <div class="flex items-center gap-6 px-2 text-lg">
+          <i class="fa-regular fa-map text-verde-escuro"></i>
+          <div id="dropdown_display" class="dropdown-display">
+            <%= select_tag :filial_id, options_from_collection_for_select(Filial.all, :id, :name, params[:filial_id]),
+              include_blank: 'Selecione uma Filial' , class: 'font-dm text-terracota w-full bg-transparent' %>
+          </div>
+        </div>
+      </div>
+      <hr class="w-full my-4">
+      <div class="font-dm bg-verde-escuro rounded-3xl flex justify-center items-center gap-4 p-3">
+        <%= submit_tag 'Filtrar' , class: 'uppercase font-light text-creme' %>
+      </div>
+      <% end %>
+  </div>
 
-<% if @cabanas.any? %>
-  <h2>Search Results:</h2>
-  <% @cabanas.each do |cabana| %>
-    <div>
-      <h3><%= cabana.name %></h3>
-      <%= link_to 'View Cabana', cabana_path(cabana) %>
-    </div>
-  <% end %>
-<% else %>
-  <p>No cabanas found for the selected filial.</p>
-<% end %>
+  <% if @cabanas.any? %>
+    <% @cabanas.each do |cabana| %>
+      <div class="flex flex-col px-8 mt-8">
+        <div class="flex flex-col gap-4">
+          <p class="font-alice text-3xl">
+            <%= cabana.name %>
+          </p>
+          <% cabana.images.each do |image| %>
+            <img src="<%= image.url %>" alt="" class="max-h-96">
+            <% end %>
+              <% cabana.info_da_cabanas.each do |info| %>
+                <% if info.info_type=="description" %>
+                  <p>
+                    <%= info.content %>
+                  </p>
+                  <% end %>
+                    <% end %>
+                      <p
+                        class="font-dm max-w-fit bg-verde-escuro text-creme rounded-3xl flex justify-center items-center gap-4 px-6 py-3">
+                        <%= link_to 'Quero essa experiência' , cabana_path(cabana), class: "text-creme" %>
+                      </p>
+        </div>
+      </div>
+      <hr class="m-8">
+      <% end %>
+        <% else %>
+          <p>No cabanas found for the selected filial.</p>
+          <% end %>
+            <%= render 'shared/funilform' %>
+              <%= render 'shared/footer' %>
+                <%= render 'shared/wppButton' %>
+</div>

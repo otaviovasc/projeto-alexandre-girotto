@@ -4,8 +4,10 @@ class CabanasController < ApplicationController
   def index
     if params[:filial_id].present?
       @cabanas = Cabana.where(filial_id: params[:filial_id])
+      # @infos_da_cabana = @cabanas.info_da_cabanas
     else
       @cabanas = Cabana.all
+      # @infos_da_cabana = @cabanas.info_da_cabanas
     end
   end
 
