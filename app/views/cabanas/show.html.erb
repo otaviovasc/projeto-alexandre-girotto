@@ -1,4 +1,4 @@
-<h1><%= @cabana.name %></h1>
+<!-- <h1><%= @cabana.name %></h1>
 <p>Price per night: <%= number_to_currency(@cabana.price) %></p>
 
 <% @infos_da_cabana.each do |info| %>
@@ -11,4 +11,42 @@
   <img src="<%=image.url%>" alt="" class="">
 <% end %>
 
-<button><%= link_to 'Book this Cabana', new_cabana_reserva_path(@cabana) %></button>
+<button><%= link_to 'Book this Cabana', new_cabana_reserva_path(@cabana) %></button> -->
+
+<div class="mt-4 pt-16">
+  <div class="bg-white rounded-md flex flex-col w-full mx-auto p-2">
+    <!-- Título da Cabana -->
+    <p class="text-center text-4xl font-alice text-verde-escuro"><%= @cabana.name %></p>
+    
+    <!-- Informações da Cabana -->
+    <div class="flex flex-col gap-6 px-8 mt-8">
+      <!-- Imagens da Cabana -->
+      <div class="flex flex-wrap gap-4 justify-center">
+        <% @cabana.images.each do |image| %>
+          <img src="<%= image.url %>" alt="<%= @cabana.name %> Image" class="rounded-md">
+        <% end %>
+      </div>
+      
+      <!-- Informações sobre a Cabana -->
+      <div class="flex flex-col gap-4">
+        <p class="font-dm text-lg text-center text-terracota">Preço por noite: R$<%= @cabana.price %></p>
+
+        <% @infos_da_cabana.each do |info| %>
+          <% if info.info_type == "description" %>
+            <p class="text-center text-lg font-dm text-verde-escuro"><%= info.content %></p>
+          <% end %>
+        <% end %>
+        
+        <!-- Botão para Reservar -->
+        <div class="font-dm bg-verde-escuro rounded-3xl flex justify-center items-center gap-4 p-3 mt-6">
+          <%= link_to 'Quero reservar!', new_cabana_reserva_path(@cabana), class: "uppercase font-light text-creme" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Funil Form e Footer -->
+  <%= render 'shared/funilform' %>
+  <%= render 'shared/footer' %>
+  <%= render 'shared/wppButton' %>
+</div>
