@@ -22,7 +22,7 @@
                         <% end %>
                 </div>
             </div>
-            <hr class="w-full my-4"> 
+            <hr class="w-full my-4">
             <div class="font-dm bg-verde-escuro rounded-3xl flex justify-center items-center gap-4 p-3">
                 <%= submit_tag 'Pesquisar' , class: 'uppercase font-light text-creme' %>
             </div>
@@ -68,7 +68,7 @@
 </style>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("turbo:load", function () {
         const dropdownDisplay = document.getElementById("dropdown_display");
         const dropdownList = document.getElementById("dropdown_list");
         const selectedFilialId = document.getElementById("selected_filial_id");

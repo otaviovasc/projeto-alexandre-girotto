@@ -61,7 +61,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('turbo:load', function () {
             // Menu hamburger
             const openMenuButton = document.getElementById('open-menu');
             const closeMenuButton = document.getElementById('close-menu');
@@ -84,7 +84,7 @@
             const toggleCabanas = document.querySelector('.toggle-cabanas');
             const arrowCabanas = document.querySelector('.arrow-cabanas');
             const submenuCabanas = document.querySelector('.submenu-cabanas');
-            
+
             toggleCabanas.addEventListener('click', function () {
                 if (submenuCabanas.style.maxHeight) {
                     submenuCabanas.style.maxHeight = null;
@@ -130,7 +130,7 @@
                 });
             } else {
                 // Se não estiver na home, aplica o estado final da animação
-                
+
                 header.classList.add('bg-creme', 'shadow-on-scroll');
                 header.classList.remove('bg-transparent');
                 menuIcon.classList.add('text-terracota');

@@ -74,6 +74,9 @@
         <a href="#">
             <p class="hover:text-terracota"><%= link_to "Sobre Nós", "/about" %></p>
         </a>
+        <a href="#">
+            <p class="hover:text-terracota"><%= link_to "Logout", destroy_user_session_path, data:{ turbo_method: :delete} %></p>
+        </a>
     </div>
     <div class="flex items-center gap-4">
         <a href="#">
@@ -111,7 +114,7 @@
         });
     });
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('turbo:load', function () {
         const openMenuButton = document.querySelector('.header-bg');
         const menuIcon = document.querySelector('.icon-color');
         menuIcon.classList.add('text-terracota');
@@ -133,7 +136,7 @@
     });
 
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('turbo:load', function () {
         var headerSwiper = new Swiper('.swiper-header', {
             loop: true,
             autoplay: {

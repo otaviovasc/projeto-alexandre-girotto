@@ -44,7 +44,7 @@
 <%= link_to 'Back', admin_reservas_path %>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('turbo:load', function() {
     const toggle = document.getElementById('create_user_toggle');
     const newUserFields = document.getElementById('new_user_fields');
     const existingUserFields = document.getElementById('existing_user_fields');
