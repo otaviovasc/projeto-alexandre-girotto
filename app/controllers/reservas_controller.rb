@@ -33,6 +33,7 @@ class ReservasController < ApplicationController
       # Recalculate total_price after services are added
       total_price = @reserva.calculate_total_price
       @reserva.update_column(:total_price, total_price)  # Skips validations
+      UserMailer.welcome_email_client(current_user).deliver_now
       redirect_to reserva_path(@reserva), notice: 'Reserva criada com sucesso.'
     else
       redirect_to new_cabana_reserva_path(@cabana), alert: "ERRO: #{@reserva.errors.full_messages.join("\n")}"
@@ -45,7 +46,7 @@ class ReservasController < ApplicationController
     reservas = @cabana.reservas
 
     unavailable_dates = reservas.map do |reserva|
-      (reserva.start_date...reserva.end_date).to_a
+      (reserva.start_date..reserva.end_date).to_a
     end.flatten
 
     render json: unavailable_dates

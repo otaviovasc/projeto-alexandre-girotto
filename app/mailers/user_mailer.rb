@@ -7,4 +7,10 @@ class UserMailer < ApplicationMailer
     @url  = 'localhost:3000/users/sign_in'
     mail(to: @user.email, subject: 'Sua hospedagem - Villagio')
   end
+
+  def welcome_email_client(user)
+    @user = user
+    @url  = 'localhost:3000/users/sign_in'
+    mail(to: @user.email, subject: 'Sua hospedagem - Villagio')
+  end
 end
