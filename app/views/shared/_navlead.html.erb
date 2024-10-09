@@ -9,130 +9,135 @@
         }
     </style>
 </head>
-<div id="menu-overlay"
-    class="fixed inset-0 z-10 bg-black opacity-0 pointer-events-none transition-opacity duration-1000 sm:hidden">
-</div>
 
-<div id="menu-container"
-    class="h-screen px-8 pt-32 pb-8 font-dm font-normal text-gray-500 sm:hidden fixed top-0 left-0 w-full bg-white z-50 transform -translate-x-full transition-transform duration-1000 ease-in-out flex flex-col justify-between">
-    <div class="fixed top-4 left-4">
-        <button id="close-menu"><i class="bi bi-x text-preto-fill text-5xl block sm:hidden"></i></button>
+<body>
+    <div id="menu-overlay"
+        class="fixed inset-0 z-10 bg-black opacity-0 pointer-events-none transition-opacity duration-1000 sm:hidden">
     </div>
-    <div class="text-lg flex flex-col gap-4 leading-8">
-        <div>
-            <div id="toggle-cabanas" class="flex gap-2 items-center">
-                <button class="hover:text-terracota">
-                    <p class="hover:text-terracota">Cabanas</p>
-                </button>
-                <i id="arrow-cabanas" class="fa-solid fa-arrow-down text-sm"></i>
-            </div>
-            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
-                <a href="#" class="hover:text-terracota underline">Ver Todas</a>
-            </div>
-            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
-                <a href="#" class="hover:text-terracota">Nuvolo</a>
-            </div>
-            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
-                <a href="#" class="hover:text-terracota">Valle</a>
-            </div>
-            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
-                <a href="#" class="hover:text-terracota">Collina</a>
-            </div>
+
+    <div id="menu-container"
+        class="h-screen px-8 pt-32 pb-8 font-dm font-normal text-gray-500 sm:hidden fixed top-0 left-0 w-full bg-white z-50 transform -translate-x-full transition-transform duration-1000 ease-in-out flex flex-col justify-between">
+        <div class="fixed top-4 left-4">
+            <button id="close-menu"><i class="bi bi-x text-preto-fill text-5xl block sm:hidden"></i></button>
         </div>
-            <p class="hover:text-terracota"><%= link_to "Sustentabilidade", "/sustentabilidade" %></p>
-            <p class="hover:text-terracota"><%= link_to "Experiências", "/experiencias" %></p>
-            <p class="hover:text-terracota"><%= link_to "Sobre Nós", "/about" %></p>
+        <div class="text-lg flex flex-col gap-4 leading-8">
+            <div>
+                <div class="toggle-cabanas flex gap-2 items-center">
+                    <button class="hover:text-terracota">
+                        <p class="hover:text-terracota">Cabanas</p>
+                    </button>
+                    <i class="fa-solid fa-arrow-down text-sm arrow-cabanas"></i>
+                </div>
+                <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
+                    <p class="hover:text-terracota underline">
+                        <%= link_to "Ver Todas" , cabanas_path %>
+                    </p>
+                </div>
+
+            </div>
+            <p class="hover:text-terracota">
+                <%= link_to "Home" , "/" %>
+            </p>
+            <p class="hover:text-terracota">
+                <%= link_to "Sustentabilidade" , "/sustentabilidade" %>
+            </p>
+            <p class="hover:text-terracota">
+                <%= link_to "Experiências" , "/experiencias" %>
+            </p>
+            <p class="hover:text-terracota">
+                <%= link_to "Sobre Nós" , "/about" %>
+            </p>
+        </div>
     </div>
-    <div class="flex items-center gap-4">
-        <a href="#">
-            <p class="font-alice text-lg hover:text-terracota font-bold">Minhas Reservas</p>
-        </a>
+
+    <div class="z-10 fixed top-0 left-0 py-2 px-4 w-full header-bg bg-creme flex items-center justify-between">
+        <i class="bi bi-list-nested text-3xl icon-color z-10" id="open-menu"></i>
+        <div class="ml-auto fixed top-0 right-0 p-4 header-bg bg-transparent flex items-center justify-between gap-2"id="open-reserva">
+            <p class="font-dm uppercase text-base">
+                <%= link_to "Reservar" , cabanas_path %>
+            </p>
+            <i class="fa-solid fa-chevron-right text-xs" id="setinha"></i>
+        </div>
     </div>
-</div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Menu hamburger
+            const openMenuButton = document.getElementById('open-menu');
+            const closeMenuButton = document.getElementById('close-menu');
+            const menuContainer = document.getElementById('menu-container');
+            const menuOverlay = document.getElementById('menu-overlay');
 
+            openMenuButton.addEventListener('click', function () {
+                menuContainer.classList.remove('-translate-x-full');
+                menuOverlay.classList.remove('opacity-0', 'pointer-events-none');
+                document.body.classList.add('overflow-hidden');
+            });
 
-<div id="open-menu" class="z-10 fixed top-0 left-0 py-2 px-4 w-full header-bg bg-transparent flex items-center justify-between">
-    <button>
-        <i class="bi bi-list-nested text-terracota text-3xl icon-color"></i>
-    </button>
-    <p class="font-dm text-creme uppercase text-base ml-auto">Reservar</p>
-    <i class="fa-solid fa-chevron-right text-white text-xs"></i>
-</div>
+            closeMenuButton.addEventListener('click', function () {
+                menuContainer.classList.add('-translate-x-full');
+                menuOverlay.classList.add('opacity-0', 'pointer-events-none');
+                document.body.classList.remove('overflow-hidden');
+            });
 
-<script>
-    document.getElementById('open-menu').addEventListener('click', function () {
-        document.getElementById('menu-container').classList.remove('-translate-x-full');
-        document.getElementById('menu-overlay').classList.remove('opacity-0');
-        document.getElementById('menu-overlay').classList.remove('pointer-events-none');
-        document.body.classList.add('overflow-hidden');
-    });
+            // Toggle submenu
+            const toggleCabanas = document.querySelector('.toggle-cabanas');
+            const arrowCabanas = document.querySelector('.arrow-cabanas');
+            const submenuCabanas = document.querySelector('.submenu-cabanas');
+            
+            toggleCabanas.addEventListener('click', function () {
+                if (submenuCabanas.style.maxHeight) {
+                    submenuCabanas.style.maxHeight = null;
+                    arrowCabanas.style.transform = 'rotate(0deg)';
+                } else {
+                    submenuCabanas.style.maxHeight = submenuCabanas.scrollHeight + 'px';
+                    arrowCabanas.style.transform = 'rotate(180deg)';
+                }
+            });
 
-    document.getElementById('close-menu').addEventListener('click', function () {
-        document.getElementById('menu-container').classList.add('-translate-x-full');
-        document.getElementById('menu-overlay').classList.add('opacity-0');
-        document.getElementById('menu-overlay').classList.add('pointer-events-none');
-        document.body.classList.remove('overflow-hidden');
-    });
+            // Change header on scroll
+            const header = document.querySelector('.header-bg');
+            const menuIcon = document.querySelector('.icon-color');
+            const reservar = document.getElementById('open-reserva');
+            const setinha = document.getElementById('setinha');
 
-    document.getElementById('toggle-cabanas').addEventListener('click', function () {
-        const submenus = document.querySelectorAll('.submenu-cabanas');
-        const arrow = document.getElementById('arrow-cabanas');
-        submenus.forEach(submenu => {
-            if (submenu.style.maxHeight) {
-                submenu.style.maxHeight = null;
-                arrow.style.transform = 'rotate(0deg)';
+            if (window.location.pathname === '/' || window.location.pathname === '/sustentabilidade') {
+                // Se estiver na home, adiciona o evento de scroll
+                header.classList.add('bg-transparent');
+                menuIcon.classList.add('text-creme');
+                reservar.classList.add('text-creme');
+                setinha.classList.add('text-creme');
+
+                window.addEventListener('scroll', function () {
+                    if (window.scrollY > 50) {
+                        header.classList.add('bg-creme', 'shadow-on-scroll');
+                        header.classList.remove('bg-transparent');
+                        menuIcon.classList.add('text-creme');
+                        menuIcon.classList.add('text-terracota');
+                        menuIcon.classList.remove('text-creme');
+                        reservar.classList.add('text-terracota');
+                        reservar.classList.remove('text-creme');
+                        setinha.classList.add('text-terracota');
+                    } else {
+                        header.classList.remove('bg-creme', 'shadow-on-scroll');
+                        header.classList.add('bg-transparent');
+                        menuIcon.classList.add('text-creme');
+                        menuIcon.classList.remove('text-terracota');
+                        reservar.classList.add('text-creme');
+                        reservar.classList.remove('text-terracota');
+                        setinha.classList.remove('text-terracota');
+                    }
+                });
             } else {
-                submenu.style.maxHeight = submenu.scrollHeight + "px";
-                arrow.style.transform = 'rotate(180deg)';
+                // Se não estiver na home, aplica o estado final da animação
+                
+                header.classList.add('bg-creme', 'shadow-on-scroll');
+                header.classList.remove('bg-transparent');
+                menuIcon.classList.add('text-terracota');
+                menuIcon.classList.remove('text-creme');
+                reservar.classList.add('text-terracota');
+                reservar.classList.remove('text-creme');
             }
         });
-    });
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const openMenuButton = document.querySelector('.header-bg');
-        const menuIcon = document.querySelector('.icon-color');
-        menuIcon.classList.add('text-terracota');
-        openMenuButton.classList.add('bg-transparent');
-
-        window.addEventListener('scroll', function () {
-            if (window.scrollY > 50) {
-                openMenuButton.classList.remove('bg-transparent');
-                openMenuButton.classList.add('bg-creme', 'transition-colors', 'duration-1000', 'ease-in-out', 'shadow-on-scroll');
-                menuIcon.classList.remove('text-terracota');
-                menuIcon.classList.add('text-terracota', 'transition-colors', 'duration-300', 'ease-in-out');
-            } else {
-                openMenuButton.classList.remove('bg-creme', 'shadow-on-scroll');
-                openMenuButton.classList.add('bg-transparent', 'transition-colors', 'duration-1000', 'ease-in-out');
-                menuIcon.classList.remove('text-terracota');
-                menuIcon.classList.add('text-terracota', 'transition-colors', 'duration-300', 'ease-in-out');
-            }
-        });
-    });
-
-
-    document.addEventListener('DOMContentLoaded', function () {
-        var headerSwiper = new Swiper('.swiper-header', {
-            loop: true,
-            autoplay: {
-                delay: 3000,
-            },
-            speed: 3000,
-            effect: 'fade',
-            fadeEffect: {
-                crossFade: true
-            },
-            pagination: false,
-            navigation: false,
-            allowTouchMove: false,
-            disableOnInteraction: true
-        });
-    });
-
-    AOS.init({
-        once: true,
-        duration: 2000,
-    });
-
-
-</script>
+    </script>
+</body>
