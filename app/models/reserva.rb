@@ -12,6 +12,16 @@ class Reserva < ApplicationRecord
   validate :end_date_after_start_date
   validate :dates_available
 
+  enum payment_status: {
+    pending: 'pending',
+    waiting_payment: 'waiting_payment',
+    paid: 'paid',
+    refused: 'refused',
+    canceled: 'canceled'
+  }
+
+  before_create :set_default_payment_status
+
   def calculate_total_price
     total_price = 0
     days_stayed = (start_date...end_date).count
@@ -31,6 +41,9 @@ class Reserva < ApplicationRecord
   end
 
   private
+  def set_default_payment_status
+    self.payment_status ||= 'pending'
+  end
 
   def find_price_for_day(date)
     if Holiday.holiday?(date)

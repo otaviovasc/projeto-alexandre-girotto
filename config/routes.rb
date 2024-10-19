@@ -54,9 +54,13 @@ Rails.application.routes.draw do
 
   # My reservations and reservation details
   resources :reservas, only: [:index, :show] do
+    get 'pay', on: :member  # Process payment for a reservation
     resources :reserva_services, only: [:create]
     resources :reserva_items, only: [:create]
   end
+
+  # config/routes.rb
+  post 'pagamentos/webhook', to: 'pagamentos#webhook', as: 'pagamentos_webhook'
 
   # Cart
   post 'cart/add_item', to: 'carts#add_item', as: 'add_item'

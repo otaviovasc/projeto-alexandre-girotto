@@ -1,34 +1,44 @@
-<h1>Reservation Details</h1>
-
-<p><strong>Cabana:</strong> <%= @reserva.cabana.name %></p>
-<p><strong>Start Date:</strong> <%= @reserva.start_date %></p>
-<p><strong>End Date:</strong> <%= @reserva.end_date %></p>
-<p><strong>Total Price:</strong> <%= number_to_currency(@reserva.total_price) %></p>
-
-<h2>Reserva Services</h2>
-<% if @reserva_services.any? %>
-  <% @reserva_services.each do |reserva_service| %>
-    <p>Service: <%= reserva_service.service.name %></p>
-    <p>Price: <%= number_to_currency(reserva_service.service.price) %> each</p>
-    <p>Quantity: <%= reserva_service.quantity %></p>
-  <% end %>
-<% else %>
-  <p>No services purchased for this reservation.</p>
-<% end %>
-
-<h2>Reserva Items</h2>
-<% if @reserva_items.any? %>
-  <% @reserva_items.each do |reserva_item| %>
-    <p>Item: <%= reserva_item.item.name %></p>
-    <p>Price: <%= number_to_currency(reserva_item.item.price) %> each</p>
-    <p>Quantity: <%= reserva_item.quantity %></p>
-  <% end %>
-<% else %>
-  <p>No items purchased for this reservation.</p>
-<% end %>
-
-
-<div>
-  <a href=""></a>
-</div>
 <%= link_to 'Back to Reservations', reservas_path %>
+<%= @reserva.payment_status%>
+<% if @reserva.payment_status == "pending" %>
+  <h1>Reservation Details</h1>
+
+  <p><strong>Cabana:</strong> <%= @reserva.cabana.name %></p>
+  <p><strong>Start Date:</strong> <%= @reserva.start_date %></p>
+  <p><strong>End Date:</strong> <%= @reserva.end_date %></p>
+  <p><strong>Total Price:</strong> <%= number_to_currency(@reserva.total_price) %></p>
+
+  <h2>Reserva Services</h2>
+  <% if @reserva_services.any? %>
+    <% @reserva_services.each do |reserva_service| %>
+      <p>Service: <%= reserva_service.service.name %></p>
+      <p>Price: <%= number_to_currency(reserva_service.service.price) %> each</p>
+      <p>Quantity: <%= reserva_service.quantity %></p>
+    <% end %>
+  <% else %>
+    <p>No services purchased for this reservation.</p>
+  <% end %>
+
+  <h2>Reserva Items</h2>
+  <% if @reserva_items.any? %>
+    <% @reserva_items.each do |reserva_item| %>
+      <p>Item: <%= reserva_item.item.name %></p>
+      <p>Price: <%= number_to_currency(reserva_item.item.price) %> each</p>
+      <p>Quantity: <%= reserva_item.quantity %></p>
+    <% end %>
+  <% else %>
+    <p>No items purchased for this reservation.</p>
+  <% end %>
+<% end %>
+<p>aaaaa----------</p>
+<p>aaaaa----------</p>
+
+<% if @reserva.payment_status == 'pending' || @reserva.payment_status == 'refused' %>
+  <%= link_to 'Pagar Reserva', pay_reserva_path(@reserva), class: 'btn btn-primary' %>
+<% elsif @reserva.payment_status == 'waiting_payment' %>
+  <%= link_to 'Pagar Reserva', pay_reserva_path(@reserva), class: 'btn btn-primary' %>
+<% elsif @reserva.payment_status == 'paid' %>
+  <p>Pagamento confirmado. Obrigado!</p>
+<% else %>
+  <p>Status do pagamento: <%= @reserva.payment_status %></p>
+<% end %>
