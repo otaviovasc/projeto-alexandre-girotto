@@ -296,16 +296,20 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  bigdecimal (= 3.1.8)
   bootsnap
   capybara
   cloudinary
+  csv (= 3.3.0)
   debug
   devise
   dotenv-rails
-  httparty
+  httparty (= 0.22.0)
   importmap-rails
   jbuilder
-  pagarme
+  multi_json (= 1.15.0)
+  multi_xml (= 0.7.1)
+  pagarme (= 2.4.0)
   pg
   puma (~> 5.0)
   rails (~> 7.0.8, >= 7.0.8.4)

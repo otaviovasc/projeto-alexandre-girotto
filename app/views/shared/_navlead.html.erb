@@ -35,7 +35,7 @@
                 </div>
 
             </div>
-            <p class="hover:text-terracota">
+            <p class="hover:text-terracota botao-home">
                 <%= link_to "Home" , "/" %>
             </p>
             <p class="hover:text-terracota">
@@ -100,6 +100,12 @@
             const menuIcon = document.querySelector('.icon-color');
             const reservar = document.getElementById('open-reserva');
             const setinha = document.getElementById('setinha');
+            const botaoHome = document.querySelector('.botao-home')
+
+
+            if (window.location.pathname === '/') {
+                botaoHome.classList.add('hidden')
+            }
 
             if (window.location.pathname === '/' || window.location.pathname === '/sustentabilidade') {
                 // Se estiver na home, adiciona o evento de scroll
@@ -130,7 +136,6 @@
                 });
             } else {
                 // Se não estiver na home, aplica o estado final da animação
-
                 header.classList.add('bg-creme', 'shadow-on-scroll');
                 header.classList.remove('bg-transparent');
                 menuIcon.classList.add('text-terracota');
