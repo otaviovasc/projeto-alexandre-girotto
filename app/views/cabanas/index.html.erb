@@ -29,7 +29,7 @@
             <img src="<%= image.url %>" alt="" class="max-h-96 rounded-md">
             <% end %>
               <% cabana.info_da_cabanas.each do |info| %>
-                <% if info.info_type=="description" %>
+                <% if info.info_type=="intro" %>
                   <p>
                     <%= info.content %>
                   </p>
