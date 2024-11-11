@@ -76,12 +76,12 @@ class ReservasController < ApplicationController
               interest_type: 'simple',
               interest_rate: 0,
               max_installments: 1,
-              amount: amount_in_cents
+              amount: amount_in_cents,
             },
             operation_type: 'auth_and_capture'
           },
           pix_settings: {
-            expires_in: 3600  # PIX expires in 1 hour
+            expires_in: 600  # PIX expires in 1 hour
           },
           accepted_payment_methods: [
             'credit_card',
@@ -92,11 +92,10 @@ class ReservasController < ApplicationController
           items: [
             {
               id: @reserva.id.to_s,
-              name: 'Reserva de Cabana',
+              name: "Reserva de #{@reserva.cabana.name}",
+              amount: amount_in_cents,
               unit_price: amount_in_cents,
-              amount: 1,
               default_quantity: 1,
-              tangible: false
             }
           ]
         },
