@@ -29,9 +29,12 @@ gem "jbuilder"
 
 gem 'devise'
 
-gem 'pagarme'
-
-gem 'httparty'
+gem 'pagarme', '2.4.0'
+gem 'httparty', '0.22.0'
+gem 'multi_json', '1.15.0'
+gem 'csv', '3.3.0'
+gem 'multi_xml', '0.7.1'
+gem 'bigdecimal', '3.1.8'
 
 gem 'simple_form'
 

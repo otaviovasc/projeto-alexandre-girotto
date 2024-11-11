@@ -27,13 +27,24 @@
         <% end %>
       </div>
       
-      <!-- Informações sobre a Cabana -->
+
       <div class="flex flex-col gap-4">
-        <p class="font-dm text-lg text-center text-terracota">Preço por noite: R$<%= @cabana.price %></p>
 
         <% @infos_da_cabana.each do |info| %>
           <% if info.info_type == "description" %>
-            <p class="text-center text-lg font-dm text-verde-escuro"><%= info.content %></p>
+            <p class="text-xl font-bold font-dm text-verde-escuro">A <%= @cabana.name %></p>
+            <p class="text-lg font-alice text-verde-escuro"><%= info.content %></p>
+          <% end %>
+        <% end %>
+
+        <% @infos_da_cabana.each do |info| %>
+          <% if info.info_type == "amenities" %>
+            <p class="text-xl font-bold font-dm text-verde-escuro">Comodidades:</p>
+            <p class="text-lg font-dm text-verde-escuro max-w-6/10"><%= info.content %></p>
+          <% end %>
+          <% if info.info_type == "other" %>
+            <p class="text-xl font-bold font-dm text-verde-escuro">Fatores Chave:</p>
+            <p class="text-lg font-dm max-w-8/10 text-verde-escuro"><%= info.content %></p>
           <% end %>
         <% end %>
         
