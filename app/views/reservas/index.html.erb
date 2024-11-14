@@ -10,10 +10,13 @@
         <br>
         <strong>To:</strong> <%= reserva.end_date %>
         <br>
+        <strong>Reserva Status</strong> <%= reserva.payment_status %>
+        <br>
         <strong>Total Price:</strong> <%= number_to_currency(reserva.total_price) %>
         <br>
         <%= link_to 'View Details', reserva_path(reserva) %>
       </li>
+        ----------------------------------------
     <% end %>
   </ul>
 <% else %>

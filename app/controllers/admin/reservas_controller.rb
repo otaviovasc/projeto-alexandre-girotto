@@ -17,7 +17,6 @@ class Admin::ReservasController < ApplicationController
       @user = User.new(user_params.merge(password: generated_password, password_confirmation: generated_password))
 
       if @user.save
-        UserMailer.welcome_email(@user, generated_password).deliver_now
         @reserva = Reserva.new(reserva_params.merge(user_id: @user.id))
       else
         flash[:alert] = "User could not be created."
@@ -29,6 +28,7 @@ class Admin::ReservasController < ApplicationController
 
     @reserva.total_price = @reserva.calculate_total_price
     if @reserva.save
+      UserMailer.reserva_paid(@user, @reserva).deliver_now
       redirect_to admin_reservas_path, notice: 'Reserva was successfully created.'
     else
       render :new

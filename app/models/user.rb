@@ -8,6 +8,9 @@ class User < ApplicationRecord
   # Cart association
   has_one :cart, dependent: :destroy
 
+  # UserMailer association
+  after_create :send_welcome_email
+
   # Assigning custom values to the roles
   enum role: { service_provider: 3, manager: 2, admin: 1, client: 0 }
 
@@ -24,5 +27,13 @@ class User < ApplicationRecord
     if self.new_record?
       self.role ||= :client
     end
+  end
+
+  # Callback para enviar o e-mail de boas-vindas após a criação do usuário
+
+  private
+
+  def send_welcome_email
+    UserMailer.welcome_email(self, self.password).deliver_now
   end
 end

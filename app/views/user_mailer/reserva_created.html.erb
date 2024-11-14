@@ -1,0 +1,166 @@
+<!-- app/views/reserva_mailer/reserva_created.html.erb -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reserva Criada - Villaggio Girotto</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      background-color: #f4f4f4;
+      padding: 20px 0;
+    }
+    .email-container {
+      width: 600px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin: auto;
+    }
+    .header {
+      padding: 20px;
+      background-color: #ff6f00;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      font-size: 24px;
+      color: #ffffff;
+    }
+    .content {
+      padding: 30px;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #333333;
+    }
+    .content p {
+      margin: 0 0 15px 0;
+    }
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    .details-table td {
+      padding: 8px;
+      border: 1px solid #ddd;
+    }
+    .cta-button {
+      text-align: center;
+    }
+    .cta-button a {
+      background-color: #ff6f00;
+      color: #ffffff;
+      padding: 12px 20px;
+      text-decoration: none;
+      border-radius: 4px;
+      display: inline-block;
+      font-weight: bold;
+    }
+    .footer {
+      padding: 20px;
+      background-color: #f4f4f4;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      color: #777777;
+    }
+    .footer p {
+      margin: 5px 0;
+    }
+    @media screen and (max-width: 600px) {
+      .email-container {
+        width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <table class="wrapper" role="presentation" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center">
+        <table class="email-container" role="presentation" border="0" cellpadding="0" cellspacing="0">
+
+          <!-- Cabeçalho -->
+          <tr>
+            <td class="header">
+              <h1>Reserva Criada com Sucesso</h1>
+            </td>
+          </tr>
+
+          <!-- Conteúdo -->
+          <tr>
+            <td class="content">
+              <p>Olá <%= @user.name || @user.email %>,</p>
+              <p>Sua reserva foi criada com sucesso no Villaggio Girotto! Abaixo estão os detalhes da sua reserva:</p>
+
+              <!-- Detalhes da Reserva -->
+              <table class="details-table">
+                <tr>
+                  <td><strong>Data de Início:</strong></td>
+                  <td><%= @reserva.start_date.strftime("%d/%m/%Y") %></td>
+                </tr>
+                <tr>
+                  <td><strong>Data de Fim:</strong></td>
+                  <td><%= @reserva.end_date.strftime("%d/%m/%Y") %></td>
+                </tr>
+                <tr>
+                  <td><strong>Cabana:</strong></td>
+                  <td><%= @reserva.cabana.name %></td>
+                </tr>
+                <tr>
+                  <td><strong>Serviços Adicionais:</strong></td>
+                  <td>
+                    <% if @services.any? %>
+                      <ul>
+                        <% @services.each do |service| %>
+                          <li><%= service.name %> (Quantidade: <%= service.reserva_services.find_by(reserva: @reserva).quantity %>)</li>
+                        <% end %>
+                      </ul>
+                    <% else %>
+                      Nenhum serviço adicional selecionado.
+                    <% end %>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Total a Pagar:</strong></td>
+                  <td>R$ <%= @reserva.total_price.to_f.round(2) %></td>
+                </tr>
+              </table>
+
+              <p>Para confirmar sua reserva, por favor, realize o pagamento em até <strong>10 minutos</strong>.</p>
+
+              <!-- Botão de Pagamento -->
+              <p class="cta-button">
+                <a href="<%= @reserva.payment_link_url || @url %>">Realizar Pagamento</a>
+              </p>
+
+              <p>Se você tiver alguma dúvida ou precisar de assistência, nossa equipe de suporte está à disposição.</p>
+
+              <p>Atenciosamente,<br>Equipe Villaggio Girotto</p>
+            </td>
+          </tr>
+
+          <!-- Rodapé -->
+          <tr>
+            <td class="footer">
+              <p>&copy; 2024 Villaggio Girotto. Todos os direitos reservados.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_10_19_180826) do
+ActiveRecord::Schema[7.0].define(version: 2024_11_13_171824) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -160,6 +160,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_19_180826) do
     t.string "payment_status"
     t.string "payment_link_id"
     t.string "payment_link_url"
+    t.datetime "payment_expires_at"
     t.index ["cabana_id"], name: "index_reservas_on_cabana_id"
     t.index ["user_id"], name: "index_reservas_on_user_id"
   end

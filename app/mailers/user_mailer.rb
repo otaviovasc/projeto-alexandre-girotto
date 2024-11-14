@@ -8,9 +8,19 @@ class UserMailer < ApplicationMailer
     mail(to: @user.email, subject: 'Sua hospedagem - Villagio')
   end
 
-  def welcome_email_client(user)
+  def reserva_created(user, reserva)
     @user = user
-    @url  = 'localhost:3000/users/sign_in'
-    mail(to: @user.email, subject: 'Sua hospedagem - Villagio')
+    @reserva = reserva
+    @url  = "localhost:3000/reservas/#{reserva.id}"
+    @services = reserva.services.includes(:reserva_services)
+    mail(to: @user.email, subject: 'Aguardando Pagamento - Villagio')
+  end
+
+  def reserva_paid(user, reserva)
+    @user = user
+    @reserva = reserva
+    @url  = "localhost:3000/reservas/#{reserva.id}"
+    @services = reserva.services.includes(:reserva_services)
+    mail(to: @user.email, subject: 'Pagamento Confirmado - Villagio')
   end
 end

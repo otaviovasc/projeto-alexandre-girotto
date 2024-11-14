@@ -40,7 +40,26 @@ class Reserva < ApplicationRecord
     total_price
   end
 
+  def expired?
+    payment_expires_at.present? && Time.current > payment_expires_at
+  end
+
+  def available?
+    check_and_cancel_expired_reservations
+
+    new_reserva_range = start_date..end_date
+    overlapping_reservas = Reserva.where(cabana_id: cabana.id)
+                                  .where(payment_status: [:pending, :waiting_payment, :paid])
+
+    overlapping_reservas.each do |existing_reserva|
+      existing_reserva_range = existing_reserva.start_date..existing_reserva.end_date
+      return false if new_reserva_range.overlaps?(existing_reserva_range)
+    end
+    true
+  end
+
   private
+
   def set_default_payment_status
     self.payment_status ||= 'pending'
   end
@@ -73,19 +92,15 @@ class Reserva < ApplicationRecord
     end
   end
 
-  def dates_available
-    unless available?(cabana, self)
-      errors.add(:base, "A Cabana esta indisponível na data selecionada.")
+  def check_and_cancel_expired_reservations
+    if expired? && waiting_payment?
+      update_column(:payment_status, 'canceled')
     end
   end
 
-  def available?(cabana, reserva)
-    new_reserva_range = reserva.start_date..reserva.end_date
-    existing_reservas = Reserva.where(cabana_id: cabana.id)
-    existing_reservas.each do |existing_reserva|
-      existing_reserva_range = existing_reserva.start_date..existing_reserva.end_date
-      return false if new_reserva_range.overlaps?(existing_reserva_range)
+  def dates_available
+    unless available?
+      errors.add(:base, "A Cabana esta indisponível na data selecionada.")
     end
-    true
   end
 end

@@ -8,11 +8,21 @@ class ReservasController < ApplicationController
 
   def index
     @reservas = current_user.reservas
+    @reservas.each do |reserva|
+      if reserva.expired? && (reserva.waiting_payment? || reserva.pending?)
+        reserva.update_column(:payment_status, 'canceled')
+      end
+    end
   end
 
   def show
     @reserva_services = @reserva.reserva_services.includes(:service)
     @reserva_items = @reserva.reserva_items.includes(:item)
+    if @reserva.expired? && (@reserva.waiting_payment? || @reserva.pending?)
+      @reserva.update_column(:payment_status, 'canceled')
+      flash[:alert] = "O prazo para pagamento expirou. Sua reserva foi cancelada."
+      redirect_to reserva_path(@reserva)
+    end
   end
 
   def new
@@ -37,7 +47,8 @@ class ReservasController < ApplicationController
       # Recalculate total_price after services are added
       total_price = @reserva.calculate_total_price
       @reserva.update_column(:total_price, total_price)  # Skips validations
-      UserMailer.welcome_email_client(current_user).deliver_now
+      @reserva.update_column(:payment_expires_at, 10.minutes.from_now)
+      UserMailer.reserva_created(current_user, @reserva).deliver_now
       redirect_to reserva_path(@reserva), notice: 'Reserva criada com sucesso.'
     else
       redirect_to new_cabana_reserva_path(@cabana), alert: "ERRO: #{@reserva.errors.full_messages.join("\n")}"
@@ -112,19 +123,14 @@ class ReservasController < ApplicationController
     Rails.logger.info "PagarMe Response: #{response.body}"
 
     if response.code == 201
+      UserMailer.reserva_created(current_user, @reserva).deliver_now
       payment_link = JSON.parse(response.body)
 
       if payment_link['url'].present?
-        @reserva.update_column(
-          :payment_link_id, payment_link['id']
-        )
-        @reserva.update_column(
-          :payment_link_url, payment_link['url']
-        )
-        @reserva.update_column(
-          :payment_status, 'waiting_payment'
-        )
-        redirect_to payment_link['url'], allow_other_host: true  # Allow external redirect
+        @reserva.update_column(:payment_link_id, payment_link['id'])
+        @reserva.update_column(:payment_link_url, payment_link['url'])
+        @reserva.update_column(:payment_status, 'waiting_payment')
+        redirect_to payment_link['url'], allow_other_host: true  # Allow external redirect...
       else
         flash[:alert] = "Erro: Link de pagamento não encontrado."
         redirect_to reserva_path(@reserva)
@@ -155,6 +161,7 @@ class ReservasController < ApplicationController
     when 'waiting_payment'
       @reserva.update_column(:payment_status, 'waiting_payment')
     when 'paid'
+      UserMailer.reserva_paid(current_user, @reserva).deliver_now
       @reserva.update_column(:payment_status, 'paid')
     when 'unpaid', 'refused'
       @reserva.update_column(:payment_status, 'refused')
@@ -169,14 +176,19 @@ class ReservasController < ApplicationController
 
   def unavailable_dates
     @cabana = Cabana.find(params[:cabana_id])
-    reservas = @cabana.reservas
 
+    # Filter reservations to include only those that are active and not expired
+    reservas = @cabana.reservas.where(payment_status: ['pending', 'waiting_payment', 'paid'])
+                               .where("payment_expires_at IS NULL OR payment_expires_at > ?", Time.current)
+
+    # Map the unavailable dates for each active reservation
     unavailable_dates = reservas.map do |reserva|
       (reserva.start_date..reserva.end_date).to_a
     end.flatten
 
     render json: unavailable_dates
   end
+
 
   def calculate_price
     start_date = Date.parse(params[:start_date])
