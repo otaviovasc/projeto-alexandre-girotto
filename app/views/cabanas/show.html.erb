@@ -17,7 +17,7 @@
   <div class="bg-white rounded-md flex flex-col w-full mx-auto p-2">
     <!-- Título da Cabana -->
     <p class="text-center text-4xl font-alice text-verde-escuro"><%= @cabana.name %></p>
-    
+
     <!-- Informações da Cabana -->
     <div class="flex flex-col gap-6 px-8 mt-8">
       <!-- Imagens da Cabana -->
@@ -26,7 +26,7 @@
           <img src="<%= image.url %>" alt="<%= @cabana.name %> Image" class="rounded-md">
         <% end %>
       </div>
-      
+
 
       <div class="flex flex-col gap-4">
 
@@ -47,9 +47,9 @@
             <p class="text-lg font-dm max-w-8/10 text-verde-escuro"><%= info.content %></p>
           <% end %>
         <% end %>
-        
+
         <!-- Botão para Reservar -->
-        <div class="font-dm bg-verde-escuro rounded-3xl flex justify-center items-center gap-4 p-3 mt-6">
+        <div class="font-dm bg-botao-verde rounded-3xl flex justify-center items-center gap-4 p-3 mt-6">
           <%= link_to 'Quero reservar!', new_cabana_reserva_path(@cabana), class: "uppercase font-light text-creme" %>
         </div>
       </div>
