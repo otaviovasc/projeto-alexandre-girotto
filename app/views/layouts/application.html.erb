@@ -21,7 +21,9 @@
   </head>
 
   <body>
-    <%= render 'shared/navadmin' %>
+    <% unless devise_controller? %>
+      <%= render 'shared/navadmin' %>
+    <% end %>
       <div class="container-fluid">
         <%= render "shared/flashes" %>
         <div class="row py-3">

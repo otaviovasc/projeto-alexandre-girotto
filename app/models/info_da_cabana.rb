@@ -1,7 +1,7 @@
 class InfoDaCabana < ApplicationRecord
   belongs_to :cabana
 
-  INFO_TYPES = %w[intro other amenities description].freeze
+  INFO_TYPES = %w[intro other comodidades description].freeze
 
   validates :info_type, inclusion: { in: INFO_TYPES }
   validates :title, :content, presence: true

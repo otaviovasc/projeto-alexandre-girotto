@@ -38,7 +38,7 @@
         <% end %>
 
         <% @infos_da_cabana.each do |info| %>
-          <% if info.info_type == "amenities" %>
+          <% if info.info_type == "comodidades" %>
             <p class="text-xl font-bold font-dm text-verde-escuro">Comodidades:</p>
             <p class="text-lg font-dm text-verde-escuro max-w-6/10"><%= info.content %></p>
           <% end %>

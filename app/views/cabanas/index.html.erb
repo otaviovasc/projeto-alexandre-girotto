@@ -12,7 +12,7 @@
         </div>
       </div>
       <hr class="w-full my-4">
-      <div class="font-dm bg-verde-escuro rounded-3xl flex justify-center items-center gap-4 p-3">
+      <div class="font-dm bg-botao-verde rounded-3xl flex justify-center items-center gap-4 p-3">
         <%= submit_tag 'Filtrar' , class: 'uppercase font-light text-creme' %>
       </div>
       <% end %>
@@ -44,7 +44,7 @@
       <hr class="m-8">
       <% end %>
         <% else %>
-          <p>No cabanas found for the selected filial.</p>
+          <p class="my- text-center font-bold">Nenhuma cabana encontrada nessa filial.</p>
           <% end %>
             <%= render 'shared/funilform' %>
               <%= render 'shared/footer' %>

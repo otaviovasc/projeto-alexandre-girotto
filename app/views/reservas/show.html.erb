@@ -1,4 +1,5 @@
 <%= link_to 'Back to Reservations', reservas_path %>
+<br>
 <%= @reserva.payment_status%>
 <% if @reserva.payment_status == "pending" %>
   <h1>Reservation Details</h1>
