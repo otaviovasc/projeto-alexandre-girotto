@@ -78,9 +78,6 @@ module.exports = {
         "8/10": "80%",
         "9/10": "95%",
       },
-      backgroundImage: theme => ({
-                'fundo': "url('<%= asset_path('fundo.png') %>')"
-            }),
     },
   },
   plugins: [],
