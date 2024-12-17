@@ -7,7 +7,7 @@ class ReservasController < ApplicationController
   skip_before_action :verify_authenticity_token, only: [:payment_webhook]
 
   def index
-    @reservas = current_user.reservas
+    @reservas = current_user.reservas.order(:start_date)
     @reservas.each do |reserva|
       if reserva.expired? && (reserva.waiting_payment? || reserva.pending?)
         reserva.update_column(:payment_status, 'canceled')

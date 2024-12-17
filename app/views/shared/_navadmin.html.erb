@@ -3,11 +3,9 @@
     <a class="navbar-brand fw-bold text-uppercase" href="#">
       <i class="bi bi-box-seam me-2"></i>Controle de Estoque
     </a>
-    <button class="navbar-toggler" type="button" id="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
 
-    <div class="custom-collapse navbar-collapse" id="navbarNav">
+    <!-- Removemos completamente o botão e as referências a collapse -->
+    <div class="navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <% if user_signed_in? && current_user.admin? %>
           <li class="nav-item dropdown">
@@ -65,26 +63,3 @@
     </div>
   </div>
 </nav>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const toggler = document.getElementById('navbarToggler');
-    const collapse = document.getElementById('navbarNav');
-
-    toggler.addEventListener('click', function() {
-      const isExpanded = toggler.getAttribute('aria-expanded') === 'true';
-      toggler.setAttribute('aria-expanded', !isExpanded);
-      collapse.classList.toggle('show');
-    });
-  });
-</script>
-
-
-<style>
-  .custom-collapse {
-  display: none;
-}
-.custom-collapse.show {
-  display: block;
-}
-</style>
