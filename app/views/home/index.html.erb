@@ -1,5 +1,10 @@
-<h1>Home#root</h1>
-<p>Find me in app/views/home/root.html.erb</p>
-<h1>Landing page non logged user</h1>
-
-<%= button_to "logout", destroy_user_session_path, method: :delete  %>
+<div>
+    <%= render 'shared/headerclient' %>
+    <%= render 'shared/compras' %>
+    <%= render 'shared/divComunidades' %>
+    <%= render 'shared/infoGS' %>
+    <%= render 'shared/experienciasGS' %>
+    <%= render 'shared/funilform' %>
+    <%= render 'shared/footer' %>
+    <%= render 'shared/wppButton' %>
+</div>

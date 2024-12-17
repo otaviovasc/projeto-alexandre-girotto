@@ -49,12 +49,18 @@
             </div>
             <div class="flex flex-col px-6 pb-16 gap-16">
                 <div class="flex flex-col gap-4">
-                    <p class="font-alice text-preto-fill font-light text-2xl">Mindfulness, conexão com a natureza e uma vida
+                    <p class="font-alice text-preto-fill font-light text-2xl">Mindfulness, conexão com a natureza e uma
+                        vida
                         muito melhor.</p>
-                    <p class="font-dm text-gray-500 text-base">Nós somos comprometidos com o bem-estar, sustentabilidade e uma obrigação em transformar a sua vida. Lorem ipsum dolor sit amet consectetur adipisicing elit. Obcaecati neque eum quam quisquam itaque culpa, omnis corporis consequatur eligendi sint!</p>
+                    <p class="font-dm text-gray-500 text-base">Nós somos comprometidos com o bem-estar, sustentabilidade
+                        e uma obrigação em transformar a sua vida. Lorem ipsum dolor sit amet consectetur adipisicing
+                        elit. Obcaecati neque eum quam quisquam itaque culpa, omnis corporis consequatur eligendi sint!
+                    </p>
                 </div>
                 <div class="flex items-center gap-1">
-                    <p class="text-laranja font-dm text-base leading-10"><%= link_to "Quais são as esperiências?", "/experiencias" %></p>
+                    <p class="text-laranja font-dm text-base leading-10">
+                        <%= link_to "Quais são as esperiências?" , "/experiencias" %>
+                    </p>
                     <i class="fa-solid fa-chevron-right text-laranja text-xs"></i>
                 </div>
             </div>
@@ -70,15 +76,15 @@
 <script>
     document.addEventListener('turbo:load', function () {
         var swiper = new Swiper('.swiper-exp', {
-                loop: true,
-                autoplay: {
-                    delay: 3000,
-                },
-                speed: 2000,
-                pagination: false,
-                clickable: false,
-                allowTouchMove: false,
-                disableOnInteraction: true
-            });
+            loop: true,
+            autoplay: {
+                delay: 3000,
+            },
+            speed: 2000,
+            pagination: false,
+            clickable: false,
+            allowTouchMove: false,
+            disableOnInteraction: true
+        });
     });
 </script>

@@ -2,10 +2,17 @@ class HomeController < ApplicationController
   layout "clientside"
   skip_before_action :authenticate_user!, only: [:root, :create_mailer_entry, :about, :experiencias, :sustentabilidade]
 
-  def root
-    @funil_mailer = FunilMailer.new
-  end
   def index
+    @funil_mailer = FunilMailer.new
+    @reservas = current_user.reservas
+    @reservas.each do |reserva|
+      if reserva.expired? && (reserva.waiting_payment? || reserva.pending?)
+        reserva.update_column(:payment_status, 'canceled')
+      end
+    end
+  end
+  
+  def root
     @funil_mailer = FunilMailer.new
   end
 

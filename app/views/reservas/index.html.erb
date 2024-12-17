@@ -1,25 +1,59 @@
-<h1 class="bg-green-600">My Reservations</h1>
+<div class="bg-white rounded-md  w-full max-w-4xl mx-auto p-6 flex flex-col gap-6">
+  <!-- Título -->
+  <h1 class="text-2xl font-alice text-verde-escuro text-center font-bold">Minhas Reservas</h1>
 
-<% if @reservas.any? %>
-  <ul>
-    <% @reservas.each do |reserva| %>
-      <li>
-        <strong>Cabana:</strong> <%= reserva.cabana.name %>
-        <br>
-        <strong>From:</strong> <%= reserva.start_date %>
-        <br>
-        <strong>To:</strong> <%= reserva.end_date %>
-        <br>
-        <strong>Reserva Status</strong> <%= reserva.payment_status %>
-        <br>
-        <strong>Total Price:</strong> <%= number_to_currency(reserva.total_price) %>
-        <br>
-        <%= link_to 'View Details', reserva_path(reserva) %>
-      </li>
-        ----------------------------------------
-    <% end %>
-  </ul>
-<% else %>
-  <p>You don't have any bookings.</p>
-  <%= link_to 'Book Now', cabanas_path %>
-<% end %>
+  <% if @reservas.any? %>
+    <div class="flex flex-col gap-6">
+      <% @reservas.each do |reserva| %>
+        <!-- Card de Reserva -->
+        <div class="border border-gray-300 rounded-md p-4 flex flex-col gap-4 shadow-sm">
+          <!-- Detalhes da Reserva -->
+          <div class="flex flex-col gap-2">
+            <div class="flex flex-wrap gap-4 justify-center">
+              <% reserva.cabana.images.each do |image| %>
+                <img src="<%= image.url %>" alt="<%= reserva.cabana.name %> Image" class="rounded-md">
+              <% end %>
+            </div>
+            <p class="font-dm text-lg text-verde-escuro">
+              <strong>Cabana:</strong> <%= reserva.cabana.name %>
+            </p>
+            <p class="text-gray-600 font-dm">
+              <strong>Data de Início:</strong> <%= reserva.start_date.strftime("%d/%m/%Y") %>
+            </p>
+            <p class="text-gray-600 font-dm">
+              <strong>Data de Fim:</strong> <%= reserva.end_date.strftime("%d/%m/%Y") %>
+            </p>
+            <p class="text-gray-600 font-dm">
+              <strong>Status:</strong>
+              <span class="<%= reserva.payment_status == 'paid' ? 'text-green-600' : 'text-orange-500' %> font-bold">
+                <%= reserva.payment_status.present? ? reserva.payment_status.humanize : 'Indefinido' %>
+              </span>
+            </p>
+            <p class="text-gray-600 font-dm">
+              <strong>Preço Total:</strong> <%= number_to_currency(reserva.total_price) %>
+            </p>
+            <p class="text-gray-600 font-dm">
+              <strong>Checkin:</strong> 12h
+            </p>
+            <p class="text-gray-600 font-dm">
+              <strong>Checkout:</strong> 16h
+            </p>
+          </div>
+
+          <!-- Botão de Ação -->
+          <div class="flex justify-end">
+            <%= link_to 'Ver Detalhes', reserva_path(reserva),
+              class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition' %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <!-- Caso não haja reservas -->
+    <div class="text-center flex flex-col gap-4">
+      <p class="text-gray-600 font-dm text-lg">Você ainda não possui reservas.</p>
+      <%= link_to 'Reserve Agora', cabanas_path,
+        class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition inline-block' %>
+    </div>
+  <% end %>
+</div>

@@ -32,9 +32,9 @@
       </div>
       <div id="breakfast_quantity_container" class="flex flex-col gap-2 pl-6" style="display:none;">
         <label class="font-dm text-lg text-terracota">
-          Quantidade de pessoas para café da manhã? R$<%= @breakfast_service.price %>/dia
+           Café da manhã: R$<%= @breakfast_service.price %>/dia
         </label>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 hidden">
           <button type="button" id="quantity_down" 
             class="bg-botao-verde text-white px-2 py-1 rounded">-</button>
           <%= number_field_tag 'reserva[breakfast_quantity]', 1, min: 0, id: 'breakfast_quantity',
