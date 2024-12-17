@@ -1,41 +1,90 @@
-<nav class="navbar navbar-expand-lg navbar-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
   <div class="container-fluid">
-    <a class="navbar-brand" href="#">Controle de Estoque</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <a class="navbar-brand fw-bold text-uppercase" href="#">
+      <i class="bi bi-box-seam me-2"></i>Controle de Estoque
+    </a>
+    <button class="navbar-toggler" type="button" id="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
+
+    <div class="custom-collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <% if user_signed_in? && current_user.admin? %>
-          <li class="nav-item">
-            <%= link_to 'Serra da Mantiqueira', admin_filial_items_path(Filial.find_by(name: 'Serra da Mantiqueira')), class: 'nav-link' %>
-          </li>
-          <li class="nav-item">
-            <%= link_to 'Fattoria di Braúna', admin_filial_items_path(Filial.find_by(name: 'Fattoria di Brauna')), class: 'nav-link' %>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="filiaisDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-building me-1"></i>Filiais
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="filiaisDropdown">
+              <li>
+                <%= link_to 'Serra da Mantiqueira',
+                            admin_filial_items_path(Filial.find_by(name: 'Serra da Mantiqueira')),
+                            class: 'dropdown-item' %>
+              </li>
+              <li>
+                <%= link_to 'Fattoria di Braúna',
+                            admin_filial_items_path(Filial.find_by(name: 'Fattoria di Brauna')),
+                            class: 'dropdown-item' %>
+              </li>
+            </ul>
           </li>
         <% end %>
       </ul>
+
       <ul class="navbar-nav ms-auto">
         <% if user_signed_in? %>
           <% if current_user.admin? %>
             <li class="nav-item">
-              <%= link_to 'Admin Dashboard', root_path, class: 'nav-link' %>
+              <%= link_to root_path, class: 'nav-link' do %>
+                <i class="bi bi-speedometer2 me-1"></i>Admin Dashboard
+              <% end %>
             </li>
           <% end %>
+
           <% if @filial %>
             <li class="nav-item">
-              <%= link_to 'Itens com Estoque Crítico', critical_stock_admin_filial_items_path(@filial), class: 'btn btn-warning' %>
+              <%= link_to critical_stock_admin_filial_items_path(@filial), class: 'btn btn-warning d-flex align-items-center gap-1' do %>
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                Itens com Estoque Crítico
+              <% end %>
             </li>
           <% end %>
+
           <li class="nav-item">
-            <%= link_to 'Sign Out', destroy_user_session_path, data: { turbo_method: :delete }, class: 'nav-link' %>
+            <%= link_to destroy_user_session_path, data: { turbo_method: :delete }, class: 'nav-link d-flex align-items-center gap-1' do %>
+              <i class="bi bi-box-arrow-right"></i>Sign Out
+            <% end %>
           </li>
         <% else %>
           <li class="nav-item">
-            <%= link_to 'Sign In', new_user_session_path, class: 'nav-link' %>
+            <%= link_to new_user_session_path, class: 'nav-link d-flex align-items-center gap-1' do %>
+              <i class="bi bi-box-arrow-in-right"></i>Sign In
+            <% end %>
           </li>
         <% end %>
       </ul>
     </div>
   </div>
 </nav>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const toggler = document.getElementById('navbarToggler');
+    const collapse = document.getElementById('navbarNav');
+
+    toggler.addEventListener('click', function() {
+      const isExpanded = toggler.getAttribute('aria-expanded') === 'true';
+      toggler.setAttribute('aria-expanded', !isExpanded);
+      collapse.classList.toggle('show');
+    });
+  });
+</script>
+
+
+<style>
+  .custom-collapse {
+  display: none;
+}
+.custom-collapse.show {
+  display: block;
+}
+</style>

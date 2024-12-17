@@ -82,9 +82,9 @@ Rails.application.routes.draw do
   resources :services, only: [:show]
 
   # Client Auth route
-  authenticated :user, ->(u) { u.client? } do
-    root to: 'home#index', as: :client_root
-  end
+  # authenticated :user, ->(u) { u.client? } do
+  #   root to: 'home#index', as: :client_root
+  # end
 
   # Admin root
   authenticated :user, ->(u) { !u.client? } do
