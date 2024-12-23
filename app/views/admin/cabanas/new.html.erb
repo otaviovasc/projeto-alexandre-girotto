@@ -22,10 +22,7 @@
       <%= form.collection_select :filial_id, Filial.all, :id, :name, {}, { class: 'form-select' } %>
     </div>
 
-    <div class="mb-3">
-      <%= form.label :images, 'Imagens', class: 'form-label' %>
-      <%= form.file_field :images, multiple: true, class: 'form-control' %>
-    </div>
+    <h3>Adicione imagens após a criação no botão de editar.</h3>
 
     <div class="d-flex gap-2 mt-4">
       <%= form.submit 'Salvar', class: 'btn btn-primary' %>

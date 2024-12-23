@@ -27,9 +27,12 @@
 
     <!-- Cart Button -->
     <div>
-      <button id="cart-button" class="text-terracota text-2xl">
+      <%# <button id="cart-button" class="text-terracota text-2xl">
         <i class="bi bi-cart"></i>
-      </button>
+      </button> %>
+      <p class="font-dm uppercase text-base">
+        <%= link_to "Reservar" , cabanas_path %>
+      </p>
     </div>
 
   </div>
@@ -45,31 +48,15 @@
         <button id="close-menu"><i class="bi bi-x text-preto-fill text-5xl block sm:hidden"></i></button>
     </div>
     <div class="text-lg flex flex-col gap-4 leading-8">
-        <div>
-            <div id="toggle-cabanas" class="flex gap-2 items-center">
-                <button class="hover:text-terracota">
-                    <p class="hover:text-terracota">Cabanas</p>
-                </button>
-                <i id="arrow-cabanas" class="fa-solid fa-arrow-down text-sm"></i>
-            </div>
-            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
-                <a href="#" class="hover:text-terracota underline">Ver Todas</a>
-            </div>
-            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
-                <a href="#" class="hover:text-terracota">Nuvolo</a>
-            </div>
-            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
-                <a href="#" class="hover:text-terracota">Valle</a>
-            </div>
-            <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
-                <a href="#" class="hover:text-terracota">Collina</a>
-            </div>
-        </div>
+
         <a href="#">
-            <p class="hover:text-terracota">Sustentabilidade</p>
+            <p class="hover:text-terracota"><%= link_to "Ver Cabanas", cabanas_path %></p>
         </a>
         <a href="#">
-            <p class="hover:text-terracota">Experiências</p>
+            <p class="hover:text-terracota"><%= link_to "Sustentabilidade", "/sustentabilidade" %></p>
+        </a>
+        <a href="#">
+            <p class="hover:text-terracota"><%= link_to "Experiências", "/experiencias" %></p>
         </a>
         <a href="#">
             <p class="hover:text-terracota"><%= link_to "Sobre Nós", "/about" %></p>
