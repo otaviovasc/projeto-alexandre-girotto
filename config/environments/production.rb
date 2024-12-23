@@ -71,15 +71,17 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: 'villaggio-stock.onrender.com' }
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-    address:              'smtp.gmail.com',
-    port:                 587,
-    domain:               'example.com',
-    user_name:            'otaviocavasc2@gmail.com',
-    password:             'testpassword123',  # Use an App Password here, not your Gmail password
-    authentication:       'plain',
-    enable_starttls_auto: true
-  }
+    address:              'smtp.zoho.com',
+    port:                 465,
+    user_name:            ENV['ZOHO_USERNAME'],
+    password:             ENV['ZOHO_PASSWORD'],
+    authentication:       :login,
+    enable_starttls_auto: false,
+    ssl:                  true,
+    tls:                  false
 
+  }
+  config.action_mailer.raise_delivery_errors = true
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
