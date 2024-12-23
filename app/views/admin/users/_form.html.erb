@@ -1,7 +1,9 @@
-<%= form_with(model: [:admin, @user], local: true) do |form| %>
+<div class="container py-4">
+  <h1 class="text-2xl font-bold mb-4">Criar Novo Usuário</h1>
+
   <% if @user.errors.any? %>
-    <div id="error_explanation">
-      <h2><%= pluralize(@user.errors.count, "error") %> prohibited this user from being saved:</h2>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(@user.errors.count, "erro") %> impediram o salvamento deste usuário:</h2>
       <ul>
         <% @user.errors.full_messages.each do |message| %>
           <li><%= message %></li>
@@ -10,32 +12,35 @@
     </div>
   <% end %>
 
-  <div class="field">
-    <%= form.label :email %>
-    <%= form.email_field :email %>
-  </div>
+  <%= form_with(model: [:admin, @user], local: true, html: { class: 'needs-validation' }) do |form| %>
+    <div class="mb-3">
+      <%= form.label :email, 'E-mail', class: 'form-label' %>
+      <%= form.email_field :email, class: 'form-control' %>
+    </div>
 
-  <div class="field">
-    <%= form.label :password %>
-    <%= form.password_field :password %>
-  </div>
+    <div class="mb-3">
+      <%= form.label :password, 'Senha', class: 'form-label' %>
+      <%= form.password_field :password, class: 'form-control' %>
+    </div>
 
-  <div class="field">
-    <%= form.label :password_confirmation %>
-    <%= form.password_field :password_confirmation %>
-  </div>
+    <div class="mb-3">
+      <%= form.label :password_confirmation, 'Confirmação de Senha', class: 'form-label' %>
+      <%= form.password_field :password_confirmation, class: 'form-control' %>
+    </div>
 
-  <div class="field">
-    <%= form.label :role %>
-    <%= form.select :role, User.roles.keys.map { |role| [role.humanize, role] }, include_blank: false %>
-  </div>
+    <div class="mb-3">
+      <%= form.label :role, 'Função', class: 'form-label' %>
+      <%= form.select :role, User.roles.keys.reject { |role| role == 'admin' }.map { |role| [role.humanize, role] }, { include_blank: 'Selecione uma função' }, { class: 'form-select' } %>
+    </div>
 
-  <div class="field">
-    <%= form.label :filial_id %>
-    <%= form.collection_select :filial_id, Filial.all, :id, :name, include_blank: true %>
-  </div>
+    <div class="mb-3">
+      <%= form.label :filial_id, 'Filial', class: 'form-label' %>
+      <%= form.collection_select :filial_id, Filial.all, :id, :name, { include_blank: 'Selecione uma filial' }, { class: 'form-select' } %>
+    </div>
 
-  <div class="actions">
-    <%= form.submit %>
-  </div>
-<% end %>
+    <div class="d-flex gap-2 mt-4">
+      <%= form.submit 'Salvar', class: 'btn btn-primary' %>
+      <%= link_to 'Cancelar', admin_users_path, class: 'btn btn-secondary' %>
+    </div>
+  <% end %>
+</div>

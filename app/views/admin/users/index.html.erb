@@ -1,27 +1,59 @@
-<h1>Manage Workers</h1>
+<div class="container py-4">
+  <h1 class="text-2xl font-bold mb-4">Gerenciar Usuários</h1>
 
-<%= link_to 'New Manager', new_admin_user_path %>
+  <div class="mb-4">
+    <%= form_with url: admin_users_path, method: :get, local: true, html: { class: 'row g-3 align-items-end' } do |form| %>
+      <div class="col-md-3">
+        <%= form.label :role, 'Filtrar por Função', class: 'form-label' %>
+        <%= form.select :role, User.roles.keys.map { |role| [role.humanize, role] }, { include_blank: 'Selecione uma função' }, { class: 'form-select' } %>
+      </div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Email</th>
-      <th>Role</th>
-      <th>Filial</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @users.each do |user| %>
-      <tr>
-        <td><%= user.email %></td>
-        <td><%= user.role %></td>
-        <td><%= user.filial ? user.filial.name : 'None' %></td>
-        <td>
-          <%= link_to 'Edit', edit_admin_user_path(user) %>
-          <%= link_to 'Delete', admin_user_path(user), data: { turbo_method: :delete } %>
-        </td>
-      </tr>
+      <div class="col-md-3">
+        <%= form.label :start_date, 'Data de criação (intervalo)', class: 'form-label' %>
+        <%= form.date_field :start_date, class: 'form-control' %>
+      </div>
+
+      <div class="col-md-3">
+        <%= form.label :end_date, 'Data Final (intervalo)', class: 'form-label' %>
+        <%= form.date_field :end_date, class: 'form-control' %>
+      </div>
+
+      <div class="col-md-3 d-flex gap-2">
+        <%= form.submit 'Filtrar', class: 'btn btn-primary' %>
+        <%= link_to 'Limpar Filtros', admin_users_path, class: 'btn btn-secondary' %>
+      </div>
     <% end %>
-  </tbody>
-</table>
+  </div>
+
+  <div class="d-flex justify-content-end mb-3">
+    <%= link_to 'Novo Usuário', new_admin_user_path, class: 'btn btn-success' %>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover shadow-sm">
+      <thead class="table-light">
+        <tr>
+          <th>E-mail</th>
+          <th>Função</th>
+          <th>Filial</th>
+          <th>Data de Criação</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @users.each do |user| %>
+          <tr>
+            <td><%= user.email %></td>
+            <td><%= user.role.humanize %></td>
+            <td><%= user.filial ? user.filial.name : 'Nenhuma' %></td>
+            <td><%= user.created_at.strftime('%d/%m/%Y') %></td>
+            <td class="d-flex gap-2">
+              <%= link_to 'Editar', edit_admin_user_path(user), class: 'btn btn-sm btn-warning' %>
+              <%= button_to 'Excluir', admin_user_path(user), method: :delete, data: { confirm: 'Tem certeza que deseja excluir este usuário?' }, class: 'btn btn-sm btn-danger' %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

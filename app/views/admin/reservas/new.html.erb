@@ -1,60 +1,62 @@
-<%= form_with model: @reserva, url: admin_reservas_path, local: true do |form| %>
-  <div>
-    <label>Create New User?</label>
-    <%= check_box_tag 'create_user', 'true', false, id: 'create_user_toggle' %>
-  </div>
+<div class="container py-4">
+  <h1 class="text-2xl font-bold mb-4">Nova Reserva</h1>
 
-  <div id="new_user_fields" style="display:none;">
-    <h3>New User Details</h3>
-    <div>
-      <%= label_tag :name, "Name" %>
-      <%= text_field_tag 'user[name]', nil, class: 'form-control' %>
+  <%= form_with model: @reserva, url: admin_reservas_path, local: true, html: { class: 'needs-validation' } do |form| %>
+    <div class="form-check mb-3">
+      <%= check_box_tag 'create_user', 'true', false, id: 'create_user_toggle', class: 'form-check-input' %>
+      <%= label_tag 'create_user_toggle', 'Criar Novo Usuário?', class: 'form-check-label' %>
     </div>
-    <div>
-      <%= label_tag :email, "Email" %>
-      <%= text_field_tag 'user[email]', nil, class: 'form-control' %>
+
+    <div id="new_user_fields" style="display:none;" class="border rounded p-3 mb-4">
+      <h5 class="mb-3">Detalhes do Novo Usuário</h5>
+      <div class="mb-3">
+        <%= label_tag :name, 'Nome', class: 'form-label' %>
+        <%= text_field_tag 'user[name]', nil, class: 'form-control' %>
+      </div>
+      <div class="mb-3">
+        <%= label_tag :email, 'E-mail', class: 'form-label' %>
+        <%= text_field_tag 'user[email]', nil, class: 'form-control' %>
+      </div>
     </div>
-  </div>
 
-  <div id="existing_user_fields">
-    <%= form.label :user_id, "Select User" %>
-    <%= form.collection_select :user_id, User.all, :id, :email %>
-  </div>
+    <div id="existing_user_fields" class="mb-3">
+      <%= form.label :user_id, 'Selecionar Usuário', class: 'form-label' %>
+      <%= form.collection_select :user_id, User.all, :id, :email, { prompt: 'Selecione um usuário' }, { class: 'form-select' } %>
+    </div>
 
-  <div>
-    <%= form.label :cabana %>
-    <%= form.collection_select :cabana_id, Cabana.all, :id, :name %>
-  </div>
+    <div class="mb-3">
+      <%= form.label :cabana_id, 'Cabana', class: 'form-label' %>
+      <%= form.collection_select :cabana_id, Cabana.all, :id, :name, {}, { class: 'form-select' } %>
+    </div>
 
-  <div>
-    <%= form.label :start_date %>
-    <%= form.date_select :start_date %>
-  </div>
+    <div class="mb-3">
+      <%= form.label :start_date, 'Data de Início', class: 'form-label' %>
+      <%= form.date_select :start_date, {}, { class: 'form-control' } %>
+    </div>
 
-  <div>
-    <%= form.label :end_date %>
-    <%= form.date_select :end_date %>
-  </div>
+    <div class="mb-3">
+      <%= form.label :end_date, 'Data de Término', class: 'form-label' %>
+      <%= form.date_select :end_date, {}, { class: 'form-control' } %>
+    </div>
 
-  <div>
-    <%= form.submit 'Create Reserva', class: 'btn btn-primary' %>
-  </div>
-<% end %>
-
-<%= link_to 'Back', admin_reservas_path %>
+    <div class="d-flex gap-2 mt-4">
+      <%= form.submit 'Salvar', class: 'btn btn-primary' %>
+      <%= link_to 'Cancelar', admin_reservas_path, class: 'btn btn-secondary' %>
+    </div>
+  <% end %>
+</div>
 
 <script>
-  document.addEventListener('turbo:load', function() {
+  document.addEventListener('turbo:load', function () {
     const toggle = document.getElementById('create_user_toggle');
-    const newUserFields = document.getElementById('new_user_fields');
+    const userFields = document.getElementById('new_user_fields');
     const existingUserFields = document.getElementById('existing_user_fields');
-
-    toggle.addEventListener('change', function() {
+    toggle.addEventListener('change', function () {
       if (toggle.checked) {
-        newUserFields.style.display = 'block';
+        userFields.style.display = 'block';
         existingUserFields.style.display = 'none';
       } else {
-        newUserFields.style.display = 'none';
+        userFields.style.display = 'none';
         existingUserFields.style.display = 'block';
       }
     });

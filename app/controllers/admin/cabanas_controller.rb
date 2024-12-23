@@ -27,8 +27,16 @@ class Admin::CabanasController < ApplicationController
 
   def update
     if @cabana.update(cabana_params)
-      @cabana.images.attach(params[:cabana][:images]) if params[:cabana][:images].present?
-      redirect_to admin_cabanas_path, notice: 'Cabana was successfully updated.'
+      if params[:cabana][:images].present?
+        images = Array(params[:cabana][:images]) # Garante que sempre será um array
+
+        images.each do |image|
+          next unless image.respond_to?(:original_filename) # Evita erros caso a imagem não tenha o método
+          @cabana.images.attach(image) unless @cabana.images.map(&:filename).include?(image.original_filename)
+        end
+      end
+
+      redirect_to admin_cabanas_path, notice: 'Cabana atualizada com sucesso.'
     else
       render :edit
     end
@@ -45,6 +53,18 @@ class Admin::CabanasController < ApplicationController
     @holiday = Holiday.new
   end
 
+  def remove_image
+    @cabana = Cabana.find(params[:id])
+    image = @cabana.images.find_by(id: params[:image_id])
+
+    if image
+      image.purge_later
+      redirect_to edit_admin_cabana_path(@cabana), notice: 'Imagem removida com sucesso.'
+    else
+      redirect_to edit_admin_cabana_path(@cabana), alert: 'Imagem não encontrada.'
+    end
+  end
+
   private
 
   def set_cabana
@@ -52,7 +72,7 @@ class Admin::CabanasController < ApplicationController
   end
 
   def cabana_params
-    params.require(:cabana).permit(:name, :price, :filial_id)
+    params.require(:cabana).permit(:name, :price, :filial_id, images: [])
   end
 
   def authorize_admin

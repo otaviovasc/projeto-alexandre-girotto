@@ -1,35 +1,43 @@
-<h1>Edit Cabana</h1>
+<div class="container py-4">
+  <h1 class="text-2xl font-bold mb-4">Editar Cabana</h1>
 
-<%= form_with model: [:admin, @cabana], local: true do |form| %>
-  <div>
-    <%= form.label :name %>
-    <%= form.text_field :name %>
-  </div>
+  <%= form_with model: [:admin, @cabana], method: :patch, local: true do |form| %>
+    <div class="mb-3">
+      <%= form.label :name, 'Nome', class: 'form-label' %>
+      <%= form.text_field :name, class: 'form-control' %>
+    </div>
 
-  <div>
-    <%= form.label :price %>
-    <%= form.number_field :price, step: 0.01 %>
-  </div>
+    <div class="mb-3">
+      <%= form.label :price, 'Preço', class: 'form-label' %>
+      <%= form.number_field :price, step: 0.01, class: 'form-control' %>
+    </div>
 
-  <div>
-    <%= form.label :filial %>
-    <%= form.collection_select :filial_id, Filial.all, :id, :name %>
-  </div>
+    <div class="mb-3">
+      <%= form.label :filial_id, 'Filial', class: 'form-label' %>
+      <%= form.collection_select :filial_id, Filial.all, :id, :name, {}, { class: 'form-select' } %>
+    </div>
 
-  <div>
-    <%= form.label :images %>
-    <%= form.file_field :images, multiple: true %>
-    <p>Existing images:</p>
-    <ul>
-      <% @cabana.images.each do |image| %>
-        <li><%= image_tag image.variant(resize_to_limit: [100, 100]) %></li>
-      <% end %>
-    </ul>
-  </div>
+    <div class="mb-3">
+      <%= form.label :images, 'Adicionar Novas Imagens', class: 'form-label' %>
+      <%= form.file_field :images, multiple: true, class: 'form-control' %>
+    </div>
 
-  <div>
-    <%= form.submit 'Update Cabana', class: 'btn btn-primary' %>
-  </div>
-<% end %>
+    <% if @cabana.images.attached? %>
+      <p class="mt-2">Imagens Existentes:</p>
+      <ul class="list-unstyled d-flex gap-2">
+        <% @cabana.images.each do |image| %>
+          <li class="position-relative">
+            <img src="<%= image.url %>" alt="<%= @cabana.name %> Image" class="rounded-md">
+            <%= button_to 'Remover', remove_image_admin_cabana_path(@cabana, image.id), method: :delete, data: { confirm: 'Tem certeza que deseja remover esta imagem?' }, class: 'btn btn-sm btn-danger position-absolute top-0 end-0' %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
 
-<%= link_to 'Back', admin_cabanas_path %>
+
+    <div class="d-flex gap-2 mt-4">
+      <%= form.submit 'Salvar', class: 'btn btn-primary' %>
+      <%= link_to 'Cancelar', admin_cabanas_path, class: 'btn btn-secondary' %>
+    </div>
+  <% end %>
+</div>

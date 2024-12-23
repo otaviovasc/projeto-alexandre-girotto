@@ -1,32 +1,33 @@
-<h1>All Info for <%= @cabana.name %></h1>
+<div class="container py-4">
+  <h1 class="text-2xl font-bold mb-4">Todas as Informações para a Cabana <%= @cabana.name %></h1>
 
-<div class="navigation">
-  <%= link_to 'Back to Cabanas', admin_cabanas_path, class: 'btn btn-secondary' %> |
-  <%= link_to 'Admin Dashboard', authenticated_root_path, class: 'btn btn-secondary' %>
+  <div class="d-flex gap-2 mb-4">
+    <%= link_to 'Voltar para Cabanas', admin_cabanas_path, class: 'btn btn-secondary d-flex align-items-center' %>
+    <%= link_to 'Painel Administrativo', authenticated_root_path, class: 'btn btn-secondary d-flex align-items-center' %>
+    <%= link_to 'Nova Informação', new_admin_cabana_info_da_cabana_path(@cabana), class: 'btn btn-primary d-flex align-items-center' %>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover shadow-sm">
+      <thead class="table-light">
+        <tr>
+          <th class="py-2 px-4">Tipo</th>
+          <th class="py-2 px-4">Título</th>
+          <th class="py-2 px-4">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @info_da_cabanas.each do |info| %>
+          <tr>
+            <td class="py-2 px-4"><%= info.info_type %></td>
+            <td class="py-2 px-4"><%= info.title %></td>
+            <td class="py-2 px-4">
+              <%= link_to 'Editar', edit_admin_cabana_info_da_cabana_path(@cabana, info), class: 'btn btn-sm btn-warning' %>
+              <%= link_to 'Excluir', admin_cabana_info_da_cabana_path(@cabana, info), method: :delete, data: { confirm: 'Você tem certeza?' }, class: 'btn btn-sm btn-danger' %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 </div>
-
-<%= link_to 'New Info', new_admin_cabana_info_da_cabana_path(@cabana), class: 'btn btn-primary' %>
-
-<table>
-  <thead>
-    <tr>
-      <th>Type</th>
-      <th>Title</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @info_da_cabanas.each do |info| %>
-      <tr>
-        <td><%= info.info_type %></td>
-        <td><%= info.title %></td>
-        <td>
-          <%= link_to 'Edit', edit_admin_cabana_info_da_cabana_path(@cabana, info) %> |
-          <%= link_to 'Delete', admin_cabana_info_da_cabana_path(@cabana, info), method: :delete, data: { confirm: 'Are you sure?' } %>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
-
-<%= link_to 'Back to Cabana', admin_cabana_path(@cabana) %>

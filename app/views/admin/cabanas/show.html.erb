@@ -1,16 +1,20 @@
-<h1><%= @cabana.name %></h1>
-<%= link_to 'Manage this Cabana Infos', admin_cabana_info_da_cabanas_path(@cabana), class: 'btn btn-primary' %> |
-<%= link_to 'Manage this Cabana Price Rules', price_rules_and_holidays_admin_cabana_path(@cabana), class: 'btn btn-primary' %> |
+<div class="container py-4">
+  <h1 class="text-2xl font-bold mb-4"><%= @cabana.name %></h1>
 
-<p>
-  <strong>Price:</strong>
-  <%= number_to_currency(@cabana.price) %>
-</p>
+  <div class="d-flex gap-2 mb-4">
+    <%= link_to 'Gerenciar Informações desta Cabana', admin_cabana_info_da_cabanas_path(@cabana), class: 'btn btn-primary d-flex align-items-center' %>
+    <%= link_to 'Gerenciar Regras de Preço desta Cabana', price_rules_and_holidays_admin_cabana_path(@cabana), class: 'btn btn-primary d-flex align-items-center' %>
+  </div>
 
-<p>
-  <strong>Filial:</strong>
-  <%= @cabana.filial.name %>
-</p>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <p class="mb-2"><strong>Preço:</strong> <%= number_to_currency(@cabana.price) %></p>
+      <p class="mb-2"><strong>Filial:</strong> <%= @cabana.filial.name %></p>
+    </div>
+  </div>
 
-<%= link_to 'Edit This Cabana', edit_admin_cabana_path(@cabana), class: 'btn btn-primary' %> |
-<%= link_to 'Back', admin_cabanas_path %>
+  <div class="d-flex gap-2">
+    <%= link_to 'Editar esta Cabana', edit_admin_cabana_path(@cabana), class: 'btn btn-warning' %>
+    <%= link_to 'Voltar', admin_cabanas_path, class: 'btn btn-secondary' %>
+  </div>
+</div>

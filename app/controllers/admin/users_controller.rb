@@ -4,7 +4,15 @@ class Admin::UsersController < ApplicationController
   before_action :set_user, only: [:edit, :update, :destroy]
 
   def index
-    @users = User.where.not(role: 'client')
+    @users = User.all
+
+    if params[:role].present?
+      @users = @users.where(role: params[:role])
+    end
+
+    if params[:start_date].present? && params[:end_date].present?
+      @users = @users.where(created_at: params[:start_date]..params[:end_date])
+    end
   end
 
   def new
@@ -44,6 +52,7 @@ class Admin::UsersController < ApplicationController
 
   def user_params
     params.require(:user).permit(:email, :password, :password_confirmation, :role, :filial_id)
+    # :name, :cpf, :state, :city, :neighborhood, :street, :street_number, :zipcode
   end
 
   def authorize_admin

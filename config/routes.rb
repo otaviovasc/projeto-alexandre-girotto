@@ -29,6 +29,7 @@ Rails.application.routes.draw do
       resources :price_rules, only: [:create, :destroy]  # For handling price rules within cabanas
       member do
         get 'price_rules_and_holidays'  # Route for the combined form
+        delete 'remove_image/:image_id', to: 'cabanas#remove_image', as: 'remove_image'
       end
     end
     resources :holidays, only: [:create, :destroy]  # Manage holidays globally within admin

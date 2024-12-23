@@ -1,29 +1,30 @@
-<h1>New Info for <%= @cabana.name %></h1>
+<div class="container py-4">
+  <h1 class="text-2xl font-bold mb-4">Nova Informação para <%= @cabana.name %></h1>
 
-<%= form_with model: [:admin, @cabana, @info_da_cabana], local: true do |form| %>
-  <div>
-    <%= form.label :info_type %>
-    <%= form.select :info_type, InfoDaCabana::INFO_TYPES %>
-  </div>
+  <%= form_with model: [:admin, @cabana, @info_da_cabana], local: true, html: { class: 'needs-validation' } do |form| %>
+    <div class="mb-3">
+      <%= form.label :info_type, 'Tipo de Informação', class: 'form-label' %>
+      <%= form.select :info_type, InfoDaCabana::INFO_TYPES, {}, { class: 'form-select' } %>
+    </div>
 
-  <div>
-    <%= form.label :title %>
-    <%= form.text_field :title %>
-  </div>
+    <div class="mb-3">
+      <%= form.label :title, 'Título', class: 'form-label' %>
+      <%= form.text_field :title, class: 'form-control' %>
+    </div>
 
-  <div>
-    <%= form.label :content %>
-    <%= form.text_area :content %>
-  </div>
+    <div class="mb-3">
+      <%= form.label :content, 'Conteúdo', class: 'form-label' %>
+      <%= form.text_area :content, class: 'form-control' %>
+    </div>
 
-  <div>
-    <%= form.label :image %>
-    <%= form.file_field :image %>
-  </div>
+    <div class="mb-3">
+      <%= form.label :image, 'Imagem', class: 'form-label' %>
+      <%= form.file_field :image, class: 'form-control' %>
+    </div>
 
-  <div>
-    <%= form.submit 'Create Info', class: 'btn btn-primary' %>
-  </div>
-<% end %>
-
-<%= link_to 'Back', admin_cabana_info_da_cabanas_path(@cabana) %>
+    <div class="d-flex gap-2 mt-4">
+      <%= form.submit 'Salvar', class: 'btn btn-primary' %>
+      <%= link_to 'Cancelar', admin_cabana_info_da_cabanas_path(@cabana), class: 'btn btn-secondary' %>
+    </div>
+  <% end %>
+</div>
