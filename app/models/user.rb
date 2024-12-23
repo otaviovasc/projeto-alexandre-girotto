@@ -3,7 +3,7 @@ class User < ApplicationRecord
          :recoverable, :rememberable, :validatable
 
   # Reserva association
-  has_many :reservas
+  has_many :reservas, dependent: :destroy
 
   # Cart association
   has_one :cart, dependent: :destroy
