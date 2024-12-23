@@ -1,31 +1,22 @@
 <div>
-    <div class="flex flex-col gap-8">
-        <div class="flex flex-col gap-4 px-6 pt-12">
-            <div class="relative">
-                <div class="p-4 sm:hidden h-96 relative"
-                    style="background-image: url('<%= asset_path('home15.png') %>'); background-size: cover; background-position: center;">
-                </div>
+    <div class="flex flex-col lg:flex-row gap-8 lg:gap-16 px-6 lg:px-20 py-12 lg:py-24">
+        <!-- Imagem principal -->
+        <div class="relative lg:w-1/2">
+            <div class="p-4 h-96 lg:h-[500px]"
+                style="background-image: url('<%= asset_path('home15.png') %>'); background-size: cover; background-position: center;">
             </div>
-            <div class="relative">
-                <p class="uppercase font-dm text-gray-500 text-base max-w-40">Quer reservar pelo AirBnB ou
-                    similar?</p>
-                <div class="p-4 sm:hidden h-48 w-48 absolute bottom-0 right-8"
-                    style="background-image: url('<%= asset_path('home16.png') %>'); background-size: cover; background-position: center;">
-                </div>
+            <!-- Imagem secundária (só no desktop) -->
+            <div class="hidden lg:block h-48 w-48 absolute bottom-8 right-8"
+                style="background-image: url('<%= asset_path('home16.png') %>'); background-size: cover; background-position: center;">
             </div>
         </div>
-        <div class="flex flex-col px-6 pb-16 gap-16">
-            <div class="flex flex-col gap-4">
-                <div>
-                    <p class="font-alice text-preto-fill font-light text-2xl">Para você ficar ainda mais tranquilo te
-                        damos essa opção.</p>
-                </div>
-                <p class="font-dm text-gray-500 text-base">Assim você pode confiar no Villaggio e saber que pode
-                    selecionar a cabana e plataforma por aqui, mas...</p>
-                <p class="font-alice text-preto-fill uppercase font-bold text-2xl pt-8">Por aqui é mais barato!</p>
-            </div>
-
+        
+        <!-- Conteúdo textual -->
+        <div class="flex flex-col gap-4 lg:w-1/2">
+            <p class="uppercase font-dm text-gray-500 text-base max-w-40">Quer reservar pelo AirBnB ou similar?</p>
+            <p class="font-alice text-preto-fill font-light text-2xl lg:text-4xl">Para você ficar ainda mais tranquilo te damos essa opção.</p>
+            <p class="font-dm text-gray-500 text-base lg:text-lg">Assim você pode confiar no Villaggio e saber que pode selecionar a cabana e plataforma por aqui, mas...</p>
+            <p class="font-alice text-preto-fill uppercase font-bold text-2xl lg:text-3xl pt-8">Por aqui é mais barato!</p>
         </div>
-
     </div>
 </div>

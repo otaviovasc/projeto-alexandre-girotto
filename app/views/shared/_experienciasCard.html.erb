@@ -1,76 +1,37 @@
 <div>
     <div class="bg-creme">
-        <div class="flex flex-col gap-2">
-            <div class="flex flex-col gap-4 px-6 pt-16">
-                <div class="swiper-container swiper-exp h-96 ">
+        <div class="flex flex-col gap-2 lg:gap-16">
+            <!-- Slider Section -->
+            <div class="flex flex-col lg:flex-row gap-4 lg:gap-16 px-6 lg:px-16 pt-16 lg:py-24">
+                <div class="swiper-container swiper-exp lg:w-1/2 lg:h-[400px] aspect-square">
                     <div class="swiper-wrapper relative">
-                        <div class="swiper-slide p-4 sm:hidden"
-                            style="background-image: url('<%= asset_path('foto_exp.png') %>'); background-size: cover; background-position: center;">
-                        </div>
-                        <div class="swiper-slide p-4 sm:hidden"
-                            style="background-image: url('<%= asset_path('home4.png') %>'); background-size: cover; background-position: center;">
-                        </div>
-                        <div class="swiper-slide p-4 sm:hidden"
-                            style="background-image: url('<%= asset_path('home5.png') %>'); background-size: cover; background-position: center;">
-                        </div>
-                        <div class="swiper-slide p-4 sm:hidden"
-                            style="background-image: url('<%= asset_path('home6.png') %>'); background-size: cover; background-position: center;">
-                        </div>
-                        <div class="swiper-slide p-4 sm:hidden"
-                            style="background-image: url('<%= asset_path('home7.png') %>'); background-size: cover; background-position: center;">
-                        </div>
-                        <div class="swiper-slide p-4 sm:hidden"
-                            style="background-image: url('<%= asset_path('home8.png') %>'); background-size: cover; background-position: center;">
-                        </div>
-                        <div class="swiper-slide p-4 sm:hidden"
-                            style="background-image: url('<%= asset_path('home9.png') %>'); background-size: cover; background-position: center;">
-                        </div>
-                        <div class="swiper-slide p-4 sm:hidden"
-                            style="background-image: url('<%= asset_path('home10.png') %>'); background-size: cover; background-position: center;">
-                        </div>
-                        <div class="swiper-slide p-4 sm:hidden"
-                            style="background-image: url('<%= asset_path('home11.png') %>'); background-size: cover; background-position: center;">
-                        </div>
-                        <div class="swiper-slide p-4 sm:hidden"
-                            style="background-image: url('<%= asset_path('home12.png') %>'); background-size: cover; background-position: center;">
-                        </div>
-                        <div class="swiper-slide p-4 sm:hidden"
-                            style="background-image: url('<%= asset_path('home13.png') %>'); background-size: cover; background-position: center;">
-                        </div>
-                        <div class="swiper-slide p-4 sm:hidden"
-                            style="background-image: url('<%= asset_path('home14.png') %>'); background-size: cover; background-position: center;">
-                        </div>
+                        <% (1..14).each do |i| %>
+                            <div class="swiper-slide p-4"
+                                style="background-image: url('<%= asset_path("home#{i}.png") %>'); background-size: cover; background-position: center;">
+                            </div>
+                        <% end %>
                     </div>
                 </div>
-                <div>
+                <div class="flex flex-col justify-center lg:w-1/2">
                     <p class="uppercase font-dm text-gray-500 text-base leading-10">Experiências</p>
-                </div>
-
-            </div>
-            <div class="flex flex-col px-6 pb-16 gap-16">
-                <div class="flex flex-col gap-4">
-                    <p class="font-alice text-preto-fill font-light text-2xl">Mindfulness, conexão com a natureza e uma
-                        vida
-                        muito melhor.</p>
-                    <p class="font-dm text-gray-500 text-base">Nós somos comprometidos com o bem-estar, sustentabilidade
-                        e uma obrigação em transformar a sua vida. Lorem ipsum dolor sit amet consectetur adipisicing
-                        elit. Obcaecati neque eum quam quisquam itaque culpa, omnis corporis consequatur eligendi sint!
+                    <p class="font-alice text-preto-fill font-light text-2xl lg:text-4xl mt-4">
+                        Mindfulness, conexão com a natureza e uma vida muito melhor.
                     </p>
-                </div>
-                <div class="flex items-center gap-1">
-                    <p class="text-laranja font-dm text-base leading-10">
-                        <%= link_to "Quais são as esperiências?" , "/experiencias" %>
+                    <p class="font-dm text-gray-500 text-base mt-4">
+                        Nós somos comprometidos com o bem-estar, sustentabilidade e uma obrigação em transformar a sua
+                        vida. Lorem ipsum dolor sit amet consectetur adipisicing elit. Obcaecati neque eum quam quisquam
+                        itaque culpa, omnis corporis consequatur eligendi sint!
                     </p>
-                    <i class="fa-solid fa-chevron-right text-laranja text-xs"></i>
+                    <div class="flex items-center gap-2 mt-4">
+                        <p class="text-laranja font-dm text-base leading-10">
+                            <%= link_to "Quais são as experiências?", "/experiencias" %>
+                        </p>
+                        <i class="fa-solid fa-chevron-right text-laranja text-xs"></i>
+                    </div>
                 </div>
             </div>
-
         </div>
     </div>
-    <div>
-
-    </div>
-</div>
 </div>
 
 <script>
@@ -81,10 +42,12 @@
                 delay: 3000,
             },
             speed: 2000,
-            pagination: false,
-            clickable: false,
-            allowTouchMove: false,
-            disableOnInteraction: true
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            allowTouchMove: true,
+            disableOnInteraction: false
         });
     });
 </script>

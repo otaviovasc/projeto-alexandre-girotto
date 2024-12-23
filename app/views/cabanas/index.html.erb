@@ -1,52 +1,53 @@
 <div class="!m-0 pt-16">
-  <div class="bg-white rounded-md flex flex-col w-full mx-auto max-w-9/10 p-2 gap-6">
-    <p class="text-center text-2xl font-alice text-verde-escuro">Filtrar Cabanas</p>
+  <!-- Filtro -->
+  <div class="bg-white rounded-md flex flex-col lg:flex-row lg:items-center w-full mx-auto max-w-6xl p-4 gap-6 lg:gap-12">
+    <p class="text-center lg:text-left text-2xl font-alice text-verde-escuro lg:w-1/3">Filtrar Cabanas</p>
     <%= form_with url: cabanas_path, method: :get, local: true do %>
-      <div class="custom-dropdown flex flex-col w-full">
-        <div class="flex items-center gap-6 px-2 text-lg">
+      <div class="custom-dropdown flex flex-col lg:flex-row lg:items-center w-full lg:w-2/3">
+        <div class="flex items-center gap-6 px-2 text-lg lg:w-full">
           <i class="fa-regular fa-map text-verde-escuro"></i>
-          <div id="dropdown_display" class="dropdown-display">
+          <div id="dropdown_display" class="dropdown-display w-full">
             <%= select_tag :filial_id, options_from_collection_for_select(Filial.all, :id, :name, params[:filial_id]),
               include_blank: 'Selecione uma Filial' , class: 'font-dm text-terracota w-full bg-transparent' %>
           </div>
         </div>
+        <div class="mt-4 lg:mt-0 lg:ml-4">
+          <%= submit_tag 'Filtrar' , class: 'uppercase font-light text-creme bg-botao-verde rounded-3xl px-6 py-3' %>
+        </div>
       </div>
-      <hr class="w-full my-4">
-      <div class="font-dm bg-botao-verde rounded-3xl flex justify-center items-center gap-4 p-3">
-        <%= submit_tag 'Filtrar' , class: 'uppercase font-light text-creme' %>
-      </div>
-      <% end %>
+    <% end %>
   </div>
 
+  <!-- Lista de Cabanas -->
   <% if @cabanas.any? %>
-    <% @cabanas.each do |cabana| %>
-      <div class="flex flex-col px-8 mt-8">
+    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+      <% @cabanas.each do |cabana| %>
         <div class="flex flex-col gap-4">
           <p class="font-alice text-3xl">
             <%= cabana.name %>
           </p>
           <% cabana.images.each do |image| %>
-            <img src="<%= image.url %>" alt="" class="max-h-96 rounded-md">
-            <% end %>
-              <% cabana.info_da_cabanas.each do |info| %>
-                <% if info.info_type=="intro" %>
-                  <p>
-                    <%= info.content %>
-                  </p>
-                  <% end %>
-                    <% end %>
-                      <p
-                        class="font-dm max-w-fit bg-botao-verde rounded-3xl flex justify-center items-center gap-4 px-6 py-3">
-                        <%= link_to 'Quero essa experiência' , cabana_path(cabana), class: "text-creme" %>
-                      </p>
-        </div>
-      </div>
-      <hr class="m-8">
-      <% end %>
-        <% else %>
-          <p class="my- text-center font-bold">Nenhuma cabana encontrada nessa filial.</p>
+            <img src="<%= image.url %>" alt="<%= cabana.name %>" class="max-h-96 rounded-md object-cover w-full">
           <% end %>
-            <%= render 'shared/funilform' %>
-              <%= render 'shared/footer' %>
-                <%= render 'shared/wppButton' %>
+          <% cabana.info_da_cabanas.each do |info| %>
+            <% if info.info_type=="intro" %>
+              <p class="text-gray-600 text-lg">
+                <%= info.content %>
+              </p>
+            <% end %>
+          <% end %>
+          <div class="font-dm max-w-fit bg-botao-verde rounded-3xl flex justify-center items-center gap-4 px-6 py-3">
+            <%= link_to 'Quero essa experiência' , cabana_path(cabana), class: "text-creme" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="my-8 text-center font-bold text-lg">Nenhuma cabana encontrada nessa filial.</p>
+  <% end %>
+
+  <!-- Formulário, Rodapé e Botão de WhatsApp -->
+  <%= render 'shared/funilform' %>
+  <%= render 'shared/footer' %>
+  <%= render 'shared/wppButton' %>
 </div>
