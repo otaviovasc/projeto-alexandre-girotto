@@ -52,7 +52,7 @@
 
   <div class="form-group">
     <%= form.label :user_id %>
-    <%= form.collection_select :user_id, User.where(role: 'service_provider'), :id, :email, { prompt: "Select a Service Provider" }, class: "form-control" %>
+    <%= form.collection_select :user_id, User.where(role: ['service_provider', 'admin']), :id, :email, { prompt: "Select a Service Provider" }, class: "form-control" %>
   </div>
 
   <%= form.submit 'Save Service', class: "btn btn-primary" %>

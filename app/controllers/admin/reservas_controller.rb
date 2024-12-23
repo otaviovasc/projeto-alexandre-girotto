@@ -4,7 +4,28 @@ class Admin::ReservasController < ApplicationController
   before_action :set_reserva, only: [:edit, :update, :destroy, :show]
 
   def index
-    @reservas = Reserva.all
+    @reservas = Reserva.includes(:cabana, :user).all
+
+    # Filtros
+    @reservas = @reservas.where(cabana_id: params[:cabana_id]) if params[:cabana_id].present?
+    @reservas = @reservas.where(user_id: params[:user_id]) if params[:user_id].present?
+    if params[:start_date].present? && params[:end_date].present?
+      @reservas = @reservas.where(start_date: params[:start_date]..params[:end_date])
+    end
+
+    # Ordenação
+    case params[:sort]
+    when 'start_date_asc'
+      @reservas = @reservas.order(start_date: :asc)
+    when 'start_date_desc'
+      @reservas = @reservas.order(start_date: :desc)
+    when 'end_date_asc'
+      @reservas = @reservas.order(end_date: :asc)
+    when 'end_date_desc'
+      @reservas = @reservas.order(end_date: :desc)
+    else
+      @reservas = @reservas.order(created_at: :desc) # Ordenação padrão
+    end
   end
 
   def new

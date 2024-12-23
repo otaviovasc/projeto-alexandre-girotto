@@ -1,6 +1,35 @@
 <div class="container py-4">
   <h1 class="text-2xl font-bold mb-4">Todas as Reservas</h1>
 
+  <div class="mb-4">
+    <%= form_with url: admin_reservas_path, method: :get, local: true, html: { class: 'row g-3 align-items-end' } do |form| %>
+      <div class="col-md-3">
+        <%= form.label :cabana_id, 'Filtrar por Cabana', class: 'form-label' %>
+        <%= form.collection_select :cabana_id, Cabana.all, :id, :name, { include_blank: 'Selecione uma Cabana' }, { class: 'form-select' } %>
+      </div>
+
+      <div class="col-md-3">
+        <%= form.label :user_id, 'Filtrar por Usuário', class: 'form-label' %>
+        <%= form.collection_select :user_id, User.all, :id, :email, { include_blank: 'Selecione um Usuário' }, { class: 'form-select' } %>
+      </div>
+
+      <div class="col-md-3">
+        <%= form.label :start_date, 'Data Inicial', class: 'form-label' %>
+        <%= form.date_field :start_date, class: 'form-control' %>
+      </div>
+
+      <div class="col-md-3">
+        <%= form.label :end_date, 'Data Final', class: 'form-label' %>
+        <%= form.date_field :end_date, class: 'form-control' %>
+      </div>
+
+      <div class="col-md-3 d-flex gap-2">
+        <%= form.submit 'Filtrar', class: 'btn btn-primary' %>
+        <%= link_to 'Limpar Filtros', admin_reservas_path, class: 'btn btn-secondary' %>
+      </div>
+    <% end %>
+  </div>
+
   <div class="d-flex gap-2 mb-4">
     <%= link_to 'Painel Administrativo', authenticated_root_path, class: 'btn btn-secondary d-flex align-items-center' %>
     <%= link_to 'Gerenciar Cabanas', admin_cabanas_path, class: 'btn btn-secondary d-flex align-items-center' %>
@@ -14,22 +43,29 @@
         <tr>
           <th class="py-2 px-4">Cabana</th>
           <th class="py-2 px-4">Usuário</th>
-          <th class="py-2 px-4">Data de Início</th>
-          <th class="py-2 px-4">Data de Término</th>
+          <th class="py-2 px-4">
+            <%= link_to 'Data de Início ▲', admin_reservas_path(sort: 'start_date_asc'), class: 'text-decoration-none' %>
+            |
+            <%= link_to '▼', admin_reservas_path(sort: 'start_date_desc'), class: 'text-decoration-none' %>
+          </th>
+          <th class="py-2 px-4">
+            <%= link_to 'Data de Término ▲', admin_reservas_path(sort: 'end_date_asc'), class: 'text-decoration-none' %>
+            |
+            <%= link_to '▼', admin_reservas_path(sort: 'end_date_desc'), class: 'text-decoration-none' %>
+          </th>
           <th class="py-2 px-4">Ações</th>
         </tr>
       </thead>
       <tbody>
-        <% @reservas.reverse_each do |reserva| %>
+        <% @reservas.each do |reserva| %>
           <tr>
             <td class="py-2 px-4"><%= reserva.cabana.name %></td>
             <td class="py-2 px-4"><%= reserva.user.email %></td>
             <td class="py-2 px-4"><%= reserva.start_date %></td>
             <td class="py-2 px-4"><%= reserva.end_date %></td>
-            <td class="py-2 px-4">
+            <td class="py-2 px-4 d-flex gap-2">
               <%= link_to 'Detalhes', admin_reserva_path(reserva), class: 'btn btn-sm btn-primary' %>
               <%= link_to 'Editar', edit_admin_reserva_path(reserva), class: 'btn btn-sm btn-warning' %>
-              <%= link_to 'Excluir', admin_reserva_path(reserva), method: :delete, data: { confirm: 'Você tem certeza?' }, class: 'btn btn-sm btn-danger' %>
             </td>
           </tr>
         <% end %>
