@@ -7,144 +7,102 @@
         .shadow-on-scroll {
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
         }
+
+        .menu-desktop-open {
+            transform: translateX(0);
+        }
+
+        .menu-desktop-close {
+            transform: translateX(-100%);
+        }
     </style>
 </head>
 
 <div id="navbar" class="fixed w-full z-20 bg-white shadow-on-scroll">
-  <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
 
-    <!-- Hamburger Button -->
-    <button id="open-menu" class="text-terracota text-3xl">
-      <i class="bi bi-list-nested"></i>
-    </button>
+        <!-- Hamburger Button -->
+        <button id="open-menu" class="text-terracota text-3xl">
+            <i class="bi bi-list-nested"></i>
+        </button>
 
-    <!-- Central Redirect Button (Flex item centered) -->
-    <div class="flex-1 text-center">
-      <%= link_to root_path, class: "text-xl font-bold text-black" do %>
-        Villaggio Girotto
-      <% end %>
+        <!-- Central Redirect Button (Flex item centered) -->
+        <div class="flex-1 text-center">
+            <%= link_to root_path, class: "text-xl font-bold text-black" do %>
+                Villaggio Girotto
+            <% end %>
+        </div>
+
+        <!-- Cart Button -->
+        <div>
+            <p class="font-dm uppercase text-base">
+                <%= link_to "Reservar", cabanas_path %>
+            </p>
+        </div>
     </div>
-
-    <!-- Cart Button -->
-    <div>
-      <%# <button id="cart-button" class="text-terracota text-2xl">
-        <i class="bi bi-cart"></i>
-      </button> %>
-      <p class="font-dm uppercase text-base">
-        <%= link_to "Reservar" , cabanas_path %>
-      </p>
-    </div>
-
-  </div>
 </div>
 
 <div id="menu-overlay"
-    class="fixed inset-0 z-10 bg-black opacity-0 pointer-events-none transition-opacity duration-1000 sm:hidden">
+    class="fixed inset-0 z-10 bg-black opacity-0 pointer-events-none transition-opacity duration-1000">
 </div>
 
 <div id="menu-container"
-    class="h-screen px-8 pt-32 pb-8 font-dm font-normal text-gray-500 sm:hidden fixed top-0 left-0 w-full bg-white z-50 transform -translate-x-full transition-transform duration-1000 ease-in-out flex flex-col justify-between">
-    <div class="fixed top-4 left-4">
-        <button id="close-menu"><i class="bi bi-x text-preto-fill text-5xl block sm:hidden"></i></button>
+    class="h-screen px-8 pt-32 pb-8 font-dm font-normal text-gray-500 fixed top-0 left-0 w-full bg-white z-50 transform -translate-x-full menu-desktop-close transition-transform duration-700 ease-in-out flex flex-col justify-between">
+    <div class="fixed top-4 right-4">
+        <button id="close-menu"><i class="bi bi-x text-preto-fill text-5xl"></i></button>
     </div>
     <div class="text-lg flex flex-col gap-4 leading-8">
-
-        <a href="#">
-            <p class="hover:text-terracota"><%= link_to "Ver Cabanas", cabanas_path %></p>
-        </a>
-        <a href="#">
-            <p class="hover:text-terracota"><%= link_to "Sustentabilidade", "/sustentabilidade" %></p>
-        </a>
-        <a href="#">
-            <p class="hover:text-terracota"><%= link_to "Experiências", "/experiencias" %></p>
-        </a>
-        <a href="#">
-            <p class="hover:text-terracota"><%= link_to "Sobre Nós", "/about" %></p>
-        </a>
-        <a href="#">
-            <p class="hover:text-terracota"><%= link_to "Logout", destroy_user_session_path, data:{ turbo_method: :delete} %></p>
-        </a>
+        <a href="#"><p class="hover:text-terracota"><%= link_to "Ver Cabanas", cabanas_path %></p></a>
+        <a href="#"><p class="hover:text-terracota"><%= link_to "Sustentabilidade", "/sustentabilidade" %></p></a>
+        <a href="#"><p class="hover:text-terracota"><%= link_to "Experiências", "/experiencias" %></p></a>
+        <a href="#"><p class="hover:text-terracota"><%= link_to "Sobre Nós", "/about" %></p></a>
+        <a href="#"><p class="hover:text-terracota"><%= link_to "Logout", destroy_user_session_path, data:{ turbo_method: :delete} %></p></a>
     </div>
     <div class="flex items-center gap-4">
-        <a href="/reservas">
-            <p class="font-alice text-lg hover:text-terracota font-bold">Minhas Reservas</p>
-        </a>
+        <a href="/reservas"><p class="font-alice text-lg hover:text-terracota font-bold">Minhas Reservas</p></a>
     </div>
 </div>
 
 <script>
-    document.getElementById('open-menu').addEventListener('click', function () {
-        document.getElementById('menu-container').classList.remove('-translate-x-full');
-        document.getElementById('menu-overlay').classList.remove('opacity-0');
-        document.getElementById('menu-overlay').classList.remove('pointer-events-none');
-        document.body.classList.add('overflow-hidden');
-    });
+    document.addEventListener('DOMContentLoaded', function () {
+        const openMenuButton = document.getElementById('open-menu');
+        const closeMenuButton = document.getElementById('close-menu');
+        const menuContainer = document.getElementById('menu-container');
+        const menuOverlay = document.getElementById('menu-overlay');
 
-    document.getElementById('close-menu').addEventListener('click', function () {
-        document.getElementById('menu-container').classList.add('-translate-x-full');
-        document.getElementById('menu-overlay').classList.add('opacity-0');
-        document.getElementById('menu-overlay').classList.add('pointer-events-none');
-        document.body.classList.remove('overflow-hidden');
-    });
+        const isMobile = () => window.innerWidth < 768; // Condição para mobile
 
-    document.getElementById('toggle-cabanas').addEventListener('click', function () {
-        const submenus = document.querySelectorAll('.submenu-cabanas');
-        const arrow = document.getElementById('arrow-cabanas');
-        submenus.forEach(submenu => {
-            if (submenu.style.maxHeight) {
-                submenu.style.maxHeight = null;
-                arrow.style.transform = 'rotate(0deg)';
+        // Abrir menu
+        openMenuButton.addEventListener('click', function () {
+            if (isMobile()) {
+                menuContainer.classList.remove('-translate-x-full');
+                menuOverlay.classList.remove('opacity-0', 'pointer-events-none');
+                document.body.classList.add('overflow-hidden');
             } else {
-                submenu.style.maxHeight = submenu.scrollHeight + "px";
-                arrow.style.transform = 'rotate(180deg)';
+                menuContainer.classList.add('menu-desktop-open');
+                menuContainer.classList.remove('menu-desktop-close');
+            }
+        });
+
+        // Fechar menu
+        closeMenuButton.addEventListener('click', function () {
+            if (isMobile()) {
+                menuContainer.classList.add('-translate-x-full');
+                menuOverlay.classList.add('opacity-0', 'pointer-events-none');
+                document.body.classList.remove('overflow-hidden');
+            } else {
+                menuContainer.classList.add('menu-desktop-close');
+                menuContainer.classList.remove('menu-desktop-open');
+            }
+        });
+
+        // Detectar mudança de tamanho de tela
+        window.addEventListener('resize', function () {
+            if (!isMobile()) {
+                menuContainer.classList.add('menu-desktop-close');
+                menuContainer.classList.remove('-translate-x-full');
+                menuOverlay.classList.add('opacity-0', 'pointer-events-none');
             }
         });
     });
-
-    document.addEventListener('turbo:load', function () {
-        const openMenuButton = document.querySelector('.header-bg');
-        const menuIcon = document.querySelector('.icon-color');
-        menuIcon.classList.add('text-terracota');
-        openMenuButton.classList.add('bg-transparent');
-
-        window.addEventListener('scroll', function () {
-            if (window.scrollY > 50) {
-                openMenuButton.classList.remove('bg-transparent');
-                openMenuButton.classList.add('bg-creme', 'transition-colors', 'duration-1000', 'ease-in-out', 'shadow-on-scroll');
-                menuIcon.classList.remove('text-terracota');
-                menuIcon.classList.add('text-terracota', 'transition-colors', 'duration-300', 'ease-in-out');
-            } else {
-                openMenuButton.classList.remove('bg-creme', 'shadow-on-scroll');
-                openMenuButton.classList.add('bg-transparent', 'transition-colors', 'duration-1000', 'ease-in-out');
-                menuIcon.classList.remove('text-terracota');
-                menuIcon.classList.add('text-terracota', 'transition-colors', 'duration-300', 'ease-in-out');
-            }
-        });
-    });
-
-
-    document.addEventListener('turbo:load', function () {
-        var headerSwiper = new Swiper('.swiper-header', {
-            loop: true,
-            autoplay: {
-                delay: 3000,
-            },
-            speed: 3000,
-            effect: 'fade',
-            fadeEffect: {
-                crossFade: true
-            },
-            pagination: false,
-            navigation: false,
-            allowTouchMove: false,
-            disableOnInteraction: true
-        });
-    });
-
-    AOS.init({
-        once: true,
-        duration: 2000,
-    });
-
-
 </script>
