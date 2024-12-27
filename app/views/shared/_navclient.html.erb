@@ -64,45 +64,53 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const openMenuButton = document.getElementById('open-menu');
-        const closeMenuButton = document.getElementById('close-menu');
-        const menuContainer = document.getElementById('menu-container');
-        const menuOverlay = document.getElementById('menu-overlay');
+  document.addEventListener('turbo:load', function () {
+    const openMenuButton = document.getElementById('open-menu');
+    const closeMenuButton = document.getElementById('close-menu');
+    const menuContainer = document.getElementById('menu-container');
+    const menuOverlay = document.getElementById('menu-overlay');
 
-        const isMobile = () => window.innerWidth < 768; // Condição para mobile
+    const isMobile = () => window.innerWidth < 768;
 
-        // Abrir menu
-        openMenuButton.addEventListener('click', function () {
-            if (isMobile()) {
-                menuContainer.classList.remove('-translate-x-full');
-                menuOverlay.classList.remove('opacity-0', 'pointer-events-none');
-                document.body.classList.add('overflow-hidden');
-            } else {
-                menuContainer.classList.add('menu-desktop-open');
-                menuContainer.classList.remove('menu-desktop-close');
-            }
-        });
+    // Função para abrir o menu
+    function openMenu() {
+      menuContainer.classList.remove('-translate-x-full', 'menu-desktop-close');
+      menuContainer.classList.add('menu-desktop-open');
+      menuOverlay.classList.remove('opacity-0', 'pointer-events-none');
+      menuOverlay.classList.add('opacity-50');
+      document.body.classList.add('overflow-hidden');
+    }
 
-        // Fechar menu
-        closeMenuButton.addEventListener('click', function () {
-            if (isMobile()) {
-                menuContainer.classList.add('-translate-x-full');
-                menuOverlay.classList.add('opacity-0', 'pointer-events-none');
-                document.body.classList.remove('overflow-hidden');
-            } else {
-                menuContainer.classList.add('menu-desktop-close');
-                menuContainer.classList.remove('menu-desktop-open');
-            }
-        });
+    // Função para fechar o menu
+    function closeMenu() {
+      menuContainer.classList.add('-translate-x-full', 'menu-desktop-close');
+      menuContainer.classList.remove('menu-desktop-open');
+      menuOverlay.classList.add('opacity-0', 'pointer-events-none');
+      menuOverlay.classList.remove('opacity-50');
+      document.body.classList.remove('overflow-hidden');
+    }
 
-        // Detectar mudança de tamanho de tela
-        window.addEventListener('resize', function () {
-            if (!isMobile()) {
-                menuContainer.classList.add('menu-desktop-close');
-                menuContainer.classList.remove('-translate-x-full');
-                menuOverlay.classList.add('opacity-0', 'pointer-events-none');
-            }
-        });
+    // Evento para abrir o menu
+    openMenuButton.addEventListener('click', function () {
+      openMenu();
     });
+
+    // Evento para fechar o menu
+    closeMenuButton.addEventListener('click', function () {
+      closeMenu();
+    });
+
+    // Evento ao redimensionar para garantir estado correto
+    window.addEventListener('resize', function () {
+      if (!isMobile()) {
+        // Fecha o menu e remove overlay no desktop
+        closeMenu();
+      }
+    });
+
+    // Fechar menu ao clicar fora (em overlay)
+    menuOverlay.addEventListener('click', function () {
+      closeMenu();
+    });
+  });
 </script>
