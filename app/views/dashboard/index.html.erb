@@ -1,45 +1,51 @@
 <div class="container py-4">
-  <h1 class="text-2xl font-bold mb-4 text-center">Painel Administrativo</h1>
+  <h1 class="text-3xl font-bold mb-6 text-center text-verde-escuro">Painel Administrativo</h1>
 
+  <!-- Seção 1: Administração Geral -->
+  <h2 class="text-xl font-semibold mt-5 mb-3">⚙️ Administração Geral</h2>
   <div class="row g-4">
+    <!-- Gerenciar Usuários -->
     <div class="col-md-3">
-      <div class="card text-center shadow-sm">
+      <div class="card text-center shadow-sm hover:shadow-md transition">
         <div class="card-body">
-          <i class="bi bi-people-fill fs-1 mb-3"></i>
-          <h5 class="card-title">Gerenciar Usuários</h5>
-          <p class="card-text">Controle e gerencie os usuários do sistema.</p>
+          <i class="bi bi-person-badge fs-1 mb-3 text-primary"></i>
+          <h5 class="card-title">Usuários</h5>
+          <p class="card-text">Controle e gerencie usuários.</p>
           <%= link_to 'Acessar', admin_users_path, class: 'btn btn-primary' %>
         </div>
       </div>
     </div>
 
+    <!-- Gerenciar Cabanas -->
     <div class="col-md-3">
-      <div class="card text-center shadow-sm">
+      <div class="card text-center shadow-sm hover:shadow-md transition">
         <div class="card-body">
-          <i class="bi bi-house-door-fill fs-1 mb-3"></i>
-          <h5 class="card-title">Gerenciar Cabanas</h5>
+          <i class="bi bi-house fs-1 mb-3 text-success"></i>
+          <h5 class="card-title">Cabanas</h5>
           <p class="card-text">Adicione, edite ou remova cabanas.</p>
           <%= link_to 'Acessar', admin_cabanas_path, class: 'btn btn-primary' %>
         </div>
       </div>
     </div>
 
+    <!-- Gerenciar Reservas -->
     <div class="col-md-3">
-      <div class="card text-center shadow-sm">
+      <div class="card text-center shadow-sm hover:shadow-md transition">
         <div class="card-body">
-          <i class="bi bi-calendar-check-fill fs-1 mb-3"></i>
-          <h5 class="card-title">Gerenciar Reservas</h5>
-          <p class="card-text">Monitore e ajuste reservas ativas.</p>
+          <i class="bi bi-calendar-event fs-1 mb-3 text-info"></i>
+          <h5 class="card-title">Reservas</h5>
+          <p class="card-text">Monitore e ajuste reservas.</p>
           <%= link_to 'Acessar', admin_reservas_path, class: 'btn btn-primary' %>
         </div>
       </div>
     </div>
 
+    <!-- Gerenciar Serviços -->
     <div class="col-md-3">
-      <div class="card text-center shadow-sm">
+      <div class="card text-center shadow-sm hover:shadow-md transition">
         <div class="card-body">
-          <i class="bi bi-tools fs-1 mb-3"></i>
-          <h5 class="card-title">Gerenciar Serviços</h5>
+          <i class="bi bi-gear-wide-connected fs-1 mb-3 text-warning"></i>
+          <h5 class="card-title">Serviços</h5>
           <p class="card-text">Administre serviços disponíveis.</p>
           <%= link_to 'Acessar', admin_services_path, class: 'btn btn-primary' %>
         </div>
@@ -47,7 +53,72 @@
     </div>
   </div>
 
+  <!-- Seção 2: User Flows -->
+  <h2 class="text-xl font-semibold mt-5 mb-3 text-verde-escuro">🔄 Fluxos de Usuário</h2>
+  <div class="row g-4">
+    <!-- Página Inicial -->
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm hover:shadow-md transition">
+        <div class="card-body">
+          <i class="bi bi-house-door fs-1 mb-3 text-primary"></i>
+          <h5 class="card-title">Página Inicial</h5>
+          <p class="card-text">Visualizar página principal.</p>
+          <%= link_to 'Acessar', home_root_path, class: 'btn btn-secondary' %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ver como Cliente - Cabanas -->
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm hover:shadow-md transition">
+        <div class="card-body">
+          <i class="bi bi-tree fs-1 mb-3 text-success"></i>
+          <h5 class="card-title">Cabanas</h5>
+          <p class="card-text">Visualizar cabanas como cliente.</p>
+          <%= link_to 'Acessar', cabanas_path, class: 'btn btn-secondary' %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ver como Cliente - reservas -->
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm hover:shadow-md transition">
+        <div class="card-body">
+          <i class="bi bi-calendar-event fs-1 mb-3 text-success"></i>
+          <h5 class="card-title">Reservas</h5>
+          <p class="card-text">Visualizar reservas como cliente.</p>
+          <%= link_to 'Acessar', reservas_path, class: 'btn btn-secondary' %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ver como Cliente - Marketplace Serviços
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm hover:shadow-md transition">
+        <div class="card-body">
+          <i class="bi bi-bag-check fs-1 mb-3 text-info"></i>
+          <h5 class="card-title">Serviços</h5>
+          <p class="card-text">Ver serviços disponíveis.</p>
+          <%= link_to 'Acessar', services_marketplace_index_path, class: 'btn btn-secondary' %>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm hover:shadow-md transition">
+        <div class="card-body">
+          <i class="bi bi-box-seam fs-1 mb-3 text-warning"></i>
+          <h5 class="card-title">Itens</h5>
+          <p class="card-text">Ver itens disponíveis.</p>
+          <%= link_to 'Acessar', items_marketplace_index_path, class: 'btn btn-secondary' %>
+        </div>
+      </div>
+    </div>
+  </div> -->
+
+  <!-- Rodapé -->
   <div class="mt-5 text-center">
-    <p class="text-muted">Bem-vindo ao painel administrativo. Use as opções acima para gerenciar as seções principais do sistema.</p>
+    <p class="text-muted">Gerencie as seções administrativas ou visualize fluxos de usuário facilmente.</p>
   </div>
 </div>

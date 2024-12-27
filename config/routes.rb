@@ -92,6 +92,9 @@ Rails.application.routes.draw do
     root to: 'dashboard#index', as: :authenticated_root
   end
 
+  # Rota acessível para admin visualizar a página pública
+  get '/home_root', to: 'home#root', as: :home_root
+
   # Unlogged route
   root to: 'home#root'
 end
