@@ -13,36 +13,73 @@
   <% end %>
 
   <%= form_with(model: [:admin, @user], local: true) do |form| %>
+    <!-- Campo Nome -->
     <div class="mb-3">
       <%= form.label :name, 'Nome', class: 'form-label' %>
-      <%= form.name_field :name, class: 'form-control' %>
+      <%= form.text_field :name, class: "form-control #{'is-invalid' if @user.errors[:name].any?}" %>
+      <% if @user.errors[:name].any? %>
+        <div class="invalid-feedback">
+          <%= @user.errors[:name].first %>
+        </div>
+      <% end %>
     </div>
 
+    <!-- Campo E-mail -->
     <div class="mb-3">
       <%= form.label :email, 'E-mail', class: 'form-label' %>
-      <%= form.email_field :email, class: 'form-control' %>
+      <%= form.email_field :email, class: "form-control #{'is-invalid' if @user.errors[:email].any?}" %>
+      <% if @user.errors[:email].any? %>
+        <div class="invalid-feedback">
+          <%= @user.errors[:email].first %>
+        </div>
+      <% end %>
     </div>
 
+    <!-- Campo Senha -->
     <div class="mb-3">
       <%= form.label :password, 'Senha', class: 'form-label' %>
-      <%= form.password_field :password, class: 'form-control' %>
+      <%= form.password_field :password, class: "form-control #{'is-invalid' if @user.errors[:password].any?}" %>
+      <% if @user.errors[:password].any? %>
+        <div class="invalid-feedback">
+          <%= @user.errors[:password].first %>
+        </div>
+      <% end %>
     </div>
 
+    <!-- Campo Confirmação de Senha -->
     <div class="mb-3">
       <%= form.label :password_confirmation, 'Confirmação de Senha', class: 'form-label' %>
-      <%= form.password_field :password_confirmation, class: 'form-control' %>
+      <%= form.password_field :password_confirmation, class: "form-control #{'is-invalid' if @user.errors[:password_confirmation].any?}" %>
+      <% if @user.errors[:password_confirmation].any? %>
+        <div class="invalid-feedback">
+          <%= @user.errors[:password_confirmation].first %>
+        </div>
+      <% end %>
     </div>
 
+    <!-- Campo Função -->
     <div class="mb-3">
       <%= form.label :role, 'Função', class: 'form-label' %>
-      <%= form.select :role, User.roles.keys.reject { |role| role == 'admin' }.map { |role| [role.humanize, role] }, { include_blank: 'Selecione uma função' }, { class: 'form-select' } %>
+      <%= form.select :role, User.roles.keys.reject { |role| role == 'admin' }.map { |role| [role.humanize, role] }, { include_blank: 'Selecione uma função' }, { class: "form-select #{'is-invalid' if @user.errors[:role].any?}" } %>
+      <% if @user.errors[:role].any? %>
+        <div class="invalid-feedback">
+          <%= @user.errors[:role].first %>
+        </div>
+      <% end %>
     </div>
 
+    <!-- Campo Filial -->
     <div class="mb-3">
       <%= form.label :filial_id, 'Filial', class: 'form-label' %>
-      <%= form.collection_select :filial_id, Filial.all, :id, :name, { include_blank: 'Selecione uma filial' }, { class: 'form-select' } %>
+      <%= form.collection_select :filial_id, Filial.all, :id, :name, { include_blank: 'Selecione uma filial' }, { class: "form-select #{'is-invalid' if @user.errors[:filial_id].any?}" } %>
+      <% if @user.errors[:filial_id].any? %>
+        <div class="invalid-feedback">
+          <%= @user.errors[:filial_id].first %>
+        </div>
+      <% end %>
     </div>
 
+    <!-- Botões -->
     <div class="d-flex gap-2 mt-4">
       <%= form.submit 'Salvar', class: 'btn btn-primary' %>
       <%= link_to 'Cancelar', admin_users_path, class: 'btn btn-secondary' %>

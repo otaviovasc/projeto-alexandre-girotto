@@ -1,33 +1,66 @@
 <p class="text-center !font-alice text-3xl text-verde-escuro">Criar Conta</p>
 <div class="bg-white rounded-md flex flex-col w-full mx-auto max-w-9/10 p-2 gap-6">
+
+  <!-- Exibição de Erros Gerais -->
+  <% if resource.errors.any? %>
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+      <strong class="font-bold"><%= pluralize(resource.errors.count, "erro") %> impediram o cadastro:</strong>
+      <ul class="mt-2">
+        <% resource.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
   <%= form_with model: resource, url: registration_path(resource_name), local: true, html: { class: 'flex flex-col gap-6' } do |f| %>
     <div class="flex flex-col w-full gap-4">
       <!-- Campo de Nome -->
       <div class="flex flex-col gap-2">
         <%= f.label :name, 'Nome Completo', class: 'font-dm text-lg text-terracota' %>
-        <%= f.text_field :name, placeholder: 'Nome Completo', 
-          class: 'font-dm w-full bg-transparent border border-terracota rounded-md px-4 py-2 text-terracota' %>
+        <%= f.text_field :name, placeholder: 'Nome Completo',
+          class: "font-dm w-full bg-transparent border border-terracota rounded-md px-4 py-2 text-terracota #{'border-red-500' if resource.errors[:name].any?}" %>
+        <% if resource.errors[:name].any? %>
+          <div class="text-red-600 text-sm">
+            <%= resource.errors[:name].first %>
+          </div>
+        <% end %>
       </div>
 
       <!-- Campo de Email -->
       <div class="flex flex-col gap-2">
         <%= f.label :email, 'Email', class: 'font-dm text-lg text-terracota' %>
-        <%= f.text_field :email, autofocus: true, placeholder: 'Email', autocomplete: "email", 
-          class: 'font-dm w-full bg-transparent border border-terracota rounded-md px-4 py-2 text-terracota' %>
+        <%= f.text_field :email, autofocus: true, placeholder: 'Email', autocomplete: "email",
+          class: "font-dm w-full bg-transparent border border-terracota rounded-md px-4 py-2 text-terracota #{'border-red-500' if resource.errors[:email].any?}" %>
+        <% if resource.errors[:email].any? %>
+          <div class="text-red-600 text-sm">
+            <%= resource.errors[:email].first %>
+          </div>
+        <% end %>
       </div>
 
       <!-- Campo de Senha -->
       <div class="flex flex-col gap-2">
         <%= f.label :password, 'Senha', class: 'font-dm text-lg text-terracota' %>
         <%= f.password_field :password, placeholder: 'Senha', autocomplete: "new-password",
-          class: 'font-dm w-full bg-transparent border border-terracota rounded-md px-4 py-2 text-terracota' %>
+          class: "font-dm w-full bg-transparent border border-terracota rounded-md px-4 py-2 text-terracota #{'border-red-500' if resource.errors[:password].any?}" %>
+        <% if resource.errors[:password].any? %>
+          <div class="text-red-600 text-sm">
+            <%= resource.errors[:password].first %>
+          </div>
+        <% end %>
       </div>
 
       <!-- Campo de Confirmação de Senha -->
       <div class="flex flex-col gap-2">
         <%= f.label :password_confirmation, 'Confirme sua Senha', class: 'font-dm text-lg text-terracota' %>
-        <%= f.password_field :password_confirmation, placeholder: 'Confirme sua Senha', autocomplete: "new-password", 
-          class: 'font-dm w-full bg-transparent border border-terracota rounded-md px-4 py-2 text-terracota' %>
+        <%= f.password_field :password_confirmation, placeholder: 'Confirme sua Senha', autocomplete: "new-password",
+          class: "font-dm w-full bg-transparent border border-terracota rounded-md px-4 py-2 text-terracota #{'border-red-500' if resource.errors[:password_confirmation].any?}" %>
+        <% if resource.errors[:password_confirmation].any? %>
+          <div class="text-red-600 text-sm">
+            <%= resource.errors[:password_confirmation].first %>
+          </div>
+        <% end %>
       </div>
     </div>
 

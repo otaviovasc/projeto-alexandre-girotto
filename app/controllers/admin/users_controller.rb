@@ -21,10 +21,11 @@ class Admin::UsersController < ApplicationController
 
   def create
     @user = User.new(user_params)
+
     if @user.save
-      redirect_to admin_users_path, notice: 'Account was successfully created.'
+      redirect_to admin_users_path, notice: 'Usuário criado com sucesso.'
     else
-      render :new
+      render :new, status: :unprocessable_entity
     end
   end
 
@@ -33,15 +34,15 @@ class Admin::UsersController < ApplicationController
 
   def update
     if @user.update(user_params)
-      redirect_to admin_users_path, notice: 'Account was successfully updated.'
+      redirect_to admin_users_path, notice: 'Usuário atualizado com sucesso.'
     else
-      render :edit
+      render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
     @user.destroy
-    redirect_to admin_users_path, notice: 'Account was successfully deleted.'
+    redirect_to admin_users_path, notice: 'Usuário excluído com sucesso.'
   end
 
   private
@@ -51,7 +52,10 @@ class Admin::UsersController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:email, :password, :password_confirmation, :role, :filial_id, :name, :cpf, :state, :city, :neighborhood, :street, :street_number, :zipcode)
+    params.require(:user).permit(
+      :email, :password, :password_confirmation, :role, :filial_id,
+      :name, :cpf, :state, :city, :neighborhood, :street, :street_number, :zipcode
+    )
   end
 
   def authorize_admin
