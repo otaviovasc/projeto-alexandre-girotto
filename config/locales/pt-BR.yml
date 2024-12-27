@@ -1,0 +1,72 @@
+pt-BR:
+  activerecord:
+    errors:
+      models:
+        user:
+          attributes:
+            email:
+              taken: "já está em uso"
+            password_confirmation:
+              confirmation: "não corresponde à senha"
+            password:
+              blank: "não pode ficar em branco"
+              too_short: "é muito curto (mínimo de %{count} caracteres)"
+              too_long: "é muito longo (máximo de %{count} caracteres)"
+            name:
+              blank: "não pode ficar em branco"
+              too_short: "é muito curto (mínimo de %{count} caracteres)"
+              too_long: "é muito longo (máximo de %{count} caracteres)"
+  errors:
+    format: "%{attribute} %{message}"
+    messages:
+      taken: "já está em uso"
+      confirmation: "não corresponde"
+      blank: "não pode ficar em branco"
+      too_short: "é muito curto (mínimo de %{count} caracteres)"
+      too_long: "é muito longo (máximo de %{count} caracteres)"
+      invalid: "não é válido"
+    attributes:
+      email:
+        taken: "já está em uso"
+      password_confirmation:
+        confirmation: "não corresponde à senha"
+      password:
+        blank: "não pode ficar em branco"
+        too_short: "é muito curta (mínimo de %{count} caracteres)"
+        too_long: "é muito longa (máximo de %{count} caracteres)"
+  date:
+    formats:
+      default: "%d/%m/%Y"
+      short: "%d de %B"
+      long: "%d de %B de %Y"
+  time:
+    formats:
+      default: "%d/%m/%Y %H:%M"
+      short: "%d de %B %H:%M"
+      long: "%d de %B de %Y, %H:%M"
+  support:
+    array:
+      words_connector: ", "
+      two_words_connector: " e "
+      last_word_connector: " e "
+  number:
+    format:
+      separator: ","
+      delimiter: "."
+    currency:
+      format:
+        unit: "R$"
+        separator: ","
+        delimiter: "."
+        format: "%u %n"
+  helpers:
+    submit:
+      create: "Criar %{model}"
+      update: "Atualizar %{model}"
+      submit: "Salvar %{model}"
+    label:
+      user:
+        email: "E-mail"
+        password: "Senha"
+        password_confirmation: "Confirme sua senha"
+        name: "Nome Completo"

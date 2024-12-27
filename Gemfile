@@ -28,6 +28,7 @@ gem "stimulus-rails"
 gem "jbuilder"
 
 gem 'devise'
+gem 'devise-i18n'
 
 gem 'pagarme', '2.4.0'
 gem 'httparty', '0.22.0'
