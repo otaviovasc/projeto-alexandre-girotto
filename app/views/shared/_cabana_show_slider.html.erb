@@ -1,0 +1,76 @@
+<!-- _cabana_show_slider.html.erb -->
+
+<!-- IMPORTS SWIPER (se ainda não estiver global em sua aplicação) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+
+<style>
+  .swiper-pagination-bullet {
+    background-color: #ccc;
+    opacity: 1;
+  }
+  .swiper-pagination-bullet-active {
+    background-color: #ffbd59;
+  }
+  .swiper-container {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .swiper-slide {
+    flex: 0 0 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  /* Botões de navegação (setas) */
+  .swiper-button-next,
+  .swiper-button-prev {
+    color: #333; /* Ajuste a cor conforme desejar */
+  }
+  .swiper-button-next:hover,
+  .swiper-button-prev:hover {
+    color: #000;
+  }
+</style>
+
+<!-- Container do Swiper -->
+<div class="swiper-container swiper-cabana-show-<%= cabana.id %> relative w-full max-w-4xl mx-auto">
+  <!-- Slides -->
+  <div class="swiper-wrapper">
+    <% images.each do |image| %>
+      <div class="swiper-slide">
+        <img src="<%= image.url %>"
+             alt="<%= cabana.name %> Image"
+             class="w-full max-h-96 object-cover rounded-md" />
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Paginação (bolinhas) -->
+  <div class="swiper-pagination"></div>
+
+  <!-- Botões de navegação -->
+  <div class="swiper-button-next"></div>
+  <div class="swiper-button-prev"></div>
+</div>
+
+<script>
+  document.addEventListener('turbo:load', function() {
+    new Swiper('.swiper-cabana-show-<%= cabana.id %>', {
+      loop: true,
+      speed: 600,
+      autoplay: {
+        delay: 3000,
+      },
+      pagination: {
+        el: '.swiper-cabana-show-<%= cabana.id %> .swiper-pagination',
+        clickable: true,
+      },
+      navigation: {
+        nextEl: '.swiper-cabana-show-<%= cabana.id %> .swiper-button-next',
+        prevEl: '.swiper-cabana-show-<%= cabana.id %> .swiper-button-prev',
+      },
+    });
+  });
+</script>

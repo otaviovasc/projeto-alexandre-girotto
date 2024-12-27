@@ -1,0 +1,70 @@
+<!--
+  Esta partial recebe:
+   - :cabana => objeto da cabana (usado para ID único do swiper, se necessário)
+   - :images => ActiveStorage ou array de URLs das imagens
+-->
+<div class="swiper-container swiper-cabana-<%= cabana.id %> relative w-full">
+  <!-- Swiper Wrapper -->
+  <div class="swiper-wrapper">
+    <% images.each do |image| %>
+      <div class="swiper-slide">
+        <img src="<%= image.url %>" alt="<%= cabana.name %>"
+             class="max-h-96 w-full object-cover rounded-md" />
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Paginação (bolinhas) -->
+  <div class="swiper-pagination">
+  </div>
+</div>
+
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" />
+
+  <!-- Se ainda não estiver carregando via import ES6, por exemplo, inclua o script -->
+  <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+</head>
+
+<style>
+    .swiper-pagination-bullet {
+    background-color: #ccc;
+    opacity: 1;
+  }
+  .swiper-pagination-bullet-active {
+    background-color: #ffbd59;
+  }
+  .swiper-container {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .swiper-slide {
+    flex: 0 0 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+</style>
+
+<script>
+  document.addEventListener('turbo:load', function () {
+    // Para cada cabana, inicialize o swiper de forma independente
+    new Swiper('.swiper-cabana-<%= cabana.id %>', {
+      loop: true,
+      speed: 600,
+      pagination: {
+        el: '.swiper-cabana-<%= cabana.id %> .swiper-pagination',
+        clickable: true,
+      },
+      navigation: {
+        nextEl: '.swiper-button-next',
+        prevEl: '.swiper-button-prev',
+      },
+      autoplay: {
+        delay: 3000,
+      },
+    });
+  });
+</script>

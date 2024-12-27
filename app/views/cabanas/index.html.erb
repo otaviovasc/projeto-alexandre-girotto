@@ -7,40 +7,49 @@
         <div class="flex items-center gap-6 px-2 text-lg lg:w-full">
           <i class="fa-regular fa-map text-verde-escuro"></i>
           <div id="dropdown_display" class="dropdown-display w-full">
-            <%= select_tag :filial_id, options_from_collection_for_select(Filial.all, :id, :name, params[:filial_id]),
-              include_blank: 'Selecione uma Filial' , class: 'font-dm text-terracota w-full bg-transparent' %>
+            <%= select_tag :filial_id,
+              options_from_collection_for_select(Filial.all, :id, :name, params[:filial_id]),
+              include_blank: 'Selecione uma Filial',
+              class: 'font-dm text-terracota w-full bg-transparent' %>
           </div>
         </div>
         <div class="mt-4 lg:mt-0 lg:ml-4">
-          <%= submit_tag 'Filtrar' , class: 'uppercase font-light text-creme bg-botao-verde rounded-3xl px-6 py-3' %>
+          <%= submit_tag 'Filtrar', class: 'uppercase font-light text-creme bg-botao-verde rounded-3xl px-6 py-3' %>
         </div>
       </div>
     <% end %>
   </div>
 
-  <!-- Lista de Cabanas -->
   <% if @cabanas.any? %>
-    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-      <% @cabanas.each do |cabana| %>
-        <div class="flex flex-col gap-4">
-          <p class="font-alice text-3xl">
-            <%= cabana.name %>
-          </p>
-          <% cabana.images.each do |image| %>
-            <img src="<%= image.url %>" alt="<%= cabana.name %>" class="max-h-96 rounded-md object-cover w-full">
-          <% end %>
-          <% cabana.info_da_cabanas.each do |info| %>
-            <% if info.info_type=="intro" %>
-              <p class="text-gray-600 text-lg">
-                <%= info.content %>
-              </p>
+    <!-- CONTAINER para evitar que encoste nas bordas -->
+    <div class="container mx-auto max-w-6xl px-4">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+        <% @cabanas.each do |cabana| %>
+          <div class="flex flex-col gap-4">
+            <p class="font-alice text-3xl">
+              <%= cabana.name %>
+            </p>
+
+            <!-- Aqui renderizamos as imagens com o Swiper -->
+            <%= render partial: 'shared/cabana_slider',
+                       locals: { cabana: cabana, images: cabana.images } %>
+
+            <!-- Intro da cabana -->
+            <% cabana.info_da_cabanas.each do |info| %>
+              <% if info.info_type == "intro" %>
+                <p class="text-gray-600 text-lg">
+                  <%= info.content %>
+                </p>
+              <% end %>
             <% end %>
-          <% end %>
-          <div class="font-dm max-w-fit bg-botao-verde rounded-3xl flex justify-center items-center gap-4 px-6 py-3">
-            <%= link_to 'Quero essa experiência' , cabana_path(cabana), class: "text-creme" %>
+
+            <!-- Botão para detalhar a cabana -->
+            <div class="font-dm max-w-fit bg-botao-verde rounded-3xl flex justify-center items-center gap-4 px-6 py-3">
+              <%= link_to 'Quero essa experiência', cabana_path(cabana), class: "text-creme" %>
+            </div>
           </div>
-        </div>
-      <% end %>
+        <% end %>
+      </div>
     </div>
   <% else %>
     <p class="my-8 text-center font-bold text-lg">Nenhuma cabana encontrada nessa filial.</p>
