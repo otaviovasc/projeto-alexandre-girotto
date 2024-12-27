@@ -48,10 +48,8 @@
              Café da manhã: R$<%= @breakfast_service.price %>/dia
           </label>
           <div class="flex items-center gap-2">
-            <button type="button" id="quantity_down" class="bg-botao-verde text-white px-2 py-1 rounded">-</button>
             <%= number_field_tag 'reserva[breakfast_quantity]', 1, min: 0, id: 'breakfast_quantity',
-              class: 'w-16 text-center border border-terracota rounded-md px-2' %>
-            <button type="button" id="quantity_up" class="bg-botao-verde text-white px-2 py-1 rounded">+</button>
+              class: 'w-16 text-center border border-terracota rounded-md hidden px-2' %>
           </div>
         </div>
       </div>

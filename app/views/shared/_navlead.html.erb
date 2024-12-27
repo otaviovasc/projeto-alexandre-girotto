@@ -4,18 +4,41 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <style>
-        .shadow-on-scroll {
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-        }
+      .shadow-on-scroll {
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      }
 
-        .menu-desktop-open {
-            transform: translateX(0);
-        }
+      /* Menu para mobile */
+      #menu-container {
+        transition: transform 0.5s ease-in-out;
+      }
 
-        .menu-desktop-close {
-            transform: translateX(-100%);
-        }
+      .menu-mobile-open {
+        transform: translateX(0);
+      }
+
+      .menu-mobile-close {
+        transform: translateX(-100%);
+      }
+
+      /* Overlay para mobile */
+      #menu-overlay.active {
+        opacity: 0.5;
+        pointer-events: auto;
+      }
+
+      /* Submenu */
+      .submenu-cabanas {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-in-out;
+      }
+
+      .submenu-cabanas.open {
+        max-height: 200px;
+      }
     </style>
+
 </head>
 
 <body>
@@ -33,16 +56,10 @@
         <div class="text-lg flex flex-col gap-4 leading-8">
             <!-- Links do menu -->
             <div>
-                <div class="toggle-cabanas flex gap-2 items-center">
+                <div class="flex gap-2 items-center">
                     <button class="hover:text-terracota">
-                        <p class="hover:text-terracota">Cabanas</p>
+                        <%= link_to "Ver Cabanas" , cabanas_path %>
                     </button>
-                    <i class="fa-solid fa-arrow-down text-sm arrow-cabanas"></i>
-                </div>
-                <div class="pl-4 max-h-0 overflow-hidden transition-all duration-700 ease-in-out submenu-cabanas">
-                    <p class="hover:text-terracota underline">
-                        <%= link_to "Ver Todas" , cabanas_path %>
-                    </p>
                 </div>
             </div>
             <p class="hover:text-terracota botao-home">
@@ -78,109 +95,100 @@
     </div>
 
     <script>
-        document.addEventListener('turbo:load', function () {
-            const openMenuButton = document.getElementById('open-menu');
-            const closeMenuButton = document.getElementById('close-menu');
-            const menuContainer = document.getElementById('menu-container');
-            const menuOverlay = document.getElementById('menu-overlay');
+      document.addEventListener('DOMContentLoaded', function () {
+        const openMenuButton = document.getElementById('open-menu');
+        const closeMenuButton = document.getElementById('close-menu');
+        const menuContainer = document.getElementById('menu-container');
+        const menuOverlay = document.getElementById('menu-overlay');
 
-            const isMobile = () => window.innerWidth < 768; // Condição para mobile
+        // Verifica se é mobile
+        const isMobile = () => window.innerWidth < 768;
 
-            // Abrir o menu
-            openMenuButton.addEventListener('click', function () {
-                if (isMobile()) {
-                    // Lógica para mobile
-                    menuContainer.classList.remove('-translate-x-full');
-                    menuOverlay.classList.remove('opacity-0', 'pointer-events-none');
-                    document.body.classList.add('overflow-hidden');
-                } else {
-                    // Lógica para desktop
-                    menuContainer.classList.add('menu-desktop-open');
-                    menuContainer.classList.remove('menu-desktop-close');
-                }
-            });
+        // Função para abrir o menu
+        const openMenu = () => {
+          if (isMobile()) {
+            menuContainer.classList.remove('menu-mobile-close');
+            menuContainer.classList.add('menu-mobile-open');
+            menuOverlay.classList.add('active');
+            document.body.classList.add('overflow-hidden');
+          } else {
+            menuContainer.classList.remove('menu-desktop-close');
+            menuContainer.classList.add('menu-desktop-open');
+          }
+        };
 
-            // Fechar o menu
-            closeMenuButton.addEventListener('click', function () {
-                if (isMobile()) {
-                    menuContainer.classList.add('-translate-x-full');
-                    menuOverlay.classList.add('opacity-0', 'pointer-events-none');
-                    document.body.classList.remove('overflow-hidden');
-                } else {
-                    menuContainer.classList.add('menu-desktop-close');
-                    menuContainer.classList.remove('menu-desktop-open');
-                }
-            });
+        // Função para fechar o menu
+        const closeMenu = () => {
+          if (isMobile()) {
+            menuContainer.classList.remove('menu-mobile-open');
+            menuContainer.classList.add('menu-mobile-close');
+            menuOverlay.classList.remove('active');
+            document.body.classList.remove('overflow-hidden');
+          } else {
+            menuContainer.classList.remove('menu-desktop-open');
+            menuContainer.classList.add('menu-desktop-close');
+          }
+        };
 
-            // Detectar mudança de tamanho de tela
-            window.addEventListener('resize', function () {
-                if (!isMobile()) {
-                    // Garantir que o menu esteja escondido em telas maiores por padrão
-                    menuContainer.classList.add('menu-desktop-close');
-                    menuContainer.classList.remove('-translate-x-full');
-                    menuOverlay.classList.add('opacity-0', 'pointer-events-none');
-                }
-            });
+        // Eventos de clique
+        openMenuButton.addEventListener('click', openMenu);
+        closeMenuButton.addEventListener('click', closeMenu);
+        menuOverlay.addEventListener('click', closeMenu);
 
-            // Toggle submenu
-            const toggleCabanas = document.querySelector('.toggle-cabanas');
-            const arrowCabanas = document.querySelector('.arrow-cabanas');
-            const submenuCabanas = document.querySelector('.submenu-cabanas');
-
-            toggleCabanas.addEventListener('click', function () {
-                if (submenuCabanas.style.maxHeight) {
-                    submenuCabanas.style.maxHeight = null;
-                    arrowCabanas.style.transform = 'rotate(0deg)';
-                } else {
-                    submenuCabanas.style.maxHeight = submenuCabanas.scrollHeight + 'px';
-                    arrowCabanas.style.transform = 'rotate(180deg)';
-                }
-            });
-
-            // Change header on scroll
-            const header = document.querySelector('.header-bg');
-            const menuIcon = document.querySelector('.icon-color');
-            const reservar = document.getElementById('open-reserva');
-            const setinha = document.getElementById('setinha');
-            const botaoHome = document.querySelector('.botao-home');
-
-            if (window.location.pathname === '/') {
-                botaoHome.classList.add('hidden');
-            }
-
-            if (window.location.pathname === '/' || window.location.pathname === '/sustentabilidade') {
-                header.classList.add('bg-transparent');
-                menuIcon.classList.add('text-creme');
-                reservar.classList.add('text-creme');
-                setinha.classList.add('text-creme');
-
-                window.addEventListener('scroll', function () {
-                    if (window.scrollY > 50) {
-                        header.classList.add('bg-creme', 'shadow-on-scroll');
-                        header.classList.remove('bg-transparent');
-                        menuIcon.classList.add('text-terracota');
-                        menuIcon.classList.remove('text-creme');
-                        reservar.classList.add('text-terracota');
-                        reservar.classList.remove('text-creme');
-                        setinha.classList.add('text-terracota');
-                    } else {
-                        header.classList.remove('bg-creme', 'shadow-on-scroll');
-                        header.classList.add('bg-transparent');
-                        menuIcon.classList.add('text-creme');
-                        menuIcon.classList.remove('text-terracota');
-                        reservar.classList.add('text-creme');
-                        reservar.classList.remove('text-terracota');
-                        setinha.classList.remove('text-terracota');
-                    }
-                });
-            } else {
-                header.classList.add('bg-creme', 'shadow-on-scroll');
-                header.classList.remove('bg-transparent');
-                menuIcon.classList.add('text-terracota');
-                menuIcon.classList.remove('text-creme');
-                reservar.classList.add('text-terracota');
-                reservar.classList.remove('text-creme');
-            }
+        // Responsividade ao redimensionar tela
+        window.addEventListener('resize', () => {
+          if (!isMobile()) {
+            menuContainer.classList.add('menu-desktop-close');
+            menuContainer.classList.remove('menu-mobile-open', 'menu-mobile-close');
+            menuOverlay.classList.remove('active');
+          }
         });
+
+        // Efeito do Header ao Rolar
+        const header = document.querySelector('.header-bg');
+        const menuIcon = document.querySelector('.icon-color');
+        const reservar = document.getElementById('open-reserva');
+        const setinha = document.getElementById('setinha');
+        const botaoHome = document.querySelector('.botao-home');
+
+        if (window.location.pathname === '/') {
+          botaoHome.classList.add('hidden');
+        }
+
+        if (window.location.pathname === '/' || window.location.pathname === '/sustentabilidade') {
+          header.classList.add('bg-transparent');
+          menuIcon.classList.add('text-creme');
+          reservar.classList.add('text-creme');
+          setinha.classList.add('text-creme');
+
+          window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+              header.classList.add('bg-creme', 'shadow-on-scroll');
+              header.classList.remove('bg-transparent');
+              menuIcon.classList.add('text-terracota');
+              menuIcon.classList.remove('text-creme');
+              reservar.classList.add('text-terracota');
+              reservar.classList.remove('text-creme');
+              setinha.classList.add('text-terracota');
+            } else {
+              header.classList.remove('bg-creme', 'shadow-on-scroll');
+              header.classList.add('bg-transparent');
+              menuIcon.classList.add('text-creme');
+              menuIcon.classList.remove('text-terracota');
+              reservar.classList.add('text-creme');
+              reservar.classList.remove('text-terracota');
+              setinha.classList.remove('text-terracota');
+            }
+          });
+        } else {
+          header.classList.add('bg-creme', 'shadow-on-scroll');
+          header.classList.remove('bg-transparent');
+          menuIcon.classList.add('text-terracota');
+          menuIcon.classList.remove('text-creme');
+          reservar.classList.add('text-terracota');
+          reservar.classList.remove('text-creme');
+        }
+      });
     </script>
+
 </body>

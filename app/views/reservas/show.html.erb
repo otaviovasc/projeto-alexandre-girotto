@@ -1,34 +1,50 @@
-<div class="bg-white rounded-md w-full max-w-4xl mx-auto p-6 flex flex-col gap-6">
+<div class="bg-white rounded-md w-full max-w-4xl mx-auto p-6 flex flex-col gap-6 shadow-md">
+
   <!-- Status de pagamento -->
-  <div class="flex flex-col items-center">
+  <div class="flex flex-col items-center text-center gap-2">
     <% if @reserva.payment_status == "paid" %>
-      <h1 class="text-xl font-alice text-verde-escuro">Pagamento confirmado. Obrigado!</h1>
+      <h1 class="text-xl font-alice text-green-600">
+        <i class="bi bi-check-circle-fill"></i> Pagamento confirmado. Obrigado!
+      </h1>
     <% else %>
-      <h1 class="text-xl font-alice text-verde-escuro">Detalhes da Reserva</h1>
-      <p class="text-gray-600 font-dm">Status do pagamento: <strong><%= @reserva.payment_status.present? ? @reserva.payment_status.humanize : 'Indefinido' %></strong></p>
+      <h1 class="text-xl font-alice text-orange-500">
+        <i class="bi bi-exclamation-circle-fill"></i> Detalhes da Reserva
+      </h1>
+      <p class="text-gray-600 font-dm">
+        <strong>Status do pagamento:</strong>
+        <%= @reserva.payment_status.present? ? @reserva.payment_status.humanize : 'Indefinido' %>
+      </p>
     <% end %>
   </div>
 
-  <!-- Botão de Pagamento -->
-  <div class="flex justify-center">
-    <% if @reserva.payment_status.in?(["pending", "refused", "waiting_payment"]) %>
-      <%= link_to 'Pagar Reserva', pay_reserva_path(@reserva),
-          class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition' %>
-    <% end %>
-  </div>
+  <!-- Botão de Pagamento ou Slider -->
+  <% if @reserva.payment_status.in?(["pending", "refused", "waiting_payment"]) %>
+    <div class="flex justify-center">
+      <%= link_to '<i class="bi bi-credit-card-fill"></i> Pagar Reserva'.html_safe, pay_reserva_path(@reserva),
+          class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition d-flex align-items-center gap-2' %>
+    </div>
+  <% else %>
+    <div class="flex flex-col items-center mt-8">
+      <%= render partial: "shared/cabana_show_slider", locals: { cabana: @reserva.cabana, images: @reserva.cabana.images } %>
+    </div>
+  <% end %>
 
   <!-- Detalhes da Reserva -->
   <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
-    <h2 class="font-alice text-lg text-verde-escuro">Detalhes da Reserva</h2>
-    <p><strong>Cabana:</strong> <%= @reserva.cabana.name %></p>
-    <p><strong>Data de Início:</strong> <%= @reserva.start_date.strftime("%d/%m/%Y") %></p>
-    <p><strong>Data de Fim:</strong> <%= @reserva.end_date.strftime("%d/%m/%Y") %></p>
-    <p><strong>Preço Total:</strong> <%= number_to_currency(@reserva.total_price) %></p>
+    <h2 class="font-alice text-lg text-verde-escuro">
+      <i class="bi bi-info-circle-fill"></i> Detalhes da Reserva
+    </h2>
+    <p><strong>🏡 Cabana:</strong> <%= @reserva.cabana.name %></p>
+    <p><strong>📅 Data de Início:</strong> <%= @reserva.start_date.strftime("%d/%m/%Y") %></p>
+    <p><strong>📅 Data de Fim:</strong> <%= @reserva.end_date.strftime("%d/%m/%Y") %></p>
+    <p><strong>💰 Preço Total:</strong> <%= number_to_currency(@reserva.total_price) %></p>
   </div>
 
   <!-- Serviços da Reserva -->
   <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
-    <h2 class="font-alice text-lg text-verde-escuro">Serviços Adicionais</h2>
+    <h2 class="font-alice text-lg text-verde-escuro">
+      <i class="bi bi-tools"></i> Serviços Adicionais
+    </h2>
     <% if @reserva_services.any? %>
       <ul class="list-disc ml-6 text-gray-600">
         <% @reserva_services.each do |reserva_service| %>
@@ -46,7 +62,9 @@
 
   <!-- Itens da Reserva -->
   <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
-    <h2 class="font-alice text-lg text-verde-escuro">Itens Adquiridos</h2>
+    <h2 class="font-alice text-lg text-verde-escuro">
+      <i class="bi bi-box"></i> Itens Adquiridos
+    </h2>
     <% if @reserva_items.any? %>
       <ul class="list-disc ml-6 text-gray-600">
         <% @reserva_items.each do |reserva_item| %>
@@ -61,7 +79,30 @@
       <p class="text-gray-600">Nenhum item adquirido para esta reserva.</p>
     <% end %>
   </div>
-  <div class="flex justify-start">
-    <%= link_to 'Voltar para Reservas', reservas_path, class: 'text-verde-escuro underline hover:text-verde-escuro-hover font-dm text-sm' %>
+
+  <!-- Como Chegar -->
+  <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
+    <h2 class="font-alice text-lg text-verde-escuro">
+      <i class="bi bi-geo-alt-fill"></i> Como Chegar
+    </h2>
+    <p>
+      <strong>🏢 Endereço da Filial:</strong>
+      <a href="https://www.google.com/maps/search/?api=1&query=<%= URI.encode_www_form_component(@reserva.cabana.filial.address) %>"
+         target="_blank"
+         rel="noopener noreferrer"
+         class="text-gray-700 hover:text-verde-escuro transition">
+        <%= @reserva.cabana.filial.address %>
+      </a>
+    </p>
+    <p class="text-gray-600">Clique no endereço acima para abrir no Google Maps.</p>
   </div>
+
+  <!-- Botão de Voltar -->
+  <div class="flex justify-start mt-4">
+    <%= link_to '<i class="bi bi-arrow-left"></i> Voltar para Reservas'.html_safe, reservas_path,
+        class: 'text-verde-escuro underline hover:text-verde-escuro-hover font-dm text-sm d-flex align-items-center gap-2' %>
+  </div>
+
+  <!-- Botão WhatsApp -->
+  <%= render 'shared/wppButton' %>
 </div>
