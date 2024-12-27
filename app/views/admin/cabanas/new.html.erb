@@ -1,29 +1,47 @@
 <div class="container py-4">
   <h1 class="text-2xl font-bold mb-4">Nova Cabana</h1>
 
+  <!-- Links de navegação -->
   <div class="d-flex gap-2 mb-4">
     <%= link_to 'Voltar para Cabanas', admin_cabanas_path, class: 'btn btn-secondary d-flex align-items-center' %>
     <%= link_to 'Painel Administrativo', authenticated_root_path, class: 'btn btn-secondary d-flex align-items-center' %>
   </div>
 
-  <%= form_with model: [:admin, @cabana], local: true, html: { class: 'needs-validation' } do |form| %>
+  <!-- Exibição de erros -->
+  <% if @cabana.errors.any? %>
+    <div class="alert alert-danger">
+      <h4 class="alert-heading">Erros no formulário:</h4>
+      <ul>
+        <% @cabana.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <!-- Formulário de Criação -->
+  <%= form_with model: [:admin, @cabana], url: admin_cabanas_path, method: :post, local: true do |form| %>
+    <!-- Nome -->
     <div class="mb-3">
       <%= form.label :name, 'Nome', class: 'form-label' %>
       <%= form.text_field :name, class: 'form-control' %>
     </div>
 
+    <!-- Preço -->
     <div class="mb-3">
       <%= form.label :price, 'Preço por dia (R$)', class: 'form-label' %>
       <%= form.number_field :price, step: 0.01, class: 'form-control' %>
     </div>
 
+    <!-- Filial -->
     <div class="mb-3">
       <%= form.label :filial_id, 'Filial', class: 'form-label' %>
       <%= form.collection_select :filial_id, Filial.all, :id, :name, {}, { class: 'form-select' } %>
     </div>
 
-    <h3>Adicione imagens após a criação no botão de editar.</h3>
+    <h3 class="text-muted">Adicione imagens após criar a cabana no botão de edição.</h3>
 
+    <!-- Botões -->
     <div class="d-flex gap-2 mt-4">
       <%= form.submit 'Salvar', class: 'btn btn-primary' %>
       <%= link_to 'Cancelar', admin_cabanas_path, class: 'btn btn-secondary' %>

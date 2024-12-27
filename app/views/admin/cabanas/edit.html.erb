@@ -1,43 +1,74 @@
 <div class="container py-4">
   <h1 class="text-2xl font-bold mb-4">Editar Cabana</h1>
 
-  <%= form_with model: [:admin, @cabana], method: :patch, local: true do |form| %>
+  <!-- Links de navegação -->
+  <div class="d-flex gap-2 mb-4">
+    <%= link_to 'Voltar para Cabanas', admin_cabanas_path, class: 'btn btn-secondary d-flex align-items-center' %>
+    <%= link_to 'Painel Administrativo', authenticated_root_path, class: 'btn btn-secondary d-flex align-items-center' %>
+  </div>
+
+  <!-- Exibição de erros -->
+  <% if @cabana.errors.any? %>
+    <div class="alert alert-danger">
+      <h4 class="alert-heading">Erros no formulário:</h4>
+      <ul>
+        <% @cabana.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <!-- Formulário de Edição -->
+  <%= form_with model: [:admin, @cabana], url: admin_cabana_path(@cabana), method: :patch, local: true, html: { multipart: true } do |form| %>
+    <!-- Nome -->
     <div class="mb-3">
       <%= form.label :name, 'Nome', class: 'form-label' %>
       <%= form.text_field :name, class: 'form-control' %>
     </div>
 
+    <!-- Preço -->
     <div class="mb-3">
-      <%= form.label :price, 'Preço', class: 'form-label' %>
+      <%= form.label :price, 'Preço por dia (R$)', class: 'form-label' %>
       <%= form.number_field :price, step: 0.01, class: 'form-control' %>
     </div>
 
+    <!-- Filial -->
     <div class="mb-3">
       <%= form.label :filial_id, 'Filial', class: 'form-label' %>
       <%= form.collection_select :filial_id, Filial.all, :id, :name, {}, { class: 'form-select' } %>
     </div>
 
+    <!-- Adicionar Novas Imagens -->
     <div class="mb-3">
       <%= form.label :images, 'Adicionar Novas Imagens', class: 'form-label' %>
-      <%= form.file_field :images, multiple: true, class: 'form-control' %>
+      <%= form.file_field :images, multiple: true, class: 'form-control', accept: 'image/*' %>
     </div>
 
-    <% if @cabana.images.attached? %>
-      <p class="mt-2">Imagens Existentes:</p>
-      <ul class="list-unstyled d-flex gap-2">
-        <% @cabana.images.each do |image| %>
-          <li class="position-relative">
-            <img src="<%= image.url %>" alt="<%= @cabana.name %> Image" class="rounded-md">
-            <%= button_to 'Remover', remove_image_admin_cabana_path(@cabana, image.id), method: :delete, data: { confirm: 'Tem certeza que deseja remover esta imagem?' }, class: 'btn btn-sm btn-danger position-absolute top-0 end-0' %>
-          </li>
-        <% end %>
-      </ul>
-    <% end %>
-
-
+    <!-- Botões -->
     <div class="d-flex gap-2 mt-4">
       <%= form.submit 'Salvar', class: 'btn btn-primary' %>
       <%= link_to 'Cancelar', admin_cabanas_path, class: 'btn btn-secondary' %>
+    </div>
+  <% end %>
+
+  <!-- Exibição e Remoção de Imagens (Fora do Formulário) -->
+  <% if @cabana.images.attached? %>
+    <h2 class="mt-5 mb-3">Imagens Atuais</h2>
+    <div class="row">
+      <% @cabana.images.each do |image| %>
+        <div class="col-md-3 mb-4">
+          <div class="card h-100 position-relative">
+            <img src="<%= url_for(image) %>" alt="<%= @cabana.name %> Image" class="card-img-top" style="height: 150px; object-fit: cover;">
+            <div class="card-body">
+              <%= button_to 'Remover', remove_image_admin_cabana_path(@cabana, image.id),
+                method: :delete,
+                data: { confirm: 'Tem certeza que deseja remover esta imagem?' },
+                class: 'btn btn-sm btn-danger w-100' %>
+            </div>
+          </div>
+        </div>
+      <% end %>
     </div>
   <% end %>
 </div>

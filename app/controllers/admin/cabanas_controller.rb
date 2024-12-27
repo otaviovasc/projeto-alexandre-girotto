@@ -16,7 +16,7 @@ class Admin::CabanasController < ApplicationController
 
     if @cabana.save
       @cabana.images.attach(params[:cabana][:images]) if params[:cabana][:images].present?
-      redirect_to admin_cabanas_path, notice: 'Cabana was successfully created.'
+      redirect_to admin_cabanas_path, notice: 'Cabana criada com sucesso.'
     else
       render :new
     end
@@ -26,25 +26,31 @@ class Admin::CabanasController < ApplicationController
   end
 
   def update
-    if @cabana.update(cabana_params)
+    if @cabana.update(cabana_params.except(:images))
+      # Verifica se há novas imagens para adicionar
       if params[:cabana][:images].present?
-        images = Array(params[:cabana][:images]) # Garante que sempre será um array
+        images = Array(params[:cabana][:images]) # Garante que é um array
 
         images.each do |image|
-          next unless image.respond_to?(:original_filename) # Evita erros caso a imagem não tenha o método
-          @cabana.images.attach(image) unless @cabana.images.map(&:filename).include?(image.original_filename)
+          # Verifica se o arquivo é válido antes de anexar
+          if image.respond_to?(:original_filename) && !@cabana.images.map(&:filename).include?(image.original_filename)
+            @cabana.images.attach(image)
+          end
         end
       end
 
-      redirect_to admin_cabanas_path, notice: 'Cabana atualizada com sucesso.'
+      redirect_to edit_admin_cabana_path(@cabana), notice: 'Cabana atualizada com sucesso.'
     else
+      flash.now[:alert] = 'Erro ao atualizar a cabana. Verifique os campos e tente novamente.'
       render :edit
     end
   end
 
+
+
   def destroy
     @cabana.destroy
-    redirect_to admin_cabanas_path, notice: 'Cabana was successfully deleted.'
+    redirect_to admin_cabanas_path, notice: 'Cabana deletada.'
   end
 
   def price_rules_and_holidays
