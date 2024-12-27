@@ -71,7 +71,7 @@ class ReservasController < ApplicationController
     amount_in_cents = (@reserva.total_price * 100).to_i
 
     response = HTTParty.post(
-      'https://sdx-api.pagar.me/core/v5/paymentlinks',
+      'https://api.pagar.me/core/v5/paymentlinks', # https://sdx-api.pagar.me/core/v5/paymentlinks
       headers: {
         'Authorization' => "Basic #{base64_credentials}",
         'Accept' => 'application/json',
@@ -117,8 +117,8 @@ class ReservasController < ApplicationController
     )
 
     # Add this to log the full response for debugging
-    puts "Response Body: #{response}"
-    puts "Response Code: #{response.code}"
+    puts "Response PayReserva Body: #{response}"
+    puts "Response PayReserva Code: #{response.code}"
 
     Rails.logger.info "PagarMe Response: #{response.body}"
 
