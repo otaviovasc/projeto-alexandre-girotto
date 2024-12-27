@@ -1,68 +1,80 @@
-<div class="bg-white rounded-md w-full mx-auto max-w-9/10 p-4 flex flex-col gap-6">
-  
-  <!-- Imagens da Cabana -->
-  <div class="flex flex-wrap gap-4 justify-center">
-    <% @cabana.images.each do |image| %>
-      <img src="<%= image.url %>" alt="<%= @cabana.name %> Image" class="rounded-md max-h-96">
+<div class="mt-4 pt-16">
+  <div class="bg-white rounded-md flex flex-col w-full mx-auto p-4 relative">
+
+    <!-- Ícone de voltar (sem texto) -->
+    <%= link_to cabanas_path,
+                class: "absolute left-10 inline-flex items-center justify-center w-10 h-10
+                        rounded-full border border-verde-escuro text-verde-escuro
+                        hover:bg-verde-escuro hover:text-white transition-colors duration-300
+                        focus:outline-none focus:ring-2 focus:ring-verde-escuro" do %>
+      <i class="fa-solid fa-arrow-left"></i>
+    <% end %>
+
+    <!-- Título da Cabana (centralizado) -->
+    <p class="text-center text-4xl font-alice text-verde-escuro">
+      <%= @cabana.name %>
+    </p>
+  </div>
+
+  <!-- Slider de Imagens da Cabana -->
+  <div class="flex flex-col items-center mt-8">
+    <%= render partial: "shared/cabana_show_slider", locals: { cabana: @cabana, images: @cabana.images } %>
+  </div>
+
+  <!-- Formulário de Nova Reserva -->
+  <div class="flex flex-col gap-6 px-8 mt-8 bg-white rounded-md p-6 shadow-md">
+
+    <%= form_with model: [@cabana, @reserva], local: true, html: { class: 'flex flex-col gap-6' } do |form| %>
+      <!-- Campo de Seleção de Datas -->
+      <div class="flex flex-col gap-4">
+        <label for="reservation_date_range" class="font-dm text-lg text-terracota">Selecione as datas</label>
+        <input type="text" id="reservation_date_range" data-cabana-id="<%= @cabana.id %>"
+          placeholder="Selecione as datas"
+          class="w-full bg-transparent border border-terracota rounded-md px-4 py-2 text-terracota" />
+        <%= form.hidden_field :start_date, id: "start_date" %>
+        <%= form.hidden_field :end_date, id: "end_date" %>
+      </div>
+
+      <!-- Serviços adicionais -->
+      <div class="flex flex-col gap-4">
+        <h3 class="font-alice text-lg text-verde-escuro">Serviços Adicionais</h3>
+        <div class="flex items-center gap-2">
+          <%= check_box_tag 'reserva[include_breakfast]', '1', false, id: 'include_breakfast',
+            class: 'w-5 h-5 text-verde-escuro border-gray-300 rounded focus:ring focus:ring-verde-escuro' %>
+          <label for="include_breakfast" class="font-dm text-terracota text-md">Incluir café da manhã?</label>
+        </div>
+        <div id="breakfast_quantity_container" class="flex flex-col gap-2 pl-6 hidden">
+          <label class="font-dm text-lg text-terracota">
+             Café da manhã: R$<%= @breakfast_service.price %>/dia
+          </label>
+          <div class="flex items-center gap-2">
+            <button type="button" id="quantity_down" class="bg-botao-verde text-white px-2 py-1 rounded">-</button>
+            <%= number_field_tag 'reserva[breakfast_quantity]', 1, min: 0, id: 'breakfast_quantity',
+              class: 'w-16 text-center border border-terracota rounded-md px-2' %>
+            <button type="button" id="quantity_up" class="bg-botao-verde text-white px-2 py-1 rounded">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total -->
+      <div class="flex flex-col gap-2">
+        <h3 class="font-alice text-lg text-verde-escuro">Total:</h3>
+        <p id="total_price" class="font-dm text-lg text-terracota">R$0.00</p>
+      </div>
+
+      <!-- Botão de Submissão -->
+      <div class="font-dm bg-botao-verde rounded-3xl flex justify-center items-center p-3 mt-4">
+        <%= form.submit 'Criar Reserva', class: 'uppercase font-light text-white w-full bg-transparent' %>
+      </div>
     <% end %>
   </div>
 
-
-  <!-- Título da página -->
-  <h1 class="text-center font-alice text-3xl text-verde-escuro"><%= @cabana.name %></h1>
-
-  <!-- Formulário -->
-  <%= form_with model: [@cabana, @reserva], local: true, html: { class: 'flex flex-col gap-6' } do |form| %>
-    <!-- Campo para selecionar datas -->
-    <div class="flex flex-col gap-4">
-      <label for="reservation_date_range" class="font-dm text-lg text-terracota">Selecione as datas</label>
-      <input type="text" id="reservation_date_range" data-cabana-id="<%= @cabana.id %>" 
-        placeholder="Selecione as datas" class="w-full bg-transparent border border-terracota rounded-md px-4 py-2 text-terracota" />
-      <%= form.hidden_field :start_date, id: "start_date" %>
-      <%= form.hidden_field :end_date, id: "end_date" %>
-    </div>
-
-    <!-- Serviços adicionais -->
-    <div class="flex flex-col gap-4">
-      <h3 class="font-alice text-lg text-verde-escuro">Selecione Serviços Adicionais</h3>
-      <div class="flex items-center gap-2">
-        <%= check_box_tag 'reserva[include_breakfast]', '1', false, id: 'include_breakfast', 
-          class: 'w-5 h-5 text-verde-escuro border-gray-300 rounded focus:ring focus:ring-verde-escuro' %>
-        <label for="include_breakfast" class="font-dm text-terracota text-md">Incluir café da manhã?</label>
-      </div>
-      <div id="breakfast_quantity_container" class="flex flex-col gap-2 pl-6" style="display:none;">
-        <label class="font-dm text-lg text-terracota">
-           Café da manhã: R$<%= @breakfast_service.price %>/dia
-        </label>
-        <div class="flex items-center gap-2 hidden">
-          <button type="button" id="quantity_down" 
-            class="bg-botao-verde text-white px-2 py-1 rounded">-</button>
-          <%= number_field_tag 'reserva[breakfast_quantity]', 1, min: 0, id: 'breakfast_quantity',
-            class: 'w-16 text-center border border-terracota rounded-md px-2' %>
-          <button type="button" id="quantity_up" 
-            class="bg-botao-verde text-white px-2 py-1 rounded">+</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Total -->
-    <div class="flex flex-col gap-2">
-      <h3 class="font-alice text-lg text-verde-escuro">Total:</h3>
-      <p id="total_price" class="font-dm text-lg text-terracota">R$0.00</p>
-    </div>
-
-    <!-- Botão de submissão -->
-    <div class="bg-botao-verde text-white rounded-3xl flex justify-center items-center p-3 cursor-pointer hover:bg-botao-verde-hover transition">
-      <%= form.submit 'Criar Reserva', class: 'uppercase font-light text-white w-full bg-transparent' %>
-    </div>
-  <% end %>
-
-  <!-- Link para voltar -->
-  <div class="flex justify-center">
-    <%= link_to 'Voltar para Cabana', cabana_path(@cabana), 
-      class: 'font-dm text-sm text-verde-escuro underline hover:text-verde-escuro-hover' %>
-  </div>
+  <!-- Funil Form e Footer -->
+  <%= render 'shared/funilform' %>
+  <%= render 'shared/footer' %>
+  <%= render 'shared/wppButton' %>
 </div>
+
 
 <script>
   document.addEventListener("turbo:load", function() {
