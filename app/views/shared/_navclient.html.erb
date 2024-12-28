@@ -35,9 +35,11 @@
 
         <!-- Cart Button -->
         <div>
-            <p class="font-dm uppercase text-base">
-                <%= link_to "Reservar", cabanas_path %>
-            </p>
+          <button id="cart-button" class="text-terracota text-2xl">
+            <%= link_to cabanas_path, class: "text-xl font-bold text-black" do %>
+                <i class="bi bi-cart"></i>
+            <% end %>
+          </button>
         </div>
     </div>
 </div>
