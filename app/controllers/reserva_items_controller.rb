@@ -5,15 +5,15 @@ class ReservaItemsController < ApplicationController
     quantity = params[:quantity].to_i
 
     if item.quantity < quantity
-      redirect_to marketplace_items_path, alert: 'Not enough stock available.'
+      redirect_to items_marketplace_index_path, alert: 'Not enough stock available.'
     else
       item.update(quantity: item.quantity - quantity)
       @reserva_item = ReservaItem.new(reserva: @reserva, item: item, quantity: quantity)
 
       if @reserva_item.save
-        redirect_to marketplace_items_path, notice: 'Item added to your reservation.'
+        redirect_to items_marketplace_index_path, notice: 'Item added to your reservation.'
       else
-        redirect_to marketplace_items_path, alert: 'Unable to add item.'
+        redirect_to items_marketplace_index_path, alert: 'Unable to add item.'
       end
     end
   end
