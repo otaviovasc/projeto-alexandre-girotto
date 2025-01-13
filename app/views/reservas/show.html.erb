@@ -58,6 +58,10 @@
     <% else %>
       <p class="text-gray-600">Nenhum serviço adicional adquirido.</p>
     <% end %>
+    <div class="flex justify-center w-100">
+      <%= link_to '<i class="bi bi-basket2"></i> Ver serviços disponiveis.'.html_safe, services_marketplace_index_path,
+          class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition d-flex align-items-center gap-2' %>
+    </div>
   </div>
 
   <!-- Itens da Reserva -->
@@ -78,6 +82,10 @@
     <% else %>
       <p class="text-gray-600">Nenhum item adquirido para esta reserva.</p>
     <% end %>
+    <div class="flex justify-center w-100">
+      <%= link_to '<i class="bi bi-bag-check"></i> Ver items disponiveis.'.html_safe, items_marketplace_index_path,
+          class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition d-flex align-items-center gap-2' %>
+    </div>
   </div>
 
   <!-- Como Chegar -->

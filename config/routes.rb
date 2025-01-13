@@ -60,7 +60,6 @@ Rails.application.routes.draw do
     resources :reserva_items, only: [:create]
   end
 
-  # config/routes.rb
   post 'pagamentos/webhook', to: 'pagamentos#webhook', as: 'pagamentos_webhook'
 
   # Cart

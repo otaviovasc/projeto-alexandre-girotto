@@ -4,7 +4,7 @@ class MarketplaceController < ApplicationController
 
   def services
     @services = Service.where(filial_id: @reserva.cabana.filial_id)
-    # load_cart_items
+    load_cart_items
   end
 
   def items

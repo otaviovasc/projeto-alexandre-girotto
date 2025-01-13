@@ -7,9 +7,9 @@ class ReservaServicesController < ApplicationController
     @reserva_service = ReservaService.new(reserva: @reserva, service: service, quantity: quantity)
 
     if @reserva_service.save
-      redirect_to services_marketplace_index_path, notice: 'Service added to your reservation.'
+      redirect_to services_marketplace_index_path, notice: 'Serviço adicionado à reserva.'
     else
-      redirect_to services_marketplace_index_path, alert: 'Unable to add service.'
+      redirect_to services_marketplace_index_path, alert: 'Não foi possivel adicionar o serviço, entre em contato com o suporte.'
     end
   end
 end

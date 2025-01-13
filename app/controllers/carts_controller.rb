@@ -1,4 +1,5 @@
 class CartsController < ApplicationController
+  layout "clientside"
   before_action :find_or_create_cart
   before_action :check_active_reserva
 
