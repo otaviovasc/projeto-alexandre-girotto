@@ -1,73 +1,73 @@
-<h1>Available Items</h1>
-<br>
-<div class="service-cards-container">
-  <% @items.each do |item| %>
-    <div class="service-card">
-      <div class="service-image">
-        <% if item.image.attached? %>
-            <img src="<%=item.image.url%>" alt="" class="" style="max-height: 200px; max-width: 200px">
-        <% else %>
-          <p>No Image Available</p>
-        <% end %>
-      </div>
-      <div class="service-details">
-        <h2><%= item.name %></h2>
-        <p><%= item.description %></p>
-        <p><strong>Price:</strong> <%= number_to_currency(item.price) %></p>
-      </div>
+<h1 class="text-2xl lg:text-4xl font-alice text-center my-8 lg:my-16">Itens Disponíveis</h1>
 
+<div class="container mx-auto px-4 lg:px-20">
+  <!-- Lista de Itens -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <% @items.each do |item| %>
+      <div class="service-card bg-white rounded-lg shadow-lg p-4 flex flex-col items-center text-center">
+        <!-- Imagem do Item -->
+        <div class="service-image mb-4">
+          <% if item.image.attached? %>
+            <img src="<%= item.image.url %>" alt="<%= item.name %>" class="w-full h-48 object-cover rounded-md">
+          <% else %>
+            <div class="flex items-center justify-center w-full h-48 bg-creme rounded-md">
+              <p class="text-gray-500">Imagem Não Disponível</p>
+            </div>
+          <% end %>
+        </div>
 
-      <div class="service-actions">
-        <%= link_to 'View Service', item_path(item) %>
+        <!-- Detalhes do Item -->
+        <div class="service-details flex flex-col gap-2">
+          <h2 class="text-lg lg:text-xl font-alice text-preto-fill"><%= item.name %></h2>
+          <p class="text-sm lg:text-base text-gray-600"><%= item.description %></p>
+          <p class="text-lg font-bold text-verde-escuro">Preço: <%= number_to_currency(item.price) %></p>
+        </div>
+
+        <!-- Botão de Ação -->
+        <div class="mt-4">
+          <%= link_to 'Ver Detalhes', item_path(item), class: 'uppercase font-light text-creme bg-botao-verde rounded-3xl px-6 py-3 inline-block' %>
+        </div>
       </div>
-    </div>
-  <% end %>
+    <% end %>
+  </div>
 </div>
 
-<h2>Your Cart</h2>
+<h2 class="text-2xl lg:text-3xl font-alice text-center my-8 lg:my-16">Seu Carrinho</h2>
 
-<% if @cart_items.present? %>
-  <% @cart_items.each do |cart_item| %>
-    <div class="cart-item">
-      <h4><%= cart_item.item&.name || cart_item.service&.name %></h4>
-      <p>Price: <%= number_to_currency(cart_item.item&.price || cart_item.service&.price) %></p>
+<div class="container mx-auto px-4 lg:px-20">
+  <% if @cart_items.present? %>
+    <!-- Lista de Itens no Carrinho -->
+    <div class="flex flex-col gap-6">
+      <% @cart_items.each do |cart_item| %>
+        <div class="cart-item bg-white rounded-lg shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center">
+          <!-- Detalhes do Item -->
+          <div class="flex flex-col gap-2 text-center sm:text-left">
+            <h4 class="text-lg font-alice text-preto-fill"><%= cart_item.item&.name || cart_item.service&.name %></h4>
+            <p class="text-sm lg:text-base text-gray-600">Preço: <%= number_to_currency(cart_item.item&.price || cart_item.service&.price) %></p>
+          </div>
 
-      <%= form_with url: add_item_path, method: :post, local: true do |f| %>
-        <%= hidden_field_tag :item_id, cart_item.item_id if cart_item.item.present? %>
-        <%= hidden_field_tag :service_id, cart_item.service_id if cart_item.service.present? %>
-        <%= number_field_tag :quantity, cart_item.quantity, min: 1 %>
-        <%= submit_tag "Update Quantity", class: "btn btn-secondary" %>
+          <!-- Ações do Item -->
+          <div class="mt-4 sm:mt-0 flex flex-col sm:flex-row items-center gap-4">
+            <%= form_with url: add_item_path, method: :post, local: true do %>
+              <div class="flex items-center gap-2">
+                <%= hidden_field_tag :item_id, cart_item.item_id if cart_item.item.present? %>
+                <%= hidden_field_tag :service_id, cart_item.service_id if cart_item.service.present? %>
+                <%= number_field_tag :quantity, cart_item.quantity, min: 1, class: 'w-16 text-center border border-gray-300 rounded-lg' %>
+                <%= submit_tag "Atualizar", class: 'uppercase font-light text-creme bg-botao-verde rounded-3xl px-4 py-2' %>
+              </div>
+            <% end %>
+
+            <%= button_to "Remover", remove_item_path(cart_item), method: :delete, class: 'uppercase font-light text-creme bg-red-500 rounded-3xl px-4 py-2' %>
+          </div>
+        </div>
       <% end %>
-
-      <%= button_to "Remove", remove_item_path(cart_item), method: :delete, class: "btn btn-danger" %>
     </div>
+
+    <!-- Botão de Checkout -->
+    <div class="text-center my-8">
+      <%= link_to 'Ir para o Checkout', checkout_cart_path, class: 'uppercase font-light text-creme bg-botao-verde rounded-3xl px-8 py-3' %>
+    </div>
+  <% else %>
+    <p class="text-center text-gray-600 text-lg">Seu carrinho está vazio.</p>
   <% end %>
-
-  <%= link_to 'Go to Checkout', checkout_cart_path, class: "btn btn-primary" %>
-<% else %>
-  <p>Your cart is empty.</p>
-<% end %>
-
-<style>
-  .marketplace-items {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-  }
-
-  .item-card, .cart-item {
-    border: 1px solid #ccc;
-    padding: 1rem;
-    border-radius: 8px;
-    background-color: #f9f9f9;
-  }
-
-  .item-card h3, .cart-item h4 {
-    margin-bottom: 0.5rem;
-  }
-
-  .cart-item {
-    margin-bottom: 1rem;
-  }
-
-</style>
+</div>
