@@ -1,8 +1,12 @@
 <h1 class="text-2xl lg:text-4xl font-alice text-center my-8 lg:my-16">Itens Disponíveis</h1>
 
-<%# colocar um toggle cinza noq esta "selcionado" %>
-<%= link_to 'ver servicos', services_marketplace_index_path %>
-<%= link_to 'ver items', items_marketplace_index_path %>
+<div class="flex justify-center items-center gap-4 mb-8">
+  <%= link_to 'Ver serviços', services_marketplace_index_path,
+              class: "px-4 py-2 rounded-full font-dm text-sm lg:text-base #{current_page?(services_marketplace_index_path) ? 'bg-gray-200 text-gray-800' : 'bg-white text-gray-500 border border-gray-300'} hover:bg-gray-300 transition" %>
+
+  <%= link_to 'Ver itens', items_marketplace_index_path,
+              class: "px-4 py-2 rounded-full font-dm text-sm lg:text-base #{current_page?(items_marketplace_index_path) ? 'bg-gray-200 text-gray-800' : 'bg-white text-gray-500 border border-gray-300'} hover:bg-gray-300 transition" %>
+</div>
 
 <div class="container mx-auto px-4 lg:px-20">
   <!-- Lista de Itens -->

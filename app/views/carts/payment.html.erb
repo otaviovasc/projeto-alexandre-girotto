@@ -1,20 +1,50 @@
 <div class="bg-white rounded-md flex flex-col w-full mx-auto p-4 relative">
 
-    <!-- Ícone de voltar (sem texto) -->
-    <%= link_to checkout_cart_path,
-                class: "absolute left-2 inline-flex items-center justify-center w-10 h-10
+  <!-- Ícone de voltar -->
+  <%= link_to checkout_cart_path, class: "absolute left-2 inline-flex items-center justify-center w-10 h-10
                         rounded-full border border-verde-escuro text-verde-escuro" do %>
-      <i class="fa-solid fa-arrow-left"></i>
-    <% end %>
+    <i class="fa-solid fa-arrow-left"></i>
+  <% end %>
 
-    <!-- Título da Cabana (centralizado) -->
-    <p class="text-center text-4xl font-alice text-green-600">
-      <i class="bi bi-check-circle-fill"></i> Pagamento confirmado. Obrigado!
-    </p>
-  </div>
+  <!-- Mensagem de confirmação -->
+  <p class="text-center text-4xl font-alice text-green-600">
+    <i class="bi bi-check-circle-fill"></i> Pagamento confirmado. Obrigado!
+  </p>
+</div>
 
 <div class="bg-white rounded-md w-full max-w-4xl mx-auto p-6 flex flex-col gap-6 shadow-md">
-  <!-- Serviços no Carrinho -->
+  <!-- Instruções de Pagamento -->
+  <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
+    <h2 class="font-alice text-lg text-verde-escuro">
+      <i class="bi bi-wallet2"></i> Como finalizar seu pagamento
+    </h2>
+    <ul class="list-decimal ml-6 text-gray-600 text-sm lg:text-base">
+      <li>Pague o seu carrinho no QR code abaixo ou copie o código PIX.</li>
+      <li>Mande o comprovante do PIX para o número <strong>XXXXX-XXXX</strong>.</li>
+      <li>O PIX está no nome de <strong>BRUNA RITIELES FORTES MIGUEL</strong>.</li>
+    </ul>
+  </div>
+
+  <!-- QR Code -->
+  <div class="flex flex-col items-center gap-4">
+    <img src="<%= asset_path('qrcode.png') %>" alt="QR Code para pagamento" class="w-48 h-48 rounded-md shadow-md">
+    <p class="text-center text-sm lg:text-base text-gray-600">
+      Ou copie o código PIX abaixo:
+    </p>
+
+    <!-- Código PIX e botão de copiar -->
+    <div class="flex flex-col items-center gap-2">
+      <div class="bg-gray-100 text-gray-800 px-4 py-2 rounded-md text-sm lg:text-base w-full max-w-sm text-center break-words">
+        00020126330014br.gov.bcb.pix0111091443446275204000053039865802BR5925BRUNA RITIELES FORTES MIG6008VIRGINIA62070503***6304070D
+      </div>
+      <button id="copyPixCode" class="bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition">
+        Copiar Código
+      </button>
+      <p id="copyFeedback" class="text-green-600 text-sm hidden">Código copiado com sucesso!</p>
+    </div>
+  </div>
+
+  <!-- Serviços e Itens -->
   <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
     <h2 class="font-alice text-lg text-verde-escuro">
       <i class="bi bi-tools"></i> Serviços no Carrinho
@@ -36,11 +66,10 @@
     <% end %>
     <div class="flex justify-center w-full">
       <%= link_to '<i class="bi bi-basket2"></i> &nbsp Adicionar mais serviços.'.html_safe, services_marketplace_index_path,
-          class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition flex items-center gap-2' %>
+                  class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition flex items-center gap-2' %>
     </div>
   </div>
 
-  <!-- Itens no Carrinho -->
   <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
     <h2 class="font-alice text-lg text-verde-escuro">
       <i class="bi bi-box"></i> Itens no Carrinho
@@ -62,8 +91,111 @@
     <% end %>
     <div class="flex justify-center w-full">
       <%= link_to '<i class="bi bi-bag-check"></i> &nbsp Adicionar mais itens.'.html_safe, items_marketplace_index_path,
-          class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition flex items-center gap-2' %>
+                  class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition flex items-center gap-2' %>
     </div>
   </div>
 </div>
-<%= render 'shared/wppButton' %>
+
+<!-- wppbutton -->
+  <div class="wh-api" style="position: fixed; bottom: 10vh; right: 10vh; z-index: 100;">
+      <div class="wh-fixed whatsapp-pulse" style="margin-right: 15px; margin-bottom: 15px; width: 60px; height: 60px; background: #10b418; position: fixed; text-align: center; color: #ffffff; cursor: pointer; border-radius: 50%; z-index: 99; display: inline-block; line-height: 65px;">
+
+          <a href="https://wa.me/5535998535301" style="display: block; text-decoration: none;">
+              <button class="wh-ap-btn" style="outline: none; width: 60px; height: 60px; border: 0; background-color: #2ecc71; padding: 0; border-radius: 100%; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24); cursor: pointer; transition: opacity 0.3s, background 0.3s, box-shadow 0.3s; position: relative;">
+                  <i class="bi bi-whatsapp text-3xl"></i>
+                  <span style="content: 'Chat with me'; display: block; position: absolute; margin-left: -130px; margin-top: 16px; height: 25px; background: #49654e; color: #fff; font-weight: 400; font-size: 15px; border-radius: 3px; width: 0; opacity: 0; padding: 0; transition: opacity 0.4s, width 0.4s, padding 0.5s; padding-top: 7px; border-radius: 30px; box-shadow: 0 1px 15px rgba(32, 33, 36, 0.28);"></span>
+              </button>
+          </a>
+      </div>
+  </div>
+
+  <style>
+      @-webkit-keyframes pulse {
+          0% {
+              -webkit-transform: scale(0);
+              opacity: 0;
+          }
+          25% {
+              -webkit-transform: scale(0.3);
+              opacity: 1;
+          }
+          50% {
+              -webkit-transform: scale(0.6);
+              opacity: 0.6;
+          }
+          75% {
+              -webkit-transform: scale(0.9);
+              opacity: 0.3;
+          }
+          100% {
+              -webkit-transform: scale(1);
+              opacity: 0;
+          }
+      }
+
+      @keyframes pulse {
+          0% {
+              transform: scale(0);
+              opacity: 0;
+          }
+          25% {
+              transform: scale(0.3);
+              opacity: 1;
+          }
+          50% {
+              transform: scale(0.6);
+              opacity: 0.6;
+          }
+          75% {
+              transform: scale(0.9);
+              opacity: 0.3;
+          }
+          100% {
+              transform: scale(1);
+              opacity: 0;
+          }
+      }
+
+      .whatsapp-pulse:before {
+          position: absolute;
+          content: " ";
+          z-index: -1;
+          bottom: -15px;
+          right: -15px;
+          background-color: #10b418;
+          width: 90px;
+          height: 90px;
+          border-radius: 100%;
+          animation-fill-mode: both;
+          -webkit-animation-fill-mode: both;
+          opacity: 0.6;
+          -webkit-animation: pulse 1s ease-out;
+          animation: pulse 1.8s ease-out;
+          -webkit-animation-iteration-count: infinite;
+          animation-iteration-count: infinite;
+      }
+
+      .wh-fixed > a:hover button.wh-ap-btn::before {
+          opacity: 1;
+          width: auto;
+          padding-top: 7px;
+          padding-left: 10px;
+          padding-right: 10px;
+          width: 100px;
+      }
+  </style>
+
+<!-- wppbutton -->
+
+
+
+<script>
+  document.getElementById('copyPixCode').addEventListener('click', function () {
+    const pixCode = "00020126330014br.gov.bcb.pix0111091443446275204000053039865802BR5925BRUNA RITIELES FORTES MIG6008VIRGINIA62070503***6304070D";
+    navigator.clipboard.writeText(pixCode).then(() => {
+      const feedback = document.getElementById('copyFeedback');
+      feedback.classList.remove('hidden');
+      setTimeout(() => feedback.classList.add('hidden'), 3000);
+    });
+  });
+</script>
