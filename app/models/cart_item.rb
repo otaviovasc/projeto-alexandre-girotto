@@ -10,7 +10,7 @@ class CartItem < ApplicationRecord
 
   def item_or_service_present
     if item_id.nil? && service_id.nil?
-      errors.add(:base, "Either item or service must be present")
+      errors.add(:base, "Necessario adicionar pelo menos 1 item ou serviço")
     end
   end
 end

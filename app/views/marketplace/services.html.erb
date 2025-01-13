@@ -1,5 +1,9 @@
 <h1 class="text-2xl lg:text-4xl font-alice text-center my-8 lg:my-16">Serviços Disponíveis</h1>
 
+<%# colocar um toggle cinza noq esta "selcionado" %>
+<%= link_to 'ver servicos', services_marketplace_index_path %>
+<%= link_to 'ver items', items_marketplace_index_path %>
+
 <div class="container mx-auto px-4 lg:px-20">
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
     <% @services.each do |service| %>
@@ -33,37 +37,4 @@
       </div>
     <% end %>
   </div>
-</div>
-
-<h2 class="text-2xl lg:text-3xl font-alice text-center my-8 lg:my-16">Seu carrinho</h2>
-
-<div class="container mx-auto px-4 lg:px-20">
-  <% if @cart_items.present? %>
-    <div class="grid grid-cols-1 gap-8">
-      <% @cart_items.each do |cart_item| %>
-        <div class="cart-item bg-white rounded-lg shadow-lg p-6 flex flex-col lg:flex-row items-center justify-between">
-          <!-- Detalhes do Item -->
-          <div class="flex flex-col gap-4 lg:w-2/3">
-            <h4 class="text-xl font-alice text-preto-fill"><%= cart_item.item&.name || cart_item.service&.name %></h4>
-            <p class="text-gray-600 text-lg">Price: <%= number_to_currency(cart_item.item&.price || cart_item.service&.price) %></p>
-          </div>
-
-          <!-- Ações do Item -->
-          <div class="flex flex-col lg:flex-row items-center gap-4 lg:w-1/3">
-            <%= form_with url: add_item_path, method: :post, local: true do |f| %>
-              <div class="flex items-center gap-4">
-                <%= hidden_field_tag :item_id, cart_item.item_id if cart_item.item.present? %>
-                <%= hidden_field_tag :service_id, cart_item.service_id if cart_item.service.present? %>
-                <%= number_field_tag :quantity, cart_item.quantity, min: 1, class: 'w-16 text-center border border-gray-300 rounded-lg' %>
-                <%= submit_tag "Update", class: 'uppercase font-light text-creme bg-botao-verde rounded-3xl px-4 py-2' %>
-              </div>
-            <% end %>
-            <%= button_to "Remove", remove_item_path(cart_item), method: :delete, class: 'uppercase font-light text-creme bg-red-500 rounded-3xl px-4 py-2' %>
-          </div>
-        </div>
-      <% end %>
-    </div>
-  <% else %>
-    <p class="text-center text-gray-600 text-lg">Seu carrinho está vazio!</p>
-  <% end %>
 </div>

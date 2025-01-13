@@ -1,5 +1,9 @@
 <h1 class="text-2xl lg:text-4xl font-alice text-center my-8 lg:my-16">Itens Disponíveis</h1>
 
+<%# colocar um toggle cinza noq esta "selcionado" %>
+<%= link_to 'ver servicos', services_marketplace_index_path %>
+<%= link_to 'ver items', items_marketplace_index_path %>
+
 <div class="container mx-auto px-4 lg:px-20">
   <!-- Lista de Itens -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -30,44 +34,4 @@
       </div>
     <% end %>
   </div>
-</div>
-
-<h2 class="text-2xl lg:text-3xl font-alice text-center my-8 lg:my-16">Seu Carrinho</h2>
-
-<div class="container mx-auto px-4 lg:px-20">
-  <% if @cart_items.present? %>
-    <!-- Lista de Itens no Carrinho -->
-    <div class="flex flex-col gap-6">
-      <% @cart_items.each do |cart_item| %>
-        <div class="cart-item bg-white rounded-lg shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center">
-          <!-- Detalhes do Item -->
-          <div class="flex flex-col gap-2 text-center sm:text-left">
-            <h4 class="text-lg font-alice text-preto-fill"><%= cart_item.item&.name || cart_item.service&.name %></h4>
-            <p class="text-sm lg:text-base text-gray-600">Preço: <%= number_to_currency(cart_item.item&.price || cart_item.service&.price) %></p>
-          </div>
-
-          <!-- Ações do Item -->
-          <div class="mt-4 sm:mt-0 flex flex-col sm:flex-row items-center gap-4">
-            <%= form_with url: add_item_path, method: :post, local: true do %>
-              <div class="flex items-center gap-2">
-                <%= hidden_field_tag :item_id, cart_item.item_id if cart_item.item.present? %>
-                <%= hidden_field_tag :service_id, cart_item.service_id if cart_item.service.present? %>
-                <%= number_field_tag :quantity, cart_item.quantity, min: 1, class: 'w-16 text-center border border-gray-300 rounded-lg' %>
-                <%= submit_tag "Atualizar", class: 'uppercase font-light text-creme bg-botao-verde rounded-3xl px-4 py-2' %>
-              </div>
-            <% end %>
-
-            <%= button_to "Remover", remove_item_path(cart_item), method: :delete, class: 'uppercase font-light text-creme bg-red-500 rounded-3xl px-4 py-2' %>
-          </div>
-        </div>
-      <% end %>
-    </div>
-
-    <!-- Botão de Checkout -->
-    <div class="text-center my-8">
-      <%= link_to 'Ir para o Checkout', checkout_cart_path, class: 'uppercase font-light text-creme bg-botao-verde rounded-3xl px-8 py-3' %>
-    </div>
-  <% else %>
-    <p class="text-center text-gray-600 text-lg">Seu carrinho está vazio.</p>
-  <% end %>
 </div>

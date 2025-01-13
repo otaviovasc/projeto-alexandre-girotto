@@ -17,16 +17,35 @@ class CartsController < ApplicationController
     @cart_item.reserva = @reserva
     @cart_item.quantity = params[:quantity].to_i if params[:quantity].present?
     if @cart_item.save
-      redirect_to redirect_fallback, notice: 'Added to cart successfully!'
+      redirect_to redirect_fallback, notice: 'Adicionado ao carrinho.'
     else
-      redirect_to redirect_fallback, alert: 'Failed to add to cart.'
+      redirect_to redirect_fallback, alert: 'Erro ao adicionar no carrinho.'
+    end
+  end
+
+  def update_item
+    redirect_fallback = checkout_cart_path
+    if params[:item_id].present?
+      item = Item.find(params[:item_id])
+      @cart_item = @cart.cart_items.find_or_initialize_by(item: item)
+    elsif params[:service_id].present?
+      service = Service.find(params[:service_id])
+      @cart_item = @cart.cart_items.find_or_initialize_by(service: service)
+    end
+
+    @cart_item.reserva = @reserva
+    @cart_item.quantity = params[:quantity].to_i if params[:quantity].present?
+    if @cart_item.save
+      redirect_to redirect_fallback, notice: 'Item atualizado no carrinho.'
+    else
+      redirect_to redirect_fallback, alert: 'Erro ao atualizar item no carrinho.'
     end
   end
 
   def remove_item
     @cart_item = @cart.cart_items.find(params[:id])
     @cart_item.destroy
-    render json: { status: 'success', cart: @cart }
+    redirect_to checkout_cart_path
   end
 
   # Display checkout page
@@ -54,10 +73,7 @@ class CartsController < ApplicationController
       end
     end
 
-    # Clear the cart after checkout
-    @cart.cart_items.destroy_all
-
-    redirect_to reserva_path(reserva), notice: 'Checkout complete! Items added to your reservation.'
+    redirect_to payment_cart_path, notice: 'Pedido concluído! Mande o comprovante no Whatsapp.'
   end
 
   private

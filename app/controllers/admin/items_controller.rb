@@ -80,7 +80,7 @@ class Admin::ItemsController < ApplicationController
   end
 
   def item_params
-    params.require(:item).permit(:name, :quantity, :category, :critical_stock, :show_in_marketplace)
+    params.require(:item).permit(:name, :quantity, :category, :critical_stock, :show_in_marketplace, :price, :description)
   end
 
   def authorize_admin_or_manager

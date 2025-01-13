@@ -64,6 +64,7 @@ Rails.application.routes.draw do
 
   # Cart
   post 'cart/add_item', to: 'carts#add_item', as: 'add_item'
+  post 'cart/update_item', to: 'carts#update_item', as: 'update_item'
   delete 'cart/remove_item/:id', to: 'carts#remove_item', as: 'remove_item'
   get 'cart/checkout', to: 'carts#checkout', as: 'checkout_cart'
   get 'cart/payment', to: 'carts#payment', as: 'payment_cart'  # Payment page
