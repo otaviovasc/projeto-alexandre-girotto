@@ -1,16 +1,27 @@
 <!-- app/views/items/show.html.erb -->
-<h1><%= @item.name %></h1>
-<p>Description: <%= @item.description %></p>
-<p>Price: <%= number_to_currency(@item.price) %></p>
+<h1 class="text-2xl lg:text-4xl font-alice text-center my-8 lg:my-16"><%= @item.name %></h1>
 
-<%= form_with url: add_item_path, method: :post, local: true do %>
-  <%= hidden_field_tag :item_id, @item.id %>  <!-- Or :item_id depending on the context -->
-  <div>
-    <label>Quantity:</label>
-    <%= number_field_tag :quantity, 1, min: 1 %>
+<div class="container mx-auto px-4 lg:px-20">
+  <!-- Detalhes do Item -->
+  <div class="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center text-center gap-6">
+    <p class="text-lg lg:text-xl text-gray-600"><strong>Descrição:</strong> <%= @item.description %></p>
+    <p class="text-lg lg:text-xl font-bold text-verde-escuro"><strong>Preço:</strong> <%= number_to_currency(@item.price) %></p>
+
+    <!-- Formulário de Adicionar ao Carrinho -->
+    <%= form_with url: add_item_path, method: :post, local: true do %>
+      <%= hidden_field_tag :item_id, @item.id %>
+      <div class="flex flex-col lg:flex-row items-center gap-4">
+        <label for="quantity" class="text-gray-600 text-lg">Quantidade:</label>
+        <%= number_field_tag :quantity, 1, min: 1, class: 'w-16 text-center border border-gray-300 rounded-lg' %>
+      </div>
+      <div class="mt-6">
+        <%= submit_tag "Adicionar ao Carrinho", class: 'uppercase font-light text-creme bg-botao-verde rounded-3xl px-6 py-3' %>
+      </div>
+    <% end %>
+
+    <!-- Link para voltar -->
+    <div class="mt-4">
+      <%= link_to 'Voltar para os Itens', items_marketplace_index_path, class: 'uppercase font-light text-botao-verde border border-botao-verde rounded-3xl px-6 py-3' %>
+    </div>
   </div>
-  <%= submit_tag "Add to Cart", class: "btn btn-primary" %>
-<% end %>
-
-
-<%= link_to 'Back to Items', items_marketplace_index_path %>
+</div>
