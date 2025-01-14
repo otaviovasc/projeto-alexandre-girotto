@@ -23,6 +23,32 @@
 
   <!-- Formulário de Nova Reserva -->
   <div class="flex flex-col gap-6 px-8 mt-8 bg-white rounded-md p-6 shadow-md">
+    
+    <% @infos_da_cabana.each do |info| %>
+      <% if info.info_type == "description" %>
+        <p class="text-xl font-bold font-dm text-verde-escuro">
+          A <%= @cabana.name %>
+        </p>
+        <p class="text-lg font-alice text-verde-escuro">
+          <%= info.content %>
+        </p>
+      <% end %>
+    <% end %>
+
+    <% @infos_da_cabana.each do |info| %>
+      <% if info.info_type == "comodidades" %>
+        <p class="text-xl font-bold font-dm text-verde-escuro">Comodidades:</p>
+        <p class="text-lg font-dm text-verde-escuro max-w-6/10">
+          <%= info.content %>
+        </p>
+      <% end %>
+      <% if info.info_type == "other" %>
+        <p class="text-xl font-bold font-dm text-verde-escuro">Fatores Chave:</p>
+        <p class="text-lg font-dm max-w-8/10 text-verde-escuro">
+          <%= info.content %>
+        </p>
+      <% end %>
+    <% end %>
 
     <%= form_with model: [@cabana, @reserva], local: true, html: { class: 'flex flex-col gap-6' } do |form| %>
       <!-- Campo de Seleção de Datas -->
@@ -62,7 +88,7 @@
 
       <!-- Botão de Submissão -->
       <div class="font-dm bg-botao-verde rounded-3xl flex justify-center items-center p-3 mt-4">
-        <%= form.submit 'Criar Reserva', class: 'uppercase font-light text-white w-full bg-transparent' %>
+        <%= form.submit 'Reservar', class: 'uppercase font-light text-white w-full bg-transparent' %>
       </div>
     <% end %>
   </div>
