@@ -1,11 +1,10 @@
 <!-- _cabana_show_slider.html.erb -->
 
-<!-- IMPORTS SWIPER (se ainda não estiver global em sua aplicação) -->
-
 <style>
   .swiper-pagination-bullet {
     background-color: #ccc;
     opacity: 1;
+    transition: background-color 0.3s;
   }
   .swiper-pagination-bullet-active {
     background-color: #ffbd59;
@@ -21,10 +20,9 @@
     box-sizing: border-box;
     overflow: hidden;
   }
-  /* Botões de navegação (setas) */
   .swiper-button-next,
   .swiper-button-prev {
-    color: #333; /* Ajuste a cor conforme desejar */
+    color: #333;
   }
   .swiper-button-next:hover,
   .swiper-button-prev:hover {
@@ -64,6 +62,8 @@
       pagination: {
         el: '.swiper-cabana-show-<%= cabana.id %> .swiper-pagination',
         clickable: true,
+        dynamicBullets: true, // Ativa as bolinhas dinâmicas
+        dynamicMainBullets: 3, // Define o número máximo de bolinhas visíveis
       },
       navigation: {
         nextEl: '.swiper-cabana-show-<%= cabana.id %> .swiper-button-next',
