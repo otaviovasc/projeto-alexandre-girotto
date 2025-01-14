@@ -1,12 +1,130 @@
 <% if notice %>
-  <div class="alert alert-info alert-dismissible fade show m-1" role="alert">
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  <div class="alert alert-notice auto-dismiss">
+    <div class="progress-bar"></div>
+    <button class="close-btn" onclick="dismissAlert(this)">✕</button>
     <%= notice %>
   </div>
 <% end %>
 <% if alert %>
-  <div class="alert alert-warning alert-dismissible fade show m-1" role="alert">
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  <div class="alert alert-warning auto-dismiss">
+    <div class="progress-bar"></div>
+    <button class="close-btn" onclick="dismissAlert(this)">✕</button>
     <%= alert.gsub("\n", "<br>").html_safe %>
   </div>
 <% end %>
+
+<style>
+/* General Alert Styling */
+.alert {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 400px;
+  border-radius: 1rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  padding: 1rem 1.5rem;
+  font-family: Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: #2A3337; /* Dark text */
+  background-color: #F6F4EB; /* Soft beige background */
+  border: 1px solid transparent;
+  z-index: 1000;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  overflow: hidden; /* Ensures the progress bar stays inside */
+}
+
+.alert-notice {
+  background-color: #F6F4EB; /* Soft beige */
+  border-color: #C9D8C5; /* Soft green border */
+  color: #2A3337; /* Dark text for notices */
+}
+
+.alert-warning {
+  background-color: #FDECEA; /* Light red */
+  border-color: #F8B4A7; /* Soft red border */
+  color: #8D2B23; /* Dark red text */
+}
+
+/* Close Button Styling */
+.close-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: inherit;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #8D2B23; /* Dark red for hover */
+}
+
+/* Progress Bar Styling */
+.progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 6px;
+  background-color: #C9D8C5; /* Soft green */
+  animation: progress 5s linear forwards;
+  border-bottom-left-radius: 1rem;
+  border-bottom-right-radius: 1rem;
+}
+
+.alert-warning .progress-bar {
+  background-color: #F8B4A7; /* Soft red */
+}
+
+/* Hide Animation */
+.alert.hide {
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .alert {
+    width: 90%;
+    font-size: 0.9rem;
+    padding: 0.8rem 1rem;
+  }
+}
+
+/* Progress Animation */
+@keyframes progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0;
+  }
+}
+</style>
+
+<script>
+// Function to manually dismiss an alert
+function dismissAlert(button) {
+  const alert = button.parentElement;
+  alert.classList.add('hide');
+  setTimeout(() => alert.remove(), 300); // Wait for transition to finish
+}
+
+// Automatically dismiss alerts after 5 seconds
+document.addEventListener('turbo:load', () => {
+  const autoDismissAlerts = document.querySelectorAll('.auto-dismiss');
+
+  autoDismissAlerts.forEach(alert => {
+    setTimeout(() => {
+      alert.classList.add('hide');
+      setTimeout(() => alert.remove(), 300); // Wait for transition to finish
+    }, 5000); // 5 seconds
+  });
+});
+</script>
