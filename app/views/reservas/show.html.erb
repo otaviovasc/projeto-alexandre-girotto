@@ -41,49 +41,76 @@
   </div>
 
   <!-- Serviços da Reserva -->
-  <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
-    <h2 class="font-alice text-lg text-verde-escuro">
+  <div class="flex flex-col gap-6 border-t border-gray-300 pt-4">
+    <!-- Serviços Adicionais -->
+    <h2 class="font-alice text-lg text-verde-escuro flex items-center gap-2">
       <i class="bi bi-tools"></i> Serviços Adicionais
     </h2>
+
     <% if @reserva_services.any? %>
-      <ul class="list-disc ml-6 text-gray-600">
+      <div class="space-y-4">
         <% @reserva_services.each do |reserva_service| %>
-          <li>
-            <strong>Serviço:</strong> <%= reserva_service.service.name %>,
-            <strong>Preço:</strong> <%= number_to_currency(reserva_service.service.price) %>,
-            <strong>Quantidade:</strong> <%= reserva_service.quantity %>
-          </li>
+          <div class="bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
+            <div class="flex justify-between items-center">
+              <div>
+                <strong class="text-gray-800">Serviço:</strong> <%= reserva_service.service.name %>
+              </div>
+              <div class="text-sm text-gray-500">
+                <strong>Data:</strong> <%= reserva_service.created_at.strftime("%H:%M %d/%m/%Y") %>
+              </div>
+            </div>
+            <div class="mt-2">
+              <strong class="text-gray-800">Preço:</strong> <%= number_to_currency(reserva_service.service.price) %>
+            </div>
+            <div>
+              <strong class="text-gray-800">Quantidade:</strong> <%= reserva_service.quantity %>
+            </div>
+          </div>
         <% end %>
-      </ul>
+      </div>
     <% else %>
       <p class="text-gray-600">Nenhum serviço adicional adquirido.</p>
     <% end %>
-    <div class="flex justify-center w-100">
-      <%= link_to '<i class="bi bi-basket2"></i> &nbsp Ver serviços disponiveis.'.html_safe, services_marketplace_index_path,
+
+    <div class="flex justify-center">
+      <%= link_to '<i class="bi bi-basket2"></i> &nbsp Ver serviços disponíveis'.html_safe, services_marketplace_index_path,
           class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition d-flex align-items-center gap-2' %>
     </div>
   </div>
 
-  <!-- Itens da Reserva -->
-  <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
-    <h2 class="font-alice text-lg text-verde-escuro">
+  <!-- Itens Adquiridos -->
+  <div class="flex flex-col gap-6 border-t border-gray-300 pt-4">
+    <h2 class="font-alice text-lg text-verde-escuro flex items-center gap-2">
       <i class="bi bi-box"></i> Itens Adquiridos
     </h2>
+
     <% if @reserva_items.any? %>
-      <ul class="list-disc ml-6 text-gray-600">
+      <div class="space-y-4">
         <% @reserva_items.each do |reserva_item| %>
-          <li>
-            <strong>Item:</strong> <%= reserva_item.item.name %>,
-            <strong>Preço:</strong> <%= number_to_currency(reserva_item.item.price) %>,
-            <strong>Quantidade:</strong> <%= reserva_item.quantity %>
-          </li>
+          <div class="bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
+            <div class="flex justify-between items-center">
+              <div>
+                <strong class="text-gray-800">Item:</strong> <%= reserva_item.item.name %>
+              </div>
+              <div class="text-sm text-gray-500">
+                <strong>Data:</strong> <%= reserva_item.created_at.strftime("%H:%M %d/%m/%Y") %>
+              </div>
+            </div>
+            <div class="mt-2">
+              <strong class="text-gray-800">Preço:</strong> <%= number_to_currency(reserva_item.item.price) %>
+            </div>
+            <div class="mt-2">
+              <strong class="text-gray-800">Quantidade:</strong> <%= reserva_item.quantity %>
+            </div>
+          </div>
         <% end %>
-      </ul>
+      </div>
     <% else %>
       <p class="text-gray-600">Nenhum item adquirido para esta reserva.</p>
     <% end %>
-    <div class="flex justify-center w-100">
-      <%= link_to '<i class="bi bi-bag-check"></i> &nbsp Ver items disponiveis.'.html_safe, items_marketplace_index_path,
+
+    <div class="flex justify-center">
+      <%= link_to '<i class="bi bi-bag-check"></i> &nbsp Ver itens disponíveis'.html_safe, items_marketplace_index_path,
           class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition d-flex align-items-center gap-2' %>
     </div>
   </div>
