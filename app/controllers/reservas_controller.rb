@@ -29,6 +29,7 @@ class ReservasController < ApplicationController
     @cabana = Cabana.find(params[:cabana_id])
     @reserva = @cabana.reservas.new
     @breakfast_service = Service.find_by(name: 'Café da Manhã')
+    @infos_da_cabana = InfoDaCabana.where(cabana_id: @cabana.id)
   end
 
   def create

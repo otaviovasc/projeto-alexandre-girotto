@@ -1,6 +1,8 @@
 <div class="container py-4">
   <h1 class="text-2xl font-bold mb-4">Nova Informação para <%= @cabana.name %></h1>
-
+  <h3 class="font-bold">Apenas "intro" terá titulo exibido.</h3>
+  <p class="font-bold">Coloque qualquer coisa no campo Título para possibilitar a criação.</p>
+  <br>
   <%= form_with model: [:admin, @cabana, @info_da_cabana], local: true, html: { class: 'needs-validation' } do |form| %>
     <div class="mb-3">
       <%= form.label :info_type, 'Tipo de Informação', class: 'form-label' %>
@@ -15,11 +17,6 @@
     <div class="mb-3">
       <%= form.label :content, 'Conteúdo', class: 'form-label' %>
       <%= form.text_area :content, class: 'form-control' %>
-    </div>
-
-    <div class="mb-3">
-      <%= form.label :image, 'Imagem', class: 'form-label' %>
-      <%= form.file_field :image, class: 'form-control' %>
     </div>
 
     <div class="d-flex gap-2 mt-4">

@@ -21,9 +21,33 @@
     <%= render partial: "shared/cabana_show_slider", locals: { cabana: @cabana, images: @cabana.images } %>
   </div>
 
+  <!-- Botão para scrollar até a seção de seleção de datas -->
+  <div id="scroll-button-container" class="fixed bottom-8 left-8 z-50">
+    <button
+      id="scroll-to-dates"
+      class="bg-verde-escuro text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition-colors">
+      Reservar Agora
+    </button>
+  </div>
+
+
   <!-- Formulário de Nova Reserva -->
   <div class="flex flex-col gap-6 px-8 mt-8 bg-white rounded-md p-6 shadow-md">
-    
+
+    <% @infos_da_cabana.each do |info| %>
+      <% if info.info_type == "intro" %>
+        <!-- Seção de introdução com destaque suave -->
+        <div class="bg-gray-100 p-6 rounded-lg mb-8">
+          <p class="text-xl font-semibold font-dm text-verde-escuro">
+            <%= info.title %>
+          </p>
+          <p class="text-lg font-alice text-verde-escuro mt-2">
+            <%= info.content %>
+          </p>
+        </div>
+      <% end %>
+    <% end %>
+
     <% @infos_da_cabana.each do |info| %>
       <% if info.info_type == "description" %>
         <p class="text-xl font-bold font-dm text-verde-escuro">
@@ -52,7 +76,7 @@
 
     <%= form_with model: [@cabana, @reserva], local: true, html: { class: 'flex flex-col gap-6' } do |form| %>
       <!-- Campo de Seleção de Datas -->
-      <div class="flex flex-col gap-4">
+      <div class="flex flex-col gap-4" id="date-selection">
         <label for="reservation_date_range" class="font-dm text-lg text-terracota">Selecione as datas</label>
         <input type="text" id="reservation_date_range" data-cabana-id="<%= @cabana.id %>"
           placeholder="Selecione as datas"
@@ -172,6 +196,30 @@
             totalPriceElement.textContent = `R$${data.total_price.toFixed(2)}`;
           });
       }
+    }
+  });
+</script>
+
+<script>
+  document.addEventListener("turbo:load", function() {
+    const scrollToDatesButton = document.getElementById("scroll-to-dates");
+    const reservationSection = document.getElementById('date-selection');
+
+    if (scrollToDatesButton && reservationSection) {
+      scrollToDatesButton.addEventListener("click", function() {
+        // Calcula o offset para centralizar
+        const offset = -window.innerHeight / 4; // Ajuste fino para centralizar
+        const sectionTop = reservationSection.getBoundingClientRect().top + window.scrollY + offset;
+
+        // Scroll suavemente até a posição calculada
+        window.scrollTo({
+          top: sectionTop,
+          behavior: "smooth"
+        });
+
+        // Oculta o botão depois do scroll
+        scrollToDatesButton.style.display = "none";
+      });
     }
   });
 </script>
