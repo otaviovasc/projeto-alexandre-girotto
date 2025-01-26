@@ -5,7 +5,7 @@ class ReservasController < ApplicationController
   layout "clientside"
   before_action :set_reserva, only: [:show, :pay]
   skip_before_action :verify_authenticity_token, only: [:payment_webhook]
-  skip_before_action :authenticate_user!, only: [:new]
+  skip_before_action :authenticate_user!, only: [:new, :unavailable_dates, :calculate_price]
 
   def index
     @reservas = current_user.reservas.order(:start_date)
