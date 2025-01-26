@@ -11,25 +11,28 @@ class HomeController < ApplicationController
       end
     end
   end
-  
+
   def root
     @funil_mailer = FunilMailer.new
   end
 
   def create_mailer_entry
-    @funil_mailer = FunilMailer.new(funil_mailer_params)
+    existing_mailer = FunilMailer.find_by(email: funil_mailer_params[:email])
 
-    if @funil_mailer.save
-      flash[:notice] = "Obrigado! Você recerá nossas ofertas a partir de agora."
+    if existing_mailer
+      flash[:notice] = "Email já registrado."
     else
-      if @funil_mailer.errors[:email].include?("has already been taken")
-        flash[:notice] = "Email já registrado."
+      @funil_mailer = FunilMailer.new(funil_mailer_params)
+
+      if @funil_mailer.save
+        flash[:notice] = "Obrigado! Você receberá nossas ofertas a partir de agora."
       else
-        flash[:alert] = "Houve um erro tentando cadastrar, tente novamente"
+        flash[:alert] = "Houve um erro tentando cadastrar, tente novamente."
       end
     end
-  end
 
+    redirect_to root_path
+  end
 
   def about
     @funil_mailer = FunilMailer.new
