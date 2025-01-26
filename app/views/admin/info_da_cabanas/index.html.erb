@@ -13,6 +13,7 @@
         <tr>
           <th class="py-2 px-4">Tipo</th>
           <th class="py-2 px-4">Título</th>
+          <th class="py-2 px-4">Conteúdo</th>
           <th class="py-2 px-4">Ações</th>
         </tr>
       </thead>
@@ -21,6 +22,7 @@
           <tr>
             <td class="py-2 px-4"><%= info.info_type %></td>
             <td class="py-2 px-4"><%= info.title %></td>
+            <td class="py-2 px-4"><%= info.content %></td>
             <td class="py-2 px-4">
               <%= link_to 'Editar', edit_admin_cabana_info_da_cabana_path(@cabana, info), class: 'btn btn-sm btn-warning' %>
               <%= button_to 'Excluir', admin_cabana_info_da_cabana_path(@cabana, info), method: :delete, data: { confirm: 'Você tem certeza?' }, class: 'btn btn-sm btn-danger' %>
