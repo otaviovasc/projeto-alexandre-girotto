@@ -15,9 +15,7 @@
         <!-- Imagem do Serviço -->
         <div class="service-image lg:w-1/3">
           <% if service.images.attached? %>
-            <% service.images.each do |image| %>
-              <img src="<%= image.url %>" alt="<%= service.name %>" class="w-full h-full object-cover">
-            <% end %>
+            <%= render partial: "shared/cabana_slider", locals: { images: service.images, cabana: service } %>
           <% else %>
             <div class="flex items-center justify-center w-full h-full bg-creme">
               <p class="text-gray-500">Sem imagem disponível!</p>

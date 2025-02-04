@@ -8,8 +8,9 @@
   <div class="swiper-wrapper">
     <% images.each do |image| %>
       <div class="swiper-slide">
-        <img src="<%= image.url %>" alt="<%= cabana.name %>"
-             class="max-h-96 w-full object-cover rounded-md" />
+        <img src="<%= image.url %>"
+          alt="<%= cabana.name %> Image"
+          class="w-full h-auto max-h-96 object-contain rounded-md" />
       </div>
     <% end %>
   </div>

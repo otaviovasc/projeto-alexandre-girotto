@@ -1,11 +1,34 @@
-<!-- app/views/services/show.html.erb -->
 <h1 class="text-2xl lg:text-4xl font-alice text-center my-8 lg:my-16"><%= @service.name %></h1>
+
+<!-- Imagem do Serviço -->
+<div class="container mx-auto px-4 lg:px-20 mb-8 flex justify-center">
+  <% if @service.images.attached? %>
+    <%= render partial: "shared/cabana_slider", locals: { images: @service.images, cabana: @service } %>
+  <% else %>
+    <div class="flex items-center justify-center w-full h-64 bg-gray-100 rounded-lg">
+      <p class="text-gray-500">Sem imagem disponível!</p>
+    </div>
+  <% end %>
+</div>
 
 <div class="container mx-auto px-4 lg:px-20">
   <!-- Detalhes do Serviço -->
   <div class="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center text-center gap-6">
-    <p class="text-lg lg:text-xl text-gray-600"><strong>Descrição:</strong> <%= @service.description %></p>
-    <p class="text-lg lg:text-xl font-bold text-verde-escuro"><strong>Preço:</strong> <%= number_to_currency(@service.price) %></p>
+    <% if @service.description.present? %>
+      <p class="text-lg lg:text-xl text-gray-600"><strong>Descrição:</strong> <%= @service.description %></p>
+    <% end %>
+    <% if @service.price.present? %>
+      <p class="text-lg lg:text-xl font-bold text-verde-escuro"><strong>Preço:</strong> <%= number_to_currency(@service.price) %></p>
+    <% end %>
+    <% if @service.duration.present? %>
+      <p class="text-lg lg:text-xl text-gray-600"><strong>Duração:</strong> <%= @service.duration %> minutos</p>
+    <% end %>
+    <% if @service.start_time.present? %>
+      <p class="text-lg lg:text-xl text-gray-600"><strong>Horário de Início:</strong> <%= @service.start_time.strftime('%H:%M') %></p>
+    <% end %>
+    <% if @service.end_time.present? %>
+      <p class="text-lg lg:text-xl text-gray-600"><strong>Horário de Término:</strong> <%= @service.end_time.strftime('%H:%M') %></p>
+    <% end %>
 
     <!-- Formulário de Adicionar ao Carrinho -->
     <%= form_with url: add_item_path, method: :post, local: true do %>

@@ -1,5 +1,11 @@
-<!-- app/views/items/show.html.erb -->
 <h1 class="text-2xl lg:text-4xl font-alice text-center my-8 lg:my-16"><%= @item.name %></h1>
+
+<% if @item.image.attached? %>
+  <div class="flex justify-center my-4">
+    <img src="<%= @item.image.url %>" alt="<%= @item.name %>" class="w-full max-w-md rounded-lg shadow-lg object-cover">
+  </div>
+<% end %>
+
 
 <div class="container mx-auto px-4 lg:px-20">
   <!-- Detalhes do Item -->
