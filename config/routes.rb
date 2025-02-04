@@ -35,6 +35,7 @@ Rails.application.routes.draw do
     resources :holidays, only: [:create, :destroy]  # Manage holidays globally within admin
 
     resources :reservas
+    get 'reservas_summary', to: 'reservas#reservas_summary'
     resources :services
 
     resources :filials do

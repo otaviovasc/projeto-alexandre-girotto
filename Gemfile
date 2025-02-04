@@ -36,6 +36,8 @@ gem 'multi_json', '1.15.0'
 gem 'csv', '3.3.0'
 gem 'multi_xml', '0.7.1'
 gem 'bigdecimal', '3.1.8'
+gem 'kaminari'
+gem 'ransack'
 
 gem 'simple_form'
 

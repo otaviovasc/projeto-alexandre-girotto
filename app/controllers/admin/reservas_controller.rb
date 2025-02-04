@@ -87,6 +87,20 @@ class Admin::ReservasController < ApplicationController
     redirect_to admin_reservas_path, notice: 'Reserva was successfully deleted.'
   end
 
+  def reservas_summary
+    # Configurar filtros avançados com Ransack
+    if current_user.admin?
+      @q = Reserva.ransack(params[:q])
+      @reservas = @q.result.includes(:cabana, :user).order(created_at: :desc).page(params[:page]).per(10)
+
+      # Estatísticas úteis
+      @total_reservas = @reservas.count
+      @total_receita  = @reservas.sum(:total_price)
+      @reservas_por_status = @reservas.unscope(:order).group(:payment_status).count
+      @reservas_por_cabana = @reservas.unscope(:order).joins(:cabana).group('cabanas.name').count
+    end
+  end
+
   private
 
   def set_reserva
