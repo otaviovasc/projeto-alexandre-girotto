@@ -1,5 +1,6 @@
 class MarketplaceController < ApplicationController
   layout "clientside"
+  before_action :check_active_reserva
 
   def services
     @services = Service.where(filial_id: @reserva.cabana.filial_id)
@@ -20,7 +21,10 @@ class MarketplaceController < ApplicationController
   private
 
   def check_active_reserva
-    @reserva = current_user.reservas.find_by(payment_status: 'paid')
+    @reserva = current_user.reservas.find_by(
+      payment_status: 'paid'
+    )&.where('start_date <= ? AND end_date >= ?', Date.today, Date.today).first
+
     unless @reserva
       redirect_to root_path, alert: 'Você precisa de uma reserva ativa para acessar a loja.'
     end
