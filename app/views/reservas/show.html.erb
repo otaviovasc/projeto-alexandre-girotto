@@ -56,7 +56,7 @@
                 <strong class="text-gray-800">Serviço:</strong> <%= reserva_service.service.name %>
               </div>
               <div class="text-sm text-gray-500">
-                <strong>Data:</strong> <%= reserva_service.created_at.strftime("%H:%M %d/%m/%Y") %>
+                <strong>Data:</strong> <p id="created_at"><%= @reserva.created_at.strftime("%H:%M %d/%m/%Y") %></p>
               </div>
             </div>
             <div class="mt-2">
@@ -93,7 +93,7 @@
                 <strong class="text-gray-800">Item:</strong> <%= reserva_item.item.name %>
               </div>
               <div class="text-sm text-gray-500">
-                <strong>Data:</strong> <%= reserva_item.created_at.strftime("%H:%M %d/%m/%Y") %>
+                <strong>Data:</strong> <p id="created_at"><%= @reserva.created_at.strftime("%H:%M %d/%m/%Y") %></p>
               </div>
             </div>
             <div class="mt-2">
@@ -141,3 +141,20 @@
   <!-- Botão WhatsApp -->
   <%= render 'shared/wppButton' %>
 </div>
+
+<script>
+  document.addEventListener('turbo:load', function() {
+    // Pega a data do servidor (em formato ISO 8601, UTC)
+    var createdAtUtc = "<%= @reserva.created_at.iso8601 %>"; // Usa o formato ISO 8601 para garantir que seja interpretada corretamente
+
+    // Converte a data para o fuso horário do navegador
+    var createdAt = new Date(createdAtUtc);
+
+    // Formata a data de forma legível
+    var options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+    var formattedDate = createdAt.toLocaleString('pt-BR', options);
+
+    // Exibe a data formatada na tela
+    document.getElementById('created_at').innerText = formattedDate;
+  });
+</script>

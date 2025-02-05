@@ -6,6 +6,8 @@ class ReservasController < ApplicationController
   before_action :set_reserva, only: [:show, :pay]
   skip_before_action :verify_authenticity_token, only: [:payment_webhook]
   skip_before_action :authenticate_user!, only: [:new, :unavailable_dates, :calculate_price]
+  before_action :store_location, only: [:new, :create]
+  before_action :store_reserva_params, only: [:create]
 
   def index
     @reservas = current_user.reservas.order(:start_date)
@@ -27,8 +29,10 @@ class ReservasController < ApplicationController
   end
 
   def new
-    @cabana = Cabana.find(params[:cabana_id])
-    @reserva = @cabana.reservas.new
+    @cabana = Cabana.find(params[:cabana_id] || session[:cabana_id])
+    reserva_data = session[:reserva_params] || {}
+
+    @reserva = @cabana.reservas.new(reserva_data)
     @breakfast_service = Service.find_by(name: 'Café da Manhã')
     @infos_da_cabana = InfoDaCabana.where(cabana_id: @cabana.id)
   end
@@ -212,6 +216,18 @@ class ReservasController < ApplicationController
     render json: { total_price: total_price.to_f }  # Ensure total_price is a float
   end
 
+  def store_location
+    if !user_signed_in?
+      session[:return_to] = request.fullpath
+    end
+  end
+
+  def store_reserva_params
+    if !user_signed_in? && params[:reserva].present?
+      session[:reserva_params] = params[:reserva].permit(:start_date, :end_date).to_h
+      session[:cabana_id] = params[:cabana_id]
+    end
+  end
 
   private
 
