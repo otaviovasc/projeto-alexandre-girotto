@@ -60,10 +60,14 @@ class CartsController < ApplicationController
 
   # Simulate payment and finalize reservation
   def checkout_process
+
     @cart_items = @cart.cart_items
 
     # Link items and services to the current user's reservation
-    reserva = current_user.reservas.find_by('start_date <= ? AND end_date >= ?', Date.today, Date.today)
+    reserva = current_user.reservas
+              .where(payment_status: 'paid')  # Filtra pelas reservas pagas
+              .order(created_at: :desc)       # Ordena pela data de criação, mais recente primeiro
+              .first                          # Pega a mais recente
 
     @cart_items.each do |cart_item|
       if cart_item.item.present?
