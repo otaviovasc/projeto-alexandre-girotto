@@ -22,36 +22,17 @@
     <p class="text-xl font-bold text-gray-800">
       <%= number_to_currency(@cart_items.sum { |cart_item| (cart_item.service&.price || cart_item.item&.price || 0) * cart_item.quantity }) %>
     </p>
-  </div>``
+  </div>
   <!-- Instruções de Pagamento -->
   <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
     <h2 class="font-alice text-lg text-verde-escuro">
       <i class="bi bi-wallet2"></i> Como finalizar seu pagamento
     </h2>
     <ul class="list-decimal ml-6 text-gray-600 text-sm lg:text-base">
-      <li>Pague o seu carrinho no QR code abaixo ou copie o código PIX.</li>
-      <li>Mande o comprovante no botão do WhatsApp abaixo.</li>
-      <li>O PIX está no nome de <strong>BRUNA RITIELES FORTES MIGUEL</strong>.</li>
+      <li>Aperte no <strong>botão</strong> abaixo para ser redirecionado para o <strong>WhatsApp.</strong></li>
+      <li><strong>Preencha</strong> as informações da mensagem <strong>pré-pronta.</strong></li>
+      <li>Envie a mensagem e <strong>finalize</strong> diretamente com o <strong>prestador.</strong></li>
     </ul>
-  </div>
-
-  <!-- QR Code -->
-  <div class="flex flex-col items-center gap-4">
-    <img src="<%= asset_path('qrcode.png') %>" alt="QR Code para pagamento" class="w-48 h-48 rounded-md shadow-md">
-    <p class="text-center text-sm lg:text-base text-gray-600">
-      Ou copie o código PIX abaixo:
-    </p>
-
-    <!-- Código PIX e botão de copiar -->
-    <div class="flex flex-col items-center gap-2">
-      <div class="bg-gray-100 text-gray-800 px-4 py-2 rounded-md text-sm lg:text-base w-full max-w-sm text-center break-words">
-        00020126330014br.gov.bcb.pix0111091443446275204000053039865802BR5925BRUNA RITIELES FORTES MIG6008VIRGINIA62070503***6304070D
-      </div>
-      <button id="copyPixCode" class="bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition">
-        Copiar Código
-      </button>
-      <p id="copyFeedback" class="text-green-600 text-sm hidden">Código copiado com sucesso!</p>
-    </div>
   </div>
 
   <!-- Serviços e Itens -->
@@ -108,22 +89,21 @@
 
 <% total = @cart_items.sum { |cart_item| (cart_item.service&.price || cart_item.item&.price || 0) * cart_item.quantity } %>
 
-<% message = "Olá, acabei de realizar um pedido!%0A%0A" %>
+<% message = "RESUMO DA COMPRA\n\n" %>
 
-<% message += "*Serviços e Itens no carrinho:*%0A" %>
+<% message += "*Método de pagamento:* (Cartão com juros / PIX)\n\n" %>
 
-<% @cart_items.each do |cart_item| %>
-  <% if cart_item.service.present? %>
-    <% message += " - *Serviço:* #{cart_item.service.name}, *Preço:* #{number_to_currency(cart_item.service.price)}, *Quantidade:* #{cart_item.quantity}%0A" %>
-  <% elsif cart_item.item.present? %>
-    <% message += " - *Item:* #{cart_item.item.name}, *Preço:* #{number_to_currency(cart_item.item.price)}, *Quantidade:* #{cart_item.quantity}%0A" %>
-  <% end %>
+<% @cart_items.each_with_index do |cart_item, index| %>
+  <% message += "##{index + 1} *#{cart_item.service&.name || cart_item.item&.name}*\n" %>
+  <% message += "*Qtd.:* #{cart_item.quantity}\n" %>
+  <% message += "*Dia/Horário:* (Preencher)\n" %>
+  <% message += "*Obs. extras:* (Preencher)\n\n" %>
 <% end %>
 
-<% message += "%0A *Total do Pedido:* #{number_to_currency(total)}%0A%0A" %>
+<% message += "*Total do Pedido:* #{number_to_currency(total)}\n\n" %>
 <% message += "Segue o comprovante de pagamento." %>
 
-<% whatsapp_url = "https://wa.me/5535998535301?text=#{message}" %>
+<% whatsapp_url = "https://wa.me/5535998535301?text=#{URI.encode_www_form_component(message)}" %>
 
 <div class="wh-api" style="position: fixed; bottom: 10vh; right: 10vh; z-index: 100;">
   <div class="wh-fixed whatsapp-pulse" style="margin-right: 15px; margin-bottom: 15px; width: 60px; height: 60px; background: #10b418; position: fixed; text-align: center; color: #ffffff; cursor: pointer; border-radius: 50%; z-index: 99; display: inline-block; line-height: 65px;">
@@ -213,16 +193,3 @@
   </style>
 
 <!-- wppbutton -->
-
-
-
-<script>
-  document.getElementById('copyPixCode').addEventListener('click', function () {
-    const pixCode = "00020126330014br.gov.bcb.pix0111091443446275204000053039865802BR5925BRUNA RITIELES FORTES MIG6008VIRGINIA62070503***6304070D";
-    navigator.clipboard.writeText(pixCode).then(() => {
-      const feedback = document.getElementById('copyFeedback');
-      feedback.classList.remove('hidden');
-      setTimeout(() => feedback.classList.add('hidden'), 3000);
-    });
-  });
-</script>
