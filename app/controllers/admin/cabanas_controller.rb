@@ -78,7 +78,7 @@ class Admin::CabanasController < ApplicationController
   end
 
   def cabana_params
-    params.require(:cabana).permit(:name, :price, :filial_id, images: [])
+    params.require(:cabana).permit(:name, :price, :link_guia, :filial_id, images: [])
   end
 
   def authorize_admin

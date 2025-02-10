@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_02_10_143017) do
+ActiveRecord::Schema[7.0].define(version: 2025_02_10_145213) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -48,6 +48,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_02_10_143017) do
     t.decimal "price"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "link_guia"
     t.index ["filial_id"], name: "index_cabanas_on_filial_id"
   end
 

@@ -39,6 +39,19 @@
       <%= form.collection_select :filial_id, Filial.all, :id, :name, {}, { class: 'form-select' } %>
     </div>
 
+
+    <% if @cabana.link_guia.present? %>
+      <div class="form-group">
+        <p>Link do Guia disponivel.</p>
+        <a href="<%= @cabana.link_guia %>" target="_blank" class="btn btn-primary">Ver Guia</a>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= form.label :link_guia, "Link do Guia (PDF)" %>
+      <%= form.text_field :link_guia, class: "form-control", placeholder: "Insira a URL do PDF" %>
+    </div>
+
     <!-- Adicionar Novas Imagens -->
     <div class="mb-3">
       <%= form.label :images, 'Adicionar Novas Imagens', class: 'form-label' %>
