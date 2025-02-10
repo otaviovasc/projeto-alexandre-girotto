@@ -23,7 +23,7 @@ class MarketplaceController < ApplicationController
   def check_active_reserva
     @reserva = current_user.reservas.find_by(
       payment_status: 'paid'
-    )&.where('start_date <= ? AND end_date >= ?', Date.today, Date.today).first
+    )
 
     unless @reserva
       redirect_to root_path, alert: 'Você precisa de uma reserva ativa para acessar a loja.'
