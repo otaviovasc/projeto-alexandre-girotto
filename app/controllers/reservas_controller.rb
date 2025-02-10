@@ -6,8 +6,6 @@ class ReservasController < ApplicationController
   before_action :set_reserva, only: [:show, :pay]
   skip_before_action :verify_authenticity_token, only: [:payment_webhook]
   skip_before_action :authenticate_user!, only: [:new, :unavailable_dates, :calculate_price]
-  before_action :store_location, only: [:new, :create]
-  before_action :store_reserva_params, only: [:create]
 
   def index
     @reservas = current_user.reservas.order(:start_date)
@@ -185,7 +183,7 @@ class ReservasController < ApplicationController
 
     # Filter reservations to include only those that are active and not expired
     reservas = @cabana.reservas.where(payment_status: ['pending', 'waiting_payment', 'paid'])
-                               .where("payment_expires_at IS NULL OR payment_expires_at > ?", Time.current)
+                               .where("payment_expires_at IS NULL OR payment_expires_at < ?", Time.current)
 
     # Map the unavailable dates for each active reservation
     unavailable_dates = reservas.map do |reserva|
@@ -214,19 +212,6 @@ class ReservasController < ApplicationController
     end
 
     render json: { total_price: total_price.to_f }  # Ensure total_price is a float
-  end
-
-  def store_location
-    if !user_signed_in?
-      session[:return_to] = request.fullpath
-    end
-  end
-
-  def store_reserva_params
-    if !user_signed_in? && params[:reserva].present?
-      session[:reserva_params] = params[:reserva].permit(:start_date, :end_date).to_h
-      session[:cabana_id] = params[:cabana_id]
-    end
   end
 
   private
