@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_11_13_171824) do
+ActiveRecord::Schema[7.0].define(version: 2025_02_10_143017) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -176,6 +176,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_11_13_171824) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.boolean "show_in_marketplace"
     t.index ["filial_id"], name: "index_services_on_filial_id"
     t.index ["user_id"], name: "index_services_on_user_id"
   end

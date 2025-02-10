@@ -3,7 +3,7 @@ class MarketplaceController < ApplicationController
   before_action :check_active_reserva
 
   def services
-    @services = Service.where(filial_id: @reserva.cabana.filial_id)
+    @services = Service.where(filial_id: @reserva.cabana.filial_id, show_in_marketplace: true)
   end
 
   def items
