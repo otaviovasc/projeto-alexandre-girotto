@@ -4,14 +4,14 @@ class UserMailer < ApplicationMailer
   def welcome_email(user, generated_password)
     @user = user
     @password = generated_password
-    @url  = 'localhost:3000/users/sign_in'
+    @url  = 'https://www.villaggiogirotto.com.br/users/sign_in'
     mail(to: @user.email, subject: 'Sua hospedagem - Villagio')
   end
 
   def reserva_created(user, reserva)
     @user = user
     @reserva = reserva
-    @url  = "localhost:3000/reservas/#{reserva.id}"
+    @url  = "https://www.villaggiogirotto.com.br/reservas/#{reserva.id}"
     @services = reserva.services.includes(:reserva_services)
     mail(to: @user.email, subject: 'Aguardando Pagamento - Villagio')
   end
@@ -19,7 +19,7 @@ class UserMailer < ApplicationMailer
   def reserva_paid(user, reserva)
     @user = user
     @reserva = reserva
-    @url  = "localhost:3000/reservas/#{reserva.id}"
+    @url  = "https://www.villaggiogirotto.com.br/reservas/#{reserva.id}"
     @services = reserva.services.includes(:reserva_services)
     mail(to: @user.email, subject: 'Pagamento Confirmado - Villagio')
   end
