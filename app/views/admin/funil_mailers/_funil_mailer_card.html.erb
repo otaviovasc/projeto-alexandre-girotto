@@ -1,0 +1,17 @@
+<div class="col-md-3 mb-4">
+  <div class="card text-center shadow-sm hover:shadow-md transition">
+    <div class="card-body">
+      <!-- Ícone: você pode trocar o 'bi-person' por outro de sua preferência -->
+      <i class="bi bi-person fs-1 mb-3 text-primary"></i>
+      <!-- Nome completo do usuário -->
+      <h5 class="card-title"><%= funil_mailer.fullname %></h5>
+      <!-- Informações: Email e Número -->
+      <p class="card-text">
+        <strong>Email:</strong> <%= funil_mailer.email %><br>
+        <strong>Número:</strong> <%= funil_mailer.number %>
+      </p>
+      <!-- Link para visualizar detalhes (certifique-se de ter a rota ou ajuste conforme necessário) -->
+      <%= link_to 'Ver Detalhes', admin_funil_mailer_path(funil_mailer), class: 'btn btn-primary' %>
+    </div>
+  </div>
+</div>

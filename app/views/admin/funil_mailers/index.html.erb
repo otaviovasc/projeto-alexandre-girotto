@@ -1,0 +1,48 @@
+<div class="container py-4">
+  <h1 class="mb-4">Lista de Funil Mailers</h1>
+
+  <!-- Formulário de Filtro com Ransack -->
+  <%= search_form_for @q, url: admin_funil_mailers_path, method: :get, class: "form-inline mb-3" do |f| %>
+    <div class="form-group mx-sm-3 mb-2">
+      <%= f.label :fullname_cont, "Nome", class: "sr-only" %>
+      <%= f.search_field :fullname_cont, placeholder: "Buscar por nome", class: "form-control" %>
+    </div>
+    <div class="form-group mx-sm-3 mb-2">
+      <%= f.label :email_cont, "Email", class: "sr-only" %>
+      <%= f.search_field :email_cont, placeholder: "Buscar por email", class: "form-control" %>
+    </div>
+    <%= f.submit "Buscar", class: "btn btn-primary mb-2" %>
+  <% end %>
+
+  <!-- Tabela de Registros -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped table-hover">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Nome Completo</th>
+          <th scope="col">Email</th>
+          <th scope="col">Número</th>
+          <th scope="col">Data de Criação</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @funil_mailers.each_with_index do |funil_mailer, index| %>
+          <tr>
+            <!-- Ajusta a numeração considerando a página atual -->
+            <th scope="row"><%= index + 1 + ((@funil_mailers.current_page - 1) * @funil_mailers.limit_value) %></th>
+            <td><%= funil_mailer.fullname %></td>
+            <td><%= funil_mailer.email %></td>
+            <td><%= funil_mailer.number %></td>
+            <td><%= funil_mailer.created_at.strftime("%d/%m/%Y %H:%M") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginação com Kaminari -->
+  <div class="d-flex justify-content-center">
+    <%= paginate @funil_mailers %>
+  </div>
+</div>

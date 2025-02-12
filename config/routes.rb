@@ -23,6 +23,7 @@ Rails.application.routes.draw do
   # Admin namespace for full CRUD operations
   namespace :admin do
     resources :users, only: [:index, :new, :create, :edit, :update, :destroy]
+    resources :funil_mailers, only: [:index, :show]
 
     resources :cabanas do
       resources :info_da_cabanas, only: [:index, :new, :create, :edit, :update, :destroy]
