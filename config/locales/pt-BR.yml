@@ -35,6 +35,7 @@ pt-BR:
         too_short: "é muito curta (mínimo de %{count} caracteres)"
         too_long: "é muito longa (máximo de %{count} caracteres)"
   date:
+    order: [:day, :month, :year]
     formats:
       default: "%d/%m/%Y"
       short: "%d de %B"
