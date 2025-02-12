@@ -71,6 +71,43 @@ class ReservasController < ApplicationController
     end
   end
 
+  # Essa ação é chamada após o login (quando os dados da reserva foram armazenados na sessão)
+  def auto_create
+    unless session[:reserva_params].present? && session[:cabana_id].present?
+      redirect_to root_path, alert: "Dados da reserva não encontrados." and return
+    end
+
+    cabana = Cabana.find(session.delete(:cabana_id))
+    reserva_data = session.delete(:reserva_params)
+
+    # Removendo os campos extras que não fazem parte do modelo (mas são usados para lógica)
+    include_breakfast = reserva_data.delete("include_breakfast")
+    breakfast_quantity = reserva_data.delete("breakfast_quantity")
+
+    @reserva = cabana.reservas.new(reserva_data)
+    @reserva.user = current_user
+
+    if @reserva.save
+      if include_breakfast.to_s == "1"
+        service = Service.find_by(name: 'Café da Manhã')
+        ReservaService.create(
+          reserva: @reserva,
+          service: service,
+          quantity: breakfast_quantity.to_i
+        )
+      end
+      total_price = @reserva.calculate_total_price || 0
+      @reserva.update_columns(
+        total_price: total_price,
+        payment_expires_at: 10.minutes.from_now
+      )
+
+      redirect_to reserva_path(@reserva), notice: "Reserva criada com sucesso após o login."
+    else
+      redirect_to new_cabana_reserva_path(cabana), alert: "Erro ao criar reserva: #{@reserva.errors.full_messages.join(', ')}"
+    end
+  end
+
   def pay
     # Check if payment_link already exists
     if @reserva.payment_link_url.present?
@@ -224,38 +261,6 @@ class ReservasController < ApplicationController
     end
 
     render json: { total_price: total_price.to_f }  # Ensure total_price is a float
-  end
-
-  # Essa ação é chamada após o login (quando os dados da reserva foram armazenados na sessão)
-  def auto_create
-    unless session[:reserva_params].present? && session[:cabana_id].present?
-      redirect_to root_path, alert: "Dados da reserva não encontrados." and return
-    end
-
-    cabana = Cabana.find(session.delete(:cabana_id))
-    reserva_data = session.delete(:reserva_params)
-
-    # Removendo os campos extras que não fazem parte do modelo (mas são usados para lógica)
-    include_breakfast = reserva_data.delete("include_breakfast")
-    breakfast_quantity = reserva_data.delete("breakfast_quantity")
-
-    @reserva = cabana.reservas.new(reserva_data)
-    @reserva.user = current_user
-
-    if @reserva.save
-      if include_breakfast.to_s == "1"
-        service = Service.find_by(name: 'Café da Manhã')
-        ReservaService.create(
-          reserva: @reserva,
-          service: service,
-          quantity: breakfast_quantity.to_i
-        )
-      end
-
-      redirect_to reserva_path(@reserva), notice: "Reserva criada com sucesso após o login."
-    else
-      redirect_to new_cabana_reserva_path(cabana), alert: "Erro ao criar reserva: #{@reserva.errors.full_messages.join(', ')}"
-    end
   end
 
   private
