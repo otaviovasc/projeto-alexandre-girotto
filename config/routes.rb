@@ -27,6 +27,7 @@ Rails.application.routes.draw do
     resources :cabanas do
       resources :info_da_cabanas, only: [:index, :new, :create, :edit, :update, :destroy]
       resources :price_rules, only: [:create, :destroy]  # For handling price rules within cabanas
+      resources :promotions, only: [:create, :destroy]  # Adicionando promoções para cada cabana
       member do
         get 'price_rules_and_holidays'  # Route for the combined form
         delete 'remove_image/:image_id', to: 'cabanas#remove_image', as: 'remove_image'

@@ -3,6 +3,7 @@ class Cabana < ApplicationRecord
   has_many :reservas, dependent: :destroy
   has_many :info_da_cabanas, dependent: :destroy
   has_many :price_rules, dependent: :destroy
+  has_many :promotions, dependent: :destroy
 
   has_many_attached :images
 

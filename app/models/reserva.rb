@@ -67,6 +67,12 @@ class Reserva < ApplicationRecord
   end
 
   def find_price_for_day(date)
+    # Primeiro, verifica se há promoção para essa data na cabana
+    if (promotion = cabana.promotions.find_by(date: date))
+      return promotion.price
+    end
+
+    # Se não houver promoção, verifica se a data é feriado (global)
     if Holiday.holiday?(date)
       price_rule = cabana.price_rules.find_by(day_type: 'holiday')
     elsif weekend?(date)
@@ -75,7 +81,7 @@ class Reserva < ApplicationRecord
       price_rule = cabana.price_rules.find_by(day_type: 'weekday')
     end
 
-    price_rule ? price_rule.price : cabana.price || 0
+    price_rule ? price_rule.price : (cabana.price || 0)
   end
 
   def weekend?(date)

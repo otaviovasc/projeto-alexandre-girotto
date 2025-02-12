@@ -57,6 +57,7 @@ class Admin::CabanasController < ApplicationController
     @price_rule = PriceRule.new
     @holidays = Holiday.all
     @holiday = Holiday.new
+    @promotion = @cabana.promotions.new
   end
 
   def remove_image

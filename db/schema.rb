@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_02_10_145213) do
+ActiveRecord::Schema[7.0].define(version: 2025_02_12_183945) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -130,6 +130,15 @@ ActiveRecord::Schema[7.0].define(version: 2025_02_10_145213) do
     t.index ["cabana_id"], name: "index_price_rules_on_cabana_id"
   end
 
+  create_table "promotions", force: :cascade do |t|
+    t.bigint "cabana_id", null: false
+    t.date "date"
+    t.decimal "price"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cabana_id"], name: "index_promotions_on_cabana_id"
+  end
+
   create_table "reserva_items", force: :cascade do |t|
     t.bigint "reserva_id", null: false
     t.bigint "item_id", null: false
@@ -216,6 +225,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_02_10_145213) do
   add_foreign_key "info_da_cabanas", "cabanas"
   add_foreign_key "items", "filials"
   add_foreign_key "price_rules", "cabanas"
+  add_foreign_key "promotions", "cabanas"
   add_foreign_key "reserva_items", "items"
   add_foreign_key "reserva_items", "reservas"
   add_foreign_key "reserva_services", "reservas"
