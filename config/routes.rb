@@ -10,7 +10,7 @@ Rails.application.routes.draw do
   get 'cabanas/index'
   get 'cabanas/show'
   get 'cabanas/:cabana_id/unavailable_dates', to: 'reservas#unavailable_dates'
-  devise_for :users
+  devise_for :users, controllers: { registrations: 'users/registrations' }
 
   # Static page
   get 'about', to: 'home#about'
@@ -56,6 +56,9 @@ Rails.application.routes.draw do
 
   # My reservations and reservation details
   resources :reservas, only: [:index, :show] do
+    collection do
+      get :auto_create
+    end
     get 'pay', on: :member  # Process payment for a reservation
     resources :reserva_services, only: [:create]
     resources :reserva_items, only: [:create]

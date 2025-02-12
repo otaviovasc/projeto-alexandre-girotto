@@ -40,6 +40,39 @@ class Users::RegistrationsController < Devise::RegistrationsController
   # end
 
   # protected
+  protected
+
+  # Sobrescreve o método que limpa a sessão após o sign up para preservar os dados necessários.
+  def expire_data_after_sign_in!
+    # Defina as chaves que você deseja preservar
+    keys_to_preserve = ["reserva_params", "cabana_id"]
+    # Converte a sessão para hash e, em seguida, utiliza slice para pegar somente as chaves desejadas
+    preserved_data = session.to_hash.slice(*keys_to_preserve)
+
+    # Chama o método original que limpa a sessão
+    super
+
+    # Restaura os dados preservados na sessão
+    preserved_data.each { |key, value| session[key] = value }
+  end
+
+  # Redireciona para auto_create se houver dados de reserva na sessão
+  def after_sign_up_path_for(resource)
+    if session[:reserva_params].present? && session[:cabana_id].present?
+      auto_create_reservas_path
+    else
+      super(resource)
+    end
+  end
+
+  # Se sua aplicação utiliza contas inativas (ex.: confirmação por e-mail), sobrescreva também este método
+  def after_inactive_sign_up_path_for(resource)
+    if session[:reserva_params].present? && session[:cabana_id].present?
+      auto_create_reservas_path
+    else
+      super(resource)
+    end
+  end
 
   # If you have extra params to permit, append them to the sanitizer.
   # def configure_sign_up_params

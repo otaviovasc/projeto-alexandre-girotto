@@ -1,4 +1,6 @@
 class Reserva < ApplicationRecord
+  attr_accessor :include_breakfast, :breakfast_quantity
+
   belongs_to :cabana
   belongs_to :user
 

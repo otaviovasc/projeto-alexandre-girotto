@@ -5,7 +5,7 @@ class ReservasController < ApplicationController
   layout "clientside"
   before_action :set_reserva, only: [:show, :pay]
   skip_before_action :verify_authenticity_token, only: [:payment_webhook]
-  skip_before_action :authenticate_user!, only: [:new, :unavailable_dates, :calculate_price]
+  skip_before_action :authenticate_user!, only: [:new, :unavailable_dates, :calculate_price, :create]
 
   def index
     @reservas = current_user.reservas.order(:start_date)
@@ -36,22 +36,34 @@ class ReservasController < ApplicationController
   end
 
   def create
-    @cabana = Cabana.find(params[:cabana_id])
+    # Se o usuário não estiver logado, salva os parâmetros na sessão e redireciona para login
+    unless user_signed_in?
+      session[:reserva_params] = reserva_params.to_h
+      session[:cabana_id]     = params[:cabana_id]
+      redirect_to new_user_session_path, alert: "Por favor, faça login para continuar com a reserva."
+      return
+    end
+
+    # Se o usuário estiver logado, cria a reserva normalmente
+    @cabana  = Cabana.find(params[:cabana_id])
     @reserva = @cabana.reservas.new(reserva_params)
     @reserva.user = current_user
 
-    # First, try to save the reserva without services
     if @reserva.save
-      # If breakfast is selected, create ReservaService
       if params[:reserva][:include_breakfast] == "1"
         service = Service.find_by(name: 'Café da Manhã')
-        ReservaService.create(reserva: @reserva, service: service, quantity: params[:reserva][:breakfast_quantity].to_i)
+        ReservaService.create(
+          reserva: @reserva,
+          service: service,
+          quantity: params[:reserva][:breakfast_quantity].to_i
+        )
       end
 
-      # Recalculate total_price after services are added
       total_price = @reserva.calculate_total_price
-      @reserva.update_column(:total_price, total_price)  # Skips validations
-      @reserva.update_column(:payment_expires_at, 10.minutes.from_now)
+      @reserva.update_columns(
+        total_price: total_price,
+        payment_expires_at: 10.minutes.from_now
+      )
       UserMailer.reserva_created(current_user, @reserva).deliver_now
       redirect_to reserva_path(@reserva), notice: 'Reserva criada com sucesso.'
     else
@@ -214,6 +226,38 @@ class ReservasController < ApplicationController
     render json: { total_price: total_price.to_f }  # Ensure total_price is a float
   end
 
+  # Essa ação é chamada após o login (quando os dados da reserva foram armazenados na sessão)
+  def auto_create
+    unless session[:reserva_params].present? && session[:cabana_id].present?
+      redirect_to root_path, alert: "Dados da reserva não encontrados." and return
+    end
+
+    cabana = Cabana.find(session.delete(:cabana_id))
+    reserva_data = session.delete(:reserva_params)
+
+    # Removendo os campos extras que não fazem parte do modelo (mas são usados para lógica)
+    include_breakfast = reserva_data.delete("include_breakfast")
+    breakfast_quantity = reserva_data.delete("breakfast_quantity")
+
+    @reserva = cabana.reservas.new(reserva_data)
+    @reserva.user = current_user
+
+    if @reserva.save
+      if include_breakfast.to_s == "1"
+        service = Service.find_by(name: 'Café da Manhã')
+        ReservaService.create(
+          reserva: @reserva,
+          service: service,
+          quantity: breakfast_quantity.to_i
+        )
+      end
+
+      redirect_to reserva_path(@reserva), notice: "Reserva criada com sucesso após o login."
+    else
+      redirect_to new_cabana_reserva_path(cabana), alert: "Erro ao criar reserva: #{@reserva.errors.full_messages.join(', ')}"
+    end
+  end
+
   private
 
   def set_reserva
@@ -221,6 +265,6 @@ class ReservasController < ApplicationController
   end
 
   def reserva_params
-    params.require(:reserva).permit(:start_date, :end_date)
+    params.require(:reserva).permit(:start_date, :end_date, :include_breakfast, :breakfast_quantity)
   end
 end
