@@ -52,10 +52,7 @@ class Admin::UsersController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(
-      :email, :password, :password_confirmation, :role, :filial_id,
-      :name, :cpf, :state, :city, :neighborhood, :street, :street_number, :zipcode
-    )
+    params.require(:user).permit(:email, :password, :password_confirmation, :role, :filial_id, :telephone, :name)
   end
 
   def authorize_admin

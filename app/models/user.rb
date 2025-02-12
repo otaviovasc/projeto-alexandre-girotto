@@ -29,9 +29,20 @@ class User < ApplicationRecord
     end
   end
 
-  # Callback para enviar o e-mail de boas-vindas após a criação do usuário
+  # Validação de unicidade do telefone
+  validates :telephone, uniqueness: { case_sensitive: false, message: "já está em uso" }
+
+  # Validação de comprimento baseado em padrões internacionais de telefone
+  validates :telephone, length: { in: 8..15, message: "deve ter entre 8 e 15 dígitos" }
+
+  # Remover caracteres não numéricos (formatação opcional)
+  before_validation :sanitize_telephone
 
   private
+
+  def sanitize_telephone
+    self.telephone = telephone.gsub(/\D/, '') if telephone.present?
+  end
 
   def send_welcome_email
     UserMailer.welcome_email(self, self.password).deliver_now

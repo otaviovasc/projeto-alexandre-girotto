@@ -1,5 +1,5 @@
 <p class="text-center !font-alice text-3xl text-verde-escuro">Criar Conta</p>
-<div class="bg-white rounded-md flex flex-col w-full mx-auto max-w-9/10 p-2 gap-6">
+<div class="bg-white rounded-md flex flex-col w-full mx-auto max-w-9/10 p-2 gap-6 m-4">
 
   <!-- Exibição de Erros Gerais -->
   <% if resource.errors.any? %>
@@ -35,6 +35,18 @@
         <% if resource.errors[:email].any? %>
           <div class="text-red-600 text-sm">
             <%= resource.errors[:email].first %>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Campo de Telefone -->
+      <div class="flex flex-col gap-2">
+        <%= f.label :telephone, 'Telefone', class: 'font-dm text-lg text-terracota' %>
+        <%= f.text_field :telephone, placeholder: 'Telefone', required: true,
+          class: "font-dm w-full bg-transparent border border-terracota rounded-md px-4 py-2 text-terracota #{'border-red-500' if resource.errors[:telephone].any?}" %>
+        <% if resource.errors[:telephone].any? %>
+          <div class="text-red-600 text-sm">
+            <%= resource.errors[:telephone].first %>
           </div>
         <% end %>
       </div>

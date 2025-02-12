@@ -35,6 +35,17 @@
       <% end %>
     </div>
 
+    <!-- Campo Telefone -->
+    <div class="mb-3">
+      <%= form.label :telephone, 'Telefone', class: 'form-label' %>
+      <%= form.telephone_field :telephone, class: "form-control #{'is-invalid' if @user.errors[:telephone].any?}", required: true %>
+      <% if @user.errors[:telephone].any? %>
+        <div class="invalid-feedback">
+          <%= @user.errors[:telephone].first %>
+        </div>
+      <% end %>
+    </div>
+
     <!-- Campo Senha -->
     <div class="mb-3">
       <%= form.label :password, 'Senha', class: 'form-label' %>

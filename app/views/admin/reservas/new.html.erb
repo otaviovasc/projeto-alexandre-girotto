@@ -17,6 +17,11 @@
         <%= label_tag :email, 'E-mail', class: 'form-label' %>
         <%= text_field_tag 'user[email]', nil, class: 'form-control' %>
       </div>
+      <!-- Campo Telefone (Novo) -->
+      <div class="mb-3">
+        <%= label_tag :telephone, 'Telefone', class: 'form-label' %>
+        <%= text_field_tag 'user[telephone]', nil, class: 'form-control', id: 'telephone_field', required: true %>
+      </div>
     </div>
 
     <div id="existing_user_fields" class="mb-3">
@@ -51,13 +56,18 @@
     const toggle = document.getElementById('create_user_toggle');
     const userFields = document.getElementById('new_user_fields');
     const existingUserFields = document.getElementById('existing_user_fields');
+    const telephoneField = document.getElementById("telephone_field");
+
     toggle.addEventListener('change', function () {
       if (toggle.checked) {
         userFields.style.display = 'block';
         existingUserFields.style.display = 'none';
+        telephoneField.setAttribute("required", "true");
+
       } else {
         userFields.style.display = 'none';
         existingUserFields.style.display = 'block';
+        telephoneField.removeAttribute("required");
       }
     });
   });

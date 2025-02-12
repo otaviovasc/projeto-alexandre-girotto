@@ -4,6 +4,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
   layout "clientside"
   # before_action :configure_sign_up_params, only: [:create]
   # before_action :configure_account_update_params, only: [:update]
+  before_action :configure_permitted_parameters, only: [:create, :update]
 
   # GET /resource/sign_up
   # def new
@@ -41,6 +42,11 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   # protected
   protected
+
+  def configure_permitted_parameters
+    devise_parameter_sanitizer.permit(:sign_up, keys: [:name, :telephone])
+    devise_parameter_sanitizer.permit(:account_update, keys: [:name, :telephone])
+  end
 
   # Sobrescreve o método que limpa a sessão após o sign up para preservar os dados necessários.
   def expire_data_after_sign_in!

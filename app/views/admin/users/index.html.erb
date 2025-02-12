@@ -34,6 +34,7 @@
       <thead class="table-light">
         <tr>
           <th>E-mail</th>
+          <th>Telefone</th>
           <th>Função</th>
           <th>Filial</th>
           <th>Data de Criação</th>
@@ -44,6 +45,7 @@
         <% @users.each do |user| %>
           <tr>
             <td><%= user.email %></td>
+            <td><%= user.telephone %></td>
             <td><%= user.role.humanize %></td>
             <td><%= user.filial ? user.filial.name : 'Nenhuma' %></td>
             <td><%= user.created_at.strftime('%d/%m/%Y') %></td>

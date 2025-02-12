@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_02_12_183945) do
+ActiveRecord::Schema[7.0].define(version: 2025_02_12_201647) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -202,16 +202,11 @@ ActiveRecord::Schema[7.0].define(version: 2025_02_12_183945) do
     t.integer "role", default: 0
     t.bigint "filial_id"
     t.string "name"
-    t.string "cpf"
-    t.string "state"
-    t.string "city"
-    t.string "neighborhood"
-    t.string "street"
-    t.string "street_number"
-    t.string "zipcode"
+    t.string "telephone"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["filial_id"], name: "index_users_on_filial_id"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["telephone"], name: "index_users_on_telephone", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
