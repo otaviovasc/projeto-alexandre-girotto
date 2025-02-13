@@ -37,6 +37,18 @@ class Admin::ServicesController < ApplicationController
     redirect_to admin_services_path, notice: 'Service was successfully deleted.'
   end
 
+  def remove_image
+    @service = Service.find(params[:id])
+    image = @service.images.find_by(id: params[:image_id])
+
+    if image
+      image.purge_later
+      redirect_to edit_admin_service_path(@service), notice: 'Imagem removida com sucesso.'
+    else
+      redirect_to edit_admin_service_path(@service), alert: 'Imagem não encontrada.'
+    end
+  end
+
   private
 
   def set_service

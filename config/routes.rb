@@ -38,7 +38,11 @@ Rails.application.routes.draw do
 
     resources :reservas
     get 'reservas_summary', to: 'reservas#reservas_summary'
-    resources :services
+    resources :services do
+      member do
+        delete 'remove_image/:image_id', to: 'services#remove_image', as: 'remove_image'
+      end
+    end
 
     resources :filials do
       resources :items do
