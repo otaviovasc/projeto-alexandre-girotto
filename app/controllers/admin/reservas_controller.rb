@@ -8,7 +8,7 @@ class Admin::ReservasController < ApplicationController
 
     # Filtros
     @reservas = @reservas.where(cabana_id: params[:cabana_id]) if params[:cabana_id].present?
-    @reservas = @reservas.where(user_id: params[:user_id]) if params[:user_id].present?
+    @reservas = @reservas.joins(:cabana).where(cabanas: { filial_id: params[:filial_id] }) if params[:filial_id].present?
     if params[:start_date].present? && params[:end_date].present?
       @reservas = @reservas.where(start_date: params[:start_date]..params[:end_date])
     end

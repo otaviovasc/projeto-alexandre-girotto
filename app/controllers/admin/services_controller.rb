@@ -2,7 +2,8 @@ class Admin::ServicesController < ApplicationController
   before_action :set_service, only: [:edit, :update, :destroy]
 
   def index
-    @services = Service.all
+    @q = Service.ransack(params[:q])
+    @services = @q.result.includes(:filial, :user)
   end
 
   def new

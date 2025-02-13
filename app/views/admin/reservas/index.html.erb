@@ -9,8 +9,8 @@
       </div>
 
       <div class="col-md-3">
-        <%= form.label :user_id, 'Filtrar por Usuário', class: 'form-label' %>
-        <%= form.collection_select :user_id, User.all, :id, :email, { include_blank: 'Selecione um Usuário' }, { class: 'form-select' } %>
+        <%= form.label :filial_id, 'Filtrar por Filial', class: 'form-label' %>
+        <%= form.collection_select :filial_id, Filial.all, :id, :name, { include_blank: 'Selecione um Filial' }, { class: 'form-select' } %>
       </div>
 
       <div class="col-md-3">
@@ -43,6 +43,7 @@
         <tr>
           <th class="py-2 px-4">Cabana</th>
           <th class="py-2 px-4">Usuário</th>
+          <th class="py-2 px-4">Preço</th>
           <th class="py-2 px-4">
             <%= link_to 'Data de Início ▲', admin_reservas_path(sort: 'start_date_asc'), class: 'text-decoration-none' %>
             |
@@ -61,6 +62,7 @@
           <tr>
             <td class="py-2 px-4"><%= reserva.cabana.name %></td>
             <td class="py-2 px-4"><%= reserva.user.email %></td>
+            <td class="py-2 px-4"><%= reserva.total_price %></td>
             <td class="py-2 px-4"><%= reserva.start_date.strftime("%d/%m/%Y") %></td>
             <td class="py-2 px-4"><%= reserva.end_date.strftime("%d/%m/%Y") %></td>
             <td class="py-2 px-4 d-flex gap-2">

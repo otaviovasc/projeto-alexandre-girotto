@@ -1,60 +1,67 @@
-<h1>Services</h1>
-<%= link_to 'New Service', new_admin_service_path, class: 'btn btn-primary' %>
+<h1 class="mb-4">Serviços</h1>
 
-<div class="service-cards-container">
+<div class="mb-3">
+  <%= link_to 'Novo Serviço', new_admin_service_path, class: 'btn btn-primary' %>
+</div>
+
+<!-- Formulário de Filtro com Ransack -->
+<%= search_form_for @q, url: admin_services_path, method: :get, class: "row g-3 mb-4" do |f| %>
+  <div class="col-md-4">
+    <%= f.label :filial_id_eq, "Filial", class: "form-label" %>
+    <%= f.collection_select :filial_id_eq, Filial.all, :id, :name, { prompt: "Selecione uma filial" }, { class: "form-select" } %>
+  </div>
+  <div class="col-md-4 align-self-end">
+    <%= f.submit "Filtrar", class: "btn btn-primary" %>
+  </div>
+<% end %>
+
+<!-- Listagem de Serviços -->
+<div class="row">
   <% @services.each do |service| %>
-    <div class="service-card">
-      <div class="service-image">
+    <div class="col-md-4 mb-4">
+      <div class="card h-100">
         <% if service.images.attached? %>
-          <% service.images.each do |image| %>
-            <img src="<%=image.url%>" alt="" class="" style="max-height: 200px; max-width: 200px;">
+          <% if service.images.count > 1 %>
+            <div id="carouselService<%= service.id %>" class="carousel slide" data-bs-ride="carousel">
+              <div class="carousel-inner">
+                <% service.images.each_with_index do |image, index| %>
+                  <div class="carousel-item <%= 'active' if index.zero? %>">
+                    <%= image_tag image.url, class: "d-block w-100", style: "max-height: 200px; object-fit: cover;" %>
+                  </div>
+                <% end %>
+              </div>
+              <button class="carousel-control-prev" type="button" data-bs-target="#carouselService<%= service.id %>" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Anterior</span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#carouselService<%= service.id %>" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Próximo</span>
+              </button>
+            </div>
+          <% else %>
+            <%= image_tag service.images.first.url, class: "card-img-top", style: "max-height: 200px; object-fit: cover;" %>
           <% end %>
         <% else %>
-          <p>No Image Available</p>
+          <div class="card-img-top bg-light d-flex justify-content-center align-items-center" style="height: 200px;">
+            <span class="text-muted">Sem Imagem</span>
+          </div>
         <% end %>
-      </div>
 
-      <div class="service-details">
-        <h2><%= service.name %></h2>
-        <p><%= service.description %></p>
-        <p><strong>Price:</strong> <%= number_to_currency(service.price) %></p>
-        <p><strong>Filial:</strong> <%= service.filial ? service.filial.name : "None" %></p>
-        <p><strong>Responsável:</strong> <%= service.user ? service.user.email : "None" %></p>
-      </div>
+        <div class="card-body">
+          <h5 class="card-title"><strong><%= service.name %></strong></h5>
+          <p class="card-text"><strong>Descrição:</strong><%= truncate(service.description, length: 100) %></p>
+          <p class="card-text"><strong>Preço:</strong> <%= number_to_currency(service.price) %></p>
+          <p class="card-text"><strong>Filial:</strong> <%= service.filial ? service.filial.name : "Nenhuma" %></p>
+          <p class="card-text"><strong>Mostrar no Mercado?:</strong> <%= service.show_in_marketplace ? "Sim" : "Nao" %></p>
+          <p class="card-text"><strong>Responsável:</strong> <%= service.user ? service.user.email : "Nenhum" %></p>
+        </div>
 
-      <div class="service-actions">
-        <%= link_to 'Edit', edit_admin_service_path(service), class: 'btn btn-secondary' %>
-        <%= link_to 'Delete', admin_service_path(service), data: { turbo_method: :delete, confirm: 'Are you sure?' }, class: 'btn btn-danger' %>
+        <div class="card-footer d-flex justify-content-between">
+          <%= link_to 'Editar', edit_admin_service_path(service), class: 'btn btn-secondary btn-sm' %>
+          <%= link_to 'Excluir', admin_service_path(service), data: { turbo_method: :delete, confirm: 'Tem certeza?' }, class: 'btn btn-danger btn-sm' %>
+        </div>
       </div>
     </div>
   <% end %>
 </div>
-
-<style>
-  .service-cards-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-  }
-
-  .service-card {
-    border: 1px solid #ccc;
-    padding: 20px;
-    width: 300px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  .service-image {
-    text-align: center;
-    margin-bottom: 15px;
-  }
-
-  .service-details {
-    margin-bottom: 15px;
-  }
-
-  .service-actions {
-    display: flex;
-    justify-content: space-between;
-  }
-</style>

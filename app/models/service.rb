@@ -7,4 +7,8 @@ class Service < ApplicationRecord
   has_many_attached :images
 
   validates :name, :price, presence: true
+
+  def self.ransackable_attributes(auth_object = nil)
+    ["created_at", "description", "duration", "end_time", "filial_id", "id", "name", "price", "show_in_marketplace", "start_time", "updated_at", "user_id"]
+  end
 end
