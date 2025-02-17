@@ -2,6 +2,7 @@ class CartItem < ApplicationRecord
   belongs_to :cart
   belongs_to :item, optional: true
   belongs_to :service, optional: true
+  belongs_to :reserva
 
   validate :item_or_service_present
 

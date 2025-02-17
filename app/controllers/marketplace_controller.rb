@@ -26,7 +26,7 @@ class MarketplaceController < ApplicationController
     )
 
     unless @reserva
-      redirect_to root_path, alert: 'Você precisa de uma reserva ativa para acessar a loja.'
+      redirect_to root_path, alert: 'Você precisa de uma reserva paga para acessar a loja.'
     end
   end
 end

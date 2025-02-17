@@ -42,7 +42,7 @@
             <%= info.title %>
           </p>
           <p class="text-lg font-alice text-verde-escuro mt-2">
-            <%= info.content %>
+            <%= simple_format(info.content) %>
           </p>
         </div>
       <% end %>
@@ -54,7 +54,7 @@
           A <%= @cabana.name %>
         </p>
         <p class="text-lg font-alice text-verde-escuro">
-          <%= info.content %>
+          <%= simple_format(info.content) %>
         </p>
       <% end %>
     <% end %>
@@ -63,13 +63,13 @@
       <% if info.info_type == "comodidades" %>
         <p class="text-xl font-bold font-dm text-verde-escuro">Comodidades:</p>
         <p class="text-lg font-dm text-verde-escuro max-w-6/10">
-          <%= info.content %>
+          <%= simple_format(info.content) %>
         </p>
       <% end %>
       <% if info.info_type == "other" %>
         <p class="text-xl font-bold font-dm text-verde-escuro">Fatores Chave:</p>
         <p class="text-lg font-dm max-w-8/10 text-verde-escuro">
-          <%= info.content %>
+          <%= simple_format(info.content) %>
         </p>
       <% end %>
     <% end %>
