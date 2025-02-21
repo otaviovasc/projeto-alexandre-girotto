@@ -54,7 +54,7 @@ class Reserva < ApplicationRecord
                                   .where(payment_status: [:pending, :waiting_payment, :paid])
 
     overlapping_reservas.each do |existing_reserva|
-      existing_reserva_range = existing_reserva.start_date..existing_reserva.end_date
+      existing_reserva_range = existing_reserva.start_date...existing_reserva.end_date
       return false if new_reserva_range.overlaps?(existing_reserva_range)
     end
     true

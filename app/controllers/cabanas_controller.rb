@@ -9,6 +9,7 @@ class CabanasController < ApplicationController
       @cabanas = Cabana.all
       # @infos_da_cabana = @cabanas.info_da_cabanas
     end
+
   end
 
   def show

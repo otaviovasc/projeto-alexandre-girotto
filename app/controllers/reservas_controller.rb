@@ -3,6 +3,7 @@ require 'base64'
 
 class ReservasController < ApplicationController
   layout "clientside"
+  before_action :check_reservations_on_new, only: [:new]
   before_action :set_reserva, only: [:show, :pay]
   skip_before_action :verify_authenticity_token, only: [:payment_webhook]
   skip_before_action :authenticate_user!, only: [:new, :unavailable_dates, :calculate_price, :create]
@@ -232,11 +233,11 @@ class ReservasController < ApplicationController
 
     # Filter reservations to include only those that are active and not expired
     reservas = @cabana.reservas.where(payment_status: ['pending', 'waiting_payment', 'paid'])
-                               .where("payment_expires_at IS NULL OR payment_expires_at < ?", Time.current)
+                               .where("payment_expires_at IS NULL OR payment_expires_at > ?", Time.current)
 
     # Map the unavailable dates for each active reservation
     unavailable_dates = reservas.map do |reserva|
-      (reserva.start_date..reserva.end_date).to_a
+      (reserva.start_date...reserva.end_date).to_a
     end.flatten
 
     render json: unavailable_dates
@@ -264,6 +265,15 @@ class ReservasController < ApplicationController
   end
 
   private
+
+  def check_reservations_on_new
+    @cabana = Cabana.find(params[:cabana_id] || session[:cabana_id])
+    @cabana.reservas.each do |reserva|
+      if reserva.expired? && (reserva.waiting_payment? || reserva.pending?)
+        reserva.update_column(:payment_status, 'canceled')
+      end
+    end
+  end
 
   def set_reserva
     @reserva = current_user.reservas.find(params[:id])
