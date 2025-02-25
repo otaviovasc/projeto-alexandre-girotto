@@ -2,6 +2,7 @@ class Admin::ReservasController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin
   before_action :set_reserva, only: [:edit, :update, :destroy, :show]
+  before_action :check_reservations_on_new, only: [:reservas_summary]
 
   def index
     @reservas = Reserva.includes(:cabana, :user).all
@@ -76,8 +77,9 @@ class Admin::ReservasController < ApplicationController
 
   def update
     if @reserva.update(reserva_params)
-      redirect_to admin_reservas_path, notice: 'Reserva was successfully updated.'
+      redirect_to admin_reservas_summary_path, notice: 'Reserva foi atualizada com sucesso.'
     else
+      flash.now[:alert] = 'Houve um erro ao atualizar a reserva. Verifique os campos e tente novamente.'
       render :edit
     end
   end
@@ -102,6 +104,15 @@ class Admin::ReservasController < ApplicationController
   end
 
   private
+
+  def check_reservations_on_new
+    @reservas = Reserva.where('end_date > ?', Date.today)
+    @reservas.each do |reserva|
+      if reserva.expired? && (reserva.waiting_payment? || reserva.pending?)
+        reserva.update_column(:payment_status, 'canceled')
+      end
+    end
+  end
 
   def set_reserva
     @reserva = Reserva.find(params[:id])

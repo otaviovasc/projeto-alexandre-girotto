@@ -103,7 +103,7 @@
 <% message += "*Total do Pedido:* #{number_to_currency(total)}\n\n" %>
 <% message += "Segue o comprovante de pagamento." %>
 
-<% whatsapp_url = "https://wa.me/553599085300?text=#{URI.encode_www_form_component(message)}" %>
+<% whatsapp_url = "https://wa.me/`553599085300`?text=#{URI.encode_www_form_component(message)}" %>
 
 <div class="wh-api" style="position: fixed; bottom: 10vh; right: 10vh; z-index: 100;">
   <div class="wh-fixed whatsapp-pulse" style="margin-right: 15px; margin-bottom: 15px; width: 60px; height: 60px; background: #10b418; position: fixed; text-align: center; color: #ffffff; cursor: pointer; border-radius: 50%; z-index: 99; display: inline-block; line-height: 65px;">

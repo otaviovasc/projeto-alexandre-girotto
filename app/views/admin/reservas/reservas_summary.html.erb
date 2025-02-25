@@ -101,6 +101,7 @@
               <td><%= number_to_currency(reserva.total_price, unit: "R$") %></td>
               <td>
                 <a href="<%= admin_reserva_path(reserva) %>" class="btn btn-sm btn-outline-primary">Ver</a>
+                <%= link_to 'Editar', edit_admin_reserva_path(reserva), class: 'btn btn-sm btn-outline-secondary' %>
               </td>
             </tr>
           <% end %>

@@ -1,5 +1,16 @@
 <h1>Edit Reserva</h1>
 
+<% if @reserva.errors.any? %>
+  <div id="error_explanation">
+    <h2><%= pluralize(@reserva.errors.count, "erro") %> impediram que a reserva fosse salva:</h2>
+    <ul>
+      <% @reserva.errors.full_messages.each do |mensagem| %>
+        <li><%= mensagem %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
 <%= form_with model: [:admin, @reserva], local: true do |form| %>
   <div class="mb-3">
     <%= form.label :cabana_id, 'Cabana', class: 'form-label' %>
@@ -12,10 +23,10 @@
   </div>
 
   <div class="mb-3" id="date-selection">
-      <label for="reservation_date_range" class="form-label">Selecione as datas</label>
-      <input type="text" id="reservation_date_range" placeholder="Selecione as datas" class="form-control" />
-      <%= form.hidden_field :start_date, id: "start_date" %>
-      <%= form.hidden_field :end_date, id: "end_date" %>
+    <label for="reservation_date_range" class="form-label">Selecione as datas</label>
+    <input type="text" id="reservation_date_range" placeholder="Selecione as datas" class="form-control" />
+    <%= form.hidden_field :start_date, id: "start_date" %>
+    <%= form.hidden_field :end_date, id: "end_date" %>
   </div>
 
   <div>
@@ -23,7 +34,8 @@
   </div>
 <% end %>
 
-<%= link_to 'Back', admin_reservas_path %>
+<%= link_to 'Back', admin_reservas_summary_path %>
+
 
 <script>
   document.addEventListener("turbo:load", function() {
