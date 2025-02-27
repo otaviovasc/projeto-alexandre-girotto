@@ -6,8 +6,6 @@
       <!-- If current month/year, show today's day; otherwise show the month number -->
       <% if start_date.month == Date.today.month && start_date.year == Date.today.year %>
         <%= "%02d" % Date.today.day %>
-      <% else %>
-        <%= start_date.strftime("%m") %>
       <% end %>
     </div>
 
