@@ -144,7 +144,9 @@
                 <td>
                 <span title="<%= reserva.user.email %>"><%= reserva.user.name %></span>
                 </td>
-              <td><%= reserva.cabana.name %></td>
+              <td><div class="legend-color me-2" style="background-color: <%= reserva.cabana.color %>"></div>
+                  <%= reserva.cabana.name %>
+              </td>
               <td>
                 <span class="badge <%= badge_class(reserva.payment_status) %>">
                   <%= status_translate(reserva.payment_status) %>
