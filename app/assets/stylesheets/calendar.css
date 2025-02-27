@@ -83,3 +83,7 @@
   background-color: yellow !important;
   transition: background-color 1s ease;
 }
+
+.simple-calendar td.today {
+  background-color: #000000; /* Light blue or any subtle color */
+}

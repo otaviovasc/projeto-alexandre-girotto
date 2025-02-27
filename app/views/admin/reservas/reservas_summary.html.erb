@@ -4,7 +4,10 @@
     <%= month_calendar(
           events: @reservas_calendar,
           attribute: :start_date,
-          end_attribute: :end_date
+          end_attribute: :end_date,
+          previous_link: "<i class='bi bi-arrow-left'></i>".html_safe,
+          next_link:     "<i class='bi bi-arrow-right'></i>".html_safe,
+          title: ->(start_date){ start_date.strftime('%B %Y') }
         ) do |date, reservas_for_date| %>
 
       <div class="day-content">
@@ -137,7 +140,9 @@
               <td><%= reserva.created_at.strftime("%A %d, %m, %Y") %></td>
               <td><%= reserva.start_date.strftime("%A %d, %m, %Y") %></td>
               <td><%= reserva.end_date.strftime("%A %d, %m, %Y") %></td>
-              <td><%= reserva.user.name %></td>
+                <td>
+                <span title="<%= reserva.user.email %>"><%= reserva.user.name %></span>
+                </td>
               <td><%= reserva.cabana.name %></td>
               <td>
                 <span class="badge <%= badge_class(reserva.payment_status) %>">

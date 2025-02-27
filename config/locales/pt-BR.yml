@@ -71,6 +71,24 @@ pt-BR:
       - "Out"
       - "Nov"
       - "Dez"
+    # Add day names here
+    day_names:
+      - "Domingo"
+      - "Segunda-feira"
+      - "Terça-feira"
+      - "Quarta-feira"
+      - "Quinta-feira"
+      - "Sexta-feira"
+      - "Sábado"
+    # And abbreviated day names
+    abbr_day_names:
+      - "Dom"
+      - "Seg"
+      - "Ter"
+      - "Qua"
+      - "Qui"
+      - "Sex"
+      - "Sáb"
   time:
     formats:
       default: "%d/%m/%Y %H:%M"
