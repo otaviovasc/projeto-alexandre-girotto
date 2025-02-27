@@ -18,7 +18,8 @@
 .day-content {
   position: relative;
   min-height: 80px;         /* ensure enough vertical space */
-  border: 1px solid #ddd;   /* border around each cell */
+  border: 0.01px solid #ddd;   /* border around each cell */
+  z-index: 1;               /* Ensure it is below reserva-line */
 }
 
 /* Day number in top-left corner */
@@ -28,6 +29,7 @@
   left: 2px;
   font-size: 0.8rem;
   color: #666;
+  z-index: 2;
 }
 
 /* Each reserva-line is absolutely positioned within the day cell */
@@ -35,7 +37,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  height: 10px;
+  height: 10px; /* Ensure it is displayed on top of day-content */
   /* top is set inline based on index (stacking) */
   /* background-color is also set inline based on the cabana color */
 }
