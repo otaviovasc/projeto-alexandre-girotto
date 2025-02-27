@@ -93,13 +93,15 @@ class Admin::ReservasController < ApplicationController
     # Configurar filtros avançados com Ransack
     if current_user.admin?
       @q = Reserva.ransack(params[:q])
-      @reservas = @q.result.includes(:cabana, :user).order(created_at: :desc).page(params[:page]).per(10)
+      @reservas = @q.result.includes(:cabana, :user).order(created_at: :desc)
 
       # Estatísticas úteis
       @total_reservas = @reservas.count
       @total_receita  = @reservas.sum(:total_price)
       @reservas_por_status = @reservas.unscope(:order).group(:payment_status).count
       @reservas_por_cabana = @reservas.unscope(:order).joins(:cabana).group('cabanas.name').count
+
+      @reservas_calendar = Reserva.includes(:cabana).where(:payment_status => 'paid')
     end
   end
 

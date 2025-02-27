@@ -1,0 +1,8 @@
+<div class="row">
+  <% Cabana.all.each do |cabana| %>
+    <div class="col-auto d-flex align-items-center my-1">
+      <div class="legend-color me-2" style="background-color: <%= cabana.color %>"></div>
+      <%= cabana.name %>
+    </div>
+  <% end %>
+</div>

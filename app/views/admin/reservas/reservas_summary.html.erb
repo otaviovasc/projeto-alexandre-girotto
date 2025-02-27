@@ -1,5 +1,49 @@
 <div class="container mt-4">
 
+  <div class="container my-8 p-4 bg-light shadow-sm">
+    <%= month_calendar(
+          events: @reservas_calendar,
+          attribute: :start_date,
+          end_attribute: :end_date
+        ) do |date, reservas_for_date| %>
+
+      <div class="day-content">
+        <span class="day-number"><%= date.day %></span>
+
+        <% reservas_for_date.each_with_index do |reserva, index| %>
+          <% is_start = (reserva.start_date == date) %>
+          <% is_end   = (reserva.end_date   == date) %>
+          <% same_day = (reserva.start_date == reserva.end_date && reserva.start_date == date) %>
+
+          <% color_style = "background-color: #{reserva.cabana.color};" %>
+          <% top_offset = 20 + (index * 15) %>
+
+          <% css_class =
+            if same_day
+              'start-end'
+            elsif is_start
+              'start'
+            elsif is_end
+              'end'
+            else
+              'middle'
+            end
+          %>
+
+          <div class="reserva-line <%= css_class %>"
+               style="<%= color_style %> top: <%= top_offset %>px;"
+               data-reserva-id="<%= reserva.id %>">
+          </div>
+        <% end %>
+      </div>
+
+    <% end %>
+
+    <hr>
+
+    <%= render 'legend' %>
+  </div>
+
   <!-- Filtros -->
   <div class="card p-3 mb-4 shadow-sm">
     <h4>Filtrar Reservas</h4>
@@ -76,6 +120,7 @@
         <thead class="table-dark">
           <tr>
             <th>ID</th>
+            <th>Criado em</th>
             <th>Data Início</th>
             <th>Data Fim</th>
             <th>Usuário</th>
@@ -87,10 +132,11 @@
         </thead>
         <tbody>
           <% @reservas.each do |reserva| %>
-            <tr>
+            <tr id="reserva-<%= reserva.id %>">
               <td><%= reserva.id %></td>
-              <td><%= reserva.start_date.strftime("%d/%m/%Y") %></td>
-              <td><%= reserva.end_date.strftime("%d/%m/%Y") %></td>
+              <td><%= reserva.created_at.strftime("%A %d, %m, %Y") %></td>
+              <td><%= reserva.start_date.strftime("%A %d, %m, %Y") %></td>
+              <td><%= reserva.end_date.strftime("%A %d, %m, %Y") %></td>
               <td><%= reserva.user.name %></td>
               <td><%= reserva.cabana.name %></td>
               <td>
@@ -109,9 +155,33 @@
       </table>
     </div>
   </div>
-
-  <!-- Paginação -->
-  <div class="d-flex justify-content-center mt-4">
-    <%= paginate @reservas %>
-  </div>
 </div>
+
+<script>
+  document.addEventListener("turbo:load", function() {
+    // Listen for clicks on any calendar reserva line
+    document.querySelectorAll(".reserva-line").forEach(function(element) {
+      element.addEventListener("click", function() {
+        console.log("Clicked on reserva line");
+
+
+        // Get the reserva id from the data attribute
+        var reservaId = this.getAttribute("data-reserva-id");
+        if (reservaId) {
+          // Find the corresponding table row by ID
+          var targetRow = document.getElementById("reserva-" + reservaId);
+          if (targetRow) {
+            // Scroll the target row into view smoothly
+            targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
+            // Add a highlight class
+            targetRow.classList.add("highlight");
+            // Remove the highlight after 3 seconds
+            setTimeout(function() {
+              targetRow.classList.remove("highlight");
+            }, 3000);
+          }
+        }
+      });
+    });
+  });
+</script>

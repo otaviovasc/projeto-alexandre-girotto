@@ -1,0 +1,85 @@
+.table.calendar {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.table.calendar td,
+.table.calendar th {
+  vertical-align: top;
+  padding: 0; /* so our .day-content can fill */
+}
+
+.day {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* day-content is each cell's container */
+.day-content {
+  position: relative;
+  min-height: 80px;         /* ensure enough vertical space */
+  border: 1px solid #ddd;   /* border around each cell */
+}
+
+/* Day number in top-left corner */
+.day-number {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* Each reserva-line is absolutely positioned within the day cell */
+.reserva-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 10px;
+  /* top is set inline based on index (stacking) */
+  /* background-color is also set inline based on the cabana color */
+}
+
+/* MIDDLE day in the range: fill the entire cell horizontally */
+.reserva-line.middle {
+  left: 0;
+  right: 0;
+}
+
+/* START day: fill from 50% to the right edge */
+.reserva-line.start {
+  left: 50%;
+  right: 0;
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+}
+
+/* END day: fill from left edge to 50% */
+.reserva-line.end {
+  left: 0;
+  right: 50%;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+}
+
+/* Single-day reservation: basically a small circle in the center */
+.reserva-line.start-end {
+  left: 50%;
+  width: 0;
+  height: 10px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+/* Legend styling */
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.highlight {
+  background-color: yellow !important;
+  transition: background-color 1s ease;
+}
