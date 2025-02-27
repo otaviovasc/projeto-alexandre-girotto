@@ -101,7 +101,15 @@ class Admin::ReservasController < ApplicationController
       @reservas_por_status = @reservas.unscope(:order).group(:payment_status).count
       @reservas_por_cabana = @reservas.unscope(:order).joins(:cabana).group('cabanas.name').count
 
-      @reservas_calendar = Reserva.includes(:cabana).where(:payment_status => 'paid')
+      @reservas_calendar = Reserva.includes(:cabana).where(payment_status: 'paid')
+
+      # Pegamos os IDs únicos das cabanas e atribuímos um offset espaçado de 10px
+      cabana_ids = @reservas_calendar.map(&:cabana_id).uniq
+      @top_offset = {}
+
+      cabana_ids.each_with_index do |cabana_id, index|
+        @top_offset[cabana_id] = 20 + index * 15 # Cada cabana terá um offset de 10px incrementalmente
+      end
     end
   end
 

@@ -17,7 +17,7 @@
 /* day-content is each cell's container */
 .day-content {
   position: relative;
-  min-height: 80px;         /* ensure enough vertical space */
+  min-height: 120px;         /* ensure enough vertical space */
   border: 0.01px solid #ddd;   /* border around each cell */
   z-index: 1;               /* Ensure it is below reserva-line */
 }
@@ -50,7 +50,7 @@
 
 /* START day: fill from 50% to the right edge */
 .reserva-line.start {
-  left: 50%;
+  left: 55%;
   right: 0;
   border-top-left-radius: 5px;
   border-bottom-left-radius: 5px;
@@ -59,7 +59,7 @@
 /* END day: fill from left edge to 50% */
 .reserva-line.end {
   left: 0;
-  right: 50%;
+  right: 55%;
   border-top-right-radius: 5px;
   border-bottom-right-radius: 5px;
 }
