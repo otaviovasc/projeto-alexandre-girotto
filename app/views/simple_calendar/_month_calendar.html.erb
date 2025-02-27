@@ -1,25 +1,35 @@
 <div class="simple-calendar">
-  <!-- Minimal, improved header with today's day if applicable -->
-  <div class="calendar-heading d-flex justify-content-between align-items-center mb-3">
-    <time datetime="<%= start_date.strftime('%Y-%m') %>" class="calendar-title h5 mb-0">
-      <%# If the calendar is showing the current month, prepend today's day %>
+  <!-- Custom header with a large number on the left, month/year + nav on the right -->
+  <div class="calendar-heading d-flex mb-3 align-items-end">
+    <!-- Big number on the left -->
+    <div class="display-1 fw-light me-4 mb-0" style="line-height: 1;">
+      <!-- If current month/year, show today's day; otherwise show the month number -->
       <% if start_date.month == Date.today.month && start_date.year == Date.today.year %>
-        <%= Date.today.day %> de
+        <%= "%02d" % Date.today.day %>
+      <% else %>
+        <%= start_date.strftime("%m") %>
       <% end %>
-      <%= t('date.month_names')[start_date.month] %> <%= start_date.year %>
-    </time>
+    </div>
 
-    <nav>
-      <%= link_to raw("<i class='bi bi-chevron-left'></i>"), calendar.url_for_previous_view,
-            class: "btn btn-sm btn-light me-1" %>
-      <%= link_to t('simple_calendar.today', default: 'Hoje'), calendar.url_for_today_view,
-            class: "btn btn-sm btn-primary me-1" %>
-      <%= link_to raw("<i class='bi bi-chevron-right'></i>"), calendar.url_for_next_view,
-            class: "btn btn-sm btn-light" %>
-    </nav>
+    <!-- Month/Year + Nav on the right -->
+    <div class="flex-grow-1 text-end">
+      <!-- Uppercase month name + year -->
+      <h3 class="calendar-title fw-light mb-1">
+        <%= t('date.month_names')[start_date.month].upcase %> <%= start_date.year %>
+      </h3>
+      <nav>
+        <%= link_to raw("<i class='bi bi-chevron-left'></i>"), calendar.url_for_previous_view,
+              class: "btn btn-sm btn-light me-1" %>
+        <%= link_to t('simple_calendar.today', default: 'Hoje'), calendar.url_for_today_view,
+              class: "btn btn-sm btn-primary me-1" %>
+        <%= link_to raw("<i class='bi bi-chevron-right'></i>"), calendar.url_for_next_view,
+              class: "btn btn-sm btn-light" %>
+      </nav>
+    </div>
   </div>
 
-  <table class="table table-striped">
+  <!-- Keep your existing table structure -->
+  <table class="table table-striped calendar">
     <thead>
       <tr>
         <% date_range.slice(0, 7).each do |day| %>
@@ -27,7 +37,6 @@
         <% end %>
       </tr>
     </thead>
-
     <tbody>
       <% date_range.each_slice(7) do |week| %>
         <tr>

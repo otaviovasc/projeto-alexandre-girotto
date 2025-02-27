@@ -85,5 +85,34 @@
 }
 
 .simple-calendar td.today {
-  background-color: #000000; /* Light blue or any subtle color */
+  background-color: #98bdcb; /* Light blue or any subtle color */
+}
+
+
+/* The big number on the left */
+.simple-calendar .calendar-heading .display-1 {
+  font-size: 4rem; /* Adjust as you like */
+  line-height: 1;
+  margin: 0;
+}
+
+/* The month/year text on the right */
+.simple-calendar .calendar-title {
+  font-size: 1.8rem; /* Slightly bigger if you want */
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* Subtle table styling (already in your code, but you can refine) */
+.table.calendar {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table.calendar th {
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: #666;
+  text-align: center;
 }
