@@ -154,15 +154,31 @@
     });
 
     fetch(`/cabanas/${cabanaId}/unavailable_dates`)
-      .then(response => response.json())
-      .then(dates => {
-        flatpickr("#reservation_date_range", {
-          mode: "range",
-          minDate: "today",
-          dateFormat: "Y-m-d",
-          disable: dates
-        });
+    .then(response => response.json())
+    .then(dates => {
+      flatpickr("#reservation_date_range", {
+        mode: "range",
+        minDate: "today",
+        dateFormat: "Y-m-d",
+        disable: dates,
+        onChange: function(selectedDates, dateStr, instance) {
+          // Proceed only if a complete range is selected
+          if (selectedDates.length === 2) {
+            const startDate = selectedDates[0];
+            const endDate = selectedDates[1];
+            // Calculate the difference in days
+            const diffDays = (endDate - startDate) / (1000 * 60 * 60 * 24);
+            // Check if it is a 1-night stay starting on Friday (5) or Saturday (6)
+            if (diffDays === 1 && (startDate.getDay() === 5 || startDate.getDay() === 6)) {
+              alert("Reservas de apenas uma noite que comecem na sexta-feira ou no sábado não são permitidas. Por favor, escolha outro intervalo de datas.");
+              // Clear the selection
+              instance.clear();
+            }
+          }
+        }
       });
+    });
+
 
     const quantityInput = document.getElementById("breakfast_quantity");
     const quantityUpButton = document.getElementById("quantity_up");
