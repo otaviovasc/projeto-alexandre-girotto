@@ -58,8 +58,10 @@ class Admin::ReservasController < ApplicationController
       render :new and return
     end
 
-    # Cálculo do preço total da reserva
-    @reserva.total_price = @reserva.calculate_total_price!
+    # Cálculo do preço total da reserva, se o total_price não estiver presente
+    unless params[:reserva][:total_price].present?
+      @reserva.total_price = @reserva.calculate_total_price!
+    end
     @reserva.payment_status = "paid"
 
     if @reserva.save
@@ -129,7 +131,7 @@ class Admin::ReservasController < ApplicationController
   end
 
   def reserva_params
-    params.require(:reserva).permit(:start_date, :end_date, :cabana_id, :user_id)
+    params.require(:reserva).permit(:start_date, :end_date, :cabana_id, :user_id, :total_price)
   end
 
   def user_params
