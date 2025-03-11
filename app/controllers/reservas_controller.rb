@@ -60,9 +60,8 @@ class ReservasController < ApplicationController
         )
       end
 
-      total_price = @reserva.calculate_total_price
+      @reserva.calculate_total_price!
       @reserva.update_columns(
-        total_price: total_price,
         payment_expires_at: 10.minutes.from_now
       )
       UserMailer.reserva_created(current_user, @reserva).deliver_now
@@ -97,9 +96,8 @@ class ReservasController < ApplicationController
           quantity: breakfast_quantity.to_i
         )
       end
-      total_price = @reserva.calculate_total_price || 0
+      @reserva.calculate_total_price!
       @reserva.update_columns(
-        total_price: total_price,
         payment_expires_at: 10.minutes.from_now
       )
 
@@ -253,7 +251,7 @@ class ReservasController < ApplicationController
     cabana = Cabana.find(params[:cabana_id])
     reserva = Reserva.new(start_date: start_date, end_date: end_date, cabana: cabana)
 
-    total_price = reserva.calculate_total_price || 0  # Ensure total_price is a number
+    total_price = reserva.calculate_total_price! || 0  # Ensure total_price is a number
 
     if include_breakfast
       breakfast_service = Service.find_by(name: 'Café da Manhã')

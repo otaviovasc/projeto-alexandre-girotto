@@ -59,7 +59,7 @@ class Admin::ReservasController < ApplicationController
     end
 
     # Cálculo do preço total da reserva
-    @reserva.total_price = @reserva.calculate_total_price
+    @reserva.calculate_total_price!
     @reserva.payment_status = "paid"
 
     if @reserva.save

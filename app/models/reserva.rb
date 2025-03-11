@@ -24,22 +24,10 @@ class Reserva < ApplicationRecord
 
   before_create :set_default_payment_status
 
-  def calculate_total_price
-    total_price = 0
-    days_stayed = (start_date...end_date).count
+  before_save :calculate_total_price!
 
-    # Calculate price for each day based on the cabana's price rules
-    (start_date...end_date).each do |date|
-      total_price += find_price_for_day(date)
-    end
-
-    # Calculate the total price of selected services (e.g., breakfast)
-    reserva_services.each do |reserva_service|
-      service = reserva_service.service
-      total_price += reserva_service.quantity * service.price * days_stayed
-    end
-
-    total_price
+  def calculate_total_price!
+    self.total_price = PriceCalculator.new(self).total_price
   end
 
   def expired?
@@ -64,28 +52,6 @@ class Reserva < ApplicationRecord
 
   def set_default_payment_status
     self.payment_status ||= 'pending'
-  end
-
-  def find_price_for_day(date)
-    # Primeiro, verifica se há promoção para essa data na cabana
-    if (promotion = cabana.promotions.find_by(date: date))
-      return promotion.price
-    end
-
-    # Se não houver promoção, verifica se a data é feriado (global)
-    if Holiday.holiday?(date)
-      price_rule = cabana.price_rules.find_by(day_type: 'holiday')
-    elsif weekend?(date)
-      price_rule = cabana.price_rules.find_by(day_type: 'weekend')
-    else
-      price_rule = cabana.price_rules.find_by(day_type: 'weekday')
-    end
-
-    price_rule ? price_rule.price : (cabana.price || 0)
-  end
-
-  def weekend?(date)
-    date.friday? || date.saturday? || date.sunday?
   end
 
   def start_date_cannot_be_in_the_past
