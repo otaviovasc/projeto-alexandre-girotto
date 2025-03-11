@@ -1,3 +1,4 @@
+# app/services/price_calculator.rb
 class PriceCalculator
   def initialize(reservation)
     @reservation = reservation
@@ -7,7 +8,12 @@ class PriceCalculator
   end
 
   def preload_data
-    @promotions = @cabana.promotions.where(date: @date_range).index_by(&:date)
+    # Carrega todas as promoções que se aplicam ao intervalo da reserva.
+    @promotions = @cabana.promotions.where(
+      "date BETWEEN ? AND ? OR (start_date IS NOT NULL AND end_date IS NOT NULL AND start_date <= ? AND end_date >= ?)",
+      @date_range.first, @date_range.last, @date_range.last, @date_range.first
+    ).to_a
+
     @price_rules = @cabana.price_rules.group_by(&:day_type)
   end
 
@@ -18,12 +24,24 @@ class PriceCalculator
   end
 
   def price_for_day(date)
-    if (promotion = @promotions[date])
+    if (promotion = promotion_for_day(date))
       promotion.price
     else
       rule = rule_for_date(date)
       rule ? rule.price : (@cabana.price || 0)
     end
+  end
+
+  def promotion_for_day(date)
+    # Verifica se há promoção de data única para o dia
+    single_promo = @promotions.find { |p| p.date.present? && p.date == date }
+    return single_promo if single_promo
+
+    # Verifica promoções com intervalo (start_date e end_date preenchidos)
+    interval_promo = @promotions.find do |p|
+      p.start_date.present? && p.end_date.present? && (p.start_date <= date && p.end_date >= date)
+    end
+    interval_promo
   end
 
   def rule_for_date(date)

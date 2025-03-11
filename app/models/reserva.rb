@@ -24,8 +24,6 @@ class Reserva < ApplicationRecord
 
   before_create :set_default_payment_status
 
-  before_save :calculate_total_price!
-
   def calculate_total_price!
     self.total_price = PriceCalculator.new(self).total_price
   end

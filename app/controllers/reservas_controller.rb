@@ -60,8 +60,8 @@ class ReservasController < ApplicationController
         )
       end
 
-      @reserva.calculate_total_price!
       @reserva.update_columns(
+        total_price: @reserva.calculate_total_price!,
         payment_expires_at: 10.minutes.from_now
       )
       UserMailer.reserva_created(current_user, @reserva).deliver_now
@@ -96,8 +96,8 @@ class ReservasController < ApplicationController
           quantity: breakfast_quantity.to_i
         )
       end
-      @reserva.calculate_total_price!
       @reserva.update_columns(
+        total_price: @reserva.calculate_total_price!,
         payment_expires_at: 10.minutes.from_now
       )
 

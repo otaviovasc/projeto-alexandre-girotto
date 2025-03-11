@@ -25,6 +25,6 @@ class Admin::PromotionsController < ApplicationController
   end
 
   def promotion_params
-    params.require(:promotion).permit(:date, :price)
+    params.require(:promotion).permit(:date, :start_date, :end_date, :price, :is_interval)
   end
 end

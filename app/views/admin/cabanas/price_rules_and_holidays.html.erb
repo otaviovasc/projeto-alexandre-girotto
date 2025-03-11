@@ -77,34 +77,67 @@
     </table>
   </div>
 
-  <!-- Seção de Promoções (exclusiva para cada cabana) -->
   <h2 class="h4 mt-5">Promoções</h2>
   <%= form_with model: @promotion, url: admin_cabana_promotions_path(@cabana), local: true, html: { class: 'needs-validation' } do |form| %>
-    <div class="mb-3">
-      <%= form.label :date, 'Data da Promoção', class: 'form-label' %>
-      <%= form.date_field :date, class: 'form-control' %>
+    <div class="form-check mb-3">
+      <%= form.check_box :is_interval, { data: { toggle: "promotion-interval" } }, "1", "0" %>
+      <%= form.label :is_interval, "Promoção de Intervalo de Tempo", class: 'form-check-label' %>
     </div>
+
+    <!-- Campo para promoção de data única -->
+    <div id="single-date-promotion" style="<%= @promotion.is_interval == "1" ? "display:none" : "display:block" %>;">
+      <div class="mb-3">
+        <%= form.label :date, 'Data da Promoção', class: 'form-label' %>
+        <%= form.date_field :date, class: 'form-control' %>
+      </div>
+    </div>
+
+    <!-- Campos para promoção por intervalo -->
+    <div id="interval-promotion" style="<%= @promotion.is_interval == "1" ? "display:block" : "display:none" %>;">
+      <div class="mb-3">
+        <%= form.label :start_date, 'Data de Início', class: 'form-label' %>
+        <%= form.date_field :start_date, class: 'form-control' %>
+      </div>
+      <div class="mb-3">
+        <%= form.label :end_date, 'Data de Término', class: 'form-label' %>
+        <%= form.date_field :end_date, class: 'form-control' %>
+      </div>
+    </div>
+
     <div class="mb-3">
       <%= form.label :price, 'Preço Promocional', class: 'form-label' %>
       <%= form.number_field :price, step: 0.01, class: 'form-control' %>
     </div>
+
     <%= form.submit 'Salvar Promoção', class: 'btn btn-primary mt-2' %>
   <% end %>
+
 
   <h3 class="h5 mt-4">Promoções Existentes</h3>
   <div class="table-responsive">
     <table class="table table-bordered table-hover">
       <thead class="table-light">
         <tr>
-          <th>Data</th>
+          <th>Tipo</th>
+          <th>Datas</th>
           <th>Preço Promocional</th>
           <th>Ações</th>
         </tr>
       </thead>
       <tbody>
-        <% @cabana.promotions.order(:date).each do |promo| %>
+        <% @cabana.promotions.order(:date, :start_date).each do |promo| %>
           <tr>
-            <td><%= promo.date.strftime("%d/%m/%Y") %></td>
+            <% if promo.start_date.present? && promo.end_date.present? %>
+              <td>Intervalo</td>
+              <td>
+                <%= promo.start_date.strftime("%d/%m/%Y") %> até <%= promo.end_date.strftime("%d/%m/%Y") %>
+              </td>
+            <% else %>
+              <td>Data Única</td>
+              <td>
+                <%= promo.date.strftime("%d/%m/%Y") %>
+              </td>
+            <% end %>
             <td><%= number_to_currency(promo.price) %></td>
             <td>
               <%= link_to 'Excluir', admin_cabana_promotion_path(@cabana, promo), data: { turbo_method: :delete, confirm: 'Você tem certeza?' }, class: 'btn btn-sm btn-danger' %>
@@ -115,7 +148,34 @@
     </table>
   </div>
 
+
   <div class="d-flex gap-2 mt-4">
     <%= link_to 'Voltar para Cabana', admin_cabana_path(@cabana), class: 'btn btn-secondary' %>
   </div>
 </div>
+
+<script>
+document.addEventListener("turbo:load", function() {
+  var promotionCheckbox = document.querySelector('input[data-toggle="promotion-interval"]');
+  var singleDatePromotion = document.getElementById("single-date-promotion");
+  var intervalPromotion = document.getElementById("interval-promotion");
+
+  function togglePromotionFields() {
+    if (promotionCheckbox.checked) {
+      // Se estiver marcado, exibe o intervalo e oculta a data única
+      singleDatePromotion.style.display = "none";
+      intervalPromotion.style.display = "block";
+    } else {
+      // Se não estiver marcado, exibe a data única e oculta o intervalo
+      singleDatePromotion.style.display = "block";
+      intervalPromotion.style.display = "none";
+    }
+  }
+
+  // Inicializa os campos conforme o estado do checkbox
+  togglePromotionFields();
+
+  // Adiciona o listener para mudanças no checkbox
+  promotionCheckbox.addEventListener("change", togglePromotionFields);
+});
+</script>
