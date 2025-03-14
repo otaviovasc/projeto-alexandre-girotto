@@ -66,6 +66,7 @@ class Admin::ReservasController < ApplicationController
 
     if @reserva.save
       UserMailer.reserva_paid(@user, @reserva).deliver_now
+      UserMailer.notify_adm(@user, @reserva).deliver_now
       redirect_to admin_reservas_path, notice: 'Reserva criada com sucesso.'
     else
       flash[:alert] = "Não foi possível salvar a reserva. Verifique os dados informados."
@@ -95,7 +96,7 @@ class Admin::ReservasController < ApplicationController
     # Configurar filtros avançados com Ransack
     if current_user.admin?
       @q = Reserva.ransack(params[:q])
-      @reservas = @q.result.includes(:cabana, :user).order(created_at: :desc)
+      @reservas = @q.result.includes(:cabana, :user).order(updated_at: :desc)
 
       # Estatísticas úteis
       @total_reservas = @reservas.count

@@ -128,7 +128,7 @@
         <thead class="table-dark">
           <tr>
             <th>ID</th>
-            <th>Criado em</th>
+            <th>Ultima atualização</th>
             <th>Data Início</th>
             <th>Data Fim</th>
             <th>Usuário</th>
@@ -140,16 +140,17 @@
         </thead>
         <tbody>
           <% @reservas.each do |reserva| %>
-            <tr id="reserva-<%= reserva.id %>">
+            <tr id="reserva-<%= reserva.id %>" data-updated-at="<%= reserva.updated_at.to_i %>">
               <td><%= reserva.id %></td>
-              <td><%= reserva.created_at.strftime("%A %d, %m, %Y") %></td>
+              <td><%= reserva.updated_at.strftime("%A %d, %m, %Y") %></td>
               <td><%= reserva.start_date.strftime("%A %d, %m, %Y") %></td>
               <td><%= reserva.end_date.strftime("%A %d, %m, %Y") %></td>
-                <td>
+              <td>
                 <span title="<%= reserva.user.email %>"><%= reserva.user.name %></span>
-                </td>
-              <td><div class="legend-color me-2" style="background-color: <%= reserva.cabana.color %>"></div>
-                  <%= reserva.cabana.name %>
+              </td>
+              <td>
+                <div class="legend-color me-2" style="background-color: <%= reserva.cabana.color %>"></div>
+                <%= reserva.cabana.name %>
               </td>
               <td>
                 <span class="badge <%= badge_class(reserva.payment_status) %>">
@@ -167,6 +168,7 @@
       </table>
     </div>
   </div>
+
 </div>
 
 <script>
@@ -196,4 +198,35 @@
       });
     });
   });
+</script>
+
+<script>
+document.addEventListener('turbo:load', function() {
+  // Recupera o timestamp da última visualização (se não existir, assume 0)
+  var lastSeen = parseInt(localStorage.getItem('lastSeenReservations')) || 0;
+
+  // Timestamp atual em segundos
+  var now = Math.floor(Date.now() / 1000);
+
+  // Seleciona todas as linhas de reserva
+  var rows = document.querySelectorAll('tr[id^="reserva-"]');
+  rows.forEach(function(row) {
+    var updatedAt = parseInt(row.getAttribute('data-updated-at'));
+    // Se a reserva foi criada após a última visualização, adiciona o highlight
+    if (updatedAt > lastSeen) {
+      row.classList.add('highlight-new');
+    }
+
+    // Remove o destaque quando o usuário passa o mouse ou clica
+    row.addEventListener('mouseover', function() {
+      row.classList.remove('highlight-new');
+    });
+    row.addEventListener('click', function() {
+      row.classList.remove('highlight-new');
+    });
+  });
+
+  // Atualiza o timestamp da última visualização para o momento atual
+  localStorage.setItem('lastSeenReservations', now);
+});
 </script>

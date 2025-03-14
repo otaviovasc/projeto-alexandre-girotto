@@ -23,4 +23,11 @@ class UserMailer < ApplicationMailer
     @services = reserva.services.includes(:reserva_services)
     mail(to: @user.email, subject: 'Pagamento Confirmado - Villagio')
   end
+
+  def notify_adm(user, reserva)
+    @user = user
+    @reserva = reserva
+    @url  = "https://www.villaggiogirotto.com.br/admin/reservas_summary"
+    mail(to: 'otaviocavasc2@gmail.com', subject: "Reserva: #{reserva.payment_status} - Villagio")
+  end
 end

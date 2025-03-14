@@ -65,6 +65,7 @@ class ReservasController < ApplicationController
         payment_expires_at: 10.minutes.from_now
       )
       UserMailer.reserva_created(current_user, @reserva).deliver_now
+      UserMailer.notify_adm(current_user, @reserva).deliver_now
       redirect_to reserva_path(@reserva), notice: 'Reserva criada com sucesso.'
     else
       redirect_to new_cabana_reserva_path(@cabana), alert: "ERRO: #{@reserva.errors.full_messages.join("\n")}"
@@ -176,6 +177,7 @@ class ReservasController < ApplicationController
 
     if response.code == 201
       UserMailer.reserva_created(current_user, @reserva).deliver_now
+      UserMailer.notify_adm(current_user, @reserva).deliver_now
       payment_link = JSON.parse(response.body)
 
       if payment_link['url'].present?
@@ -214,6 +216,7 @@ class ReservasController < ApplicationController
       @reserva.update_column(:payment_status, 'waiting_payment')
     when 'paid'
       UserMailer.reserva_paid(current_user, @reserva).deliver_now
+      UserMailer.notify_adm(current_user, @reserva).deliver_now
       @reserva.update_column(:payment_status, 'paid')
     when 'unpaid', 'refused'
       @reserva.update_column(:payment_status, 'refused')
