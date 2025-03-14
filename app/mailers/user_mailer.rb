@@ -28,6 +28,6 @@ class UserMailer < ApplicationMailer
     @user = user
     @reserva = reserva
     @url  = "https://www.villaggiogirotto.com.br/admin/reservas_summary"
-    mail(to: 'otaviocavasc2@gmail.com', subject: "Reserva: #{reserva.payment_status} - Villagio")
+    mail(to: 'contato@villaggiogirotto.com.br', subject: "Reserva: #{reserva.payment_status} - Villagio")
   end
 end
