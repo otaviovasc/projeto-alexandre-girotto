@@ -128,14 +128,15 @@
         <thead class="table-dark">
           <tr>
             <th>ID</th>
-            <th>Ultima atualização</th>
+            <th>Última atualização</th>
             <th>Data Início</th>
             <th>Data Fim</th>
-            <th>Usuário</th>
-            <th>Telefone</th>
             <th>Cabana</th>
             <th>Status</th>
             <th>Preço Total</th>
+            <th>Observações</th>
+            <th>Usuário</th>
+            <th>Telefone</th>
             <th>Ações</th>
           </tr>
         </thead>
@@ -143,15 +144,9 @@
           <% @reservas.each do |reserva| %>
             <tr id="reserva-<%= reserva.id %>" data-updated-at="<%= reserva.updated_at.to_i %>">
               <td><%= reserva.id %></td>
-              <td><%= reserva.updated_at.strftime("%A %d, %m, %Y") %></td>
-              <td><%= reserva.start_date.strftime("%A %d, %m, %Y") %></td>
-              <td><%= reserva.end_date.strftime("%A %d, %m, %Y") %></td>
-              <td>
-                <span title="<%= reserva.user.email %>"><%= reserva.user.name %></span>
-              </td>
-              <td>
-                <span title="<%= reserva.user.email %>"><%= reserva.user.telephone %></span>
-              </td>
+              <td><%= reserva.updated_at.strftime("%d/%m/%Y - %H:%Mh") %></td>
+              <td><%= reserva.start_date.strftime("%d/%m/%y") %></td>
+              <td><%= reserva.end_date.strftime("%d/%m/%y") %></td>
               <td>
                 <div class="legend-color me-2" style="background-color: <%= reserva.cabana.color %>"></div>
                 <%= reserva.cabana.name %>
@@ -162,8 +157,17 @@
                 </span>
               </td>
               <td><%= number_to_currency(reserva.total_price, unit: "R$") %></td>
+              <td><%= reserva.observation.present? ? reserva.observation : '-' %></td>
               <td>
-                <a href="<%= admin_reserva_path(reserva) %>" class="btn btn-sm btn-outline-primary">Ver</a>
+                <span title="<%= reserva.user.email %>"><%= reserva.user.name %></span>
+              </td>
+              <td>
+                <span title="<%= reserva.user.email %>"><%= reserva.user.telephone %></span>
+              </td>
+              <td>
+                <%= link_to admin_reserva_path(reserva), class: 'btn btn-sm btn-outline-primary me-1', title: 'Visualizar' do %>
+                  <i class="bi bi-eye"></i>
+                <% end %> 
               </td>
             </tr>
           <% end %>

@@ -86,11 +86,6 @@
   transition: background-color 1s ease;
 }
 
-.highlight-new {
-  background-color: #ffffcc !important; /* Destaque com uma cor clara */
-  transition: background-color 1s ease;
-}
-
 .simple-calendar td.today {
   background-color: #98bdcb; /* Light blue or any subtle color */
 }

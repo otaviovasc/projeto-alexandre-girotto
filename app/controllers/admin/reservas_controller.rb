@@ -132,7 +132,7 @@ class Admin::ReservasController < ApplicationController
   end
 
   def reserva_params
-    params.require(:reserva).permit(:start_date, :end_date, :cabana_id, :user_id, :total_price)
+    params.require(:reserva).permit(:start_date, :end_date, :cabana_id, :user_id, :total_price, :observation, :payment_status)
   end
 
   def user_params
