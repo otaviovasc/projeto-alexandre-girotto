@@ -132,6 +132,7 @@
             <th>Data Início</th>
             <th>Data Fim</th>
             <th>Usuário</th>
+            <th>Telefone</th>
             <th>Cabana</th>
             <th>Status</th>
             <th>Preço Total</th>
@@ -149,6 +150,9 @@
                 <span title="<%= reserva.user.email %>"><%= reserva.user.name %></span>
               </td>
               <td>
+                <span title="<%= reserva.user.email %>"><%= reserva.user.telephone %></span>
+              </td>
+              <td>
                 <div class="legend-color me-2" style="background-color: <%= reserva.cabana.color %>"></div>
                 <%= reserva.cabana.name %>
               </td>
@@ -160,7 +164,6 @@
               <td><%= number_to_currency(reserva.total_price, unit: "R$") %></td>
               <td>
                 <a href="<%= admin_reserva_path(reserva) %>" class="btn btn-sm btn-outline-primary">Ver</a>
-                <%= link_to 'Editar', edit_admin_reserva_path(reserva), class: 'btn btn-sm btn-outline-secondary' %>
               </td>
             </tr>
           <% end %>
