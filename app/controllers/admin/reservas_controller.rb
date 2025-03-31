@@ -67,7 +67,7 @@ class Admin::ReservasController < ApplicationController
     if @reserva.save
       UserMailer.reserva_paid(@user, @reserva).deliver_now
       UserMailer.notify_adm(@user, @reserva).deliver_now
-      redirect_to admin_reservas_path, notice: 'Reserva criada com sucesso.'
+      redirect_to admin_reservas_summary_path, notice: 'Reserva criada com sucesso.'
     else
       flash[:alert] = "Não foi possível salvar a reserva. Verifique os dados informados."
       render :new
@@ -89,7 +89,7 @@ class Admin::ReservasController < ApplicationController
 
   def destroy
     @reserva.destroy
-    redirect_to admin_reservas_path, notice: 'Reserva was successfully deleted.'
+    redirect_to admin_reservas_summary_path, notice: 'Reserva was successfully deleted.'
   end
 
   def reservas_summary
