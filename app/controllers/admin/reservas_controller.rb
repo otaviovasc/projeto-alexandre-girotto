@@ -1,7 +1,7 @@
 class Admin::ReservasController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin
-  before_action :set_reserva, only: [:edit, :update, :destroy, :show]
+  before_action :set_reserva, only: [:edit, :update, :destroy, :show, :update_observation]
   before_action :check_reservations_on_new, only: [:reservas_summary]
 
   def index
@@ -114,6 +114,15 @@ class Admin::ReservasController < ApplicationController
         @top_offset[cabana_id] = 20 + index * 15 # Cada cabana terá um offset de 10px incrementalmente
       end
     end
+  end
+
+  def update_observation
+    if @reserva.update_column(:observation, params[:observation])
+      flash[:notice] = "Observação atualizada com sucesso"
+    else
+      flash[:alert] = "Erro ao atualizar observação"
+    end
+    redirect_to admin_reservas_summary_path
   end
 
   private

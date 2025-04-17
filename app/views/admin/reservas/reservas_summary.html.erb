@@ -1,4 +1,26 @@
 <div class="container mt-4">
+  <style>
+    .edit-observation-btn {
+      font-size: 0.8rem;
+      opacity: 0.6;
+    }
+    .edit-observation-btn:hover {
+      opacity: 1;
+    }
+    td:hover .edit-observation-btn {
+      opacity: 1;
+    }
+    .observation-text {
+      word-break: break-word;
+    }
+    .highlight-new {
+      animation: highlight-fade 5s;
+    }
+    @keyframes highlight-fade {
+      from { background-color: rgba(255, 251, 130, 0.5); }
+      to { background-color: transparent; }
+    }
+  </style>
 
   <div class="container my-8 p-4 bg-light shadow-sm">
     <%= month_calendar(
@@ -157,7 +179,19 @@
                 </span>
               </td>
               <td><%= number_to_currency(reserva.total_price, unit: "R$") %></td>
-              <td><%= reserva.observation.present? ? reserva.observation : '-' %></td>
+              <td>w
+                <span class="observation-text"><%= reserva.observation.present? ? reserva.observation : '-' %></span>
+                <a href="#" class="edit-observation-btn ms-2" data-reserva-id="<%= reserva.id %>">
+                  <i class="bi bi-pencil-square text-primary"></i>
+                </a>
+                <div class="edit-observation-form d-none">
+                  <%= form_with url: update_observation_admin_reserva_path(reserva), method: :patch, class: "d-flex" do |f| %>
+                    <%= f.text_field :observation, value: reserva.observation, class: "form-control form-control-sm me-1" %>
+                    <%= f.submit "Salvar", class: "btn btn-sm btn-success" %>
+                    <button type="button" class="btn btn-sm btn-secondary ms-1 cancel-edit-btn">Cancelar</button>
+                  <% end %>
+                </div>
+              </td>
               <td>
                 <span title="<%= reserva.user.email %>"><%= reserva.user.name %></span>
               </td>
@@ -167,7 +201,7 @@
               <td>
                 <%= link_to admin_reserva_path(reserva), class: 'btn btn-sm btn-outline-primary me-1', title: 'Visualizar' do %>
                   <i class="bi bi-eye"></i>
-                <% end %> 
+                <% end %>
               </td>
             </tr>
           <% end %>
@@ -235,5 +269,36 @@ document.addEventListener('turbo:load', function() {
 
   // Atualiza o timestamp da última visualização para o momento atual
   localStorage.setItem('lastSeenReservations', now);
+});
+</script>
+
+<script>
+// Código para edição inline das observações
+document.addEventListener('turbo:load', function() {
+  // Manipulador para o botão de editar observação
+  document.querySelectorAll('.edit-observation-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      // Oculta o texto da observação e o botão de editar
+      const td = this.closest('td');
+      td.querySelector('.observation-text').classList.add('d-none');
+      this.classList.add('d-none');
+      // Mostra o formulário de edição
+      td.querySelector('.edit-observation-form').classList.remove('d-none');
+    });
+  });
+
+  // Manipulador para o botão de cancelar edição
+  document.querySelectorAll('.cancel-edit-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const td = this.closest('td');
+      // Mostra o texto da observação e o botão de editar
+      td.querySelector('.observation-text').classList.remove('d-none');
+      td.querySelector('.edit-observation-btn').classList.remove('d-none');
+      // Oculta o formulário de edição
+      td.querySelector('.edit-observation-form').classList.add('d-none');
+    });
+  });
 });
 </script>

@@ -236,12 +236,32 @@ class ReservasController < ApplicationController
     reservas = @cabana.reservas.where(payment_status: ['pending', 'waiting_payment', 'paid'])
                                .where("payment_expires_at IS NULL OR payment_expires_at > ?", Time.current)
 
-    # Map the unavailable dates for each active reservation
-    unavailable_dates = reservas.map do |reserva|
-      (reserva.start_date...reserva.end_date).to_a
-    end.flatten
+    # Collection of dates that are the middle of a stay (completely unavailable)
+    fully_unavailable_dates = []
+    # Collection of dates that are already a start date for some reservation
+    start_dates = []
+    # Collection of dates that are already an end date for some reservation
+    end_dates = []
 
-    render json: unavailable_dates
+    # Categorize dates
+    reservas.each do |reserva|
+      if reserva.start_date == reserva.end_date
+        # Single day reservation - fully unavailable
+        fully_unavailable_dates << reserva.start_date
+      else
+        # Multi-day reservation
+        start_dates << reserva.start_date
+        end_dates << reserva.end_date
+        # Middle days are completely unavailable
+        ((reserva.start_date + 1)...reserva.end_date).each do |date|
+          fully_unavailable_dates << date
+        end
+      end
+    end
+
+    # Return a simple list of unavailable dates for now
+    # We'll process this more intelligently in the frontend
+    render json: fully_unavailable_dates + start_dates
   end
 
 

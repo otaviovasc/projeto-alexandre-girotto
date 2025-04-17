@@ -35,7 +35,7 @@ class Reserva < ApplicationRecord
   def available?
     check_and_cancel_expired_reservations
 
-    new_reserva_range = start_date..end_date
+    new_reserva_range = start_date...end_date
     overlapping_reservas = Reserva.where(cabana_id: cabana.id)
                                   .where(payment_status: [:pending, :waiting_payment, :paid])
 

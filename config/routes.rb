@@ -36,7 +36,11 @@ Rails.application.routes.draw do
     end
     resources :holidays, only: [:create, :destroy]  # Manage holidays globally within admin
 
-    resources :reservas
+    resources :reservas do
+      member do
+        patch 'update_observation'
+      end
+    end
     get 'reservas_summary', to: 'reservas#reservas_summary'
     resources :services do
       member do

@@ -153,21 +153,24 @@
       }
     });
 
+    // Fetch unavailable dates and configure flatpickr
     fetch(`/cabanas/${cabanaId}/unavailable_dates`)
     .then(response => response.json())
-    .then(dates => {
+    .then(unavailableDates => {
       flatpickr("#reservation_date_range", {
         mode: "range",
         minDate: "today",
         dateFormat: "Y-m-d",
-        disable: dates,
+        disable: unavailableDates,
         onChange: function(selectedDates, dateStr, instance) {
           // Proceed only if a complete range is selected
           if (selectedDates.length === 2) {
             const startDate = selectedDates[0];
             const endDate = selectedDates[1];
+
             // Calculate the difference in days
             const diffDays = (endDate - startDate) / (1000 * 60 * 60 * 24);
+
             // Check if it is a 1-night stay starting on Friday (5) or Saturday (6)
             if (diffDays === 1 && (startDate.getDay() === 5 || startDate.getDay() === 6)) {
               alert("Reservas de apenas uma noite que comecem na sexta-feira ou no sábado não são permitidas. Por favor, escolha outro intervalo de datas.");
@@ -175,10 +178,20 @@
               instance.clear();
             }
           }
+        },
+        onDayCreate: function(dObj, dStr, fp, dayElem) {
+          // Custom logic to allow dates to be used as end dates even if they're unavailable
+          // as start dates. This essentially allows checkout day to be the same as another reservation's check-in day.
+          dayElem.addEventListener('mouseenter', function() {
+            // If this is potentially an end date (user has already selected a start date)
+            if (fp.selectedDates.length === 1) {
+              // Allow selection even if it's in the unavailable list, as it could be a valid end date
+              dayElem.classList.remove('flatpickr-disabled');
+            }
+          });
         }
       });
     });
-
 
     const quantityInput = document.getElementById("breakfast_quantity");
     const quantityUpButton = document.getElementById("quantity_up");
