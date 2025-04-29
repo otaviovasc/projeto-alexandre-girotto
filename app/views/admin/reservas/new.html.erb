@@ -83,6 +83,17 @@
                 startDateInput.value = instance.formatDate(selectedDates[0], "Y-m-d");
                 endDateInput.value = instance.formatDate(selectedDates[1], "Y-m-d");
               }
+            },
+            onDayCreate: function(dObj, dStr, fp, dayElem) {
+              // Custom logic to allow dates to be used as end dates even if they're unavailable
+              // as start dates. This essentially allows checkout day to be the same as another reservation's check-in day.
+              dayElem.addEventListener('mouseenter', function() {
+                // If this is potentially an end date (user has already selected a start date)
+                if (fp.selectedDates.length === 1) {
+                  // Allow selection even if it's in the unavailable list, as it could be a valid end date
+                  dayElem.classList.remove('flatpickr-disabled');
+                }
+              });
             }
           });
         })
