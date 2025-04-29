@@ -179,7 +179,7 @@
                 </span>
               </td>
               <td><%= number_to_currency(reserva.total_price, unit: "R$") %></td>
-              <td>w
+              <td>
                 <span class="observation-text"><%= reserva.observation.present? ? reserva.observation : '-' %></span>
                 <a href="#" class="edit-observation-btn ms-2" data-reserva-id="<%= reserva.id %>">
                   <i class="bi bi-pencil-square text-primary"></i>
