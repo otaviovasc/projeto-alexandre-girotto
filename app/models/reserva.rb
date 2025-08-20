@@ -6,6 +6,7 @@ class Reserva < ApplicationRecord
 
   has_many :reserva_services, dependent: :destroy
   has_many :services, through: :reserva_services
+  accepts_nested_attributes_for :user
 
   has_many :reserva_items, dependent: :destroy
   has_many :items, through: :reserva_items
@@ -22,6 +23,7 @@ class Reserva < ApplicationRecord
     canceled: 'canceled'
   }
 
+  before_create :set_default_fields
   before_create :set_default_payment_status
 
   def calculate_total_price!
@@ -46,12 +48,6 @@ class Reserva < ApplicationRecord
     true
   end
 
-  private
-
-  def set_default_payment_status
-    self.payment_status ||= 'pending'
-  end
-
   def start_date_cannot_be_in_the_past
     if start_date.present? && start_date < Date.today
       errors.add(:start_date, "não pode estar no passado.")
@@ -71,12 +67,36 @@ class Reserva < ApplicationRecord
   end
 
   def dates_available
-    unless available?
-      errors.add(:base, "A Cabana esta indisponível na data selecionada.")
+    # Ignora validação se for reserva importada
+    return if origem.present? && origem != 'sistema'
+
+    overlapping_reservas = Reserva.where(cabana_id: cabana.id)
+                                  .where(payment_status: [:pending, :waiting_payment, :paid])
+
+    new_reserva_range = start_date...end_date
+    overlapping_reservas.each do |existing_reserva|
+      existing_reserva_range = existing_reserva.start_date...existing_reserva.end_date
+      if new_reserva_range.overlaps?(existing_reserva_range)
+        errors.add(:base, "A Cabana está indisponível na data selecionada.")
+        break
+      end
     end
   end
 
+
+
   def self.ransackable_attributes(auth_object = nil)
     ["cabana_id", "created_at", "end_date", "id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "start_date", "total_price", "updated_at", "user_id"]
+  end
+
+  private
+
+  def set_default_fields
+    self.observation ||= 'sistema'
+    self.origem ||= 'sistema'
+  end
+
+  def set_default_payment_status
+    self.payment_status ||= 'pending'
   end
 end

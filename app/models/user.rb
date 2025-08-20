@@ -22,29 +22,45 @@ class User < ApplicationRecord
   scope :managers, -> { where(role: :manager) }
   scope :admins, -> { where(role: :admin) }
 
+  # Scopes for partner status
+  scope :partners, -> { where(partner: true) }
+  scope :non_partners, -> { where(partner: false) }
+
   # Set default role to client
   after_initialize do
     if self.new_record?
       self.role ||= :client
+      self.partner ||= false
     end
   end
 
-  # Validação de unicidade do telefone
-  validates :telephone, uniqueness: { case_sensitive: false, message: "já está em uso" }
+  # Validação de unicidade do telefone (só valida se não for vazio)
+  validates :telephone, uniqueness: { case_sensitive: false, message: "já está em uso" }, allow_blank: true, allow_nil: true
 
   # Validação de comprimento baseado em padrões internacionais de telefone
-  validates :telephone, length: { in: 8..15, message: "deve ter entre 8 e 15 dígitos" }
+  validates :telephone, length: { in: 8..15, message: "deve ter entre 8 e 15 dígitos" }, allow_blank: true
 
-  # Remover caracteres não numéricos (formatação opcional)
+  # Validação de presença do nome
+  validates :name, presence: true
+
+  # Remover caracteres não numéricos e converter string vazia para nil
   before_validation :sanitize_telephone
 
   private
 
   def sanitize_telephone
-    self.telephone = telephone.gsub(/\D/, '') if telephone.present?
+    if telephone.present?
+      self.telephone = telephone.gsub(/\D/, '')
+      # Se depois da limpeza ficar vazio, definir como nil
+      self.telephone = nil if self.telephone.blank?
+    else
+      # Converter string vazia ou espaços para nil
+      self.telephone = nil
+    end
   end
 
   def send_welcome_email
-    UserMailer.welcome_email(self, self.password).deliver_now
+    return unless Rails.env.production? # só envia em produção
+    UserMailer.with(user: self).welcome_email.deliver_later
   end
 end

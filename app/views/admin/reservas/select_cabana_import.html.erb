@@ -1,0 +1,39 @@
+<div class="container mt-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-success text-white">
+      <h4 class="mb-0">
+        <i class="bi bi-download"></i> Importar Reservas - <%= @cabana.name %>
+      </h4>
+    </div>
+
+    <div class="card-body">
+      <% if @platform_links.blank? %>
+        <p class="text-danger">Nenhum link de importação configurado para esta cabana.</p>
+      <% else %>
+        <p class="mb-4">Escolha a plataforma para importar reservas:</p>
+        <div class="row">
+          <% @platform_links.each do |platform, url| %>
+            <div class="col-md-6 mb-3">
+              <div class="card border-2 shadow-sm">
+                <div class="card-body">
+                  <h5 class="card-title text-capitalize"><%= platform %></h5>
+                  <p class="card-text text-break"><%= url %></p>
+
+                  <%= button_to import_platform_calendar_admin_reservas_path(cabana_id: @cabana.id, platform: platform),
+                                method: :post,
+                                class: "btn btn-success",
+                                data: { confirm: "Deseja importar reservas do #{platform.capitalize} para #{@cabana.name}?" } do %>
+                    <i class="bi bi-download"></i>
+                    Importar do <%= platform.capitalize %>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%= link_to 'Voltar', admin_reservas_summary_path, class: 'btn btn-secondary mt-4' %>
+    </div>
+  </div>
+</div>

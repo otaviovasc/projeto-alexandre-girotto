@@ -66,6 +66,7 @@
           <%= simple_format(info.content) %>
         </p>
       <% end %>
+      
       <% if info.info_type == "other" %>
         <p class="text-xl font-bold font-dm text-verde-escuro">Fatores Chave:</p>
         <p class="text-lg font-dm max-w-8/10 text-verde-escuro">
@@ -78,25 +79,30 @@
       <!-- Campo de Seleção de Datas -->
       <div class="flex flex-col gap-4" id="date-selection">
         <label for="reservation_date_range" class="font-dm text-lg text-terracota">Selecione as datas</label>
+
         <input type="text" id="reservation_date_range" data-cabana-id="<%= @cabana.id %>"
           placeholder="Selecione as datas"
           class="w-full bg-transparent border border-terracota rounded-md px-4 py-2 text-terracota" />
         <%= form.hidden_field :start_date, id: "start_date" %>
+
         <%= form.hidden_field :end_date, id: "end_date" %>
       </div>
 
       <!-- Serviços adicionais -->
       <div class="flex flex-col gap-4">
         <h3 class="font-alice text-lg text-verde-escuro">Serviços Adicionais</h3>
+
         <div class="flex items-center gap-2">
           <%= check_box_tag 'reserva[include_breakfast]', '1', false, id: 'include_breakfast',
             class: 'w-5 h-5 text-verde-escuro border-gray-300 rounded focus:ring focus:ring-verde-escuro' %>
           <label for="include_breakfast" class="font-dm text-terracota text-md">Incluir café da manhã?</label>
         </div>
+
         <div id="breakfast_quantity_container" class="flex flex-col gap-2 pl-6 hidden">
           <label class="font-dm text-lg text-terracota">
              Café da manhã: R$<%= @breakfast_service.price %>/dia
           </label>
+
           <div class="flex items-center gap-2">
             <%= number_field_tag 'reserva[breakfast_quantity]', 1, min: 0, id: 'breakfast_quantity',
               class: 'w-16 text-center border border-terracota rounded-md hidden px-2' %>

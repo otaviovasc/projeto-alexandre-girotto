@@ -20,6 +20,24 @@
       from { background-color: rgba(255, 251, 130, 0.5); }
       to { background-color: transparent; }
     }
+    /* Estilo para linha de usuário parceiro */
+    .partner-row {
+      background: linear-gradient(90deg, 
+        rgba(255, 192, 203, 0.1) 0%, 
+        rgba(255, 192, 203, 0.2) 100%
+      ) !important;
+      border: 2px dashed #ff69b4 !important;
+      border-left: 4px solid #ff1493 !important;
+    }
+    .partner-row td {
+      border-color: rgba(255, 105, 180, 0.3) !important;
+    }
+    .partner-row:hover {
+      background: linear-gradient(90deg, 
+        rgba(255, 192, 203, 0.2) 0%, 
+        rgba(255, 192, 203, 0.3) 100%
+      ) !important;
+    }
   </style>
 
   <div class="container my-8 p-4 bg-light shadow-sm">
@@ -69,35 +87,55 @@
 
     <%= render 'legend' %>
   </div>
+
   <div class="d-flex gap-2 mb-4">
     <%= link_to 'Nova Reserva', new_admin_reserva_path, class: 'btn btn-primary d-flex align-items-center' %>
   </div>
 
+  <div class="card p-3 mb-4 shadow-sm">
+    <h4>Importar Reservas por Cabana</h4>
+    <div class="d-flex flex-wrap gap-2">
+      <% Cabana.all.each do |cabana| %>
+        <% begin %>
+          <% links = cabana.import_links.present? ? JSON.parse(cabana.import_links) : {} %>
+          <% next if links.blank? %>
+          <%= link_to cabana.name, select_cabana_import_admin_reservas_path(cabana_id: cabana.id), class: "btn btn-outline-success" %>
+        <% rescue JSON::ParserError %>
+          <%# Ignora cabanas com JSON inválido %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
   <!-- Filtros -->
   <div class="card p-3 mb-4 shadow-sm">
-    <h4>Filtrar Reservas</h4>
-    <%= search_form_for @q, url: admin_reservas_summary_path, method: :get, html: { class: "row g-3" } do |f| %>
+    <h4 class="card-title mb-4">Filtrar Reservas</h4>
+    <%= search_form_for @q, url: admin_reservas_summary_path, method: :get, html: { class: "row g-3 align-items-end" } do |f| %>
       <div class="col-md-3">
-        <%= f.label :start_date_gteq, "Data Inicial", class: "form-label" %>
-        <%= f.date_field :start_date_gteq, class: "form-control" %>
+        <%= f.label :start_date_gteq, "Data Inicial", class: "form-label mb-1" %>
+        <%= f.date_field :start_date_gteq, class: "form-control", value: params.dig(:q, :start_date_gteq) %>
       </div>
       <div class="col-md-3">
-        <%= f.label :end_date_lteq, "Data Final", class: "form-label" %>
-        <%= f.date_field :end_date_lteq, class: "form-control" %>
+        <%= f.label :end_date_lteq, "Data Final", class: "form-label mb-1" %>
+        <%= f.date_field :end_date_lteq, class: "form-control", value: params.dig(:q, :end_date_lteq) %>
       </div>
       <div class="col-md-3">
-        <%= f.label :payment_status_eq, "Status do Pagamento", class: "form-label" %>
-        <%= f.select :payment_status_eq, options_for_select([
-          ['Todos', nil],
-          ['Pendente', 'pending'],
-          ['Aguardando Pagamento', 'waiting_payment'],
-          ['Pago', 'paid'],
-          ['Recusado', 'refused'],
-          ['Cancelado', 'canceled']
-        ], selected: params.dig(:q, :payment_status_eq)), class: "form-select" %>
+        <%= f.label :payment_status_eq, "Status do Pagamento", class: "form-label mb-1" %>
+        <%= f.select :payment_status_eq, 
+            options_for_select([
+              ['Todos', ''],
+              ['Pendente', 'pending'],
+              ['Aguardando Pagamento', 'waiting_payment'],
+              ['Pago', 'paid'],
+              ['Recusado', 'refused'],
+              ['Cancelado', 'canceled']
+            ], selected: params.dig(:q, :payment_status_eq)), 
+            {}, 
+            { class: "form-select" } %>
       </div>
-      <div class="col-md-3 d-flex align-items-end">
+      <div class="col-md-3">
         <%= f.submit "Filtrar", class: "btn btn-primary w-100" %>
+        <%= link_to "Limpar", admin_reservas_summary_path, class: "btn btn-outline-secondary w-100 mt-2" %>
       </div>
     <% end %>
   </div>
@@ -164,7 +202,7 @@
         </thead>
         <tbody>
           <% @reservas.each do |reserva| %>
-            <tr id="reserva-<%= reserva.id %>" data-updated-at="<%= reserva.updated_at.to_i %>">
+            <tr id="reserva-<%= reserva.id %>" data-updated-at="<%= reserva.updated_at.to_i %>" class="<%= 'partner-row' if reserva.user.partner? %>">
               <td><%= reserva.id %></td>
               <td><%= reserva.updated_at.strftime("%d/%m/%Y - %H:%Mh") %></td>
               <td><%= reserva.start_date.strftime("%d/%m/%y") %></td>

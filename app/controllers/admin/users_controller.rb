@@ -58,4 +58,24 @@ class Admin::UsersController < ApplicationController
   def authorize_admin
     redirect_to root_path, alert: 'Você não tem permissão para fazer isso.' unless current_user.admin?
   end
+
+  def partner_status
+    user = User.find(params[:id])
+    render json: { partner: user.partner }
+  end
+
+  def update_partner_status
+    user = User.find(params[:id])
+    if user.update(partner: params[:partner])
+      render json: { success: true, partner: user.partner }
+    else
+      render json: { success: false, errors: user.errors.full_messages }
+    end
+  end
+
+  private
+
+  def user_params
+    params.require(:user).permit(:name, :email, :telephone, :partner, :role, :filial_id)
+  end
 end

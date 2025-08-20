@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_03_31_113637) do
+ActiveRecord::Schema[7.0].define(version: 2025_08_09_161357) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -50,6 +50,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_03_31_113637) do
     t.datetime "updated_at", null: false
     t.string "link_guia"
     t.string "color", default: "#000000"
+    t.text "import_links"
     t.index ["filial_id"], name: "index_cabanas_on_filial_id"
   end
 
@@ -175,6 +176,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_03_31_113637) do
     t.string "payment_link_url"
     t.datetime "payment_expires_at"
     t.text "observation"
+    t.string "origem"
     t.index ["cabana_id"], name: "index_reservas_on_cabana_id"
     t.index ["user_id"], name: "index_reservas_on_user_id"
   end
@@ -207,6 +209,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_03_31_113637) do
     t.bigint "filial_id"
     t.string "name"
     t.string "telephone"
+    t.boolean "partner"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["filial_id"], name: "index_users_on_filial_id"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true

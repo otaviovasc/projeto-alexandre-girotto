@@ -1,0 +1,120 @@
+.table.calendar {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.table.calendar td,
+.table.calendar th {
+  vertical-align: top;
+  padding: 0; /* so our .day-content can fill */
+}
+
+.day {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* day-content is each cell's container */
+.day-content {
+  position: relative;
+  min-height: 120px;         /* ensure enough vertical space */
+  border: 0.01px solid #ddd;   /* border around each cell */
+  z-index: 1;               /* Ensure it is below reserva-line */
+}
+
+/* Day number in top-left corner */
+.day-number {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 0.8rem;
+  color: #666;
+  z-index: 2;
+}
+
+/* Each reserva-line is absolutely positioned within the day cell */
+.reserva-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 10px; /* Ensure it is displayed on top of day-content */
+  /* top is set inline based on index (stacking) */
+  /* background-color is also set inline based on the cabana color */
+}
+
+/* MIDDLE day in the range: fill the entire cell horizontally */
+.reserva-line.middle {
+  left: 0;
+  right: 0;
+}
+
+/* START day: fill from 50% to the right edge */
+.reserva-line.start {
+  left: 55%;
+  right: 0;
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+}
+
+/* END day: fill from left edge to 50% */
+.reserva-line.end {
+  left: 0;
+  right: 55%;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+}
+
+/* Single-day reservation: basically a small circle in the center */
+.reserva-line.start-end {
+  left: 50%;
+  width: 0;
+  height: 10px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+/* Legend styling */
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.highlight {
+  background-color: yellow !important;
+  transition: background-color 1s ease;
+}
+
+.simple-calendar td.today {
+  background-color: #98bdcb; /* Light blue or any subtle color */
+}
+
+
+/* The big number on the left */
+.simple-calendar .calendar-heading .display-1 {
+  font-size: 4rem; /* Adjust as you like */
+  line-height: 1;
+  margin: 0;
+}
+
+/* The month/year text on the right */
+.simple-calendar .calendar-title {
+  font-size: 1.8rem; /* Slightly bigger if you want */
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* Subtle table styling (already in your code, but you can refine) */
+.table.calendar {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table.calendar th {
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: #666;
+  text-align: center;
+}

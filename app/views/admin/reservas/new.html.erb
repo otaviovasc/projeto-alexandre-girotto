@@ -2,95 +2,115 @@
   <h1 class="text-2xl font-bold mb-4">Nova Reserva</h1>
 
   <%= form_with model: @reserva, url: admin_reservas_path, local: true, html: { class: 'needs-validation' } do |form| %>
+    
+    <!-- Toggle para criar novo usuário -->
     <div class="form-check mb-3">
       <%= check_box_tag 'create_user', 'true', false, id: 'create_user_toggle', class: 'form-check-input' %>
       <%= label_tag 'create_user_toggle', 'Criar Novo Usuário?', class: 'form-check-label' %>
     </div>
 
+    <!-- Campos para novo usuário -->
     <div id="new_user_fields" style="display:none;" class="border rounded p-3 mb-4">
       <h5 class="mb-3">Detalhes do Novo Usuário</h5>
+      
       <div class="mb-3">
-        <%= label_tag :name, 'Nome', class: 'form-label' %>
-        <%= text_field_tag 'user[name]', nil, class: 'form-control' %>
+        <%= label_tag :name, 'Nome *', class: 'form-label' %>
+        <%= text_field_tag 'user[name]', nil, class: 'form-control', required: true %>
       </div>
+
       <div class="mb-3">
-        <%= label_tag :email, 'E-mail', class: 'form-label' %>
-        <%= text_field_tag 'user[email]', nil, class: 'form-control' %>
+        <%= label_tag :email, 'E-mail *', class: 'form-label' %>
+        <%= text_field_tag 'user[email]', nil, class: 'form-control', type: 'email', required: true %>
       </div>
-      <!-- Campo Telefone (Novo) -->
+
       <div class="mb-3">
         <%= label_tag :telephone, 'Telefone', class: 'form-label' %>
-        <%= text_field_tag 'user[telephone]', nil, class: 'form-control', id: 'telephone_field', required: true %>
+        <small class="text-muted">(opcional)</small>
+        <%= text_field_tag 'user[telephone]', nil, class: 'form-control', id: 'telephone_field' %>
+      </div>
+
+      <div class="form-check mb-3">
+        <%= check_box_tag 'user[partner]', 'true', false, id: 'partner_checkbox', class: 'form-check-input' %>
+        <%= label_tag 'partner_checkbox', 'É Parceiro?', class: 'form-check-label' %>
       </div>
     </div>
 
+    <!-- Seleção de usuário existente -->
     <div id="existing_user_fields" class="mb-3">
-      <%= form.label :user_id, 'Selecionar Usuário', class: 'form-label' %>
-      <%= form.collection_select :user_id, User.all, :id, :email, { prompt: 'Selecione um usuário' }, { class: 'form-select' } %>
+      <%= form.label :user_id, 'Selecionar Usuário *', class: 'form-label' %>
+      <%= form.collection_select :user_id, User.all, :id, :email, { prompt: 'Selecione um usuário' }, { class: 'form-select', required: true, id: 'user_select' } %>
     </div>
 
+    <!-- Seleção de cabana -->
     <div class="mb-3">
-      <%= form.label :cabana_id, 'Cabana', class: 'form-label' %>
-      <%= form.collection_select :cabana_id, Cabana.all, :id, :name, { prompt: 'Selecione uma cabana' }, { class: 'form-select', id: 'reserva_cabana_id' } %>
+      <%= form.label :cabana_id, 'Cabana *', class: 'form-label' %>
+      <%= form.collection_select :cabana_id, Cabana.all, :id, :name, { prompt: 'Selecione uma cabana' }, { class: 'form-select', id: 'reserva_cabana_id', required: true } %>
     </div>
 
+    <!-- Seleção de datas -->
     <div class="mb-3" id="date-selection">
-      <label for="reservation_date_range" class="form-label">Selecione as datas</label>
-      <input type="text" id="reservation_date_range" placeholder="Selecione as datas" class="form-control" />
-      <%= form.hidden_field :start_date, id: "start_date" %>
-      <%= form.hidden_field :end_date, id: "end_date" %>
+      <label for="reservation_date_range" class="form-label">Selecione as datas *</label>
+      <input type="text" id="reservation_date_range" placeholder="Selecione as datas" class="form-control" required />
+      <%= form.hidden_field :start_date, id: "start_date", required: true %>
+      <%= form.hidden_field :end_date, id: "end_date", required: true %>
     </div>
 
+    <!-- Preço total -->
     <div class="mb-3">
-      <%= form.label :total_price, 'Preço Total', class: 'form-label' %>
+      <%= form.label :total_price, 'Preço Total *', class: 'form-label' %>
       <span class="text-muted" style="font-size: smaller;">*obs: se deixar VAZIO, o preço é calculado normalmente.</span>
-      <%= form.number_field :total_price, class: 'form-control', step: '0.01' %>
+      <%= form.number_field :total_price, class: 'form-control', step: '0.01', required: true, min: '0' %>
     </div>
 
+    <!-- Botões -->
     <div class="d-flex gap-2 mt-4">
-      <%= form.submit 'Salvar', class: 'btn btn-primary' %>
+      <%= form.submit 'Salvar', class: 'btn btn-primary', id: 'submit_btn' %>
       <%= link_to 'Cancelar', :back, class: 'btn btn-secondary' %>
     </div>
+
   <% end %>
 </div>
 
+<!-- Script para datas -->
 <script>
-  document.addEventListener("turbo:load", function() {
+  document.addEventListener("turbo:load", function () {
     const cabanaSelect = document.getElementById('reserva_cabana_id');
     const dateRangeInput = document.getElementById("reservation_date_range");
     const startDateInput = document.getElementById("start_date");
     const endDateInput = document.getElementById("end_date");
 
-    // Função para inicializar o flatpickr com as datas indisponíveis
     function initializeFlatpickr(cabanaId) {
       if (!cabanaId) return;
 
       fetch(`/cabanas/${cabanaId}/unavailable_dates`)
         .then(response => response.json())
         .then(disabledDates => {
-          // Se já houver um flatpickr inicializado, destrua-o antes
           if (dateRangeInput._flatpickr) {
             dateRangeInput._flatpickr.destroy();
           }
+
           flatpickr("#reservation_date_range", {
             mode: "range",
             minDate: "today",
             dateFormat: "Y-m-d",
             disable: disabledDates,
-            onChange: function(selectedDates, dateStr, instance) {
-              // Se tiver duas datas selecionadas, atualize os hidden fields
+            onChange: function (selectedDates, dateStr, instance) {
               if (selectedDates.length === 2) {
                 startDateInput.value = instance.formatDate(selectedDates[0], "Y-m-d");
                 endDateInput.value = instance.formatDate(selectedDates[1], "Y-m-d");
+                
+                // Marcar o campo como válido quando as datas são selecionadas
+                dateRangeInput.setCustomValidity('');
+              } else {
+                // Limpar os campos hidden se não há seleção completa
+                startDateInput.value = '';
+                endDateInput.value = '';
+                dateRangeInput.setCustomValidity('Por favor, selecione as datas de início e fim');
               }
             },
-            onDayCreate: function(dObj, dStr, fp, dayElem) {
-              // Custom logic to allow dates to be used as end dates even if they're unavailable
-              // as start dates. This essentially allows checkout day to be the same as another reservation's check-in day.
-              dayElem.addEventListener('mouseenter', function() {
-                // If this is potentially an end date (user has already selected a start date)
+            onDayCreate: function (dObj, dStr, fp, dayElem) {
+              dayElem.addEventListener('mouseenter', function () {
                 if (fp.selectedDates.length === 1) {
-                  // Allow selection even if it's in the unavailable list, as it could be a valid end date
                   dayElem.classList.remove('flatpickr-disabled');
                 }
               });
@@ -102,37 +122,237 @@
         });
     }
 
-    // Quando o select de cabana mudar, reinicialize o flatpicker
-    cabanaSelect.addEventListener("change", function(e) {
+    cabanaSelect.addEventListener("change", function (e) {
       const selectedCabanaId = e.target.value;
       initializeFlatpickr(selectedCabanaId);
     });
 
-    // Se já houver um valor selecionado ao carregar a página, inicialize
     if (cabanaSelect.value) {
       initializeFlatpickr(cabanaSelect.value);
     }
   });
 </script>
 
+<!-- Script para toggle de criação de usuário -->
 <script>
   document.addEventListener('turbo:load', function () {
     const toggle = document.getElementById('create_user_toggle');
     const userFields = document.getElementById('new_user_fields');
     const existingUserFields = document.getElementById('existing_user_fields');
-    const telephoneField = document.getElementById("telephone_field");
+    const userSelect = document.getElementById('user_select');
+    
+    // Campos obrigatórios para novo usuário
+    const nameField = document.querySelector('input[name="user[name]"]');
+    const emailField = document.querySelector('input[name="user[email]"]');
 
-    toggle.addEventListener('change', function () {
+    function updateRequiredFields() {
       if (toggle.checked) {
+        // Criando novo usuário
         userFields.style.display = 'block';
         existingUserFields.style.display = 'none';
-        telephoneField.setAttribute("required", "true");
-
+        
+        // Tornar campos obrigatórios
+        if (nameField) nameField.setAttribute("required", "true");
+        if (emailField) emailField.setAttribute("required", "true");
+        
+        // Remover obrigatoriedade da seleção de usuário
+        userSelect.removeAttribute("required");
+        userSelect.value = "";
+        
       } else {
+        // Usando usuário existente
         userFields.style.display = 'none';
         existingUserFields.style.display = 'block';
-        telephoneField.removeAttribute("required");
+        
+        // Remover obrigatoriedade dos campos de novo usuário
+        if (nameField) nameField.removeAttribute("required");
+        if (emailField) emailField.removeAttribute("required");
+        
+        // Tornar seleção de usuário obrigatória
+        userSelect.setAttribute("required", "true");
+        
+        // Limpar campos de novo usuário
+        if (nameField) nameField.value = "";
+        if (emailField) emailField.value = "";
+        document.getElementById('telephone_field').value = "";
+        document.getElementById('partner_checkbox').checked = false;
       }
-    });
+    }
+
+    toggle.addEventListener('change', updateRequiredFields);
+    
+    // Inicializar estado correto
+    updateRequiredFields();
   });
 </script>
+
+<!-- Script para validação customizada do formulário -->
+<script>
+  document.addEventListener('turbo:load', function () {
+    const form = document.querySelector('.needs-validation');
+    const dateRangeInput = document.getElementById("reservation_date_range");
+    const startDateInput = document.getElementById("start_date");
+    const endDateInput = document.getElementById("end_date");
+    const submitBtn = document.getElementById('submit_btn');
+
+    // Validação customizada para as datas
+    function validateDates() {
+      if (!startDateInput.value || !endDateInput.value) {
+        dateRangeInput.setCustomValidity('Por favor, selecione as datas de início e fim');
+        return false;
+      } else {
+        dateRangeInput.setCustomValidity('');
+        return true;
+      }
+    }
+
+    // Validar ao tentar submeter
+    if (form) {
+      form.addEventListener('submit', function(event) {
+        if (!validateDates() || !form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+          
+          // Mostrar mensagem de erro se as datas não foram selecionadas
+          if (!startDateInput.value || !endDateInput.value) {
+            alert('Por favor, selecione as datas de início e fim da reserva.');
+            return false;
+          }
+        }
+        
+        form.classList.add('was-validated');
+      }, false);
+    }
+
+    // Validar quando o campo de data perde o foco
+    if (dateRangeInput) {
+      dateRangeInput.addEventListener('blur', validateDates);
+    }
+  });
+</script>
+
+<style>
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+  }
+
+  h1 {
+    color: #2c3e50;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  .form-control, .form-select {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    transition: all 0.2s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+  }
+
+  #new_user_fields {
+    background-color: #f8fafc;
+    border-color: #e2e8f0;
+    transition: all 0.3s ease;
+  }
+
+  #new_user_fields h5 {
+    color: #2c3e50;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-check-input:checked {
+    background-color: #4299e1;
+    border-color: #4299e1;
+  }
+
+  .form-check-label {
+    color: #4a5568;
+    font-weight: 500;
+  }
+
+  .btn-primary {
+    background-color: #4299e1;
+    border-color: #4299e1;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #3182ce;
+    border-color: #3182ce;
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    background-color: #e2e8f0;
+    border-color: #e2e8f0;
+    color: #4a5568;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .btn-secondary:hover {
+    background-color: #cbd5e0;
+    border-color: #cbd5e0;
+    transform: translateY(-1px);
+  }
+
+  .text-muted {
+    color: #718096 !important;
+    font-size: 0.85rem;
+  }
+
+  /* Melhorias para o datepicker */
+  .flatpickr-calendar {
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .flatpickr-day.selected {
+    background: #4299e1;
+    border-color: #4299e1;
+  }
+
+  /* Transição suave para o toggle de usuário */
+  .toggle-transition {
+    transition: all 0.3s ease;
+  }
+
+  /* Espaçamento melhorado */
+  .mb-3 {
+    margin-bottom: 1.2rem !important;
+  }
+
+  /* Feedback visual para campos obrigatórios */
+  :required:not(:placeholder-shown):invalid {
+    border-color: #fc8181;
+  }
+
+  :required:not(:placeholder-shown):valid {
+    border-color: #48bb78;
+  }
+</style>

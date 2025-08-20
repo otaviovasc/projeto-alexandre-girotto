@@ -1,7 +1,7 @@
 class Admin::CabanasController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin
-  before_action :set_cabana, only: [:edit, :update, :destroy, :show, :price_rules_and_holidays]
+  before_action :set_cabana, only: [:edit, :update, :destroy, :show, :price_rules_and_holidays, :edit_import_links, :update_import_links]
 
   def index
     @cabanas = Cabana.all
@@ -46,8 +46,22 @@ class Admin::CabanasController < ApplicationController
     end
   end
 
+  def edit_import_links
+    @import_links = @cabana.import_links.present? ? JSON.parse(@cabana.import_links) : {}
+  end
 
-
+  def update_import_links
+    @cabana = Cabana.find(params[:id])
+    links = params[:import_links]&.to_unsafe_h&.compact_blank || {}
+    @cabana.import_links = links.to_json
+    
+    if @cabana.save
+      redirect_to admin_cabanas_path, notice: "Links atualizados com sucesso!"
+    else
+      render :edit_import_links
+    end
+  end
+  
   def destroy
     @cabana.destroy
     redirect_to admin_cabanas_path, notice: 'Cabana deletada.'

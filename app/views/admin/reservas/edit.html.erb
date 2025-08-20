@@ -1,5 +1,183 @@
+<style>
+  /* Estilos para mensagens de erro */
+  #error_explanation {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    color: #b91c1c;
+  }
+
+  #error_explanation h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  #error_explanation ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin-bottom: 0;
+  }
+
+  #error_explanation li {
+    padding: 0.25rem 0;
+    font-size: 0.95rem;
+  }
+
+  /* Estilos para o formulário */
+  .form-label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  .form-control, .form-select {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    background-color: white;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+  }
+
+  .form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+  }
+
+  textarea.form-control {
+    min-height: 100px;
+    resize: vertical;
+  }
+
+  /* Estilos para checkbox */
+  .form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+
+  .form-check-input {
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-right: 0.75rem;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .form-check-input:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+
+  .form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+  }
+
+  .form-check-label {
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+
+  /* Estilos para botões */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+
+  .btn-primary {
+    background-color: #3b82f6;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    background-color: #f3f4f6;
+    color: #374151;
+    border-color: #e5e7eb;
+  }
+
+  .btn-secondary:hover {
+    background-color: #e5e7eb;
+    transform: translateY(-1px);
+  }
+
+  /* Layout e espaçamento */
+  .mb-3 {
+    margin-bottom: 1.25rem;
+  }
+
+  /* Estilos para o datepicker */
+  .flatpickr-calendar {
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    font-family: inherit;
+  }
+
+  .flatpickr-day.selected {
+    background: #3b82f6;
+    border-color: #3b82f6;
+  }
+
+  .flatpickr-day.today {
+    border-color: #3b82f6;
+  }
+
+  .flatpickr-day.today:hover {
+    background: #e0e7ff;
+    color: #1e40af;
+  }
+
+  /* Link de voltar */
+  .back-link {
+    display: inline-block;
+    margin-top: 1.5rem;
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  .back-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+</style>
+
 <% if @reserva.errors.any? %>
-  <div id="error_explanation">
+  <div id="error_explanation" class="mb-4">
     <h2><%= pluralize(@reserva.errors.count, "erro") %> impediram que a reserva fosse salva:</h2>
     <ul>
       <% @reserva.errors.full_messages.each do |mensagem| %>
@@ -9,36 +187,43 @@
   </div>
 <% end %>
 
-<%= form_with model: [:admin, @reserva], local: true do |form| %>
+<%= form_with model: [:admin, @reserva], local: true, class: "space-y-4" do |form| %>
   <div class="mb-3">
-    <%= form.label :cabana_id, 'Cabana', class: 'form-label' %>
-    <%= form.collection_select :cabana_id, Cabana.all, :id, :name, { prompt: 'Selecione uma cabana' }, { class: 'form-select', id: 'reserva_cabana_id' } %>
+    <%= form.label :cabana_id, 'Cabana *', class: 'form-label' %>
+    <%= form.collection_select :cabana_id, Cabana.all, :id, :name, { prompt: 'Selecione uma cabana' }, { class: 'form-select', id: 'reserva_cabana_id', required: true } %>
   </div>
 
-  <div>
-    <%= form.label :user %>
-    <%= form.collection_select :user_id, User.all, :id, :email %>
+  <div class="mb-3">
+    <%= form.label :user_id, 'Usuário *', class: 'form-label' %>
+    <%= form.collection_select :user_id, User.all, :id, :email, { prompt: 'Selecione um usuário' }, { class: 'form-select', required: true, id: 'user_select' } %>
   </div>
 
-  <!-- Added observation field -->
+  <!-- Checkbox para marcar como parceiro -->
+  <div class="form-check">
+    <%= form.fields_for :user do |user_fields| %>
+      <%= user_fields.check_box :partner, class: 'form-check-input', id: 'partner_checkbox' %>
+      <%= user_fields.label :partner, 'É Parceiro?', class: 'form-check-label' %>
+    <% end %>
+  </div>
+
+  <!-- Campo de observação -->
   <div class="mb-3">
-    <%= form.label :observation, 'Observation', class: 'form-label' %>
-    <%= form.text_area :observation, class: 'form-control' %>
+    <%= form.label :observation, 'Observações', class: 'form-label' %>
+    <%= form.text_area :observation, class: 'form-control', rows: 3 %>
   </div>
 
   <div class="mb-3" id="date-selection">
-    <label for="reservation_date_range" class="form-label">Selecione as datas</label>
-    <input type="text" id="reservation_date_range" placeholder="Selecione as datas" class="form-control" />
-    <%= form.hidden_field :start_date, id: "start_date" %>
-    <%= form.hidden_field :end_date, id: "end_date" %>
+    <label for="reservation_date_range" class="form-label">Selecione as datas *</label>
+    <input type="text" id="reservation_date_range" placeholder="Selecione as datas" class="form-control" required />
+    <%= form.hidden_field :start_date, id: "start_date", required: true %>
+    <%= form.hidden_field :end_date, id: "end_date", required: true %>
   </div>
 
-  <div>
-    <%= form.submit 'Update Reserva', class: 'btn btn-primary' %>
+  <div class="flex items-center gap-3 mt-6">
+    <%= form.submit 'Atualizar Reserva', class: 'btn btn-primary' %>
+    <%= link_to 'Voltar', admin_reservas_summary_path, class: 'btn btn-secondary' %>
   </div>
 <% end %>
-
-<%= link_to 'Back', admin_reservas_summary_path %>
 
 <script>
   document.addEventListener("turbo:load", function() {
@@ -58,6 +243,7 @@
           if (dateRangeInput._flatpickr) {
             dateRangeInput._flatpickr.destroy();
           }
+          
           flatpickr("#reservation_date_range", {
             mode: "range",
             minDate: "today",
@@ -68,6 +254,14 @@
               if (selectedDates.length === 2) {
                 startDateInput.value = instance.formatDate(selectedDates[0], "Y-m-d");
                 endDateInput.value = instance.formatDate(selectedDates[1], "Y-m-d");
+                
+                // Marcar o campo como válido quando as datas são selecionadas
+                dateRangeInput.setCustomValidity('');
+              } else {
+                // Limpar os campos hidden se não há seleção completa
+                startDateInput.value = '';
+                endDateInput.value = '';
+                dateRangeInput.setCustomValidity('Por favor, selecione as datas de início e fim');
               }
             },
             onDayCreate: function(dObj, dStr, fp, dayElem) {
@@ -97,6 +291,68 @@
     // Se já houver um valor selecionado ao carregar a página, inicialize
     if (cabanaSelect.value) {
       initializeFlatpickr(cabanaSelect.value);
+    }
+  });
+</script>
+
+<script>
+  // Validação customizada do formulário
+  document.addEventListener('turbo:load', function () {
+    const form = document.querySelector('form');
+    const dateRangeInput = document.getElementById("reservation_date_range");
+    const startDateInput = document.getElementById("start_date");
+    const endDateInput = document.getElementById("end_date");
+    const partnerCheckbox = document.getElementById('partner_checkbox');
+    const userSelect = document.getElementById('user_select');
+
+    // Validação customizada para as datas
+    function validateDates() {
+      if (!startDateInput.value || !endDateInput.value) {
+        dateRangeInput.setCustomValidity('Por favor, selecione as datas de início e fim');
+        return false;
+      } else {
+        dateRangeInput.setCustomValidity('');
+        return true;
+      }
+    }
+
+    // Atualizar checkbox quando usuário mudar
+  if (userSelect && partnerCheckbox) {
+      userSelect.addEventListener('change', function() {
+        const userId = this.value;
+        if (userId) {
+          fetch(`/admin/users/${userId}/partner_status`)
+            .then(response => response.json())
+            .then(data => {
+              partnerCheckbox.checked = data.partner;
+            })
+            .catch(err => {
+              console.error("Erro ao buscar status de parceiro:", err);
+            });
+        }
+      });
+    }
+
+    // Validar ao tentar submeter
+    if (form) {
+      form.addEventListener('submit', function(event) {
+        // Primeiro validar datas
+        if (!validateDates() || !form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+          
+          // Mostrar mensagem de erro se as datas não foram selecionadas
+          if (!startDateInput.value || !endDateInput.value) {
+            alert('Por favor, selecione as datas de início e fim da reserva.');
+            return false;
+          }
+        }
+      }, false);
+    }
+
+    // Validar quando o campo de data perde o foco
+    if (dateRangeInput) {
+      dateRangeInput.addEventListener('blur', validateDates);
     }
   });
 </script>

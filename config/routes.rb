@@ -22,7 +22,13 @@ Rails.application.routes.draw do
 
   # Admin namespace for full CRUD operations
   namespace :admin do
-    resources :users, only: [:index, :new, :create, :edit, :update, :destroy]
+    resources :users, only: [:index, :new, :create, :edit, :update, :destroy] do
+      member do
+        get :partner_status
+        patch :update_partner_status
+      end
+    end
+  
     resources :funil_mailers, only: [:index, :show]
 
     resources :cabanas do
@@ -32,6 +38,8 @@ Rails.application.routes.draw do
       member do
         get 'price_rules_and_holidays'  # Route for the combined form
         delete 'remove_image/:image_id', to: 'cabanas#remove_image', as: 'remove_image'
+        get :edit_import_links
+        patch :update_import_links
       end
     end
     resources :holidays, only: [:create, :destroy]  # Manage holidays globally within admin
@@ -40,8 +48,17 @@ Rails.application.routes.draw do
       member do
         patch 'update_observation'
       end
+      collection do
+        get :import_airbnb_calendar
+        get :reservas_summary
+        get :plataformas_import
+        get :select_cabana_import
+
+        post :import_platform_calendar
+      end
     end
-    get 'reservas_summary', to: 'reservas#reservas_summary'
+   get 'reservas_summary', to: 'reservas#reservas_summary'
+
     resources :services do
       member do
         delete 'remove_image/:image_id', to: 'services#remove_image', as: 'remove_image'
@@ -108,6 +125,10 @@ Rails.application.routes.draw do
 
   # Rota acessível para admin visualizar a página pública
   get '/home_root', to: 'home#root', as: :home_root
+
+  namespace :public do
+   get "cabana/:id", to: "calendar#export", as: :calendar_export
+  end
 
   # Unlogged route
   root to: 'home#root'
