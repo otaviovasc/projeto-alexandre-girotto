@@ -212,7 +212,7 @@ class Admin::ReservasController < ApplicationController
                     elsif params[:id].present? && params[:redirect_to] == 'show'
                       admin_reserva_path(params[:id])
                     else
-                      admin_reservas_summary_path(q: params[:q]) # Mantém os filtros no redirect
+                      admin_reservas_summary_path(q: params[:q]&.permit!) # Mantém os filtros no redirect
                     end
     
     if result[:success]
