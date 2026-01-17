@@ -62,6 +62,54 @@
       <%= form.number_field :total_price, class: 'form-control', step: '0.01', required: true, min: '0' %>
     </div>
 
+    <!-- Observation -->
+    <div class="mb-3">
+      <%= form.label :observation, 'Observação (origem da reserva)', class: 'form-label' %>
+      <%= form.text_area :observation, class: 'form-control', rows: 2, placeholder: 'Ex: Airbnb, Booking, Indicação...' %>
+    </div>
+
+    <!-- Serviços -->
+    <div class="mb-4" id="services-section">
+      <h5 class="mb-3">Serviços</h5>
+      <div class="services-container">
+        <% @services.each_with_index do |service, index| %>
+          <div class="service-item border rounded p-3 mb-2" data-service-id="<%= service.id %>">
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input service-checkbox" 
+                       id="service_check_<%= service.id %>" 
+                       data-index="<%= index %>"
+                       onchange="toggleServiceFields(this, <%= index %>)">
+                <label class="form-check-label fw-bold" for="service_check_<%= service.id %>">
+                  <%= service.name %> - R$ <%= number_with_precision(service.price, precision: 2) %>
+                </label>
+              </div>
+            </div>
+            
+            <div class="service-fields mt-2" id="service_fields_<%= index %>" style="display: none;">
+              <%= hidden_field_tag "reserva[reserva_services_attributes][#{index}][service_id]", service.id, id: "service_id_#{index}", disabled: true %>
+              
+              <div class="row">
+                <div class="col-md-6">
+                  <label class="form-label">Data do Serviço *</label>
+                  <input type="date" class="form-control" 
+                         name="reserva[reserva_services_attributes][<%= index %>][service_date]" 
+                         id="service_date_<%= index %>" disabled>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Quantidade *</label>
+                  <input type="number" class="form-control" 
+                         name="reserva[reserva_services_attributes][<%= index %>][quantity]" 
+                         id="service_quantity_<%= index %>" 
+                         value="1" min="1" disabled>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
     <!-- Botões -->
     <div class="d-flex gap-2 mt-4">
       <%= form.submit 'Salvar', class: 'btn btn-primary', id: 'submit_btn' %>
@@ -70,6 +118,34 @@
 
   <% end %>
 </div>
+
+<!-- Script para habilitar/desabilitar campos de serviço -->
+<script>
+  function toggleServiceFields(checkbox, index) {
+    const fieldsContainer = document.getElementById(`service_fields_${index}`);
+    const serviceIdField = document.getElementById(`service_id_${index}`);
+    const dateField = document.getElementById(`service_date_${index}`);
+    const quantityField = document.getElementById(`service_quantity_${index}`);
+    
+    if (checkbox.checked) {
+      fieldsContainer.style.display = 'block';
+      serviceIdField.disabled = false;
+      dateField.disabled = false;
+      dateField.required = true;
+      quantityField.disabled = false;
+      quantityField.required = true;
+    } else {
+      fieldsContainer.style.display = 'none';
+      serviceIdField.disabled = true;
+      dateField.disabled = true;
+      dateField.required = false;
+      dateField.value = '';
+      quantityField.disabled = true;
+      quantityField.required = false;
+      quantityField.value = '1';
+    }
+  }
+</script>
 
 <!-- Script para datas -->
 <script>
@@ -136,11 +212,20 @@
 <!-- Script para toggle de criação de usuário -->
 <script>
   document.addEventListener('turbo:load', function () {
+    // Script para toggle de criação de usuário
     const toggle = document.getElementById('create_user_toggle');
     const userFields = document.getElementById('new_user_fields');
     const existingUserFields = document.getElementById('existing_user_fields');
     const userSelect = document.getElementById('user_select');
     
+    // Inicializar Select2
+    $('#user_select').select2({
+      theme: 'bootstrap-5',
+      width: '100%',
+      placeholder: 'Selecione um usuário',
+      allowClear: true
+    });
+
     // Campos obrigatórios para novo usuário
     const nameField = document.querySelector('input[name="user[name]"]');
     const emailField = document.querySelector('input[name="user[email]"]');
@@ -155,9 +240,9 @@
         if (nameField) nameField.setAttribute("required", "true");
         if (emailField) emailField.setAttribute("required", "true");
         
-        // Remover obrigatoriedade da seleção de usuário
+        // Remover obrigatoriedade da seleção de usuário e limpar Select2
         userSelect.removeAttribute("required");
-        userSelect.value = "";
+        $('#user_select').val(null).trigger('change');
         
       } else {
         // Usando usuário existente
@@ -185,6 +270,20 @@
     updateRequiredFields();
   });
 </script>
+
+<!-- Estilo para Select2 com Bootstrap 5 (ajuste fino se o tema não carregar perfeitamente) -->
+<style>
+.select2-container .select2-selection--single {
+    height: 38px !important;
+    border: 1px solid #ced4da !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 36px !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 36px !important;
+}
+</style>
 
 <!-- Script para validação customizada do formulário -->
 <script>

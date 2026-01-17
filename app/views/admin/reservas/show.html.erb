@@ -1,19 +1,315 @@
-<div class="container py-4">
-  <h1 class="text-2xl font-bold mb-4">Detalhes da Reserva</h1>
+<style>
+  .reserva-show-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
 
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <p class="mb-2"><strong>Cabana:</strong> <%= @reserva.cabana.name %></p>
-      <p class="mb-2"><strong>Usuário:</strong> <%= @reserva.user.email  %></p>
-      <p class="mb-2"><strong>Data de Início:</strong> <%= @reserva.start_date %></p>
-      <p class="mb-2"><strong>Data de Término:</strong> <%= @reserva.end_date %></p>
-      <p class="mb-2"><strong>Preço Total:</strong> <%= number_to_currency(@reserva.total_price) %></p>
-    </div>
+  .reserva-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .reserva-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .reserva-id {
+    background: #e2e8f0;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #64748b;
+  }
+
+  .status-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .status-paid { background: #dcfce7; color: #166534; }
+  .status-pending { background: #fef3c7; color: #92400e; }
+  .status-waiting_payment { background: #dbeafe; color: #1e40af; }
+  .status-canceled { background: #fee2e2; color: #991b1b; }
+  .status-refused { background: #fecaca; color: #b91c1c; }
+
+  .info-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .info-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .info-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .info-value {
+    font-size: 1rem;
+    color: #1e293b;
+    font-weight: 500;
+  }
+
+  .info-value.highlight {
+    font-size: 1.25rem;
+    color: #059669;
+    font-weight: 700;
+  }
+
+  .services-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .service-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .service-item.cancelled {
+    opacity: 0.6;
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+
+  .service-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .service-name {
+    font-weight: 500;
+    color: #1e293b;
+  }
+
+  .service-date {
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
+  .service-quantity {
+    background: #e2e8f0;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #475569;
+  }
+
+  .service-status-badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 1.5rem;
+    color: #94a3b8;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-primary {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+  }
+
+  .btn-danger {
+    background: #ef4444;
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background: #dc2626;
+  }
+
+  .btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+  }
+
+  .btn-secondary:hover {
+    background: #e2e8f0;
+  }
+
+  .observation-text {
+    background: #f8fafc;
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    color: #475569;
+    border-left: 3px solid #3b82f6;
+  }
+</style>
+
+<div class="reserva-show-container">
+  <!-- Header -->
+  <div class="reserva-header">
+    <h1 class="reserva-title">
+      🏨 Reserva
+      <span class="reserva-id">#<%= @reserva.id %></span>
+    </h1>
+    <span class="status-badge status-<%= @reserva.payment_status %>">
+      <%= @reserva.payment_status.humanize %>
+    </span>
   </div>
 
-  <div class="d-flex gap-2">
-    <%= link_to 'Editar', edit_admin_reserva_path(@reserva), class: 'btn btn-primary' %>
-    <%= link_to 'Excluir', admin_reserva_path(@reserva), data: { turbo_method: :delete, confirm: 'Você tem certeza?' }, class: 'btn btn-sm btn-danger' %>
-    <%= link_to 'Voltar', admin_reservas_path, class: 'btn btn-secondary' %>
+  <!-- Informações Principais -->
+  <div class="info-card">
+    <h3 class="info-card-title">📋 Informações da Reserva</h3>
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="info-label">Cabana</span>
+        <span class="info-value"><%= @reserva.cabana.name %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Hóspede</span>
+        <span class="info-value"><%= @reserva.user.name || @reserva.user.email %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Email</span>
+        <span class="info-value"><%= @reserva.user.email %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Telefone</span>
+        <span class="info-value"><%= @reserva.user.telephone || '—' %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Check-in</span>
+        <span class="info-value"><%= l @reserva.start_date, format: :long rescue @reserva.start_date %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Check-out</span>
+        <span class="info-value"><%= l @reserva.end_date, format: :long rescue @reserva.end_date %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Noites</span>
+        <span class="info-value"><%= (@reserva.end_date - @reserva.start_date).to_i %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Preço Total</span>
+        <span class="info-value highlight"><%= number_to_currency(@reserva.total_price, unit: 'R$ ', separator: ',', delimiter: '.') %></span>
+      </div>
+    </div>
+
+    <% if @reserva.observation.present? %>
+      <div class="info-item" style="margin-top: 1rem;">
+        <span class="info-label">Observação / Origem</span>
+        <div class="observation-text"><%= @reserva.observation %></div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Serviços -->
+  <div class="info-card">
+    <h3 class="info-card-title">🛎️ Serviços</h3>
+    
+    <% if @reserva.reserva_services.any? %>
+      <div class="services-list">
+        <% @reserva.reserva_services.includes(:service).each do |rs| %>
+          <div class="service-item <%= rs.cancelled? ? 'cancelled' : '' %>">
+            <div class="service-info">
+              <span class="service-name"><%= rs.service.name %></span>
+              <span class="service-quantity">x<%= rs.quantity %></span>
+              <% if rs.service_date.present? %>
+                <span class="service-date">📅 <%= rs.service_date.strftime('%d/%m/%Y') %></span>
+              <% end %>
+            </div>
+            <div>
+              <% if rs.cancelled? %>
+                <span class="service-status-badge" style="background: #fee2e2; color: #991b1b;">Cancelado</span>
+              <% else %>
+                <span class="service-status-badge" style="background: #dcfce7; color: #166534;">Ativo</span>
+              <% end %>
+              <span style="margin-left: 0.5rem; color: #059669; font-weight: 600;">
+                <%= number_to_currency(rs.service.price * rs.quantity, unit: 'R$ ', separator: ',', delimiter: '.') %>
+              </span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty-state">
+        <p>Nenhum serviço adicional nesta reserva</p>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Ações -->
+  <div class="action-buttons">
+    <%= link_to '✏️ Editar Reserva', edit_admin_reserva_path(@reserva), class: 'btn btn-primary' %>
+    <%= link_to export_sheets_admin_reservas_path(redirect_to: 'show', id: @reserva.id), class: 'btn btn-warning', style: "background: #f59e0b; color: white;", data: { turbo_method: :get } do %>
+      <i class="bi bi-cloud-upload"></i> Sincronizar com Sheets
+    <% end %>
+    <%= link_to '🗑️ Excluir', admin_reserva_path(@reserva), data: { turbo_method: :delete, turbo_confirm: 'Tem certeza que deseja excluir esta reserva?' }, class: 'btn btn-danger' %>
+    <%= link_to '← Voltar', admin_reservas_summary_path, class: 'btn btn-secondary' %>
   </div>
 </div>

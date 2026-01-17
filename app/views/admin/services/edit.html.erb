@@ -1,88 +1,442 @@
-<div class="container py-4">
-  <%= form_with model: [:admin, @service], local: true do |form| %>
-    <% if @service.errors.any? %>
-      <div id="error_explanation">
-        <h2><%= pluralize(@service.errors.count, "error") %> prohibited this service from being saved:</h2>
-        <ul>
-        <% @service.errors.full_messages.each do |msg| %>
-          <li><%= msg %></li>
-        <% end %>
-        </ul>
+<style>
+  .services-form-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .form-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 2rem;
+  }
+
+  .form-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .form-subtitle {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .form-section {
+    margin-bottom: 2rem;
+  }
+
+  .form-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .form-section-title::before {
+    content: '';
+    width: 4px;
+    height: 1rem;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 2px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .form-control, .form-select {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    background-color: #f8fafc;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    outline: none;
+  }
+
+  textarea.form-control {
+    min-height: 100px;
+    resize: vertical;
+  }
+
+  .file-input-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    width: 100%;
+  }
+
+  .file-input-wrapper input[type=file] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .file-input-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .file-input-label:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #3b82f6;
+  }
+
+  .checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1.5px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .checkbox-wrapper:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+
+  .checkbox-wrapper input[type="checkbox"] {
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: #3b82f6;
+    cursor: pointer;
+  }
+
+  .checkbox-label {
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .checkbox-description {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .btn {
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  }
+
+  .btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1.5px solid #e2e8f0;
+  }
+
+  .btn-secondary:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+  }
+
+  .btn-danger {
+    background: #ef4444;
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background: #dc2626;
+  }
+
+  .error-box {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    color: #dc2626;
+  }
+
+  .error-box h4 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .error-box ul {
+    margin: 0;
+    padding-left: 1.25rem;
+  }
+
+  .input-prefix {
+    display: flex;
+    align-items: center;
+  }
+
+  .input-prefix span {
+    background: #e2e8f0;
+    padding: 0.65rem 0.9rem;
+    border: 1.5px solid #e2e8f0;
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .input-prefix input {
+    border-radius: 0 8px 8px 0;
+  }
+
+  /* Galeria de imagens */
+  .images-gallery {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .images-gallery-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+
+  .image-card {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1.5px solid #e2e8f0;
+    transition: all 0.2s ease;
+  }
+
+  .image-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .image-card img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+  }
+
+  .image-card-actions {
+    padding: 0.75rem;
+    background: #f8fafc;
+    text-align: center;
+  }
+</style>
+
+<div class="services-form-container">
+  <div class="form-card">
+    <h1 class="form-title">
+      ✏️ Editar Serviço
+    </h1>
+    <p class="form-subtitle">Atualize as informações do serviço "<%= @service.name %>"</p>
+
+    <%= form_with model: [:admin, @service], local: true do |form| %>
+      <% if @service.errors.any? %>
+        <div class="error-box">
+          <h4><%= pluralize(@service.errors.count, "erro") %> encontrado(s):</h4>
+          <ul>
+            <% @service.errors.full_messages.each do |msg| %>
+              <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <!-- Informações Básicas -->
+      <div class="form-section">
+        <h3 class="form-section-title">Informações Básicas</h3>
+        
+        <div class="form-group">
+          <%= form.label :name, 'Nome do Serviço *' %>
+          <%= form.text_field :name, class: "form-control", placeholder: "Ex: Café da Manhã, Massagem..." %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :description, 'Descrição' %>
+          <%= form.text_area :description, class: "form-control", placeholder: "Descreva o serviço oferecido..." %>
+        </div>
       </div>
-    <% end %>
 
-    <div class="form-group">
-      <%= form.label :name %>
-      <%= form.text_field :name, class: "form-control" %>
-    </div>
+      <!-- Preço e Duração -->
+      <div class="form-section">
+        <h3 class="form-section-title">Preço e Duração</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <%= form.label :price, 'Preço por pessoa (R$) *' %>
+            <div class="input-prefix">
+              <span>R$</span>
+              <%= form.number_field :price, step: 0.01, class: "form-control", placeholder: "0,00" %>
+            </div>
+          </div>
 
-    <div class="form-group">
-      <%= form.label :description %>
-      <%= form.text_area :description, class: "form-control" %>
-    </div>
+          <div class="form-group">
+            <%= form.label :duration, 'Duração (minutos)' %>
+            <%= form.number_field :duration, class: "form-control", placeholder: "Ex: 60" %>
+          </div>
+        </div>
+      </div>
 
-    <div class="form-group">
-      <%= form.label :price %>
-      <%= form.number_field :price, step: 0.01, class: "form-control" %>
-    </div>
+      <!-- Horário de Funcionamento -->
+      <div class="form-section">
+        <h3 class="form-section-title">Horário de Funcionamento</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <%= form.label :start_time, 'Horário de Início' %>
+            <%= form.time_field :start_time, class: "form-control" %>
+          </div>
 
-    <div class="form-group">
-      <%= form.label 'Duration in minutes' %>
-      <%= form.number_field :duration, class: "form-control" %>
-    </div>
+          <div class="form-group">
+            <%= form.label :end_time, 'Horário de Término' %>
+            <%= form.time_field :end_time, class: "form-control" %>
+          </div>
+        </div>
+      </div>
 
-    <div class="form-group">
-      <%= form.label :start_time %>
-      <%= form.time_select :start_time %>
-    </div>
+      <!-- Configurações -->
+      <div class="form-section">
+        <h3 class="form-section-title">Configurações</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <%= form.label :filial_id, 'Filial *' %>
+            <%= form.collection_select :filial_id, Filial.all, :id, :name, { prompt: "Selecione uma filial" }, class: "form-control" %>
+          </div>
 
-    <div class="form-group">
-      <%= form.label :end_time %>
-      <%= form.time_select :end_time %>
-    </div>
+          <div class="form-group">
+            <%= form.label :user_id, 'Responsável *' %>
+            <%= form.collection_select :user_id, User.where(role: ['service_provider', 'admin']), :id, :email, { prompt: "Selecione um responsável" }, class: "form-control" %>
+          </div>
+        </div>
 
-    <div class="form-group">
-      <%= form.label :filial_id %>
-      <%= form.collection_select :filial_id, Filial.all, :id, :name, { prompt: "Select a Filial" }, class: "form-control" %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :images %>
-      <%= form.file_field :images, multiple: true %>
-    </div>
-
-  <div class="form-group">
-      <%= form.label :user_id %>
-      <%= form.collection_select :user_id, User.where(role: 'service_provider'), :id, :email, { prompt: "Select a Service Provider" }, class: "form-control" %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :show_in_marketplace, 'Show on Marketplace?' %>
-      <%= form.check_box :show_in_marketplace %>
-    </div>
-
-    <%= form.submit 'Save Service', class: "btn btn-primary" %>
-  <% end %>
-
-
-<!-- Exibição e Remoção de Imagens (Fora do Formulário) -->
-  <% if @service.images.attached? %>
-    <h2 class="mt-5 mb-3">Imagens Atuais</h2>
-    <div class="row">
-      <% @service.images.each do |image| %>
-        <div class="col-md-3 mb-4">
-          <div class="card h-100 position-relative">
-            <img src="<%= url_for(image) %>" alt="<%= @service.name %> Image" class="card-img-top" style="height: 150px; object-fit: cover;">
-            <div class="card-body">
-              <%= button_to 'Remover', remove_image_admin_service_path(@service, image.id),
-                method: :delete,
-                data: { confirm: 'Tem certeza que deseja remover esta imagem?' },
-                class: 'btn btn-sm btn-danger w-100' %>
+        <div class="form-group">
+          <label>Adicionar Novas Imagens</label>
+          <div class="file-input-wrapper">
+            <%= form.file_field :images, multiple: true %>
+            <div class="file-input-label">
+              📷 Clique para selecionar imagens ou arraste aqui
             </div>
           </div>
         </div>
-      <% end %>
-    </div>
-  <% end %>
 
+        <div class="form-group">
+          <label class="checkbox-wrapper">
+            <%= form.check_box :show_in_marketplace, id: "show_marketplace" %>
+            <div>
+              <div class="checkbox-label">Mostrar no Marketplace</div>
+              <div class="checkbox-description">O serviço ficará visível para os clientes no site</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Ações -->
+      <div class="form-actions">
+        <%= form.submit 'Salvar Alterações', class: "btn btn-primary" %>
+        <%= link_to 'Cancelar', admin_services_path, class: "btn btn-secondary" %>
+      </div>
+    <% end %>
+
+    <!-- Galeria de Imagens Existentes -->
+    <% if @service.images.attached? %>
+      <div class="images-gallery">
+        <h3 class="images-gallery-title">📸 Imagens Atuais</h3>
+        <div class="images-grid">
+          <% @service.images.each do |image| %>
+            <div class="image-card">
+              <img src="<%= url_for(image) %>" alt="<%= @service.name %>">
+              <div class="image-card-actions">
+                <%= button_to 'Remover', remove_image_admin_service_path(@service, image.id),
+                    method: :delete,
+                    data: { confirm: 'Tem certeza que deseja remover esta imagem?' },
+                    class: 'btn btn-danger btn-sm' %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
 </div>

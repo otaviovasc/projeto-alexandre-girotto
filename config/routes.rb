@@ -51,6 +51,9 @@ Rails.application.routes.draw do
       collection do
         get :import_airbnb_calendar
         get :reservas_summary
+        get :export_csv
+        get :export_sheets
+
         get :plataformas_import
         get :select_cabana_import
 

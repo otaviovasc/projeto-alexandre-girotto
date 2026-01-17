@@ -43,6 +43,9 @@ gem 'kaminari'
 gem 'ransack'
 gem 'simple_calendar'
 
+# Google Sheets API
+gem 'google-api-client', '~> 0.53'
+
 gem 'simple_form'
 
 gem 'dotenv-rails', groups: [:development, :test]

@@ -90,6 +90,12 @@
 
   <div class="d-flex gap-2 mb-4">
     <%= link_to 'Nova Reserva', new_admin_reserva_path, class: 'btn btn-primary d-flex align-items-center' %>
+    <%= link_to export_csv_admin_reservas_path(request.query_parameters.merge(format: :csv)), class: 'btn btn-success d-flex align-items-center' do %>
+      <i class="bi bi-file-earmark-spreadsheet me-1"></i> Exportar CSV
+    <% end %>
+    <%= link_to export_sheets_admin_reservas_path(request.query_parameters), class: 'btn btn-warning d-flex align-items-center', data: { turbo_method: :get } do %>
+      <i class="bi bi-cloud-upload me-1"></i> Enviar p/ Google Sheets
+    <% end %>
   </div>
 
   <div class="card p-3 mb-4 shadow-sm">
@@ -204,9 +210,10 @@
           <% @reservas.each do |reserva| %>
             <tr id="reserva-<%= reserva.id %>" data-updated-at="<%= reserva.updated_at.to_i %>" class="<%= 'partner-row' if reserva.user.partner? %>">
               <td><%= reserva.id %></td>
-              <td><%= reserva.updated_at.strftime("%d/%m/%Y - %H:%Mh") %></td>
-              <td><%= reserva.start_date.strftime("%d/%m/%y") %></td>
-              <td><%= reserva.end_date.strftime("%d/%m/%y") %></td>
+              <td><%= reserva.updated_at&.in_time_zone("America/Sao_Paulo")&.strftime("%d/%m/%Y - %H:%Mh") || "—" %></td>
+              <td><%= reserva.start_date&.strftime("%d/%m/%y") || "—" %></td>
+              <td><%= reserva.end_date&.strftime("%d/%m/%y") || "—" %></td>
+
               <td>
                 <div class="legend-color me-2" style="background-color: <%= reserva.cabana.color %>"></div>
                 <%= reserva.cabana.name %>

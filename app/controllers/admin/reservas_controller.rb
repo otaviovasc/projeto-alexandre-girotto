@@ -33,6 +33,7 @@ class Admin::ReservasController < ApplicationController
 
   def new
     @reserva = Reserva.new
+    @services = Service.all
   end
 
   def create
@@ -75,9 +76,12 @@ class Admin::ReservasController < ApplicationController
     @reserva.payment_status = "paid"
 
     if @reserva.save
+      # Sincroniza automaticamente com Google Sheets ao criar
+      GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc))
+      
       # UserMailer.reserva_paid(@user, @reserva).deliver_now
       # UserMailer.notify_adm(@user, @reserva).deliver_now
-      redirect_to admin_reservas_summary_path, notice: 'Reserva criada com sucesso.'
+      redirect_to admin_reservas_summary_path, notice: 'Reserva criada com sucesso e sincronizada com Google Sheets.'
     else
       flash[:alert] = "Não foi possível salvar a reserva. Verifique os dados informados: #{@reserva.errors.full_messages.join(', ')}"
       render :new
@@ -85,6 +89,7 @@ class Admin::ReservasController < ApplicationController
   end
 
   def edit
+    @services = Service.all
   end
 
   def update
@@ -98,6 +103,7 @@ class Admin::ReservasController < ApplicationController
       
       redirect_to admin_reservas_summary_path, notice: 'Reserva foi atualizada com sucesso.'
     else
+      @services = Service.all
       flash.now[:alert] = 'Houve um erro ao atualizar a reserva. Verifique os campos e tente novamente.'
       render :edit
     end
@@ -156,6 +162,67 @@ class Admin::ReservasController < ApplicationController
 
     @plataformas = plataformas_set.to_a.sort
   end
+
+  def export_csv
+    @reservas = Reserva.includes(:cabana, :user, reserva_services: :service)
+    
+    # Filtros opcionais
+    @reservas = @reservas.where(cabana_id: params[:cabana_id]) if params[:cabana_id].present?
+    @reservas = @reservas.joins(:cabana).where(cabanas: { filial_id: params[:filial_id] }) if params[:filial_id].present?
+    if params[:start_date].present? && params[:end_date].present?
+      @reservas = @reservas.where(start_date: params[:start_date]..params[:end_date])
+    end
+    
+    @reservas = @reservas.order(created_at: :desc)
+    
+    csv_data = ReservasExportService.to_csv(@reservas)
+    
+    # Adiciona BOM para UTF-8 (Excel compatibilidade)
+    bom = "\xEF\xBB\xBF"
+    csv_with_bom = bom + csv_data
+    
+    filename = "reservas_export_#{Date.today.strftime('%Y%m%d')}.csv"
+    
+    send_data csv_with_bom,
+              filename: filename,
+              type: 'text/csv; charset=utf-8',
+              disposition: 'attachment'
+  end
+
+  def export_sheets
+    @reservas = Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
+
+    # Aplica os mesmos filtros do Ransack se estiverem presentes
+    if params[:q].present?
+      @q = Reserva.ransack(params[:q])
+      @reservas = @q.result.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
+    end
+    
+    # Filtros manuais (se houver, compatibilidade com export_csv)
+    @reservas = @reservas.where(cabana_id: params[:cabana_id]) if params[:cabana_id].present?
+    @reservas = @reservas.joins(:cabana).where(cabanas: { filial_id: params[:filial_id] }) if params[:filial_id].present?
+    if params[:start_date].present? && params[:end_date].present?
+      @reservas = @reservas.where(start_date: params[:start_date]..params[:end_date])
+    end
+    
+    result = GoogleSheetsExportService.export_reservas(@reservas)
+    
+    redirect_path = if params[:id].present? && params[:redirect_to] == 'edit'
+                      edit_admin_reserva_path(params[:id])
+                    elsif params[:id].present? && params[:redirect_to] == 'show'
+                      admin_reserva_path(params[:id])
+                    else
+                      admin_reservas_summary_path(q: params[:q]) # Mantém os filtros no redirect
+                    end
+    
+    if result[:success]
+      redirect_to redirect_path, notice: "✅ #{result[:message]}"
+    else
+      redirect_to redirect_path, alert: "❌ Erro ao exportar: #{result[:error]}"
+    end
+  end
+
+
 
   def plataformas_disponiveis
     plataformas = Set.new
@@ -324,7 +391,8 @@ class Admin::ReservasController < ApplicationController
       :end_date, 
       :total_price, 
       :observation,
-      user_attributes: [:id, :partner]
+      user_attributes: [:id, :partner],
+      reserva_services_attributes: [:id, :service_id, :quantity, :service_date, :status, :_destroy]
     )
   end
 

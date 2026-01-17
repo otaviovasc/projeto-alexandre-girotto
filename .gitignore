@@ -43,3 +43,7 @@
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
+
+# Credentials
+credentials/*.json
+credentials/google_sheets_credentials.json

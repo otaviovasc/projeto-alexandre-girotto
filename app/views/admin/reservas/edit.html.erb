@@ -1,229 +1,521 @@
 <style>
-  /* Estilos para mensagens de erro */
-  #error_explanation {
-    background-color: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: 8px;
-    padding: 1.25rem;
+  .reserva-edit-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .form-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    padding: 2rem;
     margin-bottom: 1.5rem;
-    color: #b91c1c;
   }
 
-  #error_explanation h2 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
+  .form-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
   }
 
-  #error_explanation ul {
-    list-style-type: none;
-    padding-left: 0;
-    margin-bottom: 0;
-  }
-
-  #error_explanation li {
-    padding: 0.25rem 0;
+  .form-subtitle {
+    color: #64748b;
     font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
   }
 
-  /* Estilos para o formulário */
+  .form-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .form-section-title::before {
+    content: '';
+    width: 4px;
+    height: 1rem;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 2px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
   .form-label {
     display: block;
-    font-weight: 600;
+    font-weight: 500;
     color: #374151;
     margin-bottom: 0.5rem;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 
   .form-control, .form-select {
     width: 100%;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    padding: 0.625rem 0.75rem;
+    padding: 0.65rem 0.9rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
     font-size: 0.95rem;
     transition: all 0.2s ease;
-    background-color: white;
+    background-color: #f8fafc;
   }
 
   .form-control:focus, .form-select:focus {
     border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
     outline: none;
-  }
-
-  .form-select {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-    background-position: right 0.5rem center;
-    background-repeat: no-repeat;
-    background-size: 1.5em 1.5em;
-    padding-right: 2.5rem;
   }
 
   textarea.form-control {
-    min-height: 100px;
+    min-height: 80px;
     resize: vertical;
   }
 
-  /* Estilos para checkbox */
   .form-check {
     display: flex;
     align-items: center;
-    margin-bottom: 1.25rem;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1.5px solid #e2e8f0;
+    margin-bottom: 1rem;
   }
 
   .form-check-input {
-    width: 1.125rem;
-    height: 1.125rem;
-    margin-right: 0.75rem;
-    border: 2px solid #d1d5db;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    cursor: pointer;
-  }
-
-  .form-check-input:checked {
-    background-color: #3b82f6;
-    border-color: #3b82f6;
-  }
-
-  .form-check-input:focus {
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    outline: none;
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: #3b82f6;
   }
 
   .form-check-label {
     font-weight: 500;
     color: #374151;
-    cursor: pointer;
-    font-size: 0.95rem;
   }
 
-  /* Estilos para botões */
-  .btn {
-    display: inline-flex;
+  .error-box {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    color: #dc2626;
+  }
+
+  .error-box h4 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .service-item {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+  }
+
+  .service-item:hover {
+    border-color: #cbd5e1;
+  }
+
+  .service-item.cancelled-service {
+    opacity: 0.6;
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+
+  .service-header {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    padding: 0.5rem 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .service-name {
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .service-price {
+    color: #059669;
+    font-weight: 600;
+  }
+
+  .status-badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 0.5rem;
+  }
+
+  .status-cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .cancelled-badge {
+    background: #dc2626;
+    color: white;
+    padding: 0.3rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  .active-badge {
+    background: #dcfce7;
+    color: #166534;
+    padding: 0.3rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  .cancelled-info {
+    background: #fef2f2;
+    border: 1px dashed #fecaca;
     border-radius: 6px;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #7f1d1d;
+  }
+
+  .cancelled-info p {
+    margin: 0.25rem 0;
+  }
+
+  .cancel-select {
+    border-color: #e2e8f0;
+  }
+
+  .cancel-select:focus {
+    border-color: #ef4444;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .btn {
+    padding: 0.65rem 1.25rem;
+    border-radius: 8px;
     font-weight: 500;
     font-size: 0.95rem;
-    transition: all 0.2s ease;
     cursor: pointer;
-    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
   }
 
   .btn-primary {
-    background-color: #3b82f6;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
     color: white;
   }
 
   .btn-primary:hover {
-    background-color: #2563eb;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
   }
 
   .btn-secondary {
-    background-color: #f3f4f6;
-    color: #374151;
-    border-color: #e5e7eb;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1.5px solid #e2e8f0;
   }
 
   .btn-secondary:hover {
-    background-color: #e5e7eb;
+    background: #e2e8f0;
     transform: translateY(-1px);
   }
 
-  /* Layout e espaçamento */
-  .mb-3 {
-    margin-bottom: 1.25rem;
+  .add-service-check {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
 
-  /* Estilos para o datepicker */
-  .flatpickr-calendar {
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    font-family: inherit;
-  }
-
-  .flatpickr-day.selected {
-    background: #3b82f6;
-    border-color: #3b82f6;
-  }
-
-  .flatpickr-day.today {
-    border-color: #3b82f6;
-  }
-
-  .flatpickr-day.today:hover {
-    background: #e0e7ff;
-    color: #1e40af;
-  }
-
-  /* Link de voltar */
-  .back-link {
-    display: inline-block;
-    margin-top: 1.5rem;
-    color: #3b82f6;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s ease;
-  }
-
-  .back-link:hover {
-    color: #2563eb;
-    text-decoration: underline;
+  .service-fields-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
   }
 </style>
 
-<% if @reserva.errors.any? %>
-  <div id="error_explanation" class="mb-4">
-    <h2><%= pluralize(@reserva.errors.count, "erro") %> impediram que a reserva fosse salva:</h2>
-    <ul>
-      <% @reserva.errors.full_messages.each do |mensagem| %>
-        <li><%= mensagem %></li>
-      <% end %>
-    </ul>
-  </div>
-<% end %>
+<div class="reserva-edit-container">
+  <div class="form-card">
+    <h1 class="form-title">✏️ Editar Reserva #<%= @reserva.id %></h1>
+    <p class="form-subtitle">Atualize as informações da reserva</p>
 
-<%= form_with model: [:admin, @reserva], local: true, class: "space-y-4" do |form| %>
-  <div class="mb-3">
-    <%= form.label :cabana_id, 'Cabana *', class: 'form-label' %>
-    <%= form.collection_select :cabana_id, Cabana.all, :id, :name, { prompt: 'Selecione uma cabana' }, { class: 'form-select', id: 'reserva_cabana_id', required: true } %>
-  </div>
+    <% if @reserva.errors.any? %>
+      <div class="error-box">
+        <h4><%= pluralize(@reserva.errors.count, "erro") %> encontrado(s):</h4>
+        <ul style="margin: 0; padding-left: 1.25rem;">
+          <% @reserva.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
 
-  <div class="mb-3">
-    <%= form.label :user_id, 'Usuário *', class: 'form-label' %>
-    <%= form.collection_select :user_id, User.all, :id, :email, { prompt: 'Selecione um usuário' }, { class: 'form-select', required: true, id: 'user_select' } %>
-  </div>
+    <%= form_with model: [:admin, @reserva], local: true do |form| %>
+      
+      <!-- Informações Básicas -->
+      <div class="form-section">
+        <h3 class="form-section-title">Informações Básicas</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <%= form.label :cabana_id, 'Cabana *', class: 'form-label' %>
+            <%= form.collection_select :cabana_id, Cabana.all, :id, :name, { prompt: 'Selecione' }, { class: 'form-control', id: 'reserva_cabana_id', required: true } %>
+          </div>
 
-  <!-- Checkbox para marcar como parceiro -->
-  <div class="form-check">
-    <%= form.fields_for :user do |user_fields| %>
-      <%= user_fields.check_box :partner, class: 'form-check-input', id: 'partner_checkbox' %>
-      <%= user_fields.label :partner, 'É Parceiro?', class: 'form-check-label' %>
+          <div class="form-group">
+            <%= form.label :user_id, 'Hóspede *', class: 'form-label' %>
+            <%= form.collection_select :user_id, User.all, :id, :email, { prompt: 'Selecione' }, { class: 'form-control', required: true, id: 'user_select' } %>
+          </div>
+        </div>
+
+        <div class="form-check">
+          <%= form.fields_for :user do |user_fields| %>
+            <%= user_fields.check_box :partner, class: 'form-check-input', id: 'partner_checkbox' %>
+            <%= user_fields.label :partner, 'Marcar como Parceiro', class: 'form-check-label' %>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Datas -->
+      <div class="form-section">
+        <h3 class="form-section-title">Período da Reserva</h3>
+        
+        <div class="form-group">
+          <label for="reservation_date_range" class="form-label">Datas de Check-in e Check-out *</label>
+          <input type="text" id="reservation_date_range" placeholder="Clique para selecionar as datas" class="form-control" required />
+          <%= form.hidden_field :start_date, id: "start_date", required: true %>
+          <%= form.hidden_field :end_date, id: "end_date", required: true %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :observation, 'Observação / Origem', class: 'form-label' %>
+          <%= form.text_area :observation, class: 'form-control', rows: 2, placeholder: 'Ex: Airbnb, Booking, Indicação...' %>
+        </div>
+      </div>
+
+      <!-- Serviços Existentes -->
+      <div class="form-section">
+        <h3 class="form-section-title">🛎️ Serviços da Reserva</h3>
+        
+        <% if @reserva.reserva_services.any? %>
+          <% @reserva.reserva_services.each_with_index do |rs, idx| %>
+            <div class="service-item <%= rs.cancelled? ? 'cancelled-service' : '' %>" id="service_item_<%= rs.id %>">
+              <%= form.fields_for :reserva_services, rs do |rsf| %>
+                <%= rsf.hidden_field :id %>
+                <%= rsf.hidden_field :service_id %>
+                
+                <div class="service-header">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="service-name"><%= rs.service.name %></span>
+                    <% if rs.cancelled? %>
+                      <span class="cancelled-badge">❌ CANCELADO</span>
+                    <% else %>
+                      <span class="active-badge">✓ Ativo</span>
+                    <% end %>
+                  </div>
+                  <span class="service-price">R$ <%= number_with_precision(rs.service.price * rs.quantity, precision: 2) %></span>
+                </div>
+                
+                <% if rs.cancelled? %>
+                  <!-- Serviço Cancelado - apenas exibe informações -->
+                  <div class="cancelled-info">
+                    <p>📅 Data: <%= rs.service_date&.strftime('%d/%m/%Y') || 'N/A' %></p>
+                    <p>📦 Quantidade: <%= rs.quantity %></p>
+                    <p style="margin-top: 0.5rem; font-style: italic; color: #991b1b;">
+                      Este serviço foi cancelado e não será cobrado.
+                    </p>
+                  </div>
+                  <%= rsf.hidden_field :service_date %>
+                  <%= rsf.hidden_field :quantity %>
+                  <%= rsf.hidden_field :status %>
+                <% else %>
+                  <!-- Serviço Ativo - permite edição -->
+                  <div class="service-fields-row">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">📅 Data</label>
+                      <%= rsf.date_field :service_date, class: 'form-control' %>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">📦 Qtd</label>
+                      <%= rsf.number_field :quantity, class: 'form-control', min: 1 %>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">⚡ Ação</label>
+                      <%= rsf.select :status, [['Manter Ativo', 'active'], ['🚫 Cancelar Serviço', 'cancelled']], {}, class: 'form-control cancel-select', id: "status_select_#{rs.id}", onchange: "confirmCancel(this, #{rs.id}, '#{rs.service.name}')" %>
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          <% end %>
+        <% else %>
+          <p style="color: #94a3b8; text-align: center; padding: 1rem;">Nenhum serviço adicionado</p>
+        <% end %>
+      </div>
+
+      <!-- Adicionar Novos Serviços -->
+      <div class="form-section">
+        <h3 class="form-section-title">➕ Adicionar Serviços</h3>
+        
+        <% existing_service_ids = @reserva.reserva_services.map(&:service_id) %>
+        <% available_services = @services.reject { |s| existing_service_ids.include?(s.id) } %>
+        
+        <% if available_services.any? %>
+          <% available_services.each_with_index do |service, index| %>
+            <% real_index = @reserva.reserva_services.size + index %>
+            <div class="service-item">
+              <div class="add-service-check">
+                <input type="checkbox" class="form-check-input" 
+                       id="new_service_check_<%= service.id %>" 
+                       onchange="toggleNewServiceFields(this, <%= real_index %>)">
+                <label for="new_service_check_<%= service.id %>" style="font-weight: 500; color: #1e293b; cursor: pointer;">
+                  <%= service.name %> - <span style="color: #059669;">R$ <%= number_with_precision(service.price, precision: 2) %></span>
+                </label>
+              </div>
+              
+              <div class="service-fields-row" id="new_service_fields_<%= real_index %>" style="display: none;">
+                <input type="hidden" name="reserva[reserva_services_attributes][<%= real_index %>][service_id]" 
+                       value="<%= service.id %>" id="new_service_id_<%= real_index %>" disabled>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label">Data *</label>
+                  <input type="date" class="form-control" 
+                         name="reserva[reserva_services_attributes][<%= real_index %>][service_date]" 
+                         id="new_service_date_<%= real_index %>" disabled>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label">Qtd *</label>
+                  <input type="number" class="form-control" 
+                         name="reserva[reserva_services_attributes][<%= real_index %>][quantity]" 
+                         id="new_service_quantity_<%= real_index %>" 
+                         value="1" min="1" disabled>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        <% else %>
+          <p style="color: #94a3b8; text-align: center; padding: 1rem;">Todos os serviços já foram adicionados</p>
+        <% end %>
+      </div>
+
+      <!-- Ações -->
+      <div class="form-actions">
+        <%= form.submit '💾 Salvar Alterações', class: 'btn btn-primary' %>
+        <%= link_to export_sheets_admin_reservas_path(redirect_to: 'edit', id: @reserva.id), class: 'btn btn-warning', data: { turbo_method: :get } do %>
+          <i class="bi bi-cloud-upload"></i> Sincronizar com Sheets
+        <% end %>
+        <%= link_to '← Voltar', admin_reservas_summary_path, class: 'btn btn-secondary' %>
+      </div>
     <% end %>
   </div>
+</div>
 
-  <!-- Campo de observação -->
-  <div class="mb-3">
-    <%= form.label :observation, 'Observações', class: 'form-label' %>
-    <%= form.text_area :observation, class: 'form-control', rows: 3 %>
-  </div>
+<script>
+  function confirmCancel(selectElement, serviceId, serviceName) {
+    const serviceItem = document.getElementById('service_item_' + serviceId);
+    
+    if (selectElement.value === 'cancelled') {
+      // Atualiza a aparência visual imediatamente
+      serviceItem.classList.add('cancelled-service');
+      serviceItem.style.opacity = '0.6';
+      
+      // Mostra uma mensagem de feedback
+      const header = serviceItem.querySelector('.service-header');
+      let existingWarning = serviceItem.querySelector('.cancel-warning');
+      if (!existingWarning) {
+        const warning = document.createElement('div');
+        warning.className = 'cancel-warning';
+        warning.style.cssText = 'background: #fef3c7; color: #92400e; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.85rem; text-align: center;';
+        warning.innerHTML = '⚠️ Este serviço será CANCELADO ao salvar. Selecione "Manter Ativo" para desfazer.';
+        header.parentNode.insertBefore(warning, header.nextSibling);
+      }
+    } else {
+      // Se voltar para 'active', remove avisos visuais
+      serviceItem.classList.remove('cancelled-service');
+      serviceItem.style.opacity = '1';
+      const warning = serviceItem.querySelector('.cancel-warning');
+      if (warning) warning.remove();
+    }
+  }
+</script>
 
-  <div class="mb-3" id="date-selection">
-    <label for="reservation_date_range" class="form-label">Selecione as datas *</label>
-    <input type="text" id="reservation_date_range" placeholder="Selecione as datas" class="form-control" required />
-    <%= form.hidden_field :start_date, id: "start_date", required: true %>
-    <%= form.hidden_field :end_date, id: "end_date", required: true %>
-  </div>
-
-  <div class="flex items-center gap-3 mt-6">
-    <%= form.submit 'Atualizar Reserva', class: 'btn btn-primary' %>
-    <%= link_to 'Voltar', admin_reservas_summary_path, class: 'btn btn-secondary' %>
-  </div>
-<% end %>
+<script>
+  function toggleNewServiceFields(checkbox, index) {
+    const fieldsContainer = document.getElementById(`new_service_fields_${index}`);
+    const serviceIdField = document.getElementById(`new_service_id_${index}`);
+    const dateField = document.getElementById(`new_service_date_${index}`);
+    const quantityField = document.getElementById(`new_service_quantity_${index}`);
+    
+    if (checkbox.checked) {
+      fieldsContainer.style.display = 'grid';
+      serviceIdField.disabled = false;
+      dateField.disabled = false;
+      dateField.required = true;
+      quantityField.disabled = false;
+      quantityField.required = true;
+    } else {
+      fieldsContainer.style.display = 'none';
+      serviceIdField.disabled = true;
+      dateField.disabled = true;
+      dateField.required = false;
+      dateField.value = '';
+      quantityField.disabled = true;
+      quantityField.required = false;
+      quantityField.value = '1';
+    }
+  }
+</script>
 
 <script>
   document.addEventListener("turbo:load", function() {
@@ -232,14 +524,12 @@
     const startDateInput = document.getElementById("start_date");
     const endDateInput = document.getElementById("end_date");
 
-    // Função para inicializar o flatpickr com as datas indisponíveis
     function initializeFlatpickr(cabanaId) {
       if (!cabanaId) return;
 
       fetch(`/cabanas/${cabanaId}/unavailable_dates`)
         .then(response => response.json())
         .then(disabledDates => {
-          // Se já houver um flatpickr inicializado, destrua-o antes
           if (dateRangeInput._flatpickr) {
             dateRangeInput._flatpickr.destroy();
           }
@@ -250,45 +540,32 @@
             dateFormat: "Y-m-d",
             disable: disabledDates,
             onChange: function(selectedDates, dateStr, instance) {
-              // Se tiver duas datas selecionadas, atualize os hidden fields
               if (selectedDates.length === 2) {
                 startDateInput.value = instance.formatDate(selectedDates[0], "Y-m-d");
                 endDateInput.value = instance.formatDate(selectedDates[1], "Y-m-d");
-                
-                // Marcar o campo como válido quando as datas são selecionadas
                 dateRangeInput.setCustomValidity('');
               } else {
-                // Limpar os campos hidden se não há seleção completa
                 startDateInput.value = '';
                 endDateInput.value = '';
-                dateRangeInput.setCustomValidity('Por favor, selecione as datas de início e fim');
+                dateRangeInput.setCustomValidity('Selecione as datas');
               }
             },
             onDayCreate: function(dObj, dStr, fp, dayElem) {
-              // Custom logic to allow dates to be used as end dates even if they're unavailable
-              // as start dates. This essentially allows checkout day to be the same as another reservation's check-in day.
               dayElem.addEventListener('mouseenter', function() {
-                // If this is potentially an end date (user has already selected a start date)
                 if (fp.selectedDates.length === 1) {
-                  // Allow selection even if it's in the unavailable list, as it could be a valid end date
                   dayElem.classList.remove('flatpickr-disabled');
                 }
               });
             }
           });
         })
-        .catch(err => {
-          console.error("Erro ao buscar datas indisponíveis:", err);
-        });
+        .catch(err => console.error("Erro:", err));
     }
 
-    // Quando o select de cabana mudar, reinicialize o flatpicker
     cabanaSelect.addEventListener("change", function(e) {
-      const selectedCabanaId = e.target.value;
-      initializeFlatpickr(selectedCabanaId);
+      initializeFlatpickr(e.target.value);
     });
 
-    // Se já houver um valor selecionado ao carregar a página, inicialize
     if (cabanaSelect.value) {
       initializeFlatpickr(cabanaSelect.value);
     }
@@ -296,7 +573,6 @@
 </script>
 
 <script>
-  // Validação customizada do formulário
   document.addEventListener('turbo:load', function () {
     const form = document.querySelector('form');
     const dateRangeInput = document.getElementById("reservation_date_range");
@@ -305,54 +581,83 @@
     const partnerCheckbox = document.getElementById('partner_checkbox');
     const userSelect = document.getElementById('user_select');
 
-    // Validação customizada para as datas
     function validateDates() {
       if (!startDateInput.value || !endDateInput.value) {
-        dateRangeInput.setCustomValidity('Por favor, selecione as datas de início e fim');
+        dateRangeInput.setCustomValidity('Selecione as datas');
         return false;
-      } else {
-        dateRangeInput.setCustomValidity('');
-        return true;
       }
+      dateRangeInput.setCustomValidity('');
+      return true;
     }
 
-    // Atualizar checkbox quando usuário mudar
-  if (userSelect && partnerCheckbox) {
+    if (userSelect && partnerCheckbox) {
       userSelect.addEventListener('change', function() {
         const userId = this.value;
         if (userId) {
           fetch(`/admin/users/${userId}/partner_status`)
             .then(response => response.json())
-            .then(data => {
-              partnerCheckbox.checked = data.partner;
-            })
-            .catch(err => {
-              console.error("Erro ao buscar status de parceiro:", err);
-            });
+            .then(data => { partnerCheckbox.checked = data.partner; })
+            .catch(err => console.error("Erro:", err));
         }
       });
     }
 
-    // Validar ao tentar submeter
     if (form) {
       form.addEventListener('submit', function(event) {
-        // Primeiro validar datas
         if (!validateDates() || !form.checkValidity()) {
           event.preventDefault();
           event.stopPropagation();
-          
-          // Mostrar mensagem de erro se as datas não foram selecionadas
           if (!startDateInput.value || !endDateInput.value) {
-            alert('Por favor, selecione as datas de início e fim da reserva.');
+            alert('Selecione as datas de check-in e check-out.');
             return false;
           }
         }
       }, false);
     }
 
-    // Validar quando o campo de data perde o foco
     if (dateRangeInput) {
       dateRangeInput.addEventListener('blur', validateDates);
     }
   });
+</script>
+
+<script>
+  document.addEventListener("turbo:load", function() {
+    // --- Lógica para Restrição de Datas dos Serviços ---
+    const startDateInput = document.getElementById("start_date");
+    const endDateInput = document.getElementById("end_date");
+    const dateRangeInput = document.getElementById("reservation_date_range");
+
+    function updateServiceDateLimits() {
+      const minDate = startDateInput.value;
+      const maxDate = endDateInput.value;
+      
+      if (!minDate || !maxDate) return;
+
+      // Atualiza inputs de serviços existentes
+      document.querySelectorAll('input[name*="[service_date]"]').forEach(input => {
+        input.min = minDate;
+        input.max = maxDate;
+      });
+
+      // Atualiza inputs de novos serviços (que estão disabled ou hidden)
+      document.querySelectorAll('input[id^="new_service_date_"]').forEach(input => {
+        input.min = minDate;
+        input.max = maxDate;
+      });
+    }
+
+    // Monitora mudanças no flatpickr
+    if (dateRangeInput && dateRangeInput._flatpickr) {
+      const originalOnChange = dateRangeInput._flatpickr.config.onChange[0];
+      dateRangeInput._flatpickr.set('onChange', function(selectedDates, dateStr, instance) {
+        if (originalOnChange) originalOnChange(selectedDates, dateStr, instance);
+        setTimeout(updateServiceDateLimits, 100);
+      });
+    }
+
+    // Executa inicialmente
+    updateServiceDateLimits();
+  });
+
 </script>

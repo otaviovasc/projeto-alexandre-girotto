@@ -1,5 +1,6 @@
-# # db/seeds.rb
+# db/seeds.rb
 
+# Limpar dados existentes (descomente se quiser resetar tudo)
 # Cart.destroy_all
 # Service.destroy_all
 # Reserva.destroy_all
@@ -7,74 +8,31 @@
 # User.destroy_all
 # Filial.destroy_all
 
-# # # Create filials
-# filial1 = Filial.create!(name: 'Serra da Mantiqueira')
-# filial2 = Filial.create!(name: 'Fattoria di Brauna')
+# Criar filiais
+filial1 = Filial.find_or_create_by!(name: 'Serra da Mantiqueira')
+filial2 = Filial.find_or_create_by!(name: 'Fattoria di Brauna')
+puts "Filiais criadas: #{filial1.name}, #{filial2.name}"
 
-# # Create an admin user
-# admin = User.create!(
-#   email: 'villaggiogirotto@gmail.com',
-#   password: 'Aleserver10!',
-#   password_confirmation: 'Aleserver10!',
-#   role: :admin
-# )
-# puts "Admin created: #{admin.email}"
+# Criar usuário admin de teste (fácil de lembrar)
+admin = User.find_or_initialize_by(email: 'admin@teste.com')
+admin.update!(
+  name: 'Admin Teste',
+  password: '123456',
+  password_confirmation: '123456',
+  role: :admin
+)
+puts "Admin criado: #{admin.email} / senha: 123456"
 
-# # Create manager users
-# manager1 = User.create!(
-#   email: 'estoque@villaggio.com',
-#   password: 'Estoque10!',
-#   password_confirmation: 'Estoque10!',
-#   role: :manager,
-#   filial: filial1
-# )
-# puts "Manager created: #{manager1.email}"
-
-# manager2 = User.create!(
-#   email: 'estoque2@gmail.com',
-#   password: 'Estoque10!',
-#   password_confirmation: 'Estoque10!',
-#   role: :manager,
-#   filial: filial2
-# )
-# puts "Manager created: #{manager2.email}"
-
-# mercadomg = Filial.create!(name: 'Mercadinho MG')
-# mercadosp = Filial.create!(name: 'Mercadinho SP')
-
-# manager3 = User.create!(
-#   email: 'estoque3@gmail.com',
-#   password: 'Estoque10!',
-#   password_confirmation: 'Estoque10!',
-#   role: :manager,
-#   filial: mercadomg
-# )
-# puts "Manager created: #{manager3.email}"
-
-# manager4 = User.create!(
-#   email: 'estoque4@gmail.com',
-#   password: 'Estoque10!',
-#   password_confirmation: 'Estoque10!',
-#   role: :manager,
-#   filial: mercadosp
-# )
-# puts "Manager created: #{manager4.email}"
-
-# # Create an admin user
-# otavioteste = User.create!(
-#   email: 'otavio@teste.com',
-#   password: '123123',
-#   password_confirmation: '123123',
-#   role: :admin
-# )
-# puts "Admin created: #{otavioteste.email}"
-
-# cliente = User.create!(
-#   email: 'client@teste.com',
-#   password: '123123',
-#   password_confirmation: '123123',
-# )
-# puts "Admin created: #{cliente.email}"
+# Criar usuário manager de teste
+manager = User.find_or_initialize_by(email: 'manager@teste.com')
+manager.update!(
+  name: 'Manager Teste',
+  password: '123456',
+  password_confirmation: '123456',
+  role: :manager,
+  filial: filial1
+)
+puts "Manager criado: #{manager.email} / senha: 123456"
 # 10.times do |i|
 #   Item.create!(
 #     name: "Item #{i + 1}",

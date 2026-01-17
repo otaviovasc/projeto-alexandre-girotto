@@ -7,12 +7,14 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_USER: postgres
       POSTGRES_DB: myapp_development
+    ports:
+      - "5433:5432"
 
   web:
     build: .
     command: ./bin/dev
     volumes:
-      - '.:/myapp'
+      - ".:/myapp"
     ports:
       - "3000:3000"
     depends_on:
@@ -20,3 +22,5 @@ services:
     tty: true
     environment:
       DATABASE_URL: postgres://postgres:password@db:5432/myapp_development
+      GOOGLE_SHEETS_SPREADSHEET_ID: 174Js6pxhIL1Wha1G0m2xIG390eoBE_twnaK1XKzNs_E
+      GOOGLE_SHEETS_CREDENTIALS_PATH: /myapp/credentials/google_sheets_credentials.json

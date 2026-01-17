@@ -1,0 +1,114 @@
+# frozen_string_literal: true
+
+# Google Sheets Export Service
+# 
+# Para usar esta funcionalidade, você precisa:
+# 1. Criar um projeto no Google Cloud Console (https://console.cloud.google.com)
+# 2. Ativar a Google Sheets API
+# 3. Criar uma Service Account e baixar as credenciais JSON
+# 4. Salvar o arquivo como credentials/google_sheets_credentials.json
+# 5. Criar uma planilha e compartilhar com o email da Service Account
+# 6. Adicionar as variáveis de ambiente:
+#    - GOOGLE_SHEETS_SPREADSHEET_ID: ID da planilha (da URL)
+#    - GOOGLE_SHEETS_CREDENTIALS_PATH: caminho para o arquivo de credenciais
+#
+# Depois de configurado, descomente a gem no Gemfile:
+# gem 'google-api-client'
+
+require 'csv'
+
+class GoogleSheetsExportService
+  SCOPES = ['https://www.googleapis.com/auth/spreadsheets'].freeze
+  
+  class << self
+    def export_reservas(reservas)
+      new.export(reservas)
+    end
+
+    def configured?
+      spreadsheet_id.present? && (credentials_json_content.present? || (credentials_path.present? && File.exist?(credentials_path)))
+    end
+
+    def spreadsheet_id
+      ENV['GOOGLE_SHEETS_SPREADSHEET_ID']
+    end
+
+    def credentials_json_content
+      ENV['GOOGLE_SHEETS_CREDENTIALS_JSON']
+    end
+
+    def credentials_path
+      ENV['GOOGLE_SHEETS_CREDENTIALS_PATH'] || Rails.root.join('credentials', 'google_sheets_credentials.json').to_s
+    end
+  end
+
+  def initialize
+    @spreadsheet_id = self.class.spreadsheet_id
+  end
+
+  def export(reservas)
+    return { success: false, error: 'Google Sheets não configurado' } unless self.class.configured?
+
+    begin
+      # Carrega a API do Google
+      require 'google/apis/sheets_v4'
+      require 'googleauth'
+      require 'stringio'
+
+      service = Google::Apis::SheetsV4::SheetsService.new
+      service.client_options.application_name = 'Villaggio Girotto'
+      service.authorization = authorize
+      
+      # ... (rest of export logic is fine, authorize is called here)
+
+      # Prepara os dados
+      export_service = ReservasExportService.new(reservas)
+      headers = [
+        'Tipo', 'ID Reserva', 'Cabana', 'Filial', 'Hóspede', 'Email', 'Telefone',
+        'Check-in', 'Check-out', 'Noites', 'Valor', 'Status Pagamento',
+        'Nome Serviço', 'Data Serviço', 'Quantidade', 'Status Serviço', 
+        'Valor Serviço', 'Observação', 'Data Criação'
+      ]
+      rows = export_service.generate_array
+
+      # Limpa a planilha e insere novos dados
+      clear_range = 'A:T'
+      service.clear_values(@spreadsheet_id, clear_range)
+
+      # Insere headers + dados
+      all_data = [headers] + rows
+      value_range = Google::Apis::SheetsV4::ValueRange.new(values: all_data)
+      
+      result = service.update_spreadsheet_value(
+        @spreadsheet_id,
+        'A1',
+        value_range,
+        value_input_option: 'USER_ENTERED'
+      )
+
+      {
+        success: true,
+        rows_updated: result.updated_rows,
+        message: "#{result.updated_rows} linhas exportadas para Google Sheets"
+      }
+    rescue => e
+      Rails.logger.error "Google Sheets Export Error: #{e.message}"
+      { success: false, error: e.message }
+    end
+  end
+
+  private
+
+  def authorize
+    json_io = if self.class.credentials_json_content.present?
+                StringIO.new(self.class.credentials_json_content)
+              else
+                File.open(self.class.credentials_path)
+              end
+
+    Google::Auth::ServiceAccountCredentials.make_creds(
+      json_key_io: json_io,
+      scope: SCOPES
+    )
+  end
+end

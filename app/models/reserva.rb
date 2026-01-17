@@ -6,6 +6,7 @@ class Reserva < ApplicationRecord
 
   has_many :reserva_services, dependent: :destroy
   has_many :services, through: :reserva_services
+  accepts_nested_attributes_for :reserva_services, allow_destroy: true, reject_if: proc { |attrs| attrs['service_id'].blank? }
   accepts_nested_attributes_for :user
 
   has_many :reserva_items, dependent: :destroy
@@ -72,6 +73,9 @@ class Reserva < ApplicationRecord
 
     overlapping_reservas = Reserva.where(cabana_id: cabana.id)
                                   .where(payment_status: [:pending, :waiting_payment, :paid])
+    
+    # Exclui a própria reserva quando está editando (não é novo registro)
+    overlapping_reservas = overlapping_reservas.where.not(id: self.id) if self.persisted?
 
     new_reserva_range = start_date...end_date
     overlapping_reservas.each do |existing_reserva|
