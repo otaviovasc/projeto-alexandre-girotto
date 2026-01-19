@@ -25,6 +25,10 @@ class GoogleSheetsExportService
       new.export(reservas)
     end
 
+    def delete_reserva(reserva_id)
+      new.delete_by_id(reserva_id)
+    end
+
     def configured?
       spreadsheet_id.present? && (credentials_json_content.present? || (credentials_path.present? && File.exist?(credentials_path)))
     end
@@ -93,6 +97,68 @@ class GoogleSheetsExportService
       }
     rescue => e
       Rails.logger.error "Google Sheets Export Error: #{e.message}"
+      { success: false, error: e.message }
+    end
+  end
+
+  # Deleta todas as linhas que contêm o ID da reserva
+  def delete_by_id(reserva_id)
+    return { success: false, error: 'Google Sheets não configurado' } unless self.class.configured?
+
+    begin
+      require 'google/apis/sheets_v4'
+      require 'googleauth'
+      require 'stringio'
+
+      service = Google::Apis::SheetsV4::SheetsService.new
+      service.client_options.application_name = 'Villaggio Girotto'
+      service.authorization = authorize
+
+      # Busca todos os dados da planilha
+      response = service.get_spreadsheet_values(@spreadsheet_id, 'A:T')
+      rows = response.values || []
+
+      # Encontra as linhas que contêm o ID da reserva (coluna B = índice 1)
+      rows_to_delete = []
+      rows.each_with_index do |row, index|
+        # Coluna B (índice 1) contém o ID da reserva
+        if row[1].to_s == reserva_id.to_s
+          rows_to_delete << index
+        end
+      end
+
+      if rows_to_delete.empty?
+        return { success: true, message: 'Nenhuma linha encontrada para deletar' }
+      end
+
+      # Deleta as linhas de baixo para cima (para não afetar os índices)
+      # Obtém o sheet ID (geralmente 0 para a primeira aba)
+      spreadsheet = service.get_spreadsheet(@spreadsheet_id)
+      sheet_id = spreadsheet.sheets.first.properties.sheet_id
+
+      requests = rows_to_delete.sort.reverse.map do |row_index|
+        {
+          delete_dimension: {
+            range: {
+              sheet_id: sheet_id,
+              dimension: 'ROWS',
+              start_index: row_index,
+              end_index: row_index + 1
+            }
+          }
+        }
+      end
+
+      batch_update_request = Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest.new(requests: requests)
+      service.batch_update_spreadsheet(@spreadsheet_id, batch_update_request)
+
+      {
+        success: true,
+        rows_deleted: rows_to_delete.count,
+        message: "#{rows_to_delete.count} linha(s) deletada(s) do Google Sheets"
+      }
+    rescue => e
+      Rails.logger.error "Google Sheets Delete Error: #{e.message}"
       { success: false, error: e.message }
     end
   end

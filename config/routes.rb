@@ -10,6 +10,7 @@ Rails.application.routes.draw do
   get 'cabanas/index'
   get 'cabanas/show'
   get 'cabanas/:cabana_id/unavailable_dates', to: 'reservas#unavailable_dates'
+  get 'cabanas/:id/region', to: 'cabanas#region', as: 'cabana_region'
   devise_for :users, controllers: { registrations: 'users/registrations' }
 
   # Static page

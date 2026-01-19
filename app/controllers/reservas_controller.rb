@@ -235,6 +235,11 @@ class ReservasController < ApplicationController
     # Filter reservations to include only those that are active and not expired
     reservas = @cabana.reservas.where(payment_status: ['pending', 'waiting_payment', 'paid'])
                                .where("payment_expires_at IS NULL OR payment_expires_at > ?", Time.current)
+    
+    # Exclui a reserva atual ao editar (para permitir selecionar as próprias datas)
+    if params[:exclude_reserva_id].present?
+      reservas = reservas.where.not(id: params[:exclude_reserva_id])
+    end
 
     # Collection of dates that are the middle of a stay (completely unavailable)
     fully_unavailable_dates = []

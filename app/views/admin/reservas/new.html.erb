@@ -71,9 +71,24 @@
     <!-- Serviços -->
     <div class="mb-4" id="services-section">
       <h5 class="mb-3">Serviços</h5>
+      
+      <!-- Filtros de Serviços -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <input type="text" id="service-search" class="form-control" placeholder="🔍 Buscar serviço por nome...">
+        </div>
+        <div class="col-md-6">
+          <select id="service-region-filter" class="form-control">
+            <option value="">Todas as regiões</option>
+            <option value="SP">São Paulo (SP)</option>
+            <option value="MG">Minas Gerais (MG)</option>
+          </select>
+        </div>
+      </div>
+      
       <div class="services-container">
         <% @services.each_with_index do |service, index| %>
-          <div class="service-item border rounded p-3 mb-2" data-service-id="<%= service.id %>">
+          <div class="service-item border rounded p-3 mb-2" data-service-id="<%= service.id %>" data-service-name="<%= service.name.downcase %>" data-service-region="<%= service.region %>">
             <div class="d-flex align-items-center justify-content-between">
               <div class="form-check">
                 <input type="checkbox" class="form-check-input service-checkbox" 
@@ -145,6 +160,41 @@
       quantityField.value = '1';
     }
   }
+</script>
+
+<!-- Script para filtrar serviços por nome e região -->
+<script>
+  document.addEventListener("turbo:load", function() {
+    const searchInput = document.getElementById('service-search');
+    const regionFilter = document.getElementById('service-region-filter');
+    const serviceItems = document.querySelectorAll('.service-item');
+
+    function filterServices() {
+      const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+      const selectedRegion = regionFilter ? regionFilter.value : '';
+
+      serviceItems.forEach(function(item) {
+        const name = item.dataset.serviceName || '';
+        const region = item.dataset.serviceRegion || '';
+
+        const matchesName = name.includes(searchTerm);
+        const matchesRegion = selectedRegion === '' || region === selectedRegion;
+
+        if (matchesName && matchesRegion) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', filterServices);
+    }
+    if (regionFilter) {
+      regionFilter.addEventListener('change', filterServices);
+    }
+  });
 </script>
 
 <!-- Script para datas -->

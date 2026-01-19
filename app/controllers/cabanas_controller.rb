@@ -16,4 +16,10 @@ class CabanasController < ApplicationController
     @cabana = Cabana.find(params[:id])
     @infos_da_cabana = InfoDaCabana.where(cabana_id: @cabana.id)
   end
+
+  # Retorna a região da filial da cabana (usado para filtrar serviços)
+  def region
+    cabana = Cabana.find(params[:id])
+    render json: { region: cabana.filial&.region }
+  end
 end

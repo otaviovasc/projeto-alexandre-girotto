@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_01_17_162059) do
+ActiveRecord::Schema[7.0].define(version: 2026_01_19_205132) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -82,6 +82,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_17_162059) do
     t.string "address"
     t.string "pagarme_api_key"
     t.string "pagarme_encryption_key"
+    t.string "region"
   end
 
   create_table "funil_mailers", force: :cascade do |t|
@@ -195,6 +196,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_17_162059) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.boolean "show_in_marketplace"
+    t.string "region", default: "SP"
     t.index ["filial_id"], name: "index_services_on_filial_id"
     t.index ["user_id"], name: "index_services_on_user_id"
   end

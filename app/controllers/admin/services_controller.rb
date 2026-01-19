@@ -56,6 +56,6 @@ class Admin::ServicesController < ApplicationController
   end
 
   def service_params
-    params.require(:service).permit(:name, :description, :price, :duration, :options, :start_time, :end_time, :filial_id, :user_id, :show_in_marketplace)
+    params.require(:service).permit(:name, :description, :price, :duration, :options, :start_time, :end_time, :filial_id, :user_id, :show_in_marketplace, :region)
   end
 end

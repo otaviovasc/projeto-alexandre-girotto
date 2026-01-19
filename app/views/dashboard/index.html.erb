@@ -1,147 +1,316 @@
-<div class="container py-4">
-  <h1 class="text-3xl font-bold mb-6 text-center text-verde-escuro">Painel Administrativo</h1>
+<style>
+  .dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
 
-  <!-- Seção 1: Administração Geral -->
-  <h2 class="text-xl font-semibold mt-5 mb-3">⚙️ Administração Geral</h2>
-  <div class="row g-4">
-    <!-- Gerenciar Usuários -->
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm hover:shadow-md transition">
-        <div class="card-body">
-          <i class="bi bi-person-badge fs-1 mb-3 text-primary"></i>
-          <h5 class="card-title">Usuários</h5>
-          <p class="card-text">Controle e gerencie usuários.</p>
-          <%= link_to 'Acessar', admin_users_path, class: 'btn btn-primary' %>
-        </div>
+  /* Hero Header - mais clean */
+  .dashboard-hero {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    color: white;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(30, 58, 95, 0.2);
+  }
+
+  .dashboard-hero h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .dashboard-hero p {
+    opacity: 0.85;
+    font-size: 0.95rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .hero-stat {
+    background: rgba(255, 255, 255, 0.12);
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+  }
+
+  .hero-stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .hero-stat-label {
+    font-size: 0.8rem;
+    opacity: 0.8;
+  }
+
+  /* Section Headers */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    color: #374151;
+  }
+
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  /* Cards Grid */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  /* Dashboard Card - mais simples */
+  .dash-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .dash-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #d1d5db;
+  }
+
+  .card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+    color: white;
+  }
+
+  .icon-users { background: #6366f1; }
+  .icon-cabanas { background: #10b981; }
+  .icon-reservas { background: #f43f5e; }
+  .icon-funil { background: #0ea5e9; }
+  .icon-services { background: #f59e0b; }
+  .icon-home { background: #8b5cf6; }
+  .icon-client { background: #64748b; }
+
+  .card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+  }
+
+  .card-description {
+    color: #6b7280;
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .card-btn {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+
+  .card-btn-primary {
+    background: #1e3a5f;
+    color: white;
+    border: none;
+  }
+
+  .card-btn-primary:hover {
+    background: #2d5a87;
+    color: white;
+  }
+
+  .card-btn-secondary {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+  }
+
+  .card-btn-secondary:hover {
+    background: #e5e7eb;
+    color: #1f2937;
+  }
+
+  /* Footer */
+  .dashboard-footer {
+    text-align: center;
+    padding: 1.5rem;
+    color: #9ca3af;
+    font-size: 0.8rem;
+  }
+</style>
+
+<div class="dashboard-container">
+  <!-- Hero Header -->
+  <div class="dashboard-hero">
+    <h1>Painel Administrativo</h1>
+    <p>Villaggio Girotto - Sistema de Gestão</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-value"><%= Reserva.count %></div>
+        <div class="hero-stat-label">Reservas</div>
       </div>
-    </div>
-
-    <!-- Gerenciar Cabanas -->
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm hover:shadow-md transition">
-        <div class="card-body">
-          <i class="bi bi-house fs-1 mb-3 text-success"></i>
-          <h5 class="card-title">Cabanas</h5>
-          <p class="card-text">Adicione, edite ou remova cabanas.</p>
-          <%= link_to 'Acessar', admin_cabanas_path, class: 'btn btn-primary' %>
-        </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value"><%= Cabana.count %></div>
+        <div class="hero-stat-label">Cabanas</div>
       </div>
-    </div>
-
-    <!-- Gerenciar Reservas
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm hover:shadow-md transition">
-        <div class="card-body">
-          <i class="bi bi-calendar-event fs-1 mb-3 text-info"></i>
-          <h5 class="card-title">Editar Reservas</h5>
-          <p class="card-text">Ajuste reservas.</p>
-          <%= link_to 'Acessar', admin_reservas_path, class: 'btn btn-primary' %>
-        </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value"><%= User.count %></div>
+        <div class="hero-stat-label">Usuários</div>
       </div>
-    </div> -->
-
-    <!-- Gerenciar Reservas -->
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm hover:shadow-md transition">
-        <div class="card-body">
-          <i class="bi bi-calendar-event fs-1 mb-3 text-info"></i>
-          <h5 class="card-title">Sumário das Reservas</h5>
-          <p class="card-text">Monitore reservas.</p>
-          <%= link_to 'Acessar', admin_reservas_summary_path, class: 'btn btn-primary' %>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm hover:shadow-md transition">
-        <div class="card-body">
-          <i class="bi bi-calendar-event fs-1 mb-3 text-info"></i>
-          <h5 class="card-title">Ver leads do Funil</h5>
-          <p class="card-text">Visualizar os leads.</p>
-          <%= link_to 'Acessar', admin_funil_mailers_path, class: 'btn btn-primary' %>
-        </div>
-      </div>
-    </div>
-
-    <!-- Gerenciar Serviços -->
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm hover:shadow-md transition">
-        <div class="card-body">
-          <i class="bi bi-gear-wide-connected fs-1 mb-3 text-warning"></i>
-          <h5 class="card-title">Serviços</h5>
-          <p class="card-text">Administre serviços disponíveis.</p>
-          <%= link_to 'Acessar', admin_services_path, class: 'btn btn-primary' %>
-        </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value"><%= number_to_currency(Reserva.where.not(payment_status: ['canceled', 'refused']).sum(:total_price), unit: 'R$', precision: 0) %></div>
+        <div class="hero-stat-label">Receita</div>
       </div>
     </div>
   </div>
 
-  <!-- Seção 2: User Flows -->
-  <h2 class="text-xl font-semibold mt-5 mb-3 text-verde-escuro">🔄 Fluxos de Usuário</h2>
-  <div class="row g-4">
-    <!-- Página Inicial -->
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm hover:shadow-md transition">
-        <div class="card-body">
-          <i class="bi bi-house-door fs-1 mb-3 text-primary"></i>
-          <h5 class="card-title">Página Inicial</h5>
-          <p class="card-text">Visualizar página principal.</p>
-          <%= link_to 'Acessar', home_root_path, class: 'btn btn-secondary' %>
-        </div>
+  <!-- Seção: Administração -->
+  <div class="section-header">
+    <span>⚙️</span>
+    <h2 class="section-title">Administração</h2>
+  </div>
+
+  <div class="cards-grid">
+    <!-- Usuários -->
+    <div class="dash-card">
+      <div class="card-icon icon-users">
+        <i class="bi bi-people-fill"></i>
       </div>
+      <h3 class="card-title">Usuários</h3>
+      <p class="card-description">Gerencie usuários e permissões</p>
+      <%= link_to admin_users_path, class: 'card-btn card-btn-primary' do %>
+        Acessar →
+      <% end %>
     </div>
 
-    <!-- Ver como Cliente - Cabanas -->
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm hover:shadow-md transition">
-        <div class="card-body">
-          <i class="bi bi-tree fs-1 mb-3 text-success"></i>
-          <h5 class="card-title">Cabanas</h5>
-          <p class="card-text">Visualizar cabanas como cliente.</p>
-          <%= link_to 'Acessar', cabanas_path, class: 'btn btn-secondary' %>
-        </div>
+    <!-- Cabanas -->
+    <div class="dash-card">
+      <div class="card-icon icon-cabanas">
+        <i class="bi bi-house-fill"></i>
       </div>
+      <h3 class="card-title">Cabanas</h3>
+      <p class="card-description">Adicione ou edite cabanas</p>
+      <%= link_to admin_cabanas_path, class: 'card-btn card-btn-primary' do %>
+        Acessar →
+      <% end %>
     </div>
 
-    <!-- Ver como Cliente - reservas -->
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm hover:shadow-md transition">
-        <div class="card-body">
-          <i class="bi bi-calendar-event fs-1 mb-3 text-success"></i>
-          <h5 class="card-title">Reservas</h5>
-          <p class="card-text">Visualizar reservas como cliente.</p>
-          <%= link_to 'Acessar', reservas_path, class: 'btn btn-secondary' %>
-        </div>
+    <!-- Reservas -->
+    <div class="dash-card">
+      <div class="card-icon icon-reservas">
+        <i class="bi bi-calendar-check-fill"></i>
       </div>
+      <h3 class="card-title">Reservas</h3>
+      <p class="card-description">Monitore todas as reservas</p>
+      <%= link_to admin_reservas_summary_path, class: 'card-btn card-btn-primary' do %>
+        Acessar →
+      <% end %>
     </div>
 
-    <!-- Ver como Cliente - Marketplace Serviços
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm hover:shadow-md transition">
-        <div class="card-body">
-          <i class="bi bi-bag-check fs-1 mb-3 text-info"></i>
-          <h5 class="card-title">Serviços</h5>
-          <p class="card-text">Ver serviços disponíveis.</p>
-          <%= link_to 'Acessar', services_marketplace_index_path, class: 'btn btn-secondary' %>
-        </div>
+    <!-- Leads -->
+    <div class="dash-card">
+      <div class="card-icon icon-funil">
+        <i class="bi bi-funnel-fill"></i>
       </div>
+      <h3 class="card-title">Leads</h3>
+      <p class="card-description">Leads capturados pelo site</p>
+      <%= link_to admin_funil_mailers_path, class: 'card-btn card-btn-primary' do %>
+        Acessar →
+      <% end %>
     </div>
 
-
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm hover:shadow-md transition">
-        <div class="card-body">
-          <i class="bi bi-box-seam fs-1 mb-3 text-warning"></i>
-          <h5 class="card-title">Itens</h5>
-          <p class="card-text">Ver itens disponíveis.</p>
-          <%= link_to 'Acessar', items_marketplace_index_path, class: 'btn btn-secondary' %>
-        </div>
+    <!-- Serviços -->
+    <div class="dash-card">
+      <div class="card-icon icon-services">
+        <i class="bi bi-star-fill"></i>
       </div>
+      <h3 class="card-title">Serviços</h3>
+      <p class="card-description">Gerencie serviços oferecidos</p>
+      <%= link_to admin_services_path, class: 'card-btn card-btn-primary' do %>
+        Acessar →
+      <% end %>
     </div>
-  </div> -->
+  </div>
 
-  <!-- Rodapé -->
-  <div class="mt-5 text-center">
-    <p class="text-muted">Gerencie as seções administrativas ou visualize fluxos de usuário facilmente.</p>
+  <!-- Seção: Visualizar como Cliente -->
+  <div class="section-header">
+    <span>👁️</span>
+    <h2 class="section-title">Ver como Cliente</h2>
+  </div>
+
+  <div class="cards-grid">
+    <!-- Home -->
+    <div class="dash-card">
+      <div class="card-icon icon-home">
+        <i class="bi bi-house-door"></i>
+      </div>
+      <h3 class="card-title">Página Inicial</h3>
+      <p class="card-description">Ver página principal</p>
+      <%= link_to home_root_path, class: 'card-btn card-btn-secondary' do %>
+        Visualizar
+      <% end %>
+    </div>
+
+    <!-- Cabanas Cliente -->
+    <div class="dash-card">
+      <div class="card-icon icon-client">
+        <i class="bi bi-tree-fill"></i>
+      </div>
+      <h3 class="card-title">Cabanas</h3>
+      <p class="card-description">Visualização do cliente</p>
+      <%= link_to cabanas_path, class: 'card-btn card-btn-secondary' do %>
+        Visualizar
+      <% end %>
+    </div>
+
+    <!-- Minhas Reservas -->
+    <div class="dash-card">
+      <div class="card-icon icon-client">
+        <i class="bi bi-calendar-event"></i>
+      </div>
+      <h3 class="card-title">Minhas Reservas</h3>
+      <p class="card-description">Tela de reservas do cliente</p>
+      <%= link_to reservas_path, class: 'card-btn card-btn-secondary' do %>
+        Visualizar
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="dashboard-footer">
+    <p>Sistema de Gestão • Villaggio Girotto</p>
   </div>
 </div>

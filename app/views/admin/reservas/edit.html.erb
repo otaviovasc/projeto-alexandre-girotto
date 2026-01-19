@@ -523,21 +523,37 @@
     const dateRangeInput = document.getElementById("reservation_date_range");
     const startDateInput = document.getElementById("start_date");
     const endDateInput = document.getElementById("end_date");
+    
+    // Datas atuais da reserva (para pré-preencher e excluir dos bloqueios)
+    const currentStartDate = "<%= @reserva.start_date&.strftime('%Y-%m-%d') %>";
+    const currentEndDate = "<%= @reserva.end_date&.strftime('%Y-%m-%d') %>";
+    const currentReservaId = <%= @reserva.id %>;
 
     function initializeFlatpickr(cabanaId) {
       if (!cabanaId) return;
 
-      fetch(`/cabanas/${cabanaId}/unavailable_dates`)
+      // Passa o ID da reserva para excluir suas próprias datas
+      fetch(`/cabanas/${cabanaId}/unavailable_dates?exclude_reserva_id=${currentReservaId}`)
         .then(response => response.json())
         .then(disabledDates => {
           if (dateRangeInput._flatpickr) {
             dateRangeInput._flatpickr.destroy();
           }
           
+          // Configura datas padrão se existirem
+          let defaultDates = [];
+          if (currentStartDate && currentEndDate) {
+            defaultDates = [currentStartDate, currentEndDate];
+            // Preenche os hidden fields também
+            startDateInput.value = currentStartDate;
+            endDateInput.value = currentEndDate;
+          }
+          
           flatpickr("#reservation_date_range", {
             mode: "range",
-            minDate: "today",
+            minDate: null, // Permite selecionar datas passadas na edição
             dateFormat: "Y-m-d",
+            defaultDate: defaultDates,
             disable: disabledDates,
             onChange: function(selectedDates, dateStr, instance) {
               if (selectedDates.length === 2) {

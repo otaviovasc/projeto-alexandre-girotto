@@ -110,8 +110,11 @@ class Admin::ReservasController < ApplicationController
   end
 
   def destroy
+    # Sincroniza exclusão com Google Sheets
+    GoogleSheetsExportService.delete_reserva(@reserva.id)
+    
     @reserva.destroy
-    redirect_to admin_reservas_summary_path, notice: 'Reserva was successfully deleted.'
+    redirect_to admin_reservas_summary_path, notice: 'Reserva excluída com sucesso.'
   end
 
   def reservas_summary
