@@ -72,12 +72,10 @@
     <div class="mb-4" id="services-section">
       <h5 class="mb-3">Serviços</h5>
       
-      <!-- Filtros de Serviços -->
+      <!-- Filtro por Região -->
       <div class="row mb-3">
-        <div class="col-md-6">
-          <input type="text" id="service-search" class="form-control" placeholder="🔍 Buscar serviço por nome...">
-        </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
+          <label class="form-label fw-bold">Filtrar por Região</label>
           <select id="service-region-filter" class="form-control">
             <option value="">Todas as regiões</option>
             <option value="SP">São Paulo (SP)</option>
@@ -86,43 +84,49 @@
         </div>
       </div>
       
-      <div class="services-container">
-        <% @services.each_with_index do |service, index| %>
-          <div class="service-item border rounded p-3 mb-2" data-service-id="<%= service.id %>" data-service-name="<%= service.name.downcase %>" data-service-region="<%= service.region %>">
-            <div class="d-flex align-items-center justify-content-between">
-              <div class="form-check">
-                <input type="checkbox" class="form-check-input service-checkbox" 
-                       id="service_check_<%= service.id %>" 
-                       data-index="<%= index %>"
-                       onchange="toggleServiceFields(this, <%= index %>)">
-                <label class="form-check-label fw-bold" for="service_check_<%= service.id %>">
-                  <%= service.name %> - R$ <%= number_with_precision(service.price, precision: 2) %>
-                </label>
-              </div>
-            </div>
-            
-            <div class="service-fields mt-2" id="service_fields_<%= index %>" style="display: none;">
-              <%= hidden_field_tag "reserva[reserva_services_attributes][#{index}][service_id]", service.id, id: "service_id_#{index}", disabled: true %>
-              
-              <div class="row">
-                <div class="col-md-6">
-                  <label class="form-label">Data do Serviço *</label>
-                  <input type="date" class="form-control" 
-                         name="reserva[reserva_services_attributes][<%= index %>][service_date]" 
-                         id="service_date_<%= index %>" disabled>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Quantidade *</label>
-                  <input type="number" class="form-control" 
-                         name="reserva[reserva_services_attributes][<%= index %>][quantity]" 
-                         id="service_quantity_<%= index %>" 
-                         value="1" min="1" disabled>
-                </div>
-              </div>
-            </div>
+      <!-- Adicionar Serviço -->
+      <div class="add-service-box border rounded p-3 mb-3" style="background: #f8fafc;">
+        <div class="row align-items-end">
+          <div class="col-md-4 mb-2 mb-md-0">
+            <label class="form-label fw-bold">Serviço</label>
+            <select id="service-select" class="form-control">
+              <option value="">Selecione ou digite para buscar...</option>
+              <% @services.each do |service| %>
+                <option value="<%= service.id %>" 
+                        data-name="<%= service.name %>" 
+                        data-price="<%= service.price %>"
+                        data-region="<%= service.region %>">
+                  <%= service.name %> - R$ <%= number_with_precision(service.price, precision: 2) %> (<%= service.region %>)
+                </option>
+              <% end %>
+            </select>
           </div>
-        <% end %>
+          <div class="col-md-3 mb-2 mb-md-0">
+            <label class="form-label fw-bold">Data *</label>
+            <input type="date" id="service-date-input" class="form-control">
+          </div>
+          <div class="col-md-2 mb-2 mb-md-0">
+            <label class="form-label fw-bold">Qtd</label>
+            <input type="number" id="service-quantity-input" class="form-control" value="1" min="1">
+          </div>
+          <div class="col-md-3">
+            <button type="button" id="add-service-btn" class="btn btn-success w-100" onclick="addServiceToList()">
+              <i class="bi bi-plus-lg"></i> Adicionar
+            </button>
+          </div>
+        </div>
       </div>
+      
+      <!-- Lista de Serviços Adicionados -->
+      <div id="services-list-container" class="border rounded p-3" style="min-height: 100px; background: #fff;">
+        <h6 class="text-muted mb-3">📋 Serviços Adicionados <small>(ordenados por data)</small></h6>
+        <div id="services-list">
+          <p id="no-services-msg" class="text-center text-muted py-3">Nenhum serviço adicionado ainda.</p>
+        </div>
+      </div>
+      
+      <!-- Container para hidden inputs dos serviços -->
+      <div id="services-hidden-inputs"></div>
     </div>
 
     <!-- Botões -->
@@ -134,67 +138,146 @@
   <% end %>
 </div>
 
-<!-- Script para habilitar/desabilitar campos de serviço -->
+<!-- Script para gerenciar lista de serviços -->
 <script>
-  function toggleServiceFields(checkbox, index) {
-    const fieldsContainer = document.getElementById(`service_fields_${index}`);
-    const serviceIdField = document.getElementById(`service_id_${index}`);
-    const dateField = document.getElementById(`service_date_${index}`);
-    const quantityField = document.getElementById(`service_quantity_${index}`);
-    
-    if (checkbox.checked) {
-      fieldsContainer.style.display = 'block';
-      serviceIdField.disabled = false;
-      dateField.disabled = false;
-      dateField.required = true;
-      quantityField.disabled = false;
-      quantityField.required = true;
-    } else {
-      fieldsContainer.style.display = 'none';
-      serviceIdField.disabled = true;
-      dateField.disabled = true;
-      dateField.required = false;
-      dateField.value = '';
-      quantityField.disabled = true;
-      quantityField.required = false;
-      quantityField.value = '1';
-    }
-  }
-</script>
+  // Array para armazenar os serviços adicionados
+  let addedServices = [];
+  let serviceIndex = 0;
 
-<!-- Script para filtrar serviços por nome e região -->
-<script>
   document.addEventListener("turbo:load", function() {
-    const searchInput = document.getElementById('service-search');
+    // Inicializar Select2 para o select de serviços
+    $('#service-select').select2({
+      theme: 'bootstrap-5',
+      width: '100%',
+      placeholder: 'Selecione ou digite para buscar...',
+      allowClear: true
+    });
+
+    // Filtro por região
     const regionFilter = document.getElementById('service-region-filter');
-    const serviceItems = document.querySelectorAll('.service-item');
+    const serviceSelect = document.getElementById('service-select');
 
-    function filterServices() {
-      const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
-      const selectedRegion = regionFilter ? regionFilter.value : '';
-
-      serviceItems.forEach(function(item) {
-        const name = item.dataset.serviceName || '';
-        const region = item.dataset.serviceRegion || '';
-
-        const matchesName = name.includes(searchTerm);
-        const matchesRegion = selectedRegion === '' || region === selectedRegion;
-
-        if (matchesName && matchesRegion) {
-          item.style.display = 'block';
-        } else {
-          item.style.display = 'none';
-        }
+    if (regionFilter) {
+      regionFilter.addEventListener('change', function() {
+        const selectedRegion = this.value;
+        const options = serviceSelect.querySelectorAll('option');
+        
+        options.forEach(option => {
+          if (option.value === '') return; // Skip placeholder
+          const region = option.dataset.region;
+          if (selectedRegion === '' || region === selectedRegion) {
+            option.style.display = '';
+            option.disabled = false;
+          } else {
+            option.style.display = 'none';
+            option.disabled = true;
+          }
+        });
+        
+        // Resetar seleção e atualizar Select2
+        $('#service-select').val('').trigger('change');
       });
     }
-
-    if (searchInput) {
-      searchInput.addEventListener('input', filterServices);
-    }
-    if (regionFilter) {
-      regionFilter.addEventListener('change', filterServices);
-    }
   });
+
+  function addServiceToList() {
+    const selectEl = document.getElementById('service-select');
+    const dateInput = document.getElementById('service-date-input');
+    const quantityInput = document.getElementById('service-quantity-input');
+    
+    const serviceId = selectEl.value;
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    const serviceName = selectedOption.dataset.name;
+    const servicePrice = parseFloat(selectedOption.dataset.price);
+    const serviceDate = dateInput.value;
+    const quantity = parseInt(quantityInput.value) || 1;
+
+    // Validações
+    if (!serviceId) {
+      alert('Por favor, selecione um serviço.');
+      return;
+    }
+    if (!serviceDate) {
+      alert('Por favor, selecione a data do serviço.');
+      return;
+    }
+
+    // Criar objeto do serviço
+    const service = {
+      id: serviceIndex++,
+      serviceId: serviceId,
+      name: serviceName,
+      price: servicePrice,
+      date: serviceDate,
+      quantity: quantity,
+      total: servicePrice * quantity
+    };
+
+    // Adicionar ao array
+    addedServices.push(service);
+
+    // Ordenar por data
+    addedServices.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Renderizar lista
+    renderServicesList();
+
+    // Limpar inputs
+    $('#service-select').val('').trigger('change');
+    dateInput.value = '';
+    quantityInput.value = '1';
+  }
+
+  function removeService(id) {
+    addedServices = addedServices.filter(s => s.id !== id);
+    renderServicesList();
+  }
+
+  function renderServicesList() {
+    const listContainer = document.getElementById('services-list');
+    const hiddenInputsContainer = document.getElementById('services-hidden-inputs');
+    const noServicesMsg = document.getElementById('no-services-msg');
+
+    // Limpar containers
+    listContainer.innerHTML = '';
+    hiddenInputsContainer.innerHTML = '';
+
+    if (addedServices.length === 0) {
+      listContainer.innerHTML = '<p id="no-services-msg" class="text-center text-muted py-3">Nenhum serviço adicionado ainda.</p>';
+      return;
+    }
+
+    // Renderizar cada serviço
+    addedServices.forEach((service, index) => {
+      // Formatar data para exibição
+      const dateObj = new Date(service.date + 'T00:00:00');
+      const formattedDate = dateObj.toLocaleDateString('pt-BR');
+
+      // Criar item visual
+      const itemHtml = `
+        <div class="service-list-item d-flex justify-content-between align-items-center border rounded p-2 mb-2" style="background: #f8fafc;">
+          <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-primary">📅 ${formattedDate}</span>
+            <strong>${service.name}</strong>
+            <span class="text-muted">Qtd: ${service.quantity}</span>
+            <span class="text-success fw-bold">R$ ${service.total.toFixed(2).replace('.', ',')}</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeService(${service.id})">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      `;
+      listContainer.insertAdjacentHTML('beforeend', itemHtml);
+
+      // Criar hidden inputs
+      const hiddenInputsHtml = `
+        <input type="hidden" name="reserva[reserva_services_attributes][${index}][service_id]" value="${service.serviceId}">
+        <input type="hidden" name="reserva[reserva_services_attributes][${index}][service_date]" value="${service.date}">
+        <input type="hidden" name="reserva[reserva_services_attributes][${index}][quantity]" value="${service.quantity}">
+      `;
+      hiddenInputsContainer.insertAdjacentHTML('beforeend', hiddenInputsHtml);
+    });
+  }
 </script>
 
 <!-- Script para datas -->
@@ -382,7 +465,7 @@
 
 <style>
   .container {
-    max-width: 800px;
+    max-width: 1000px;
     margin: 0 auto;
     background: white;
     border-radius: 10px;

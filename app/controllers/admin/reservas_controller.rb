@@ -349,7 +349,13 @@ class Admin::ReservasController < ApplicationController
         end
       end
 
-      redirect_to admin_reservas_summary_path, notice: "#{count} reservas importadas do #{platform.capitalize} para #{cabana.name}!"
+      # Sincroniza automaticamente com Google Sheets após importação
+      if count > 0
+        GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc))
+        redirect_to admin_reservas_summary_path, notice: "#{count} reservas importadas do #{platform.capitalize} para #{cabana.name} e sincronizadas com Google Sheets!"
+      else
+        redirect_to admin_reservas_summary_path, notice: "Nenhuma nova reserva encontrada no #{platform.capitalize} para #{cabana.name}."
+      end
     rescue => e
       redirect_to admin_reservas_summary_path, alert: "Erro ao importar reservas do #{params[:platform]}: #{e.message}"
     end
