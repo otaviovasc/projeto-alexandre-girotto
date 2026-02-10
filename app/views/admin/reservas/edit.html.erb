@@ -333,7 +333,10 @@
         
         <div class="form-group">
           <label for="reservation_date_range" class="form-label">Datas de Check-in e Check-out *</label>
-          <input type="text" id="reservation_date_range" placeholder="Clique para selecionar as datas" class="form-control" required />
+          <input type="text" id="reservation_date_range" placeholder="Clique para selecionar as datas" class="form-control" required
+                 data-start-date="<%= @reserva.start_date&.strftime('%Y-%m-%d') %>"
+                 data-end-date="<%= @reserva.end_date&.strftime('%Y-%m-%d') %>"
+                 data-reserva-id="<%= @reserva.id %>" />
           <%= form.hidden_field :start_date, id: "start_date", required: true %>
           <%= form.hidden_field :end_date, id: "end_date", required: true %>
         </div>
@@ -408,6 +411,18 @@
       <div class="form-section">
         <h3 class="form-section-title">➕ Adicionar Serviços</h3>
         
+        <!-- Filtro por Região -->
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Filtrar por Região</label>
+            <select id="service-region-filter" class="form-control">
+              <option value="">Todas as regiões</option>
+              <option value="SP">São Paulo (SP)</option>
+              <option value="MG">Minas Gerais (MG)</option>
+            </select>
+          </div>
+        </div>
+        
         <!-- Adicionar Serviço -->
         <div class="add-service-box border rounded p-3 mb-3" style="background: #f8fafc;">
           <div class="row align-items-end">
@@ -420,7 +435,7 @@
                           data-name="<%= service.name %>" 
                           data-price="<%= service.price %>"
                           data-region="<%= service.region %>">
-                    <%= service.name %> - R$ <%= number_with_precision(service.price, precision: 2) %>
+                    <%= service.name %> - R$ <%= number_with_precision(service.price, precision: 2) %> (<%= service.region %>)
                   </option>
                 <% end %>
               </select>
@@ -450,7 +465,7 @@
         </div>
         
         <!-- Container para hidden inputs dos novos serviços -->
-        <div id="services-hidden-inputs"></div>
+        <div id="services-hidden-inputs" data-reserva-services-count="<%= @reserva.reserva_services.size %>"></div>
       </div>
 
       <!-- Ações -->
@@ -500,6 +515,20 @@
   let serviceIndex = <%= @reserva.reserva_services.size %>;
 
   document.addEventListener("turbo:load", function() {
+    // Resetar estado dos serviços a cada carregamento de página (evita acumular entre reservas)
+    addedServices = [];
+    serviceIndex = parseInt(document.querySelector('[data-reserva-services-count]')?.dataset.reservaServicesCount || '<%= @reserva.reserva_services.size %>');
+    
+    // Limpar UI de novos serviços
+    const servicesList = document.getElementById('services-list');
+    const hiddenInputs = document.getElementById('services-hidden-inputs');
+    if (servicesList) {
+      servicesList.innerHTML = '<p id="no-services-msg" class="text-center text-muted py-2">Nenhum novo serviço adicionado.</p>';
+    }
+    if (hiddenInputs) {
+      hiddenInputs.innerHTML = '';
+    }
+
     // Inicializar Select2 para o select de serviços
     $('#service-select').select2({
       theme: 'bootstrap-5',
@@ -507,6 +536,32 @@
       placeholder: 'Selecione ou digite para buscar...',
       allowClear: true
     });
+
+    // Filtro por região
+    const regionFilter = document.getElementById('service-region-filter');
+    const serviceSelect = document.getElementById('service-select');
+
+    if (regionFilter) {
+      regionFilter.addEventListener('change', function() {
+        const selectedRegion = this.value;
+        const options = serviceSelect.querySelectorAll('option');
+        
+        options.forEach(option => {
+          if (option.value === '') return; // Skip placeholder
+          const region = option.dataset.region;
+          if (selectedRegion === '' || region === selectedRegion) {
+            option.style.display = '';
+            option.disabled = false;
+          } else {
+            option.style.display = 'none';
+            option.disabled = true;
+          }
+        });
+        
+        // Resetar seleção e atualizar Select2
+        $('#service-select').val('').trigger('change');
+      });
+    }
   });
 
   function addServiceToList() {
@@ -598,7 +653,8 @@
       listContainer.insertAdjacentHTML('beforeend', itemHtml);
 
       // Usar índice baseado no tamanho atual + posição na lista de novos
-      const realIndex = <%= @reserva.reserva_services.size %> + index;
+      const baseIndex = parseInt(document.getElementById('services-hidden-inputs')?.dataset.reservaServicesCount || '0');
+      const realIndex = baseIndex + index;
 
       // Criar hidden inputs
       const hiddenInputsHtml = `
@@ -618,10 +674,10 @@
     const startDateInput = document.getElementById("start_date");
     const endDateInput = document.getElementById("end_date");
     
-    // Datas atuais da reserva (para pré-preencher e excluir dos bloqueios)
-    const currentStartDate = "<%= @reserva.start_date&.strftime('%Y-%m-%d') %>";
-    const currentEndDate = "<%= @reserva.end_date&.strftime('%Y-%m-%d') %>";
-    const currentReservaId = <%= @reserva.id %>;
+    // Ler datas do DOM (evita cache do Turbo entre reservas diferentes)
+    const currentStartDate = dateRangeInput ? dateRangeInput.dataset.startDate : '';
+    const currentEndDate = dateRangeInput ? dateRangeInput.dataset.endDate : '';
+    const currentReservaId = dateRangeInput ? dateRangeInput.dataset.reservaId : '';
 
     function initializeFlatpickr(cabanaId) {
       if (!cabanaId) return;
@@ -731,43 +787,3 @@
   });
 </script>
 
-<script>
-  document.addEventListener("turbo:load", function() {
-    // --- Lógica para Restrição de Datas dos Serviços ---
-    const startDateInput = document.getElementById("start_date");
-    const endDateInput = document.getElementById("end_date");
-    const dateRangeInput = document.getElementById("reservation_date_range");
-
-    function updateServiceDateLimits() {
-      const minDate = startDateInput.value;
-      const maxDate = endDateInput.value;
-      
-      if (!minDate || !maxDate) return;
-
-      // Atualiza inputs de serviços existentes
-      document.querySelectorAll('input[name*="[service_date]"]').forEach(input => {
-        input.min = minDate;
-        input.max = maxDate;
-      });
-
-      // Atualiza inputs de novos serviços (que estão disabled ou hidden)
-      document.querySelectorAll('input[id^="new_service_date_"]').forEach(input => {
-        input.min = minDate;
-        input.max = maxDate;
-      });
-    }
-
-    // Monitora mudanças no flatpickr
-    if (dateRangeInput && dateRangeInput._flatpickr) {
-      const originalOnChange = dateRangeInput._flatpickr.config.onChange[0];
-      dateRangeInput._flatpickr.set('onChange', function(selectedDates, dateStr, instance) {
-        if (originalOnChange) originalOnChange(selectedDates, dateStr, instance);
-        setTimeout(updateServiceDateLimits, 100);
-      });
-    }
-
-    // Executa inicialmente
-    updateServiceDateLimits();
-  });
-
-</script>
