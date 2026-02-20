@@ -401,7 +401,7 @@ class Admin::ReservasController < ApplicationController
       :total_price, 
       :observation,
       user_attributes: [:id, :partner],
-      reserva_services_attributes: [:id, :service_id, :quantity, :service_date, :status, :_destroy]
+      reserva_services_attributes: [:id, :service_id, :quantity, :service_date, :status, :observation, :_destroy]
     )
   end
 

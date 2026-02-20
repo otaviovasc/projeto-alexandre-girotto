@@ -101,11 +101,11 @@
               <% end %>
             </select>
           </div>
-          <div class="col-md-3 mb-2 mb-md-0">
+          <div class="col-md-2 mb-2 mb-md-0">
             <label class="form-label fw-bold">Data *</label>
             <input type="date" id="service-date-input" class="form-control">
           </div>
-          <div class="col-md-2 mb-2 mb-md-0">
+          <div class="col-md-1 mb-2 mb-md-0">
             <label class="form-label fw-bold">Qtd</label>
             <input type="number" id="service-quantity-input" class="form-control" value="1" min="1">
           </div>
@@ -113,6 +113,12 @@
             <button type="button" id="add-service-btn" class="btn btn-success w-100" onclick="addServiceToList()">
               <i class="bi bi-plus-lg"></i> Adicionar
             </button>
+          </div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-12">
+            <label class="form-label fw-bold">📝 Observação <small class="text-muted fw-normal">(opcional)</small></label>
+            <textarea id="service-observation-input" class="form-control" rows="2" placeholder="Ex: sem lactose, capricho na decoração..."></textarea>
           </div>
         </div>
       </div>
@@ -184,6 +190,7 @@
     const selectEl = document.getElementById('service-select');
     const dateInput = document.getElementById('service-date-input');
     const quantityInput = document.getElementById('service-quantity-input');
+    const observationInput = document.getElementById('service-observation-input');
     
     const serviceId = selectEl.value;
     const selectedOption = selectEl.options[selectEl.selectedIndex];
@@ -191,6 +198,7 @@
     const servicePrice = parseFloat(selectedOption.dataset.price);
     const serviceDate = dateInput.value;
     const quantity = parseInt(quantityInput.value) || 1;
+    const observation = observationInput ? observationInput.value.trim() : '';
 
     // Validações
     if (!serviceId) {
@@ -210,7 +218,8 @@
       price: servicePrice,
       date: serviceDate,
       quantity: quantity,
-      total: servicePrice * quantity
+      total: servicePrice * quantity,
+      observation: observation
     };
 
     // Adicionar ao array
@@ -226,6 +235,7 @@
     $('#service-select').val('').trigger('change');
     dateInput.value = '';
     quantityInput.value = '1';
+    if (observationInput) observationInput.value = '';
   }
 
   function removeService(id) {
@@ -255,16 +265,19 @@
 
       // Criar item visual
       const itemHtml = `
-        <div class="service-list-item d-flex justify-content-between align-items-center border rounded p-2 mb-2" style="background: #f8fafc;">
-          <div class="d-flex align-items-center gap-3">
-            <span class="badge bg-primary">📅 ${formattedDate}</span>
-            <strong>${service.name}</strong>
-            <span class="text-muted">Qtd: ${service.quantity}</span>
-            <span class="text-success fw-bold">R$ ${service.total.toFixed(2).replace('.', ',')}</span>
+        <div class="service-list-item border rounded p-2 mb-2" style="background: #f8fafc;">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+              <span class="badge bg-primary">📅 ${formattedDate}</span>
+              <strong>${service.name}</strong>
+              <span class="text-muted">Qtd: ${service.quantity}</span>
+              <span class="text-success fw-bold">R$ ${service.total.toFixed(2).replace('.', ',')}</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeService(${service.id})">
+              <i class="bi bi-trash"></i>
+            </button>
           </div>
-          <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeService(${service.id})">
-            <i class="bi bi-trash"></i>
-          </button>
+          ${service.observation ? `<div class="mt-1" style="font-size:0.85rem; color:#475569;">📝 ${service.observation}</div>` : ''}
         </div>
       `;
       listContainer.insertAdjacentHTML('beforeend', itemHtml);
@@ -274,6 +287,7 @@
         <input type="hidden" name="reserva[reserva_services_attributes][${index}][service_id]" value="${service.serviceId}">
         <input type="hidden" name="reserva[reserva_services_attributes][${index}][service_date]" value="${service.date}">
         <input type="hidden" name="reserva[reserva_services_attributes][${index}][quantity]" value="${service.quantity}">
+        <input type="hidden" name="reserva[reserva_services_attributes][${index}][observation]" value="${service.observation || ''}">
       `;
       hiddenInputsContainer.insertAdjacentHTML('beforeend', hiddenInputsHtml);
     });

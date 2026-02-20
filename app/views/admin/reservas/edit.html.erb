@@ -371,10 +371,12 @@
                 </div>
                 
                 <% if rs.cancelled? %>
-                  <!-- Serviço Cancelado - apenas exibe informações -->
                   <div class="cancelled-info">
                     <p>📅 Data: <%= rs.service_date&.strftime('%d/%m/%Y') || 'N/A' %></p>
                     <p>📦 Quantidade: <%= rs.quantity %></p>
+                    <% if rs.observation.present? %>
+                      <p>📝 Obs: <%= rs.observation %></p>
+                    <% end %>
                     <p style="margin-top: 0.5rem; font-style: italic; color: #991b1b;">
                       Este serviço foi cancelado e não será cobrado.
                     </p>
@@ -382,8 +384,8 @@
                   <%= rsf.hidden_field :service_date %>
                   <%= rsf.hidden_field :quantity %>
                   <%= rsf.hidden_field :status %>
+                  <%= rsf.hidden_field :observation %>
                 <% else %>
-                  <!-- Serviço Ativo - permite edição -->
                   <div class="service-fields-row">
                     <div class="form-group" style="margin-bottom: 0;">
                       <label class="form-label">📅 Data</label>
@@ -397,6 +399,10 @@
                       <label class="form-label">⚡ Ação</label>
                       <%= rsf.select :status, [['Manter Ativo', 'active'], ['🚫 Cancelar Serviço', 'cancelled']], {}, class: 'form-control cancel-select', id: "status_select_#{rs.id}", onchange: "confirmCancel(this, #{rs.id}, '#{rs.service.name}')" %>
                     </div>
+                  </div>
+                  <div class="form-group" style="margin-top: 0.5rem; margin-bottom: 0;">
+                    <label class="form-label">📝 Observação</label>
+                    <%= rsf.text_area :observation, class: 'form-control', rows: 2, placeholder: 'Ex: sem lactose, capricho na decoração...' %>
                   </div>
                 <% end %>
               <% end %>
@@ -440,11 +446,11 @@
                 <% end %>
               </select>
             </div>
-            <div class="col-md-3 mb-2 mb-md-0">
+            <div class="col-md-2 mb-2 mb-md-0">
               <label class="form-label fw-bold">Data *</label>
               <input type="date" id="service-date-input" class="form-control">
             </div>
-            <div class="col-md-2 mb-2 mb-md-0">
+            <div class="col-md-1 mb-2 mb-md-0">
               <label class="form-label fw-bold">Qtd</label>
               <input type="number" id="service-quantity-input" class="form-control" value="1" min="1">
             </div>
@@ -452,6 +458,12 @@
               <button type="button" id="add-service-btn" class="btn btn-success w-100" onclick="addServiceToList()">
                 <i class="bi bi-plus-lg"></i> Adicionar
               </button>
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col-12">
+              <label class="form-label fw-bold">📝 Observação <small class="text-muted fw-normal">(opcional)</small></label>
+              <textarea id="service-observation-input" class="form-control" rows="2" placeholder="Ex: sem lactose, capricho na decoração..."></textarea>
             </div>
           </div>
         </div>
@@ -568,6 +580,7 @@
     const selectEl = document.getElementById('service-select');
     const dateInput = document.getElementById('service-date-input');
     const quantityInput = document.getElementById('service-quantity-input');
+    const observationInput = document.getElementById('service-observation-input');
     
     const serviceId = selectEl.value;
     const selectedOption = selectEl.options[selectEl.selectedIndex];
@@ -575,6 +588,7 @@
     const servicePrice = parseFloat(selectedOption.dataset.price);
     const serviceDate = dateInput.value;
     const quantity = parseInt(quantityInput.value) || 1;
+    const observation = observationInput ? observationInput.value.trim() : '';
 
     // Validações
     if (!serviceId) {
@@ -594,7 +608,8 @@
       price: servicePrice,
       date: serviceDate,
       quantity: quantity,
-      total: servicePrice * quantity
+      total: servicePrice * quantity,
+      observation: observation
     };
 
     // Adicionar ao array
@@ -610,6 +625,7 @@
     $('#service-select').val('').trigger('change');
     dateInput.value = '';
     quantityInput.value = '1';
+    if (observationInput) observationInput.value = '';
   }
 
   function removeService(id) {
@@ -638,16 +654,19 @@
 
       // Criar item visual
       const itemHtml = `
-        <div class="service-list-item d-flex justify-content-between align-items-center border rounded p-2 mb-2" style="background: #f0fdf4;">
-          <div class="d-flex align-items-center gap-3">
-            <span class="badge bg-primary">📅 ${formattedDate}</span>
-            <strong>${service.name}</strong>
-            <span class="text-muted">Qtd: ${service.quantity}</span>
-            <span class="text-success fw-bold">R$ ${service.total.toFixed(2).replace('.', ',')}</span>
+        <div class="service-list-item border rounded p-2 mb-2" style="background: #f0fdf4;">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+              <span class="badge bg-primary">📅 ${formattedDate}</span>
+              <strong>${service.name}</strong>
+              <span class="text-muted">Qtd: ${service.quantity}</span>
+              <span class="text-success fw-bold">R$ ${service.total.toFixed(2).replace('.', ',')}</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeService(${service.id})">
+              <i class="bi bi-trash"></i>
+            </button>
           </div>
-          <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeService(${service.id})">
-            <i class="bi bi-trash"></i>
-          </button>
+          ${service.observation ? `<div class="mt-1" style="font-size:0.85rem; color:#475569;">📝 ${service.observation}</div>` : ''}
         </div>
       `;
       listContainer.insertAdjacentHTML('beforeend', itemHtml);
@@ -661,6 +680,7 @@
         <input type="hidden" name="reserva[reserva_services_attributes][${realIndex}][service_id]" value="${service.serviceId}">
         <input type="hidden" name="reserva[reserva_services_attributes][${realIndex}][service_date]" value="${service.date}">
         <input type="hidden" name="reserva[reserva_services_attributes][${realIndex}][quantity]" value="${service.quantity}">
+        <input type="hidden" name="reserva[reserva_services_attributes][${realIndex}][observation]" value="${service.observation || ''}">
       `;
       hiddenInputsContainer.insertAdjacentHTML('beforeend', hiddenInputsHtml);
     });

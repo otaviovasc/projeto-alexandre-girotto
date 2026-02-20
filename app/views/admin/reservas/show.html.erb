@@ -294,6 +294,11 @@
               </span>
             </div>
           </div>
+          <% if rs.observation.present? %>
+            <div style="font-size: 0.85rem; color: #475569; padding: 0.25rem 0.5rem 0.5rem; border-left: 3px solid #e2e8f0; margin-left: 0.25rem;">
+              📝 <%= rs.observation %>
+            </div>
+          <% end %>
         <% end %>
       </div>
     <% else %>
