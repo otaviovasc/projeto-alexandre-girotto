@@ -347,6 +347,16 @@
         </div>
       </div>
 
+      <!-- Preço Total -->
+      <div class="form-section">
+        <h3 class="form-section-title">💰 Valor da Reserva</h3>
+        <div class="form-group">
+          <%= form.label :total_price, 'Preço Total *', class: 'form-label' %>
+          <small class="text-muted d-block mb-2">Este valor é o total da hospedagem (sem contar serviços extras adicionados abaixo).</small>
+          <%= form.number_field :total_price, class: 'form-control', step: '0.01', required: true, min: '0' %>
+        </div>
+      </div>
+
       <!-- Serviços Existentes -->
       <div class="form-section">
         <h3 class="form-section-title">🛎️ Serviços da Reserva</h3>
