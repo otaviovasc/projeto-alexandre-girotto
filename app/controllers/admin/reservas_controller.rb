@@ -300,7 +300,13 @@ class Admin::ReservasController < ApplicationController
 
       calendar.events.each do |event|
         start_date = event.dtstart.to_date
-        end_date   = event.dtend.to_date - 1.day
+        end_date   = event.dtend.to_date
+
+        # Airbnb adiciona 1 dia de buffer antes e depois no iCal
+        if platform.downcase == 'airbnb'
+          start_date = start_date + 1.day
+          end_date   = end_date - 1.day
+        end
 
         next if start_date < Date.current
         next if start_date > Date.current + 11.months

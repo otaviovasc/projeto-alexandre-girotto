@@ -90,7 +90,7 @@ class Reserva < ApplicationRecord
 
 
   def self.ransackable_attributes(auth_object = nil)
-    ["cabana_id", "created_at", "end_date", "id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "start_date", "total_price", "updated_at", "user_id"]
+    ["cabana_id", "created_at", "end_date", "id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "start_date", "total_price", "updated_at", "user_id"]
   end
 
   private
