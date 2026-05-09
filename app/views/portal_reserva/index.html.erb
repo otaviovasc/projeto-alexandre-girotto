@@ -1,0 +1,93 @@
+<%# Portal da Reserva - Tela de Acesso %>
+<% content_for :title, "Meus serviços - Villaggio Girotto" %>
+
+<div class="min-h-screen bg-gradient-to-br from-[#1a2e1a] via-[#2d4a2d] to-[#1a2e1a] flex items-center justify-center px-4 py-12">
+
+  <!-- Card principal -->
+  <div class="w-full max-w-md">
+
+    <!-- Logo / Header -->
+    <div class="text-center mb-10">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm mb-4 border border-white/20 shadow-xl">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-[#c8a96e]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <h1 class="text-3xl font-bold text-white tracking-tight">Meus serviços</h1>
+      <p class="text-white/60 mt-2 text-sm">Acesse e escolha seus serviços exclusivos</p>
+    </div>
+
+    <!-- Flash messages -->
+    <% if flash[:alert].present? %>
+      <div class="mb-6 bg-red-500/20 border border-red-400/40 text-red-200 text-sm rounded-xl px-4 py-3 flex items-start gap-2 backdrop-blur-sm">
+        <svg class="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 4a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V10a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        <%= flash[:alert] %>
+      </div>
+    <% end %>
+
+    <!-- Card do formulário -->
+    <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl p-8">
+
+      <%= form_with url: portal_reserva_acessar_path, method: :post, local: true, class: "space-y-6" do |f| %>
+
+        <!-- Campo: Nome ou Email -->
+        <div>
+          <label class="block text-white/80 text-xs font-semibold uppercase tracking-widest mb-2">
+            Primeiro nome ou e-mail enviado no momento da reserva
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg class="w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <%= f.text_field :identificador,
+                placeholder: "Primeiro nome ou e-mail enviado no momento da reserva",
+                required: true,
+                autocomplete: "off",
+                class: "w-full bg-white/10 border border-white/25 text-white placeholder-white/30 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] transition" %>
+          </div>
+          <p class="text-white/40 text-xs mt-1.5">Primeiro nome ou e-mail enviado no momento da reserva</p>
+        </div>
+
+        <!-- Campo: Código da Reserva -->
+        <div>
+          <label class="block text-white/80 text-xs font-semibold uppercase tracking-widest mb-2">
+            CÓDIGO DA RESERVA
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg class="w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+              </svg>
+            </div>
+            <%= f.number_field :reserva_id,
+                placeholder: "Ex: 42",
+                required: true,
+                min: 1,
+                class: "w-full bg-white/10 border border-white/25 text-white placeholder-white/30 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] transition" %>
+          </div>
+          <p class="text-white/40 text-xs mt-1.5">Código enviado no grupo de estadia</p>
+        </div>
+
+        <!-- Botão -->
+        <button type="submit"
+          class="w-full bg-[#c8a96e] hover:bg-[#b8975e] text-white font-semibold py-3.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm tracking-wide shadow-lg hover:shadow-[#c8a96e]/30 hover:-translate-y-0.5">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+          Acessar meus serviços
+        </button>
+
+      <% end %>
+    </div>
+
+    <!-- Rodapé -->
+    <p class="text-center text-white/30 text-xs mt-8">
+      Precisa de ajuda? Entre em contato com o Villaggio Girotto.
+    </p>
+
+  </div>
+</div>

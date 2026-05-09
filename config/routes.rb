@@ -69,6 +69,8 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :service_purchases, only: [:index]
+
     resources :filials do
       resources :items do
         collection do
@@ -133,6 +135,17 @@ Rails.application.routes.draw do
   namespace :public do
    get "cabana/:id", to: "calendar#export", as: :calendar_export
   end
+
+  # Portal da Reserva (acesso sem login obrigatório via ID + nome/email)
+  get  'minha-reserva',          to: 'portal_reserva#index',    as: :portal_reserva
+  post 'minha-reserva/acessar',  to: 'portal_reserva#acessar',  as: :portal_reserva_acessar
+  get  'minha-reserva/servicos', to: 'portal_reserva#servicos', as: :portal_reserva_servicos
+  get  'minha-reserva/confirmacao', to: 'portal_reserva#confirmacao', as: :portal_reserva_confirmacao
+  get  'minha-reserva/confirmacao/status', to: 'portal_reserva#confirmacao_status', as: :portal_reserva_confirmacao_status
+  post 'minha-reserva/adicionar',to: 'portal_reserva#adicionar',as: :portal_reserva_adicionar
+  delete 'minha-reserva/remover/:id', to: 'portal_reserva#remover', as: :portal_reserva_remover
+  post 'minha-reserva/pagar',    to: 'portal_reserva#pagar',    as: :portal_reserva_pagar
+  delete 'minha-reserva/sair',   to: 'portal_reserva#sair',    as: :portal_reserva_sair
 
   # Unlogged route
   root to: 'home#root'

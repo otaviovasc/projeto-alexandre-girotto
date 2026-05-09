@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_01_19_205132) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_01_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -62,8 +62,18 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_19_205132) do
     t.integer "quantity"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "payment_status"
+    t.string "payment_link_id"
+    t.string "payment_link_url"
+    t.string "payment_order_code"
+    t.datetime "payment_expires_at"
+    t.decimal "unit_price_paid", precision: 10, scale: 2
+    t.decimal "total_paid", precision: 10, scale: 2
+    t.datetime "paid_at"
     t.index ["cart_id"], name: "index_cart_items_on_cart_id"
     t.index ["item_id"], name: "index_cart_items_on_item_id"
+    t.index ["payment_link_id"], name: "index_cart_items_on_payment_link_id"
+    t.index ["payment_order_code"], name: "index_cart_items_on_payment_order_code"
     t.index ["reserva_id"], name: "index_cart_items_on_reserva_id"
     t.index ["service_id"], name: "index_cart_items_on_service_id"
   end
@@ -162,6 +172,17 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_19_205132) do
     t.datetime "updated_at", null: false
     t.date "service_date"
     t.string "status", default: "active"
+    t.text "observation"
+    t.string "payment_status"
+    t.string "payment_link_id"
+    t.string "payment_link_url"
+    t.string "payment_order_code"
+    t.datetime "payment_expires_at"
+    t.decimal "unit_price_paid", precision: 10, scale: 2
+    t.decimal "total_paid", precision: 10, scale: 2
+    t.datetime "paid_at"
+    t.index ["payment_link_id"], name: "index_reserva_services_on_payment_link_id"
+    t.index ["payment_order_code"], name: "index_reserva_services_on_payment_order_code"
     t.index ["reserva_id"], name: "index_reserva_services_on_reserva_id"
     t.index ["service_id"], name: "index_reserva_services_on_service_id"
   end
@@ -180,6 +201,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_19_205132) do
     t.datetime "payment_expires_at"
     t.text "observation"
     t.string "origem"
+    t.string "platform_uid"
+    t.index ["cabana_id", "platform_uid"], name: "index_reservas_on_cabana_id_and_platform_uid"
     t.index ["cabana_id"], name: "index_reservas_on_cabana_id"
     t.index ["user_id"], name: "index_reservas_on_user_id"
   end

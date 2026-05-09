@@ -26,6 +26,24 @@ class User < ApplicationRecord
   scope :partners, -> { where(partner: true) }
   scope :non_partners, -> { where(partner: false) }
 
+  def sync_filial_from_cabana!(cabana)
+    return if cabana.blank? || cabana.filial_id.blank? || filial_id == cabana.filial_id
+
+    update_column(:filial_id, cabana.filial_id)
+  end
+
+  def sync_filial_from_latest_reserva!
+    return unless client?
+
+    reserva = reservas
+                .includes(cabana: :filial)
+                .where(payment_status: %w[paid waiting_payment pending])
+                .order(created_at: :desc)
+                .first
+
+    sync_filial_from_cabana!(reserva&.cabana)
+  end
+
   # Set default role to client
   after_initialize do
     if self.new_record?

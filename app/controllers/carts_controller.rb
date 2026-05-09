@@ -5,11 +5,11 @@ class CartsController < ApplicationController
 
   def add_item
     if params[:item_id].present?
-      item = Item.find(params[:item_id])
+      item = @reserva.cabana.filial.items.find(params[:item_id])
       @cart_item = @cart.cart_items.find_or_initialize_by(item: item)
       redirect_fallback = items_marketplace_index_path
     elsif params[:service_id].present?
-      service = Service.find(params[:service_id])
+      service = @reserva.cabana.filial.services.find(params[:service_id])
       @cart_item = @cart.cart_items.find_or_initialize_by(service: service)
       redirect_fallback = services_marketplace_index_path
     end
@@ -26,10 +26,10 @@ class CartsController < ApplicationController
   def update_item
     redirect_fallback = checkout_cart_path
     if params[:item_id].present?
-      item = Item.find(params[:item_id])
+      item = @reserva.cabana.filial.items.find(params[:item_id])
       @cart_item = @cart.cart_items.find_or_initialize_by(item: item)
     elsif params[:service_id].present?
-      service = Service.find(params[:service_id])
+      service = @reserva.cabana.filial.services.find(params[:service_id])
       @cart_item = @cart.cart_items.find_or_initialize_by(service: service)
     end
 
@@ -50,34 +50,37 @@ class CartsController < ApplicationController
 
   # Display checkout page
   def checkout
-    @cart_items = @cart.cart_items.includes(:item, :service)
+    @cart_items = payable_cart_items.includes(:item, :service)
   end
 
   # Payment page action
   def payment
+    @pending_payment = active_pending_payment
     @cart_items = @cart.cart_items.includes(:item, :service)
   end
 
-  # Simulate payment and finalize reservation
   def checkout_process
-
-    @cart_items = @cart.cart_items
-
-    # Link items and services to the current user's reservation
-    reserva = current_user.reservas
-              .where(payment_status: 'paid')  # Filtra pelas reservas pagas
-              .order(created_at: :desc)       # Ordena pela data de criação, mais recente primeiro
-              .first                          # Pega a mais recente
-
-    @cart_items.each do |cart_item|
-      if cart_item.item.present?
-        ReservaItem.create(reserva: reserva, item: cart_item.item, quantity: cart_item.quantity)
-      elsif cart_item.service.present?
-        ReservaService.create(reserva: reserva, service: cart_item.service, quantity: cart_item.quantity)
-      end
+    pending_payment = active_pending_payment
+    if pending_payment.present? && payable_cart_items.empty?
+      redirect_to pending_payment.payment_link_url, allow_other_host: true, status: :see_other
+      return
     end
 
-    redirect_to payment_cart_path, notice: 'Pedido concluído! Mande o comprovante no Whatsapp.'
+    @cart_items = payable_cart_items.includes(:item, :service, reserva: { cabana: :filial })
+    if @cart_items.empty?
+      redirect_to checkout_cart_path, alert: 'Seu carrinho esta vazio.'
+      return
+    end
+
+    payment_link = create_cart_payment_link(@cart_items)
+
+    redirect_to payment_link['url'], allow_other_host: true, status: :see_other
+  rescue PagarmePaymentLinkService::Error => e
+    Rails.logger.error("Pagar.me cart payment error: #{e.message}")
+    redirect_to checkout_cart_path, alert: e.message
+  rescue => e
+    Rails.logger.error("Unexpected cart payment error: #{e.message}")
+    redirect_to checkout_cart_path, alert: 'Nao foi possivel iniciar o pagamento. Tente novamente.'
   end
 
   private
@@ -91,7 +94,77 @@ class CartsController < ApplicationController
       payment_status: 'paid'
     )
     unless @reserva
-      redirect_to root_path, alert: 'Você precisa de uma reserva paga para acessar a loja.'
+      redirect_to root_path, alert: 'Voce precisa de uma reserva paga para acessar a loja.'
     end
+  end
+
+  def payable_cart_items
+    @cart.cart_items.where(payment_status: [nil, 'refused'])
+  end
+
+  def active_pending_payment
+    @cart.cart_items
+         .where(payment_status: 'waiting_payment')
+         .where('payment_expires_at IS NULL OR payment_expires_at > ?', Time.current)
+         .where.not(payment_link_url: nil)
+         .first
+  end
+
+  def create_cart_payment_link(cart_items)
+    order_code = "cart-#{@cart.id}-#{Time.current.to_i}"
+    expires_in = 30
+    payment_link = PagarmePaymentLinkService.new(
+      api_key: @reserva.cabana.filial.pagarme_api_key_for_payments,
+      name: "Carrinho Reserva #{@reserva.id}",
+      order_code: order_code,
+      items: pagarme_cart_items(cart_items),
+      success_url: payment_cart_url,
+      failure_url: checkout_cart_url,
+      expires_in: expires_in
+    ).call
+
+    payment_expires_at = expires_in.minutes.from_now
+    now = Time.current
+
+    cart_items.find_each do |cart_item|
+      product = cart_item.item || cart_item.service
+      unit_price = product.price || 0
+      quantity = cart_item.quantity || 1
+
+      cart_item.update_columns(
+        payment_status: 'waiting_payment',
+        payment_link_id: payment_link['id'],
+        payment_link_url: payment_link['url'],
+        payment_order_code: order_code,
+        payment_expires_at: payment_expires_at,
+        unit_price_paid: unit_price,
+        total_paid: unit_price * quantity,
+        updated_at: now
+      )
+    end
+
+    payment_link
+  end
+
+  def pagarme_cart_items(cart_items)
+    items = cart_items.map do |cart_item|
+      product = cart_item.item || cart_item.service
+
+      {
+        id: cart_item.id,
+        name: product.name,
+        unit_price: product.price,
+        quantity: cart_item.quantity
+      }
+    end
+
+    return items if items.size <= 10
+
+    [{
+      id: "cart-#{@cart.id}",
+      name: "Itens adicionais - Reserva #{@reserva.id}",
+      unit_price: cart_items.sum { |cart_item| (cart_item.item&.price || cart_item.service&.price || 0) * cart_item.quantity },
+      quantity: 1
+    }]
   end
 end

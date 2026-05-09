@@ -1,195 +1,57 @@
 <div class="bg-white rounded-md flex flex-col w-full mx-auto p-4 relative">
-
-  <!-- Ícone de voltar -->
-  <%= link_to checkout_cart_path, class: "absolute left-2 inline-flex items-center justify-center w-10 h-10
-                        rounded-full border border-verde-escuro text-verde-escuro" do %>
+  <%= link_to checkout_cart_path, class: "absolute left-2 inline-flex items-center justify-center w-10 h-10 rounded-full border border-verde-escuro text-verde-escuro" do %>
     <i class="fa-solid fa-arrow-left"></i>
   <% end %>
 
-  <!-- Mensagem de confirmação -->
   <p class="text-center text-4xl font-alice text-verde-escuro">
-    Leia as instruções abaixo para finalizar seu pedido.
+    Pagamento
   </p>
 </div>
 
-
 <div class="bg-white rounded-md w-full max-w-4xl mx-auto p-6 flex flex-col gap-6 shadow-md">
-  <%# TOTAL %>
-  <div class="flex justify-between items-center border-t border-gray-300 pt-4">
-    <h2 class="font-alice text-lg text-verde-escuro">
-      <i class="bi bi-cash-stack"></i> Total do Pedido
-    </h2>
-    <p class="text-xl font-bold text-gray-800">
-      <%= number_to_currency(@cart_items.sum { |cart_item| (cart_item.service&.price || cart_item.item&.price || 0) * cart_item.quantity }) %>
-    </p>
-  </div>
-  <!-- Instruções de Pagamento -->
-  <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
-    <h2 class="font-alice text-lg text-verde-escuro">
-      <i class="bi bi-wallet2"></i> Como finalizar seu pagamento
-    </h2>
-    <ul class="list-decimal ml-6 text-gray-600 text-sm lg:text-base">
-      <li>Aperte no <strong>icone</strong> abaixo para ser redirecionado para o <strong>WhatsApp.</strong></li>
-      <li><strong>Preencha</strong> as informações da mensagem <strong>pré-pronta.</strong></li>
-      <li>Envie a mensagem e <strong>finalize</strong> diretamente com o <strong>atendimento.</strong></li>
-    </ul>
-  </div>
-
-  <!-- Serviços e Itens -->
-  <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
-    <h2 class="font-alice text-lg text-verde-escuro">
-      <i class="bi bi-tools"></i> Serviços no Carrinho
-    </h2>
-    <% if @cart_items.any? %>
-      <ul class="list-disc ml-6 text-gray-600">
-        <% @cart_items.each do |cart_item| %>
-          <% if cart_item.service.present? %>
-            <li>
-              <strong>Serviço:</strong> <%= cart_item.service.name %>,
-              <strong>Preço:</strong> <%= number_to_currency(cart_item.service.price) %>,
-              <strong>Quantidade:</strong> <%= cart_item.quantity %>
-            </li>
-          <% end %>
-        <% end %>
-      </ul>
-    <% else %>
-      <p class="text-gray-600">Nenhum serviço adicionado ao carrinho.</p>
-    <% end %>
-    <div class="flex justify-center w-full">
-      <%= link_to '<i class="bi bi-basket2"></i> &nbsp Adicionar mais serviços.'.html_safe, services_marketplace_index_path,
-                  class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition flex items-center gap-2' %>
+  <% if @pending_payment.present? %>
+    <div class="flex flex-col gap-3 text-center">
+      <h2 class="font-alice text-2xl text-verde-escuro">Aguardando confirmação do pagamento</h2>
+      <p class="text-gray-600">
+        Seu pedido foi enviado para a Pagar.me. Assim que o pagamento por Pix ou cartão for confirmado,
+        os itens serão vinculados automaticamente à sua reserva.
+      </p>
+      <%= link_to "Abrir link de pagamento", @pending_payment.payment_link_url,
+                  class: "bg-botao-verde text-white px-6 py-3 rounded-md text-sm font-dm uppercase hover:bg-botao-verde-hover transition mx-auto",
+                  target: "_blank", rel: "noopener" %>
     </div>
-  </div>
+  <% else %>
+    <div class="flex flex-col gap-3 text-center">
+      <h2 class="font-alice text-2xl text-verde-escuro">Pagamento recebido</h2>
+      <p class="text-gray-600">
+        Se o carrinho estiver vazio, seu pagamento já foi processado e os itens foram adicionados à reserva.
+      </p>
+    </div>
+  <% end %>
 
-  <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
-    <h2 class="font-alice text-lg text-verde-escuro">
-      <i class="bi bi-box"></i> Itens no Carrinho
-    </h2>
-    <% if @cart_items.any? %>
+  <% if @cart_items.any? %>
+    <div class="flex justify-between items-center border-t border-gray-300 pt-4">
+      <h2 class="font-alice text-lg text-verde-escuro">
+        <i class="bi bi-cash-stack"></i> Total do pedido
+      </h2>
+      <p class="text-xl font-bold text-gray-800">
+        <%= number_to_currency(@cart_items.sum { |cart_item| (cart_item.service&.price || cart_item.item&.price || 0) * cart_item.quantity }) %>
+      </p>
+    </div>
+
+    <div class="flex flex-col gap-4 border-t border-gray-300 pt-4">
+      <h2 class="font-alice text-lg text-verde-escuro">
+        <i class="bi bi-bag-check"></i> Itens do pedido
+      </h2>
       <ul class="list-disc ml-6 text-gray-600">
         <% @cart_items.each do |cart_item| %>
-          <% if cart_item.item.present? %>
-            <li>
-              <strong>Item:</strong> <%= cart_item.item.name %>,
-              <strong>Preço:</strong> <%= number_to_currency(cart_item.item.price) %>,
-              <strong>Quantidade:</strong> <%= cart_item.quantity %>
-            </li>
-          <% end %>
+          <li>
+            <strong><%= cart_item.service&.name || cart_item.item&.name %></strong>,
+            <strong>Preço:</strong> <%= number_to_currency(cart_item.service&.price || cart_item.item&.price) %>,
+            <strong>Quantidade:</strong> <%= cart_item.quantity %>
+          </li>
         <% end %>
       </ul>
-      <div class="flex justify-center w-full">
-        <%= link_to '<i class="bi bi-bag-check"></i> &nbsp Adicionar mais itens.'.html_safe, items_marketplace_index_path,
-                    class: 'bg-verde-escuro text-white px-4 py-2 rounded-md text-sm font-dm hover:bg-verde-escuro-hover transition flex items-center gap-2' %>
-      </div>
-    <% else %>
-      <p class="text-gray-600">Nenhum item adicionado ao carrinho.</p>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
 </div>
-
-<% total = @cart_items.sum { |cart_item| (cart_item.service&.price || cart_item.item&.price || 0) * cart_item.quantity } %>
-
-<% message = "RESUMO DA COMPRA\n\n" %>
-
-<% message += "*Método de pagamento:* (Cartão com juros / PIX)\n\n" %>
-
-<% @cart_items.each_with_index do |cart_item, index| %>
-  <% message += "##{index + 1} *#{cart_item.service&.name || cart_item.item&.name}*\n" %>
-  <% message += "*Qtd.:* #{cart_item.quantity}\n" %>
-  <% message += "*Dia/Horário:* (Preencher)\n" %>
-  <% message += "*Obs. extras:* (Preencher)\n\n" %>
-<% end %>
-
-<% message += "*Total do Pedido:* #{number_to_currency(total)}\n\n" %>
-<% message += "Segue o comprovante de pagamento." %>
-
-<% whatsapp_url = "https://wa.me/`553599085300`?text=#{URI.encode_www_form_component(message)}" %>
-
-<div class="wh-api" style="position: fixed; bottom: 10vh; right: 10vh; z-index: 100;">
-  <div class="wh-fixed whatsapp-pulse" style="margin-right: 15px; margin-bottom: 15px; width: 60px; height: 60px; background: #10b418; position: fixed; text-align: center; color: #ffffff; cursor: pointer; border-radius: 50%; z-index: 99; display: inline-block; line-height: 65px;">
-    <a href="<%= whatsapp_url %>" target="_blank" style="display: block; text-decoration: none;">
-      <button class="wh-ap-btn" style="outline: none; width: 60px; height: 60px; border: 0; background-color: #2ecc71; padding: 0; border-radius: 100%; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24); cursor: pointer; transition: opacity 0.3s, background 0.3s, box-shadow 0.3s; position: relative;">
-        <i class="bi bi-whatsapp text-3xl"></i>
-      </button>
-    </a>
-  </div>
-</div>
-
-
-  <style>
-      @-webkit-keyframes pulse {
-          0% {
-              -webkit-transform: scale(0);
-              opacity: 0;
-          }
-          25% {
-              -webkit-transform: scale(0.3);
-              opacity: 1;
-          }
-          50% {
-              -webkit-transform: scale(0.6);
-              opacity: 0.6;
-          }
-          75% {
-              -webkit-transform: scale(0.9);
-              opacity: 0.3;
-          }
-          100% {
-              -webkit-transform: scale(1);
-              opacity: 0;
-          }
-      }
-
-      @keyframes pulse {
-          0% {
-              transform: scale(0);
-              opacity: 0;
-          }
-          25% {
-              transform: scale(0.3);
-              opacity: 1;
-          }
-          50% {
-              transform: scale(0.6);
-              opacity: 0.6;
-          }
-          75% {
-              transform: scale(0.9);
-              opacity: 0.3;
-          }
-          100% {
-              transform: scale(1);
-              opacity: 0;
-          }
-      }
-
-      .whatsapp-pulse:before {
-          position: absolute;
-          content: " ";
-          z-index: -1;
-          bottom: -15px;
-          right: -15px;
-          background-color: #10b418;
-          width: 90px;
-          height: 90px;
-          border-radius: 100%;
-          animation-fill-mode: both;
-          -webkit-animation-fill-mode: both;
-          opacity: 0.6;
-          -webkit-animation: pulse 1s ease-out;
-          animation: pulse 1.8s ease-out;
-          -webkit-animation-iteration-count: infinite;
-          animation-iteration-count: infinite;
-      }
-
-      .wh-fixed > a:hover button.wh-ap-btn::before {
-          opacity: 1;
-          width: auto;
-          padding-top: 7px;
-          padding-left: 10px;
-          padding-right: 10px;
-          width: 100px;
-      }
-  </style>
-
-<!-- wppbutton -->

@@ -64,6 +64,8 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   # Redireciona para auto_create se houver dados de reserva na sessão
   def after_sign_up_path_for(resource)
+    sync_user_filial_after_sign_in(resource)
+
     if session[:reserva_params].present? && session[:cabana_id].present?
       auto_create_reservas_path
     else
@@ -73,6 +75,8 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   # Se sua aplicação utiliza contas inativas (ex.: confirmação por e-mail), sobrescreva também este método
   def after_inactive_sign_up_path_for(resource)
+    sync_user_filial_after_sign_in(resource)
+
     if session[:reserva_params].present? && session[:cabana_id].present?
       auto_create_reservas_path
     else

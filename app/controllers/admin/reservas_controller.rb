@@ -77,7 +77,7 @@ class Admin::ReservasController < ApplicationController
 
     if @reserva.save
       # Sincroniza automaticamente com Google Sheets ao criar
-      GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc))
+      GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)) if GoogleSheetsExportService.configured?
       
       # UserMailer.reserva_paid(@user, @reserva).deliver_now
       # UserMailer.notify_adm(@user, @reserva).deliver_now
@@ -100,6 +100,8 @@ class Admin::ReservasController < ApplicationController
         user = @reserva.user
         user.update(partner: params[:reserva][:user_attributes][:partner])
       end
+
+      GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)) if GoogleSheetsExportService.configured?
       
       redirect_to admin_reservas_summary_path, notice: 'Reserva foi atualizada com sucesso.'
     else
@@ -260,6 +262,7 @@ class Admin::ReservasController < ApplicationController
 
   def update_observation
     if @reserva.update_column(:observation, params[:observation])
+      GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)) if GoogleSheetsExportService.configured?
       flash[:notice] = "Observação atualizada com sucesso"
     else
       flash[:alert] = "Erro ao atualizar observação"
@@ -357,7 +360,7 @@ class Admin::ReservasController < ApplicationController
 
       # Sincroniza automaticamente com Google Sheets após importação
       if count > 0
-        GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc))
+        GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)) if GoogleSheetsExportService.configured?
         redirect_to admin_reservas_summary_path, notice: "#{count} reservas importadas do #{platform.capitalize} para #{cabana.name} e sincronizadas com Google Sheets!"
       else
         redirect_to admin_reservas_summary_path, notice: "Nenhuma nova reserva encontrada no #{platform.capitalize} para #{cabana.name}."

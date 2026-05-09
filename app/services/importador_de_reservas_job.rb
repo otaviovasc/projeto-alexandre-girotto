@@ -96,10 +96,15 @@ class ImportadorDeReservasJob
             )
 
             reservas_obsoletas.each do |r|
-              Rails.logger.info "🗑️ Reserva #{r.id} removida (cancelada na plataforma): #{r.start_date} → #{r.end_date} (#{platform}, cabana #{cabana.id}, UID: #{r.platform_uid})"
+              Rails.logger.info "Reserva #{r.id} ausente no calendario #{platform}: #{r.start_date} -> #{r.end_date} (cabana #{cabana.id}, UID: #{r.platform_uid})"
             end
 
-            reservas_obsoletas.destroy_all
+            if cancel_missing_imported_reservas?
+              reservas_obsoletas.update_all(
+                payment_status: 'canceled',
+                updated_at: Time.current
+              )
+            end
           end
 
         rescue => e
@@ -120,5 +125,8 @@ class ImportadorDeReservasJob
       Rails.logger.error "Erro ao sincronizar com Google Sheets: #{e.message}"
     end
   end
-end
 
+  def self.cancel_missing_imported_reservas?
+    ActiveModel::Type::Boolean.new.cast(ENV.fetch('IMPORT_CANCEL_MISSING_RESERVAS', 'false'))
+  end
+end

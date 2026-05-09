@@ -17,10 +17,23 @@ class ApplicationController < ActionController::Base
   end
 
   def after_sign_in_path_for(resource)
+    sync_user_filial_after_sign_in(resource)
+
     if session[:reserva_params].present? && session[:cabana_id].present?
       auto_create_reservas_path
     else
       stored_location_for(resource) || root_path
+    end
+  end
+
+  def sync_user_filial_after_sign_in(resource)
+    return unless resource.respond_to?(:sync_filial_from_cabana!)
+
+    if session[:cabana_id].present?
+      cabana = Cabana.find_by(id: session[:cabana_id])
+      resource.sync_filial_from_cabana!(cabana)
+    elsif resource.respond_to?(:sync_filial_from_latest_reserva!)
+      resource.sync_filial_from_latest_reserva!
     end
   end
 end

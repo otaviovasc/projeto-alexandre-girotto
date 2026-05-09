@@ -109,6 +109,7 @@
   .icon-reservas { background: #f43f5e; }
   .icon-funil { background: #0ea5e9; }
   .icon-services { background: #f59e0b; }
+  .icon-purchases { background: #14b8a6; }
   .icon-home { background: #8b5cf6; }
   .icon-client { background: #64748b; }
 
@@ -260,6 +261,18 @@
       <h3 class="card-title">Serviços</h3>
       <p class="card-description">Gerencie serviços oferecidos</p>
       <%= link_to admin_services_path, class: 'card-btn card-btn-primary' do %>
+        Acessar →
+      <% end %>
+    </div>
+
+    <!-- Compras de Serviços -->
+    <div class="dash-card">
+      <div class="card-icon icon-purchases">
+        <i class="bi bi-receipt-cutoff"></i>
+      </div>
+      <h3 class="card-title">Compras de Serviços</h3>
+      <p class="card-description">Acompanhe serviços pagos pelos clientes</p>
+      <%= link_to admin_service_purchases_path, class: 'card-btn card-btn-primary' do %>
         Acessar →
       <% end %>
     </div>

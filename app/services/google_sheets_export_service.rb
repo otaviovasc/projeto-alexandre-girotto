@@ -29,6 +29,10 @@ class GoogleSheetsExportService
       new.delete_by_id(reserva_id)
     end
 
+    def export_service_purchases(reserva_services)
+      new.export_service_purchases(reserva_services)
+    end
+
     def configured?
       spreadsheet_id.present? && (credentials_json_content.present? || (credentials_path.present? && File.exist?(credentials_path)))
     end
@@ -48,6 +52,47 @@ class GoogleSheetsExportService
 
   def initialize
     @spreadsheet_id = self.class.spreadsheet_id
+  end
+
+  def export_service_purchases(reserva_services)
+    return { success: false, error: 'Google Sheets nao configurado' } unless self.class.configured?
+
+    reserva_services = Array(reserva_services).compact
+    return { success: true, rows_updated: 0, message: 'Nenhuma compra de servico para exportar' } if reserva_services.empty?
+
+    begin
+      require 'google/apis/sheets_v4'
+      require 'googleauth'
+      require 'stringio'
+
+      service = Google::Apis::SheetsV4::SheetsService.new
+      service.client_options.application_name = 'Villaggio Girotto'
+      service.authorization = authorize
+
+      sheet_title = 'Compras de Servicos'
+      ensure_sheet_exists!(service, sheet_title)
+      ensure_service_purchases_headers!(service, sheet_title)
+
+      rows = service_purchase_rows(reserva_services)
+      value_range = Google::Apis::SheetsV4::ValueRange.new(values: rows)
+
+      result = service.append_spreadsheet_value(
+        @spreadsheet_id,
+        quoted_range(sheet_title, 'A:E'),
+        value_range,
+        value_input_option: 'USER_ENTERED',
+        insert_data_option: 'INSERT_ROWS'
+      )
+
+      {
+        success: true,
+        rows_updated: result.updates&.updated_rows || rows.size,
+        message: "#{rows.size} compra(s) de servico exportada(s) para Google Sheets"
+      }
+    rescue => e
+      Rails.logger.error "Google Sheets Service Purchases Export Error: #{e.message}"
+      { success: false, error: e.message }
+    end
   end
 
   def export(reservas)
@@ -164,6 +209,61 @@ class GoogleSheetsExportService
   end
 
   private
+
+  def ensure_sheet_exists!(service, sheet_title)
+    spreadsheet = service.get_spreadsheet(@spreadsheet_id)
+    sheet_exists = spreadsheet.sheets.any? { |sheet| sheet.properties.title == sheet_title }
+    return if sheet_exists
+
+    request = Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest.new(
+      requests: [
+        {
+          add_sheet: {
+            properties: {
+              title: sheet_title
+            }
+          }
+        }
+      ]
+    )
+
+    service.batch_update_spreadsheet(@spreadsheet_id, request)
+  end
+
+  def ensure_service_purchases_headers!(service, sheet_title)
+    response = service.get_spreadsheet_values(@spreadsheet_id, quoted_range(sheet_title, 'A1:E1'))
+    return if response.values.present?
+
+    headers = [['ID DA RESERVA', 'NOME DO CLIENTE', 'SERVICO', 'QUANTIDADE', 'VALOR']]
+    value_range = Google::Apis::SheetsV4::ValueRange.new(values: headers)
+
+    service.update_spreadsheet_value(
+      @spreadsheet_id,
+      quoted_range(sheet_title, 'A1:E1'),
+      value_range,
+      value_input_option: 'USER_ENTERED'
+    )
+  end
+
+  def service_purchase_rows(reserva_services)
+    reserva_services.map do |reserva_service|
+      [
+        reserva_service.reserva_id,
+        reserva_service.reserva.user.name,
+        reserva_service.service.name,
+        reserva_service.quantity,
+        format_currency(reserva_service.total_paid || ((reserva_service.unit_price_paid || reserva_service.service.price || 0) * (reserva_service.quantity || 1)))
+      ]
+    end
+  end
+
+  def format_currency(value)
+    "R$ #{format('%.2f', value || 0).tr('.', ',')}"
+  end
+
+  def quoted_range(sheet_title, range)
+    "'#{sheet_title}'!#{range}"
+  end
 
   def authorize
     json_io = if self.class.credentials_json_content.present?

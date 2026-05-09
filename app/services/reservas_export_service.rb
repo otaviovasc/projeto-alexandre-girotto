@@ -63,7 +63,8 @@ class ReservasExportService
       'Status Serviço',
       'Valor Serviço',
       'Observação',
-      'Data Criação'
+      'Data Criação',
+      'Observação de Serviços'
     ]
   end
 
@@ -89,7 +90,8 @@ class ReservasExportService
       '-',
       '-',
       reserva.observation,
-      format_datetime(reserva.created_at)
+      format_datetime(reserva.created_at),
+      '-'
     ]
   end
 
@@ -113,7 +115,8 @@ class ReservasExportService
       rs.cancelled? ? 'Cancelado' : 'Ativo',
       format_currency(rs.service&.price.to_f * rs.quantity.to_i),
       '-',
-      format_datetime(rs.created_at)
+      format_datetime(rs.created_at),
+      rs.observation.presence || '-'
     ]
   end
 

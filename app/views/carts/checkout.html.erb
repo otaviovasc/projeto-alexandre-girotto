@@ -44,7 +44,7 @@
 
     <!-- Botão de Checkout -->
     <div class="flex justify-center border-gray-300 pt-4">
-      <%= form_with url: checkout_process_path, method: :post, local: true do %>
+      <%= form_with url: checkout_process_path, method: :post, local: true, data: { turbo: false } do %>
         <%= submit_tag 'Finalizar Compra', class: 'bg-botao-verde text-white px-6 py-3 rounded-md text-sm font-dm uppercase hover:bg-botao-verde-hover transition' %>
       <% end %>
     </div>

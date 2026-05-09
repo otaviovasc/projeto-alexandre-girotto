@@ -1,6 +1,3 @@
-require 'httparty'
-require 'base64'
-
 class ReservasController < ApplicationController
   layout "clientside"
   before_action :check_reservations_on_new, only: [:new]
@@ -47,6 +44,7 @@ class ReservasController < ApplicationController
 
     # Se o usuário estiver logado, cria a reserva normalmente
     @cabana  = Cabana.find(params[:cabana_id])
+    current_user.sync_filial_from_cabana!(@cabana)
     @reserva = @cabana.reservas.new(reserva_params)
     @reserva.user = current_user
 
@@ -80,6 +78,7 @@ class ReservasController < ApplicationController
 
     cabana = Cabana.find(session.delete(:cabana_id))
     reserva_data = session.delete(:reserva_params)
+    current_user.sync_filial_from_cabana!(cabana)
 
     # Removendo os campos extras que não fazem parte do modelo (mas são usados para lógica)
     include_breakfast = reserva_data.delete("include_breakfast")
@@ -115,84 +114,37 @@ class ReservasController < ApplicationController
       return
     end
 
-    api_key = @reserva.cabana.filial.pagarme_api_key
-    base64_credentials = Base64.strict_encode64("#{api_key}:password")
+    expires_in = 10
+    payment_link = PagarmePaymentLinkService.new(
+      api_key: @reserva.cabana.filial.pagarme_api_key_for_payments,
+      name: "Reserva #{@reserva.id}",
+      order_code: "reserva-#{@reserva.id}",
+      items: [{
+        id: @reserva.id,
+        name: "Reserva de #{@reserva.cabana.name}",
+        unit_price: @reserva.total_price,
+        quantity: 1
+      }],
+      success_url: reserva_url(@reserva),
+      failure_url: reserva_url(@reserva),
+      expires_in: expires_in
+    ).call
 
-    success_url = reserva_url(@reserva)  # URL to redirect after successful payment
-    failure_url = reserva_url(@reserva)  # You can customize this if needed for failed payments
+    UserMailer.reserva_created(current_user, @reserva).deliver_now
+    UserMailer.notify_adm(current_user, @reserva).deliver_now
 
-    amount_in_cents = (@reserva.total_price * 100).to_i
-
-    response = HTTParty.post(
-      'https://api.pagar.me/core/v5/paymentlinks', # https://sdx-api.pagar.me/core/v5/paymentlinks
-      headers: {
-        'Authorization' => "Basic #{base64_credentials}",
-        'Accept' => 'application/json',
-        'Content-Type' => 'application/json'
-      },
-      body: {
-        is_building: false,
-        type: 'order',
-        name: "Reserva #{@reserva.id}",
-        payment_settings: {
-          credit_card_settings: {
-            installments_setup: {
-              interest_type: 'simple',
-              interest_rate: 0,
-              max_installments: 1,
-              amount: amount_in_cents,
-            },
-            operation_type: 'auth_and_capture'
-          },
-          pix_settings: {
-            expires_in: 600  # PIX expires in 1 hour
-          },
-          accepted_payment_methods: [
-            'credit_card',
-            'pix'
-          ]
-        },
-        cart_settings: {
-          items: [
-            {
-              id: @reserva.id.to_s,
-              name: "Reserva de #{@reserva.cabana.name}",
-              amount: amount_in_cents,
-              unit_price: amount_in_cents,
-              default_quantity: 1,
-            }
-          ]
-        },
-        max_paid_sessions: 1,
-        success_url: success_url,  # Redirect back to this URL on success
-        failure_url: failure_url,
-      }.to_json
+    @reserva.update_columns(
+      payment_link_id: payment_link['id'],
+      payment_link_url: payment_link['url'],
+      payment_status: 'waiting_payment',
+      payment_expires_at: expires_in.minutes.from_now
     )
 
-    # Add this to log the full response for debugging
-    puts "Response PayReserva Body: #{response}"
-    puts "Response PayReserva Code: #{response.code}"
-
-    Rails.logger.info "PagarMe Response: #{response.body}"
-
-    if response.code == 201
-      UserMailer.reserva_created(current_user, @reserva).deliver_now
-      UserMailer.notify_adm(current_user, @reserva).deliver_now
-      payment_link = JSON.parse(response.body)
-
-      if payment_link['url'].present?
-        @reserva.update_column(:payment_link_id, payment_link['id'])
-        @reserva.update_column(:payment_link_url, payment_link['url'])
-        @reserva.update_column(:payment_status, 'waiting_payment')
-        redirect_to payment_link['url'], allow_other_host: true  # Allow external redirect...
-      else
-        flash[:alert] = "Erro: Link de pagamento não encontrado."
-        redirect_to reserva_path(@reserva)
-      end
-    else
-      flash[:alert] = "Erro ao criar o link de pagamento: #{response.parsed_response['errors'] || response.message}"
-      redirect_to reserva_path(@reserva)
-    end
+    redirect_to payment_link['url'], allow_other_host: true
+  rescue PagarmePaymentLinkService::Error => e
+    Rails.logger.error("Pagar.me reserva payment error: #{e.message}")
+    flash[:alert] = e.message
+    redirect_to reserva_path(@reserva)
   rescue => e
     flash[:alert] = "Erro ao criar o link de pagamento: #{e.message}"
     redirect_to reserva_path(@reserva)

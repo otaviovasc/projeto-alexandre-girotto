@@ -1,0 +1,198 @@
+<div class="container-fluid py-4">
+  <style>
+    .service-purchases-header {
+      background: #1f2937;
+      color: #fff;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .metric-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #fff;
+      padding: 1rem;
+      min-height: 96px;
+    }
+
+    .metric-label {
+      color: #6b7280;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+
+    .metric-value {
+      color: #111827;
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .status-paid { background: #dcfce7; color: #166534; }
+    .status-waiting_payment { background: #fef3c7; color: #92400e; }
+    .status-refused { background: #fee2e2; color: #991b1b; }
+    .status-canceled { background: #e5e7eb; color: #374151; }
+    .status-default { background: #e0f2fe; color: #075985; }
+
+    .purchase-table th {
+      white-space: nowrap;
+      font-size: 0.82rem;
+    }
+
+    .purchase-table td {
+      vertical-align: middle;
+      font-size: 0.9rem;
+    }
+  </style>
+
+  <div class="service-purchases-header">
+    <div class="d-flex flex-column flex-md-row justify-content-between gap-3">
+      <div>
+        <h1 class="h3 mb-1">Compras de Serviços</h1>
+        <p class="mb-0 text-white-50">Serviços comprados pelos clientes via portal e carrinho.</p>
+      </div>
+      <%= link_to admin_reservas_summary_path, class: "btn btn-outline-light align-self-start" do %>
+        <i class="bi bi-calendar-check me-1"></i> Reservas
+      <% end %>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-md-3">
+      <div class="metric-card">
+        <div class="metric-label">Receita paga</div>
+        <p class="metric-value"><%= number_to_currency(@total_paid || 0, unit: "R$") %></p>
+      </div>
+    </div>
+    <div class="col-12 col-md-3">
+      <div class="metric-card">
+        <div class="metric-label">Pagas</div>
+        <p class="metric-value"><%= @paid_count %></p>
+      </div>
+    </div>
+    <div class="col-12 col-md-3">
+      <div class="metric-card">
+        <div class="metric-label">Aguardando</div>
+        <p class="metric-value"><%= @waiting_count %></p>
+      </div>
+    </div>
+    <div class="col-12 col-md-3">
+      <div class="metric-card">
+        <div class="metric-label">Recusadas</div>
+        <p class="metric-value"><%= @refused_count %></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <%= form_with url: admin_service_purchases_path, method: :get, local: true, class: "row g-3 align-items-end" do |f| %>
+        <div class="col-12 col-md-4">
+          <%= f.label :q, "Buscar", class: "form-label" %>
+          <%= f.text_field :q, value: params[:q], class: "form-control", placeholder: "Cliente, e-mail, servico ou cabana" %>
+        </div>
+        <div class="col-12 col-md-2">
+          <%= f.label :status, "Status", class: "form-label" %>
+          <%= f.select :status,
+                       options_for_select([
+                         ["Todos", ""],
+                         ["Pago", "paid"],
+                         ["Aguardando", "waiting_payment"],
+                         ["Recusado", "refused"],
+                         ["Cancelado", "canceled"]
+                       ], params[:status]),
+                       {},
+                       class: "form-select" %>
+        </div>
+        <div class="col-12 col-md-2">
+          <%= f.label :start_date, "Servico de", class: "form-label" %>
+          <%= f.date_field :start_date, value: params[:start_date], class: "form-control" %>
+        </div>
+        <div class="col-12 col-md-2">
+          <%= f.label :end_date, "Servico ate", class: "form-label" %>
+          <%= f.date_field :end_date, value: params[:end_date], class: "form-control" %>
+        </div>
+        <div class="col-12 col-md-2 d-grid gap-2">
+          <%= f.submit "Filtrar", class: "btn btn-primary" %>
+          <%= link_to "Limpar", admin_service_purchases_path, class: "btn btn-outline-secondary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+      <h2 class="h5 mb-0">Historico de compras</h2>
+      <span class="badge bg-light text-dark"><%= @service_purchases.size %> registro(s)</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-striped table-hover purchase-table mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>Pagamento</th>
+            <th>Status</th>
+            <th>Cliente</th>
+            <th>Reserva</th>
+            <th>Cabana</th>
+            <th>Servico</th>
+            <th>Data do servico</th>
+            <th>Qtd.</th>
+            <th>Valor unit.</th>
+            <th>Total pago</th>
+            <th>Pago em</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @service_purchases.any? %>
+            <% @service_purchases.each do |purchase| %>
+              <% status_class = "status-#{purchase.payment_status.presence || 'default'}" %>
+              <tr>
+                <td>
+                  <span class="text-muted"><%= purchase.payment_link_id.presence || purchase.payment_order_code.presence || "-" %></span>
+                </td>
+                <td>
+                  <span class="status-pill <%= status_class %>">
+                    <%= purchase.payment_status.to_s.humanize.presence || "Sem status" %>
+                  </span>
+                </td>
+                <td>
+                  <strong><%= purchase.reserva.user.name.presence || "Sem nome" %></strong><br>
+                  <span class="text-muted"><%= purchase.reserva.user.email %></span>
+                </td>
+                <td>
+                  <%= link_to "##{purchase.reserva.id}", admin_reserva_path(purchase.reserva), class: "fw-bold" %>
+                </td>
+                <td><%= purchase.reserva.cabana.name %></td>
+                <td><%= purchase.service.name %></td>
+                <td><%= purchase.service_date&.strftime("%d/%m/%Y") || "-" %></td>
+                <td><%= purchase.quantity %></td>
+                <td><%= number_to_currency(purchase.unit_price_paid || purchase.service.price || 0, unit: "R$") %></td>
+                <td><strong><%= number_to_currency(purchase.total_paid || 0, unit: "R$") %></strong></td>
+                <td><%= purchase.paid_at&.in_time_zone("America/Sao_Paulo")&.strftime("%d/%m/%Y %H:%M") || "-" %></td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="11" class="text-center text-muted py-5">
+                Nenhuma compra de servico encontrada para os filtros selecionados.
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

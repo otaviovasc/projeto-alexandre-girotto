@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <title>Minha Reserva - Villaggio Girotto</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="bg-[#f7f5f0]">
+    <%= yield %>
+  </body>
+</html>
