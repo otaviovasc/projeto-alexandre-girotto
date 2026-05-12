@@ -1,6 +1,10 @@
 class ReservaServicesController < ApplicationController
   def create
     @reserva = Reserva.find(params[:reserva_id])
+    unless @reserva.service_purchase_window_open?
+      redirect_to services_marketplace_index_path, alert: @reserva.service_purchase_closed_message and return
+    end
+
     service = Service.find(params[:service_id])
     quantity = params[:quantity].to_i
 

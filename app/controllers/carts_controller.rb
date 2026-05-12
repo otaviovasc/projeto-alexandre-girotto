@@ -2,6 +2,7 @@ class CartsController < ApplicationController
   layout "clientside"
   before_action :find_or_create_cart
   before_action :check_active_reserva
+  before_action :ensure_service_purchase_window_open_for_service!, only: [:add_item, :update_item]
 
   def add_item
     if params[:item_id].present?
@@ -50,6 +51,7 @@ class CartsController < ApplicationController
 
   # Display checkout page
   def checkout
+    discard_closed_service_cart_items
     @cart_items = payable_cart_items.includes(:item, :service)
   end
 
@@ -60,6 +62,8 @@ class CartsController < ApplicationController
   end
 
   def checkout_process
+    removed_services = discard_closed_service_cart_items
+
     pending_payment = active_pending_payment
     if pending_payment.present? && payable_cart_items.empty?
       redirect_to pending_payment.payment_link_url, allow_other_host: true, status: :see_other
@@ -68,7 +72,8 @@ class CartsController < ApplicationController
 
     @cart_items = payable_cart_items.includes(:item, :service, reserva: { cabana: :filial })
     if @cart_items.empty?
-      redirect_to checkout_cart_path, alert: 'Seu carrinho esta vazio.'
+      alert = removed_services ? @reserva.service_purchase_closed_message : 'Seu carrinho esta vazio.'
+      redirect_to checkout_cart_path, alert: alert
       return
     end
 
@@ -90,9 +95,18 @@ class CartsController < ApplicationController
   end
 
   def check_active_reserva
-    @reserva = current_user.reservas.find_by(
-      payment_status: 'paid'
-    )
+    @reserva = current_user.reservas
+                           .includes(cabana: :filial)
+                           .where(payment_status: 'paid')
+                           .where('end_date >= ?', Date.current)
+                           .order(start_date: :asc, created_at: :desc)
+                           .first
+
+    @reserva ||= current_user.reservas
+                            .includes(cabana: :filial)
+                            .where(payment_status: 'paid')
+                            .order(created_at: :desc)
+                            .first
     unless @reserva
       redirect_to root_path, alert: 'Voce precisa de uma reserva paga para acessar a loja.'
     end
@@ -108,6 +122,25 @@ class CartsController < ApplicationController
          .where('payment_expires_at IS NULL OR payment_expires_at > ?', Time.current)
          .where.not(payment_link_url: nil)
          .first
+  end
+
+  def ensure_service_purchase_window_open_for_service!
+    return unless params[:service_id].present?
+    return if @reserva.service_purchase_window_open?
+
+    @cart.cart_items.where(service_id: params[:service_id]).where(payment_status: [nil, 'refused']).destroy_all
+    redirect_to services_marketplace_index_path, alert: @reserva.service_purchase_closed_message
+  end
+
+  def discard_closed_service_cart_items
+    return false if @reserva.service_purchase_window_open?
+
+    service_items = payable_cart_items.where.not(service_id: nil)
+    return false if service_items.empty?
+
+    service_items.destroy_all
+    flash.now[:alert] = @reserva.service_purchase_closed_message
+    true
   end
 
   def create_cart_payment_link(cart_items)

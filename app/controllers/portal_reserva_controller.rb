@@ -35,9 +35,9 @@ class PortalReservaController < ApplicationController
       redirect_to portal_reserva_path and return
     end
 
-    unless service_purchase_window_open?(reserva)
+    unless reserva.service_purchase_window_open?
       reserva.reserva_services.where(status: "pending_portal").destroy_all
-      flash[:alert] = service_purchase_closed_message(reserva)
+      flash[:alert] = reserva.service_purchase_closed_message
       redirect_to portal_reserva_path and return
     end
 
@@ -58,7 +58,9 @@ class PortalReservaController < ApplicationController
     end
 
     @reserva = Reserva.includes(:user, cabana: :filial).find(session[:portal_reserva_id])
-    @services = @reserva.cabana.filial.services.where(show_in_marketplace: true).order(:name)
+    @services = @reserva.cabana.filial.services
+                       .where(show_in_marketplace: [true, nil])
+                       .order(:name)
     
     # Apenas itens adicionados nesta sessão do portal
     @portal_cart_items = @reserva.reserva_services.where(status: "pending_portal").includes(:service)
@@ -222,27 +224,12 @@ class PortalReservaController < ApplicationController
     return unless session[:portal_reserva_id].present?
 
     reserva = Reserva.find_by(id: session[:portal_reserva_id])
-    return if reserva.blank? || service_purchase_window_open?(reserva)
+    return if reserva.blank? || reserva.service_purchase_window_open?
 
     reserva.reserva_services.where(status: "pending_portal").destroy_all
     session.delete(:portal_reserva_id)
-    flash[:alert] = service_purchase_closed_message(reserva)
+    flash[:alert] = reserva.service_purchase_closed_message
     redirect_to portal_reserva_path
-  end
-
-  def service_purchase_window_open?(reserva)
-    reserva.start_date.present? && Date.current <= service_purchase_cutoff_date(reserva)
-  end
-
-  def service_purchase_cutoff_date(reserva)
-    reserva.start_date - 5
-  end
-
-  def service_purchase_closed_message(reserva)
-    cutoff_date = service_purchase_cutoff_date(reserva).strftime("%d/%m/%Y")
-    start_date = reserva.start_date.strftime("%d/%m/%Y")
-
-    "As compras de servicos para esta reserva ficaram disponiveis ate #{cutoff_date}, 5 dias antes do check-in em #{start_date}."
   end
 
   def create_portal_payment_link

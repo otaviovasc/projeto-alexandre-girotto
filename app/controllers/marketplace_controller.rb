@@ -3,11 +3,15 @@ class MarketplaceController < ApplicationController
   before_action :check_active_reserva
 
   def services
-    @services = Service.where(filial_id: @reserva.cabana.filial_id, show_in_marketplace: true)
+    @services = @reserva.cabana.filial.services
+                       .where(show_in_marketplace: [true, nil])
+                       .order(:name)
   end
 
   def items
-    @items = Item.where(filial_id: @reserva.cabana.filial_id, show_in_marketplace: true)
+    @items = @reserva.cabana.filial.items
+                    .where(show_in_marketplace: [true, nil])
+                    .order(:name)
   end
 
   def show_service
@@ -21,9 +25,18 @@ class MarketplaceController < ApplicationController
   private
 
   def check_active_reserva
-    @reserva = current_user.reservas.find_by(
-      payment_status: 'paid'
-    )
+    @reserva = current_user.reservas
+                           .includes(cabana: :filial)
+                           .where(payment_status: 'paid')
+                           .where('end_date >= ?', Date.current)
+                           .order(start_date: :asc, created_at: :desc)
+                           .first
+
+    @reserva ||= current_user.reservas
+                            .includes(cabana: :filial)
+                            .where(payment_status: 'paid')
+                            .order(created_at: :desc)
+                            .first
 
     unless @reserva
       redirect_to root_path, alert: 'Você precisa de uma reserva paga para acessar a loja.'

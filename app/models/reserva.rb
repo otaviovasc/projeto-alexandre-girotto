@@ -1,4 +1,6 @@
 class Reserva < ApplicationRecord
+  SERVICE_PURCHASE_BLOCK_DAYS_BEFORE_CHECKIN = 7
+
   attr_accessor :include_breakfast, :breakfast_quantity
 
   belongs_to :cabana
@@ -33,6 +35,23 @@ class Reserva < ApplicationRecord
 
   def expired?
     payment_expires_at.present? && Time.current > payment_expires_at
+  end
+
+  def service_purchase_block_date
+    return if start_date.blank?
+
+    start_date - SERVICE_PURCHASE_BLOCK_DAYS_BEFORE_CHECKIN
+  end
+
+  def service_purchase_window_open?(date = Date.current)
+    service_purchase_block_date.present? && date < service_purchase_block_date
+  end
+
+  def service_purchase_closed_message
+    block_date = service_purchase_block_date.strftime("%d/%m/%Y")
+    check_in_date = start_date.strftime("%d/%m/%Y")
+
+    "As compras de servicos para esta reserva ficam indisponiveis a partir de #{block_date}, #{SERVICE_PURCHASE_BLOCK_DAYS_BEFORE_CHECKIN} dias antes do check-in em #{check_in_date}."
   end
 
   def available?
