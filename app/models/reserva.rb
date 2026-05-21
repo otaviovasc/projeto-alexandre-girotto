@@ -1,5 +1,5 @@
 class Reserva < ApplicationRecord
-  SERVICE_PURCHASE_BLOCK_DAYS_BEFORE_CHECKIN = 7
+  SERVICE_PURCHASE_BLOCK_DAYS_BEFORE_CHECKIN = 10
 
   attr_accessor :include_breakfast, :breakfast_quantity
 
