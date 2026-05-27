@@ -3,11 +3,13 @@ class Admin::ServicePurchasesController < ApplicationController
   before_action :authorize_admin
 
   def index
+    @selected_status = params[:status].presence || 'paid'
+
     @service_purchases = ReservaService
                          .includes(:service, reserva: [:user, { cabana: :filial }])
                          .where.not(payment_status: nil)
 
-    @service_purchases = @service_purchases.where(payment_status: params[:status]) if params[:status].present?
+    @service_purchases = @service_purchases.where(payment_status: @selected_status) if @selected_status.present?
     @service_purchases = @service_purchases.where(service_date: params[:start_date]..) if params[:start_date].present?
     @service_purchases = @service_purchases.where(service_date: ..params[:end_date]) if params[:end_date].present?
 
