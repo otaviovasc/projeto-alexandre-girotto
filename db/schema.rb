@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_01_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_26_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -70,6 +70,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_01_120000) do
     t.decimal "unit_price_paid", precision: 10, scale: 2
     t.decimal "total_paid", precision: 10, scale: 2
     t.datetime "paid_at"
+    t.date "service_date"
     t.index ["cart_id"], name: "index_cart_items_on_cart_id"
     t.index ["item_id"], name: "index_cart_items_on_item_id"
     t.index ["payment_link_id"], name: "index_cart_items_on_payment_link_id"

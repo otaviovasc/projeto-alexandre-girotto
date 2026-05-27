@@ -36,7 +36,7 @@ class PortalReservaController < ApplicationController
     end
 
     unless reserva.service_purchase_window_open?
-      reserva.reserva_services.where(status: "pending_portal").destroy_all
+      portal_cart_items(reserva).destroy_all
       flash[:alert] = reserva.service_purchase_closed_message
       redirect_to portal_reserva_path and return
     end
@@ -44,8 +44,7 @@ class PortalReservaController < ApplicationController
     # Autenticação bem-sucedida: salva na sessão
     session[:portal_reserva_id] = reserva.id
     
-    # Sempre começa com o carrinho vazio ao fazer login (limpa itens não pagos do portal)
-    reserva.reserva_services.where(status: "pending_portal").destroy_all
+    expire_stale_portal_cart_items(reserva)
     
     redirect_to portal_reserva_servicos_path
   end
@@ -61,9 +60,15 @@ class PortalReservaController < ApplicationController
     @services = @reserva.cabana.filial.services
                        .where(show_in_marketplace: [true, nil])
                        .order(:name)
+
+    expire_stale_portal_cart_items(@reserva)
+
+    if (pending_payment = active_pending_portal_payment(@reserva))
+      redirect_to portal_reserva_confirmacao_path(codigo: pending_payment.payment_order_code) and return
+    end
     
     # Apenas itens adicionados nesta sessão do portal
-    @portal_cart_items = @reserva.reserva_services.where(status: "pending_portal").includes(:service)
+    @portal_cart_items = portal_cart_items(@reserva).includes(:service)
 
     # Datas disponíveis para selecionar (dentro do período da reserva)
     @available_dates = (@reserva.start_date..@reserva.end_date).to_a
@@ -95,14 +100,14 @@ class PortalReservaController < ApplicationController
     dates_to_add.each do |date|
       # Valida se a data está dentro do período da reserva
       if date >= @reserva.start_date && date <= @reserva.end_date
-        rs = ReservaService.new(
+        cart_item = portal_cart_items(@reserva).new(
+          cart:         portal_cart(@reserva),
           reserva:      @reserva,
           service:      service,
           quantity:     quantity,
-          service_date: date,
-          status:       "pending_portal"
+          service_date: date
         )
-        success = false unless rs.save
+        success = false unless cart_item.save
       end
     end
 
@@ -122,7 +127,7 @@ class PortalReservaController < ApplicationController
     end
 
     @reserva = Reserva.find(session[:portal_reserva_id])
-    rs = @reserva.reserva_services.find_by(id: params[:id])
+    rs = portal_cart_items(@reserva).find_by(id: params[:id])
 
     if rs
       rs.destroy
@@ -141,7 +146,8 @@ class PortalReservaController < ApplicationController
     end
 
     @reserva = Reserva.find(session[:portal_reserva_id])
-    @portal_cart_items = @reserva.reserva_services.includes(:service).where(status: "pending_portal")
+    expire_stale_portal_cart_items(@reserva)
+    @portal_cart_items = portal_cart_items(@reserva).includes(:service)
     
     if @portal_cart_items.empty?
       flash[:alert] = "Seu carrinho está vazio."
@@ -169,11 +175,9 @@ class PortalReservaController < ApplicationController
     end
 
     order_code = params[:codigo].to_s.strip
+    expire_stale_portal_cart_items(Reserva.find(session[:portal_reserva_id]))
 
-    @purchased_services = ReservaService.includes(:service, reserva: [:user, :cabana])
-                                        .where(payment_order_code: order_code)
-                                        .where(reserva_id: session[:portal_reserva_id])
-                                        .order(:service_date, :id)
+    @purchased_services = purchase_items_for_order(order_code)
 
     if @purchased_services.empty?
       flash[:alert] = "Nao encontramos o resumo desta compra."
@@ -185,6 +189,7 @@ class PortalReservaController < ApplicationController
     @payment_status = purchase_payment_status(@purchased_services)
     @payment_status_label = payment_status_label(@payment_status)
     @payment_paid = @payment_status == "paid"
+    @payment_open = @payment_status == "waiting_payment"
     @summary_text = purchase_summary_text(@reserva, @purchased_services)
   end
 
@@ -194,9 +199,8 @@ class PortalReservaController < ApplicationController
       render json: { found: false, paid: false, status: nil }, status: :unauthorized and return
     end
 
-    purchased_services = ReservaService
-                         .where(payment_order_code: params[:codigo].to_s.strip)
-                         .where(reserva_id: session[:portal_reserva_id])
+    expire_stale_portal_cart_items(Reserva.find(session[:portal_reserva_id]))
+    purchased_services = purchase_items_for_order(params[:codigo].to_s.strip)
 
     if purchased_services.empty?
       render json: { found: false, paid: false, status: nil }, status: :not_found and return
@@ -226,7 +230,7 @@ class PortalReservaController < ApplicationController
     reserva = Reserva.find_by(id: session[:portal_reserva_id])
     return if reserva.blank? || reserva.service_purchase_window_open?
 
-    reserva.reserva_services.where(status: "pending_portal").destroy_all
+    portal_cart_items(reserva).destroy_all
     session.delete(:portal_reserva_id)
     flash[:alert] = reserva.service_purchase_closed_message
     redirect_to portal_reserva_path
@@ -235,7 +239,7 @@ class PortalReservaController < ApplicationController
   def create_portal_payment_link
     order_code = "portal-services-#{@reserva.id}-#{Time.current.to_i}"
     @portal_payment_order_code = order_code
-    expires_in = 30
+    expires_in = 10
 
     payment_link = PagarmePaymentLinkService.new(
       api_key: @reserva.cabana.filial.pagarme_api_key_for_payments,
@@ -250,12 +254,11 @@ class PortalReservaController < ApplicationController
     payment_expires_at = expires_in.minutes.from_now
     now = Time.current
 
-    @portal_cart_items.find_each do |reserva_service|
-      unit_price = reserva_service.service.price || 0
-      quantity = reserva_service.quantity || 1
+    @portal_cart_items.find_each do |cart_item|
+      unit_price = cart_item.service.price || 0
+      quantity = cart_item.quantity || 1
 
-      reserva_service.update_columns(
-        status: 'pending_payment',
+      cart_item.update_columns(
         payment_status: 'waiting_payment',
         payment_link_id: payment_link['id'],
         payment_link_url: payment_link['url'],
@@ -268,6 +271,45 @@ class PortalReservaController < ApplicationController
     end
 
     payment_link
+  end
+
+  def portal_cart(reserva)
+    reserva.user.cart || reserva.user.create_cart
+  end
+
+  def portal_cart_items(reserva)
+    portal_cart(reserva)
+      .cart_items
+      .where(reserva: reserva, item_id: nil, payment_status: [nil, 'refused'])
+  end
+
+  def active_pending_portal_payment(reserva)
+    portal_cart(reserva)
+      .cart_items
+      .where(reserva: reserva, item_id: nil, payment_status: 'waiting_payment')
+      .where('payment_expires_at IS NULL OR payment_expires_at > ?', Time.current)
+      .where.not(payment_order_code: nil)
+      .first
+  end
+
+  def expire_stale_portal_cart_items(reserva)
+    portal_cart(reserva)
+      .cart_items
+      .where(reserva: reserva, item_id: nil, payment_status: 'waiting_payment')
+      .where('payment_expires_at <= ?', Time.current)
+      .update_all(payment_status: 'canceled', updated_at: Time.current)
+  end
+
+  def purchase_items_for_order(order_code)
+    cart_items = CartItem.includes(:service, reserva: [:user, :cabana])
+                         .where(payment_order_code: order_code, reserva_id: session[:portal_reserva_id])
+                         .order(:service_date, :id)
+
+    return cart_items if cart_items.any?
+
+    ReservaService.includes(:service, reserva: [:user, :cabana])
+                  .where(payment_order_code: order_code, reserva_id: session[:portal_reserva_id])
+                  .order(:service_date, :id)
   end
 
   def purchase_payment_status(purchased_services)

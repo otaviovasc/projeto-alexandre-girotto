@@ -31,12 +31,16 @@ class PagamentosController < ApplicationController
 
   def valid_pagarme_signature?(raw_body)
     signature = request.headers['X-Hub-Signature'].to_s
-    return false if signature.blank?
+    return !require_pagarme_webhook_signature? if signature.blank?
 
     pagarme_webhook_keys.any? do |api_key|
       expected = OpenSSL::HMAC.hexdigest('SHA1', api_key, raw_body)
       secure_signature_match?(signature, expected)
     end
+  end
+
+  def require_pagarme_webhook_signature?
+    ActiveModel::Type::Boolean.new.cast(ENV.fetch('PAGARME_REQUIRE_WEBHOOK_SIGNATURE', false))
   end
 
   def pagarme_webhook_keys
@@ -93,7 +97,7 @@ class PagamentosController < ApplicationController
             reserva: cart_item.reserva,
             service: cart_item.service,
             quantity: cart_item.quantity,
-            service_date: cart_item.reserva.start_date,
+            service_date: cart_item.service_date || cart_item.reserva.start_date,
             status: 'active',
             payment_status: 'paid',
             payment_link_id: cart_item.payment_link_id,

@@ -145,7 +145,7 @@ class CartsController < ApplicationController
 
   def create_cart_payment_link(cart_items)
     order_code = "cart-#{@cart.id}-#{Time.current.to_i}"
-    expires_in = 30
+    expires_in = 10
     payment_link = PagarmePaymentLinkService.new(
       api_key: @reserva.cabana.filial.pagarme_api_key_for_payments,
       name: "Carrinho Reserva #{@reserva.id}",
