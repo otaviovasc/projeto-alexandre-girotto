@@ -12,6 +12,9 @@ source ~/.bash_profile
 # Install dependencies
 bundle install --deployment --without development test
 
+# Run database migrations
+bundle exec rails db:migrate
+
 # Precompile assets
 bundle exec rails assets:precompile
 

@@ -1,0 +1,85 @@
+class CleaningServicesAssigner
+  RULES_BY_FILIAL = {
+    'serra da mantiqueira' => [
+      { service_key: 'limpeza entrada mg', date_attribute: :start_date },
+      { service_key: 'limpeza de saida mg', date_attribute: :end_date }
+    ],
+    'fattoria di brauna' => [
+      { service_key: 'limpeza entrada sp', date_attribute: :start_date },
+      { service_key: 'limpeza de saida sp', date_attribute: :end_date }
+    ]
+  }.freeze
+
+  def self.cleaning_service?(service)
+    return false unless service
+
+    cleaning_service_keys.include?(service_key(service.name))
+  end
+
+  def self.expected_date_for(reserva, service)
+    rule = rule_for_service(service)
+    return unless rule
+
+    reserva.public_send(rule[:date_attribute])
+  end
+
+  def self.rule_for_service(service)
+    return unless service
+
+    RULES_BY_FILIAL.values.flatten.find do |rule|
+      rule[:service_key] == service_key(service.name)
+    end
+  end
+
+  def self.cleaning_service_keys
+    RULES_BY_FILIAL.values.flatten.map { |rule| rule[:service_key] }
+  end
+
+  def self.service_key(value)
+    I18n.transliterate(value.to_s)
+        .downcase
+        .gsub(/[^a-z0-9]+/, ' ')
+        .squish
+  end
+
+  def initialize(reserva, force_dates: false)
+    @reserva = reserva
+    @force_dates = force_dates
+  end
+
+  def call
+    rules.each do |rule|
+      service = service_matching(rule[:service_key])
+      next unless service
+
+      reserva_service = ReservaService.find_or_initialize_by(reserva: @reserva, service: service)
+      reserva_service.quantity ||= 1
+      assign_date(reserva_service, @reserva.public_send(rule[:date_attribute]))
+      reserva_service.save! if reserva_service.new_record? || reserva_service.changed?
+    end
+  end
+
+  private
+
+  def assign_date(reserva_service, expected_date)
+    manual_override = reserva_service.respond_to?(:manual_date_override?) &&
+                      reserva_service.manual_date_override?
+    return if reserva_service.persisted? && manual_override && !@force_dates
+
+    reserva_service.service_date = expected_date
+    reserva_service.manual_date_override = false if reserva_service.respond_to?(:manual_date_override=)
+  end
+
+  def rules
+    RULES_BY_FILIAL[self.class.service_key(@reserva.cabana&.filial&.name)] || []
+  end
+
+  def service_matching(service_key)
+    service_matching_in_scope(service_key, Service.where(filial_id: @reserva.cabana&.filial_id)) ||
+      service_matching_in_scope(service_key, Service.all)
+  end
+
+  def service_matching_in_scope(service_key, scope)
+    scope.detect { |service| self.class.service_key(service.name) == service_key }
+  end
+end

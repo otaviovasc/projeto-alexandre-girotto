@@ -1,6 +1,4 @@
 class Admin::ReservasController < ApplicationController
-  require 'open-uri'
-
   before_action :authenticate_user!
   before_action :authorize_admin
   before_action :set_reserva, only: [:edit, :update, :destroy, :show, :update_observation]
@@ -94,7 +92,10 @@ class Admin::ReservasController < ApplicationController
 
   def update
     # Atualiza os atributos da reserva
-    if @reserva.update(reserva_params)
+    attrs = reserva_params
+    @reserva.manual_override = true if manual_override_update?(attrs)
+
+    if @reserva.update(attrs)
       # Atualiza o status de parceiro do usuário se os parâmetros estiverem presentes
       if params[:reserva][:user_attributes] && params[:reserva][:user_attributes][:partner].present?
         user = @reserva.user
@@ -123,7 +124,9 @@ class Admin::ReservasController < ApplicationController
     return unless current_user.admin?
 
     @q = Reserva.ransack(params[:q])
-    @reservas = @q.result.includes(:cabana, :user).order(updated_at: :desc)
+    @reservas = @q.result.includes(:cabana, :user)
+                 .order(Arel.sql("CASE WHEN ical_missing_since IS NULL THEN 1 ELSE 0 END ASC"))
+                 .order(updated_at: :desc)
 
     # Estatísticas úteis
     @total_reservas = @reservas.count
@@ -278,7 +281,8 @@ class Admin::ReservasController < ApplicationController
 
     begin
       cabana = Cabana.find(params[:cabana_id])
-      platform = params[:platform].downcase
+      platform_param = params[:platform].to_s
+      platform = platform_param.downcase
 
       import_links = {}
       if cabana.import_links.present?
@@ -288,83 +292,19 @@ class Admin::ReservasController < ApplicationController
           import_links = {}
         end
       end
-      platform_link = import_links[platform]
+      platform_link = import_links[platform_param] ||
+                      import_links[platform] ||
+                      import_links.find { |key, _url| key.to_s.casecmp(platform_param).zero? }&.last
 
       unless platform_link.present?
         redirect_to admin_reservas_summary_path, alert: "Link para #{platform.capitalize} não configurado para esta cabana."
         return
       end
 
-      ics_content = URI.parse(platform_link).open.read
-      calendars = Icalendar::Calendar.parse(ics_content)
-      calendar = calendars.first
+      result = IcalReservationImporter.new(cabana: cabana, platform: platform, url: platform_link).call
 
-      count = 0
-
-      calendar.events.each do |event|
-        start_date = event.dtstart.to_date
-        end_date   = event.dtend.to_date
-
-        # Airbnb adiciona 1 dia de buffer antes e depois no iCal
-        if platform.downcase == 'airbnb'
-          start_date = start_date + 1.day
-          end_date   = end_date - 1.day
-        end
-
-        next if start_date < Date.current
-        next if start_date > Date.current + 11.months
-        end_date = start_date + 1.day if end_date <= start_date
-
-        # Conjunto de todos os dias do evento
-        dias_livres = (start_date..end_date).to_a
-
-        # Remove dias já ocupados
-        reservas_existentes = Reserva.where(cabana_id: cabana.id)
-          .where("start_date <= ? AND end_date >= ?", end_date, start_date)
-          .where(payment_status: %w[pending waiting_payment paid])
-
-        reservas_existentes.each do |reserva|
-          dias_ocupados = (reserva.start_date..reserva.end_date).to_a
-          dias_livres -= dias_ocupados
-        end
-
-        # Se não sobrou nenhum dia livre, pula
-        next if dias_livres.empty?
-
-        # Agrupa dias contínuos
-        blocos = dias_livres.chunk_while { |d1, d2| d2 == d1 + 1 }.to_a
-
-        # Garante que o usuário da plataforma exista
-        user = User.find_or_create_by!(email: "#{platform}@importado.com") do |u|
-          u.name = platform.capitalize
-          u.telephone = "000000001"
-          u.password = "password"
-          u.password_confirmation = "password"
-        end
-
-        # Cria reservas para cada bloco livre
-        blocos.each do |bloco|
-          Reserva.create!(
-            start_date: bloco.first,
-            end_date: bloco.last,
-            user: user,
-            cabana: cabana,
-            origem: platform,
-            payment_status: 'paid',
-            total_price: 0.0,
-            observation: "Importado via #{platform.capitalize} - #{cabana.name}"
-          )
-          count += 1
-        end
-      end
-
-      # Sincroniza automaticamente com Google Sheets após importação
-      if count > 0
-        GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)) if GoogleSheetsExportService.configured?
-        redirect_to admin_reservas_summary_path, notice: "#{count} reservas importadas do #{platform.capitalize} para #{cabana.name} e sincronizadas com Google Sheets!"
-      else
-        redirect_to admin_reservas_summary_path, notice: "Nenhuma nova reserva encontrada no #{platform.capitalize} para #{cabana.name}."
-      end
+      redirect_to admin_reservas_summary_path,
+                  notice: "#{result.created} reservas criadas, #{result.updated} atualizadas, #{result.missing} possíveis cancelamentos e #{result.skipped} já estavam em dia para #{cabana.name}."
     rescue => e
       redirect_to admin_reservas_summary_path, alert: "Erro ao importar reservas do #{params[:platform]}: #{e.message}"
     end
@@ -420,5 +360,28 @@ class Admin::ReservasController < ApplicationController
 
   def authorize_admin
     redirect_to root_path, alert: 'Você não tem permissão para fazer isso.' unless current_user.admin?
+  end
+
+  def manual_override_update?(attrs)
+    return false unless @reserva.imported?
+
+    attrs_hash = attrs.to_h
+
+    %w[start_date end_date cabana_id].any? do |attribute|
+      next false unless attrs_hash.key?(attribute)
+
+      incoming = attrs_hash[attribute]
+      next false if incoming.blank?
+
+      current = @reserva.public_send(attribute)
+      normalized =
+        if attribute == 'cabana_id'
+          incoming.to_i
+        else
+          Date.parse(incoming.to_s)
+        end
+
+      normalized != current
+    end
   end
 end

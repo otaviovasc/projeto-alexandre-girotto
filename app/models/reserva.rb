@@ -28,6 +28,8 @@ class Reserva < ApplicationRecord
 
   before_create :set_default_fields
   before_create :set_default_payment_status
+  after_create :ensure_required_cleaning_services
+  after_update :ensure_required_cleaning_services_after_schedule_change, if: :cleaning_schedule_changed?
 
   def calculate_total_price!
     self.total_price = PriceCalculator.new(self).total_price
@@ -69,6 +71,8 @@ class Reserva < ApplicationRecord
   end
 
   def start_date_cannot_be_in_the_past
+    return if imported?
+
     if start_date.present? && start_date < Date.today
       errors.add(:start_date, "não pode estar no passado.")
     end
@@ -88,7 +92,7 @@ class Reserva < ApplicationRecord
 
   def dates_available
     # Ignora validação se for reserva importada
-    return if origem.present? && origem != 'sistema'
+    return if imported?
 
     overlapping_reservas = Reserva.where(cabana_id: cabana.id)
                                   .where(payment_status: [:pending, :waiting_payment, :paid])
@@ -106,13 +110,31 @@ class Reserva < ApplicationRecord
     end
   end
 
+  def imported?
+    origem.present? && origem != 'sistema'
+  end
 
+  def ical_missing?
+    ical_missing_since.present?
+  end
 
   def self.ransackable_attributes(auth_object = nil)
-    ["cabana_id", "created_at", "end_date", "id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "start_date", "total_price", "updated_at", "user_id"]
+    ["cabana_id", "created_at", "end_date", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "manual_override", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "start_date", "total_price", "updated_at", "user_id"]
   end
 
   private
+
+  def ensure_required_cleaning_services
+    CleaningServicesAssigner.new(self).call
+  end
+
+  def ensure_required_cleaning_services_after_schedule_change
+    CleaningServicesAssigner.new(self, force_dates: true).call
+  end
+
+  def cleaning_schedule_changed?
+    saved_change_to_start_date? || saved_change_to_end_date? || saved_change_to_cabana_id?
+  end
 
   def set_default_fields
     self.observation ||= 'sistema'

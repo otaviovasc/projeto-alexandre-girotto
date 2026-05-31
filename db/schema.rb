@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_26_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_31_222000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -182,6 +182,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_26_120000) do
     t.decimal "unit_price_paid", precision: 10, scale: 2
     t.decimal "total_paid", precision: 10, scale: 2
     t.datetime "paid_at"
+    t.boolean "manual_date_override", default: false, null: false
     t.index ["payment_link_id"], name: "index_reserva_services_on_payment_link_id"
     t.index ["payment_order_code"], name: "index_reserva_services_on_payment_order_code"
     t.index ["reserva_id"], name: "index_reserva_services_on_reserva_id"
@@ -203,8 +204,16 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_26_120000) do
     t.text "observation"
     t.string "origem"
     t.string "platform_uid"
-    t.index ["cabana_id", "platform_uid"], name: "index_reservas_on_cabana_id_and_platform_uid"
+    t.string "ical_uid"
+    t.date "imported_start_date"
+    t.date "imported_end_date"
+    t.boolean "manual_override", default: false, null: false
+    t.boolean "ical_uid_from_feed", default: false, null: false
+    t.datetime "ical_missing_since"
     t.index ["cabana_id"], name: "index_reservas_on_cabana_id"
+    t.index ["cabana_id", "platform_uid"], name: "index_reservas_on_cabana_id_and_platform_uid"
+    t.index ["cabana_id", "origem", "ical_uid"], name: "index_reservas_on_imported_ical"
+    t.index ["ical_missing_since"], name: "index_reservas_on_ical_missing_since"
     t.index ["user_id"], name: "index_reservas_on_user_id"
   end
 

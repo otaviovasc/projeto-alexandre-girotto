@@ -22,6 +22,7 @@ module ProjetoAlexandreGirotto
 
     # config/application.rb
 
+    config.time_zone = "Brasilia"
     config.i18n.default_locale = :'pt-BR'   # Define o idioma padrão como pt-BR
     config.i18n.available_locales = [:'pt-BR', :en]  # Define os idiomas disponíveis
     config.i18n.fallbacks = [:en]   # Define que, caso pt-BR falhe, use en

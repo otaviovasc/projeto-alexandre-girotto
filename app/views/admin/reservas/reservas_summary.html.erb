@@ -38,6 +38,19 @@
         rgba(255, 192, 203, 0.3) 100%
       ) !important;
     }
+    .ical-missing-row {
+      --bs-table-bg: #fff1f2;
+      --bs-table-striped-bg: #fff1f2;
+      --bs-table-hover-bg: #ffe4e6;
+      background: #fff1f2 !important;
+      border-left: 5px solid #dc3545 !important;
+    }
+    .ical-missing-row td {
+      border-color: #f3b8be !important;
+    }
+    .ical-missing-row:hover {
+      background: #ffe4e6 !important;
+    }
   </style>
 
   <div class="container my-8 p-4 bg-light shadow-sm">
@@ -208,7 +221,10 @@
         </thead>
         <tbody>
           <% @reservas.each do |reserva| %>
-            <tr id="reserva-<%= reserva.id %>" data-updated-at="<%= reserva.updated_at.to_i %>" class="<%= 'partner-row' if reserva.user.partner? %>">
+            <% row_classes = [] %>
+            <% row_classes << 'partner-row' if reserva.user.partner? %>
+            <% row_classes << 'ical-missing-row' if reserva.ical_missing? %>
+            <tr id="reserva-<%= reserva.id %>" data-updated-at="<%= reserva.updated_at.to_i %>" class="<%= row_classes.join(' ') %>">
               <td><%= reserva.id %></td>
               <td><%= reserva.updated_at&.in_time_zone("America/Sao_Paulo")&.strftime("%d/%m/%Y - %H:%Mh") || "—" %></td>
               <td><%= reserva.start_date&.strftime("%d/%m/%y") || "—" %></td>
@@ -222,9 +238,17 @@
                 <span class="badge <%= badge_class(reserva.payment_status) %>">
                   <%= status_translate(reserva.payment_status) %>
                 </span>
+                <% if reserva.ical_missing? %>
+                  <span class="badge bg-danger ms-1">Possível cancelamento iCal</span>
+                <% end %>
               </td>
               <td><%= number_to_currency(reserva.total_price, unit: "R$") %></td>
               <td>
+                <% if reserva.ical_missing? %>
+                  <div class="text-danger fw-semibold mb-1">
+                    Sumiu do iCal em <%= reserva.ical_missing_since.strftime("%d/%m/%Y - %H:%Mh") %>
+                  </div>
+                <% end %>
                 <span class="observation-text"><%= reserva.observation.present? ? reserva.observation : '-' %></span>
                 <a href="#" class="edit-observation-btn ms-2" data-reserva-id="<%= reserva.id %>">
                   <i class="bi bi-pencil-square text-primary"></i>
