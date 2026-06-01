@@ -15,8 +15,8 @@ module Public
         event = Icalendar::Event.new
         event.dtstart = Icalendar::Values::Date.new(reserva.start_date)
         event.dtend   = Icalendar::Values::Date.new(reserva.end_date)
-        event.summary = "Reserva - #{reserva.user&.name || 'Sem nome'}"
-        event.description = "Reserva importada do sistema"
+        event.summary = "Conforme Site Oficial - Villaggio Girotto"
+        event.description = "Bloqueio importado do sistema oficial Villaggio Girotto"
         event.uid = "reserva-#{reserva.id}@meusistema.com"
         calendar.add_event(event)
       end

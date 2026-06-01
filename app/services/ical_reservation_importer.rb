@@ -4,6 +4,23 @@ require 'open-uri'
 
 class IcalReservationImporter
   LOOKAHEAD = 11.months
+  SELF_ORIGIN_MARKERS = [
+    'conforme site oficial',
+    'villaggio girotto',
+    'village girotto',
+    'meusistema.com',
+    'meu sistema de reservas',
+    'reserva importada do sistema',
+    'sistema oficial villaggio'
+  ].freeze
+  EXTERNAL_CALENDAR_BLOCK_MARKERS = [
+    'blocked by external calendar',
+    'bloqueado por calendario externo',
+    'bloqueado por calendário externo',
+    'imported calendar',
+    'calendario importado',
+    'calendário importado'
+  ].freeze
 
   EventRange = Struct.new(:uid, :uid_from_feed, :start_date, :end_date, keyword_init: true)
   Result = Struct.new(:created, :updated, :skipped, :missing, keyword_init: true) do
@@ -86,6 +103,8 @@ class IcalReservationImporter
   end
 
   def range_for(event)
+    return unless importable_event?(event)
+
     start_date = calendar_date(event.dtstart)
     return unless start_date
 
@@ -101,6 +120,27 @@ class IcalReservationImporter
       start_date: start_date,
       end_date: end_date
     )
+  end
+
+  def importable_event?(event)
+    normalized_text = normalized_event_text(event)
+    return false if SELF_ORIGIN_MARKERS.any? { |marker| normalized_text.include?(marker) }
+    return false if EXTERNAL_CALENDAR_BLOCK_MARKERS.any? { |marker| normalized_text.include?(marker) }
+
+    true
+  end
+
+  def normalized_event_text(event)
+    [
+      event.uid,
+      event.summary,
+      event.description,
+      event.location,
+      event.organizer,
+      event.categories
+    ].compact.map(&:to_s).join(' ').then do |text|
+      I18n.transliterate(text).downcase.squish
+    end
   end
 
   def calendar_date(value)

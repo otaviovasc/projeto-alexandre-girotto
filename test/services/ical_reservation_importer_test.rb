@@ -66,6 +66,41 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
                   [Date.new(2026, 6, 12), Date.new(2026, 6, 14)]], ranges
   end
 
+  test "ignores blocks that came from the official site calendar" do
+    result = import(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:site-loop@example.com
+      DTSTART;VALUE=DATE:20260717
+      DTEND;VALUE=DATE:20260718
+      SUMMARY:Conforme Site Oficial - Villaggio Girotto
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    assert_equal 0, result.created
+    assert_equal 0, @cabana.reservas.where(origem: "airbnb").count
+  end
+
+  test "ignores events with the system export uid" do
+    result = import(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:reserva-123@meusistema.com
+      DTSTART;VALUE=DATE:20260717
+      DTEND;VALUE=DATE:20260718
+      SUMMARY:Blocked
+      DESCRIPTION:Reserva importada do sistema
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    assert_equal 0, result.created
+    assert_equal 0, @cabana.reservas.where(origem: "airbnb").count
+  end
+
   test "converts datetime events using the application time zone" do
     import(<<~ICS)
       BEGIN:VCALENDAR
