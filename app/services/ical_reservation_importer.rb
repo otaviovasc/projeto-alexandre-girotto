@@ -125,6 +125,7 @@ class IcalReservationImporter
   def importable_event?(event)
     normalized_text = normalized_event_text(event)
     return false if airbnb_not_available_event?(normalized_text)
+    return false if booking_closed_not_available_event?(normalized_text)
     return false if SELF_ORIGIN_MARKERS.any? { |marker| normalized_text.include?(marker) }
     return false if EXTERNAL_CALENDAR_BLOCK_MARKERS.any? { |marker| normalized_text.include?(marker) }
 
@@ -133,6 +134,10 @@ class IcalReservationImporter
 
   def airbnb_not_available_event?(normalized_text)
     @platform == 'airbnb' && normalized_text.include?('not available')
+  end
+
+  def booking_closed_not_available_event?(normalized_text)
+    @platform == 'booking' && normalized_text.include?('closed') && normalized_text.include?('not available')
   end
 
   def normalized_event_text(event)
