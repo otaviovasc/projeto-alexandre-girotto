@@ -101,6 +101,23 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
     assert_equal 0, @cabana.reservas.where(origem: "airbnb").count
   end
 
+  test "ignores Airbnb not available blocks" do
+    result = import(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:not-available@example.com
+      DTSTART;VALUE=DATE:20260717
+      DTEND;VALUE=DATE:20260718
+      SUMMARY:Airbnb (Not available)
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    assert_equal 0, result.created
+    assert_equal 0, @cabana.reservas.where(origem: "airbnb").count
+  end
+
   test "converts datetime events using the application time zone" do
     import(<<~ICS)
       BEGIN:VCALENDAR
