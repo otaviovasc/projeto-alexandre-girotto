@@ -239,6 +239,79 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
     assert_not reserva.manual_override?
   end
 
+  test "does not create duplicates when feed uid changes but dates stay the same" do
+    import_holmy(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:holmy-first@example.com
+      DTSTART;VALUE=DATE:20261117
+      DTEND;VALUE=DATE:20261118
+      SUMMARY:Reserved
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    import_holmy(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:holmy-second@example.com
+      DTSTART;VALUE=DATE:20261117
+      DTEND;VALUE=DATE:20261118
+      SUMMARY:Reserved
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    reserva = @cabana.reservas.find_by!(origem: "holmy")
+
+    assert_equal 1, @cabana.reservas.where(origem: "holmy").count
+    assert_equal "holmy-second@example.com", reserva.ical_uid
+    assert_not reserva.ical_missing?
+  end
+
+  test "keeps manual override when feed uid changes but source dates stay the same" do
+    import_holmy(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:holmy-manual-first@example.com
+      DTSTART;VALUE=DATE:20261117
+      DTEND;VALUE=DATE:20261118
+      SUMMARY:Reserved
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    reserva = @cabana.reservas.find_by!(origem: "holmy")
+    reserva.update!(
+      start_date: Date.new(2026, 11, 16),
+      end_date: Date.new(2026, 11, 18),
+      manual_override: true
+    )
+
+    import_holmy(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:holmy-manual-second@example.com
+      DTSTART;VALUE=DATE:20261117
+      DTEND;VALUE=DATE:20261118
+      SUMMARY:Reserved
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    reserva.reload
+
+    assert_equal 1, @cabana.reservas.where(origem: "holmy").count
+    assert_equal Date.new(2026, 11, 16), reserva.start_date
+    assert_equal Date.new(2026, 11, 18), reserva.end_date
+    assert_equal "holmy-manual-second@example.com", reserva.ical_uid
+    assert_not reserva.ical_missing?
+  end
+
   test "marks a future manually edited reservation missing when it disappears from the feed" do
     import(<<~ICS)
       BEGIN:VCALENDAR
@@ -457,6 +530,16 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
     IcalReservationImporter.new(
       cabana: @cabana,
       platform: "airbnb",
+      url: "unused",
+      ics_content: ics,
+      today: today
+    ).call
+  end
+
+  def import_holmy(ics, today: Date.new(2026, 5, 31))
+    IcalReservationImporter.new(
+      cabana: @cabana,
+      platform: "holmy",
       url: "unused",
       ics_content: ics,
       today: today

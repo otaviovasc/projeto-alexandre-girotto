@@ -174,22 +174,34 @@ class IcalReservationImporter
   end
 
   def find_existing_import(event_range)
-    by_uid = Reserva.where(cabana_id: @cabana.id)
-                    .where('LOWER(origem) = ?', @platform)
-                    .find_by(ical_uid: event_range.uid)
+    by_uid = imported_reservas.find_by(ical_uid: event_range.uid)
     return by_uid if by_uid
 
-    by_platform_uid = Reserva.where(cabana_id: @cabana.id)
-                             .where('LOWER(origem) = ?', @platform)
-                             .find_by(platform_uid: event_range.uid)
+    by_platform_uid = imported_reservas.find_by(platform_uid: event_range.uid)
     return by_platform_uid if by_platform_uid
 
+    by_imported_dates = imported_reservas
+                        .where(imported_start_date: event_range.start_date, imported_end_date: event_range.end_date)
+                        .order(Arel.sql('CASE WHEN ical_missing_since IS NULL THEN 0 ELSE 1 END'), :created_at)
+                        .first
+    return by_imported_dates if by_imported_dates
+
+    by_current_dates = imported_reservas
+                       .where(start_date: event_range.start_date, end_date: event_range.end_date)
+                       .order(Arel.sql('CASE WHEN ical_missing_since IS NULL THEN 0 ELSE 1 END'), :created_at)
+                       .first
+    return by_current_dates if by_current_dates
+
+    imported_reservas
+      .where(ical_uid: [nil, ''])
+      .where('start_date < ? AND end_date > ?', event_range.end_date, event_range.start_date)
+      .order(:start_date)
+      .first
+  end
+
+  def imported_reservas
     Reserva.where(cabana_id: @cabana.id)
            .where('LOWER(origem) = ?', @platform)
-           .where(ical_uid: [nil, ''])
-           .where('start_date < ? AND end_date > ?', event_range.end_date, event_range.start_date)
-           .order(:start_date)
-           .first
   end
 
   def preserve_manual_override?(reserva, event_range)
