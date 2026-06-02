@@ -118,7 +118,7 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
     assert_equal 0, @cabana.reservas.where(origem: "airbnb").count
   end
 
-  test "ignores Booking closed not available blocks" do
+  test "imports Booking closed not available as a reservation" do
     result = IcalReservationImporter.new(
       cabana: @cabana,
       platform: "booking",
@@ -137,8 +137,8 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
       ICS
     ).call
 
-    assert_equal 0, result.created
-    assert_equal 0, @cabana.reservas.where(origem: "booking").count
+    assert_equal 1, result.created
+    assert_equal 1, @cabana.reservas.where(origem: "booking").count
   end
 
   test "converts datetime events using the application time zone" do
