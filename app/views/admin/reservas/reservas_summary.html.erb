@@ -51,6 +51,15 @@
     .ical-missing-row:hover {
       background: #ffe4e6 !important;
     }
+    .group-created-checkbox {
+      width: 1.2rem;
+      height: 1.2rem;
+      cursor: pointer;
+    }
+    .group-created-checkbox:disabled {
+      cursor: wait;
+      opacity: 0.6;
+    }
   </style>
 
   <div class="container my-8 p-4 bg-light shadow-sm">
@@ -207,6 +216,7 @@
         <thead class="table-dark">
           <tr>
             <th>ID</th>
+            <th>Grupo</th>
             <th>Última atualização</th>
             <th>Data Início</th>
             <th>Data Fim</th>
@@ -226,6 +236,19 @@
             <% row_classes << 'ical-missing-row' if reserva.ical_missing? %>
             <tr id="reserva-<%= reserva.id %>" data-updated-at="<%= reserva.updated_at.to_i %>" class="<%= row_classes.join(' ') %>">
               <td><%= reserva.id %></td>
+              <td>
+                <%= check_box_tag(
+                      "reserva_#{reserva.id}_group_created",
+                      "1",
+                      reserva.group_created?,
+                      class: "form-check-input group-created-checkbox",
+                      data: {
+                        url: update_group_created_admin_reserva_path(reserva),
+                        reserva_id: reserva.id
+                      },
+                      title: "Grupo criado"
+                    ) %>
+              </td>
               <td><%= reserva.updated_at&.in_time_zone("America/Sao_Paulo")&.strftime("%d/%m/%Y - %H:%Mh") || "—" %></td>
               <td><%= reserva.start_date&.strftime("%d/%m/%y") || "—" %></td>
               <td><%= reserva.end_date&.strftime("%d/%m/%y") || "—" %></td>
@@ -344,6 +367,49 @@ document.addEventListener('turbo:load', function() {
 <script>
 // Código para edição inline das observações
 document.addEventListener('turbo:load', function() {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+  document.querySelectorAll('.group-created-checkbox').forEach(function(checkbox) {
+    checkbox.addEventListener('change', function() {
+      const checked = this.checked;
+      const previousValue = !checked;
+
+      this.disabled = true;
+
+      fetch(this.dataset.url, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({ group_created: checked })
+      })
+        .then(function(response) {
+          return response.json().then(function(data) {
+            return { ok: response.ok, data: data };
+          });
+        })
+        .then(function(result) {
+          if (!result.ok || !result.data.success) {
+            throw new Error(result.data.error || 'Não foi possível salvar o grupo.');
+          }
+
+          checkbox.checked = result.data.group_created;
+          if (result.data.sheets_synced === false) {
+            alert('Grupo salvo no sistema, mas o Google Sheets não sincronizou: ' + (result.data.error || 'erro desconhecido'));
+          }
+        })
+        .catch(function(error) {
+          checkbox.checked = previousValue;
+          alert(error.message || 'Não foi possível salvar o grupo.');
+        })
+        .finally(function() {
+          checkbox.disabled = false;
+        });
+    });
+  });
+
   // Manipulador para o botão de editar observação
   document.querySelectorAll('.edit-observation-btn').forEach(function(btn) {
     btn.addEventListener('click', function(e) {

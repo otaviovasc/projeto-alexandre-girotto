@@ -49,6 +49,7 @@ Rails.application.routes.draw do
     resources :reservas do
       member do
         patch 'update_observation'
+        patch 'update_group_created'
       end
       collection do
         get :import_airbnb_calendar

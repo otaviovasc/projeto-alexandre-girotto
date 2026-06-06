@@ -1,7 +1,7 @@
 class Admin::ReservasController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin
-  before_action :set_reserva, only: [:edit, :update, :destroy, :show, :update_observation]
+  before_action :set_reserva, only: [:edit, :update, :destroy, :show, :update_observation, :update_group_created]
   before_action :check_reservations_on_new, only: [:reservas_summary]
 
   def index
@@ -276,6 +276,32 @@ class Admin::ReservasController < ApplicationController
     redirect_to admin_reservas_summary_path
   end
 
+  def update_group_created
+    group_created = ActiveModel::Type::Boolean.new.cast(params[:group_created])
+    @reserva.update_column(:group_created, group_created)
+
+    sheets_result = if GoogleSheetsExportService.configured?
+                      GoogleSheetsExportService.export_reservas(
+                        Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
+                      )
+                    else
+                      { success: true }
+                    end
+
+    if sheets_result[:success]
+      render json: { success: true, group_created: @reserva.group_created? }
+    else
+      render json: {
+        success: true,
+        group_created: @reserva.group_created?,
+        sheets_synced: false,
+        error: sheets_result[:error]
+      }, status: :accepted
+    end
+  rescue => e
+    render json: { success: false, error: e.message }, status: :unprocessable_entity
+  end
+
   def import_platform_calendar
     unless params[:cabana_id].present? && params[:platform].present?
       redirect_to select_cabana_import_admin_reservas_path, alert: "Selecione a cabana e a plataforma."
@@ -352,6 +378,7 @@ class Admin::ReservasController < ApplicationController
       :end_date, 
       :total_price, 
       :observation,
+      :group_created,
       user_attributes: [:id, :partner],
       reserva_services_attributes: [:id, :service_id, :quantity, :service_date, :status, :observation, :_destroy]
     )

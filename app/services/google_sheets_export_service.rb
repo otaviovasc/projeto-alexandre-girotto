@@ -116,12 +116,13 @@ class GoogleSheetsExportService
         'Tipo', 'ID Reserva', 'Cabana', 'Filial', 'Hóspede', 'Email', 'Telefone',
         'Check-in', 'Check-out', 'Noites', 'Valor', 'Status Pagamento',
         'Nome Serviço', 'Data Serviço', 'Quantidade', 'Status Serviço', 
-        'Valor Serviço', 'Observação', 'Data Criação'
+        'Valor Serviço', 'Observação', 'Data Criação', 'Observação de Serviços',
+        'Grupo Criado'
       ]
       rows = export_service.generate_array
 
       # Limpa a planilha e insere novos dados
-      clear_range = 'A:T'
+      clear_range = 'A:U'
       service.clear_values(@spreadsheet_id, clear_range)
 
       # Insere headers + dados
@@ -160,7 +161,7 @@ class GoogleSheetsExportService
       service.authorization = authorize
 
       # Busca todos os dados da planilha
-      response = service.get_spreadsheet_values(@spreadsheet_id, 'A:T')
+      response = service.get_spreadsheet_values(@spreadsheet_id, 'A:U')
       rows = response.values || []
 
       # Encontra as linhas que contêm o ID da reserva (coluna B = índice 1)

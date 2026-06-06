@@ -64,7 +64,8 @@ class ReservasExportService
       'Valor Serviço',
       'Observação',
       'Data Criação',
-      'Observação de Serviços'
+      'Observação de Serviços',
+      'Grupo Criado'
     ]
   end
 
@@ -91,7 +92,8 @@ class ReservasExportService
       '-',
       reserva.observation,
       format_datetime(reserva.created_at),
-      '-'
+      '-',
+      group_created_label(reserva)
     ]
   end
 
@@ -116,7 +118,8 @@ class ReservasExportService
       format_currency(rs.service&.price.to_f * rs.quantity.to_i),
       '-',
       format_datetime(rs.created_at),
-      rs.observation.presence || '-'
+      rs.observation.presence || '-',
+      group_created_label(reserva)
     ]
   end
 
@@ -144,5 +147,9 @@ class ReservasExportService
       'refused' => 'Recusado'
     }
     translations[status] || status
+  end
+
+  def group_created_label(reserva)
+    reserva.group_created? ? 'Sim' : 'Não'
   end
 end
