@@ -41,6 +41,7 @@ Rails.application.routes.draw do
         delete 'remove_image/:image_id', to: 'cabanas#remove_image', as: 'remove_image'
         get :edit_import_links
         patch :update_import_links
+        patch :update_breakfast_inclusions
       end
     end
     resources :holidays, only: [:create, :destroy]  # Manage holidays globally within admin

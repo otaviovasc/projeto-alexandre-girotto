@@ -57,6 +57,16 @@
       <%= form.text_field :color, class: 'form-control', placeholder: '#FFFFFF' %>
     </div>
 
+    <div class="mb-3 border rounded p-3">
+      <p class="fw-bold mb-2">Café da manhã incluso</p>
+      <% Cabana.breakfast_source_options.each do |_source, label, column| %>
+        <div class="form-check">
+          <%= form.check_box column, class: 'form-check-input' %>
+          <%= form.label column, label, class: 'form-check-label' %>
+        </div>
+      <% end %>
+    </div>
+
     <!-- Adicionar Novas Imagens -->
     <div class="mb-3">
       <%= form.label :images, 'Adicionar Novas Imagens', class: 'form-label' %>

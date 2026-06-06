@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_31_222000) do
+ActiveRecord::Schema[7.0].define(version: 2026_06_06_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -51,6 +51,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_31_222000) do
     t.string "link_guia"
     t.string "color", default: "#000000"
     t.text "import_links"
+    t.boolean "breakfast_included_airbnb", default: false, null: false
+    t.boolean "breakfast_included_booking", default: false, null: false
+    t.boolean "breakfast_included_holmy", default: false, null: false
+    t.boolean "breakfast_included_direct", default: false, null: false
     t.index ["filial_id"], name: "index_cabanas_on_filial_id"
   end
 
@@ -210,6 +214,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_31_222000) do
     t.boolean "manual_override", default: false, null: false
     t.boolean "ical_uid_from_feed", default: false, null: false
     t.datetime "ical_missing_since"
+    t.boolean "breakfast_manual_override", default: false, null: false
     t.index ["cabana_id"], name: "index_reservas_on_cabana_id"
     t.index ["cabana_id", "platform_uid"], name: "index_reservas_on_cabana_id_and_platform_uid"
     t.index ["cabana_id", "origem", "ical_uid"], name: "index_reservas_on_imported_ical"

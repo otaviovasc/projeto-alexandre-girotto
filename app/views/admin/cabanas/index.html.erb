@@ -15,6 +15,7 @@
           <th class="py-2 px-4">Nome</th>
           <th class="py-2 px-4">Preço</th>
           <th class="py-2 px-4">Filial</th>
+          <th class="py-2 px-4">Café incluso</th>
           <th class="py-2 px-4">Ações</th>
         </tr>
       </thead>
@@ -24,6 +25,18 @@
             <td class="py-2 px-4"><%= cabana.name %></td>
             <td class="py-2 px-4"><%= number_to_currency(cabana.price) %></td>
             <td class="py-2 px-4"><%= cabana.filial.name %></td>
+            <td class="py-2 px-4">
+              <%= form_with url: update_breakfast_inclusions_admin_cabana_path(cabana), method: :patch, local: true, class: 'd-flex flex-column gap-1' do %>
+                <% Cabana.breakfast_source_options.each do |_source, label, column| %>
+                  <div class="form-check mb-0">
+                    <%= hidden_field_tag "cabana[#{column}]", "0" %>
+                    <%= check_box_tag "cabana[#{column}]", "1", cabana.public_send(column), id: "cabana_#{cabana.id}_#{column}", class: 'form-check-input' %>
+                    <%= label_tag "cabana_#{cabana.id}_#{column}", label, class: 'form-check-label' %>
+                  </div>
+                <% end %>
+                <%= submit_tag 'Salvar café', class: 'btn btn-sm btn-outline-success mt-1 align-self-start' %>
+              <% end %>
+            </td>
             <td class="py-2 px-4 d-flex gap-2">
               <%= link_to 'Visualizar', admin_cabana_path(cabana), class: 'btn btn-sm btn-info' %>
               <%= link_to 'Editar', edit_admin_cabana_path(cabana), class: 'btn btn-sm btn-warning' %>

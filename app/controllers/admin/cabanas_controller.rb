@@ -1,7 +1,7 @@
 class Admin::CabanasController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin
-  before_action :set_cabana, only: [:edit, :update, :destroy, :show, :price_rules_and_holidays, :edit_import_links, :update_import_links]
+  before_action :set_cabana, only: [:edit, :update, :destroy, :show, :price_rules_and_holidays, :edit_import_links, :update_import_links, :update_breakfast_inclusions]
 
   def index
     @cabanas = Cabana.all
@@ -61,6 +61,14 @@ class Admin::CabanasController < ApplicationController
       render :edit_import_links
     end
   end
+
+  def update_breakfast_inclusions
+    if @cabana.update(breakfast_inclusion_params)
+      redirect_to admin_cabanas_path, notice: "Configuração de café da manhã atualizada para #{@cabana.name}."
+    else
+      redirect_to admin_cabanas_path, alert: "Não foi possível atualizar o café da manhã de #{@cabana.name}."
+    end
+  end
   
   def destroy
     @cabana.destroy
@@ -93,7 +101,27 @@ class Admin::CabanasController < ApplicationController
   end
 
   def cabana_params
-    params.require(:cabana).permit(:name, :price, :link_guia, :color, :filial_id, images: [])
+    params.require(:cabana).permit(
+      :name,
+      :price,
+      :link_guia,
+      :color,
+      :filial_id,
+      :breakfast_included_airbnb,
+      :breakfast_included_booking,
+      :breakfast_included_holmy,
+      :breakfast_included_direct,
+      images: []
+    )
+  end
+
+  def breakfast_inclusion_params
+    params.require(:cabana).permit(
+      :breakfast_included_airbnb,
+      :breakfast_included_booking,
+      :breakfast_included_holmy,
+      :breakfast_included_direct
+    )
   end
 
   def authorize_admin

@@ -29,7 +29,9 @@ class Reserva < ApplicationRecord
   before_create :set_default_fields
   before_create :set_default_payment_status
   after_create :ensure_required_cleaning_services
+  after_update :shift_reservation_services_after_start_date_change, if: :saved_change_to_start_date?
   after_update :ensure_required_cleaning_services_after_schedule_change, if: :cleaning_schedule_changed?
+  after_update :sync_automatic_breakfast_service_date, if: :cleaning_schedule_changed?
 
   def calculate_total_price!
     self.total_price = PriceCalculator.new(self).total_price
@@ -119,7 +121,7 @@ class Reserva < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    ["cabana_id", "created_at", "end_date", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "manual_override", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "start_date", "total_price", "updated_at", "user_id"]
+    ["breakfast_manual_override", "cabana_id", "created_at", "end_date", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "manual_override", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "start_date", "total_price", "updated_at", "user_id"]
   end
 
   private
@@ -128,8 +130,21 @@ class Reserva < ApplicationRecord
     CleaningServicesAssigner.new(self).call
   end
 
+  def shift_reservation_services_after_start_date_change
+    old_start_date, new_start_date = saved_change_to_start_date
+    ReservationServicesDateShifter.new(
+      self,
+      old_start_date: old_start_date,
+      new_start_date: new_start_date
+    ).call
+  end
+
   def ensure_required_cleaning_services_after_schedule_change
     CleaningServicesAssigner.new(self, force_dates: true).call
+  end
+
+  def sync_automatic_breakfast_service_date
+    BreakfastServicesAssigner.new(self).sync_automatic_service_dates
   end
 
   def cleaning_schedule_changed?

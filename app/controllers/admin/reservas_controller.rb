@@ -74,6 +74,8 @@ class Admin::ReservasController < ApplicationController
     @reserva.payment_status = "paid"
 
     if @reserva.save
+      BreakfastServicesAssigner.new(@reserva, source: 'sistema').add_if_configured
+
       # Sincroniza automaticamente com Google Sheets ao criar
       GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)) if GoogleSheetsExportService.configured?
       
@@ -101,6 +103,7 @@ class Admin::ReservasController < ApplicationController
         user = @reserva.user
         user.update(partner: params[:reserva][:user_attributes][:partner])
       end
+      BreakfastServicesAssigner.new(@reserva).remove_automatic_services if @reserva.user&.partner?
 
       GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)) if GoogleSheetsExportService.configured?
       

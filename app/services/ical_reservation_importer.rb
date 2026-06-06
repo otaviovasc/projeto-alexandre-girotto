@@ -63,6 +63,7 @@ class IcalReservationImporter
             end_date: event_range.end_date
           ))
           ensure_cleaning_services(reserva, force_dates: true)
+          sync_breakfast_service_date(reserva)
           result.updated += 1
         end
       else
@@ -77,6 +78,7 @@ class IcalReservationImporter
           observation: "Importado via #{@platform.capitalize} - #{@cabana.name}"
         ))
         ensure_cleaning_services(reserva)
+        ensure_breakfast_service(reserva)
         imported_ids << reserva.id
         result.created += 1
       end
@@ -232,6 +234,14 @@ class IcalReservationImporter
 
   def ensure_cleaning_services(reserva, force_dates: false)
     CleaningServicesAssigner.new(reserva, force_dates: force_dates).call
+  end
+
+  def ensure_breakfast_service(reserva)
+    BreakfastServicesAssigner.new(reserva, source: @platform).add_if_configured
+  end
+
+  def sync_breakfast_service_date(reserva)
+    BreakfastServicesAssigner.new(reserva, source: @platform).sync_automatic_service_dates
   end
 
   def mark_missing_imports(imported_ids)

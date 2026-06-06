@@ -63,6 +63,8 @@ class PriceCalculator
     @reservation.reserva_services.sum do |reserva_service|
       service = reserva_service.service
       next 0 if CleaningServicesAssigner.cleaning_service?(service)
+      next 0 if BreakfastServicesAssigner.included_breakfast_service?(reserva_service)
+      next reserva_service.quantity * service.price if BreakfastServicesAssigner.breakfast_service?(service)
 
       reserva_service.quantity * service.price * days_stayed
     end

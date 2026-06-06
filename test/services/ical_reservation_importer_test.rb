@@ -524,6 +524,33 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
     assert_includes reserva.reload.services.pluck(:name), "➡️ Limpeza Entrada (MG)"
   end
 
+  test "adds included breakfast only when a new configured iCal reservation enters" do
+    @cabana.update!(breakfast_included_airbnb: true)
+    create_service("Café da Manhã", @filial)
+
+    import(ics_for("breakfast-airbnb@example.com"))
+
+    reserva = @cabana.reservas.find_by!(ical_uid: "breakfast-airbnb@example.com")
+    breakfast_dates = reserva.reserva_services.includes(:service).select do |reserva_service|
+      BreakfastServicesAssigner.breakfast_service?(reserva_service.service)
+    end.map(&:service_date).sort
+
+    assert_equal [Date.new(2026, 6, 13), Date.new(2026, 6, 14)], breakfast_dates
+    assert reserva.reserva_services.includes(:service).select { |rs| BreakfastServicesAssigner.breakfast_service?(rs.service) }.all? { |rs| rs.observation == BreakfastServicesAssigner::AUTO_OBSERVATION }
+  end
+
+  test "does not add included breakfast retroactively to an existing iCal reservation" do
+    create_service("Café da Manhã", @filial)
+    ics = ics_for("existing-before-breakfast@example.com")
+
+    import(ics)
+    reserva = @cabana.reservas.find_by!(ical_uid: "existing-before-breakfast@example.com")
+    @cabana.update!(breakfast_included_airbnb: true)
+    import(ics)
+
+    assert_empty reserva.reload.services.select { |service| BreakfastServicesAssigner.breakfast_service?(service) }
+  end
+
   private
 
   def import(ics, today: Date.new(2026, 5, 31))
