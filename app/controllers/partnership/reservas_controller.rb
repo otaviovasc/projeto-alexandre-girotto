@@ -76,10 +76,10 @@ class Partnership::ReservasController < ApplicationController
   end
 
   def partnership_monthly_goal_rows
-    month_range = @reference_date.beginning_of_month.beginning_of_day..@reference_date.end_of_month.end_of_day
+    month_range = @reference_date.beginning_of_month..@reference_date.end_of_month
     counts_by_filial = partnership_reserva_scope
                        .joins(cabana: :filial)
-                       .where(created_at: month_range)
+                       .where(start_date: month_range)
                        .group('filials.name')
                        .count
 

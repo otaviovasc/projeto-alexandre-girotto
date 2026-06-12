@@ -46,7 +46,7 @@
 
   <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
     <%= link_to 'Mês anterior', partnership_dashboard_path(month: @previous_month), class: 'btn btn-outline-secondary btn-sm' %>
-    <div class="fw-semibold px-2">Metas de <%= @reference_date.strftime('%m/%Y') %></div>
+    <div class="fw-semibold px-2">Metas de <%= @reference_date.strftime('%m/%Y') %> pela data da estadia</div>
     <%= link_to 'Próximo mês', partnership_dashboard_path(month: @next_month), class: 'btn btn-outline-secondary btn-sm' %>
   </div>
 
@@ -86,7 +86,7 @@
           </div>
           <div class="d-flex align-items-end gap-2 mt-3">
             <div class="goal-count"><%= goal[:count] %></div>
-            <div class="text-muted mb-1">parcerias fechadas</div>
+            <div class="text-muted mb-1">parcerias alocadas neste mês</div>
           </div>
           <div class="progress mt-3" style="height: 8px;">
             <div class="progress-bar <%= goal[:status] == :above ? 'bg-danger' : 'bg-success' %>" style="width: <%= progress_percent %>%"></div>
