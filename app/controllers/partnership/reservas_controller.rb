@@ -63,10 +63,12 @@ class Partnership::ReservasController < ApplicationController
   end
 
   def partnership_reserva_scope
-    scope = Reserva.where.not(partnership_creator_id: nil)
-    return scope if current_user.admin?
-
-    scope.where(partnership_creator: current_user)
+    base_scope = Reserva.left_joins(:user)
+    base_scope
+      .where.not(partnership_creator_id: nil)
+      .or(base_scope.where("LOWER(COALESCE(reservas.observation, '')) LIKE ?", '%parceria%'))
+      .or(base_scope.where(users: { partner: true }))
+      .distinct
   end
 
   def partnership_reference_date
@@ -119,7 +121,7 @@ class Partnership::ReservasController < ApplicationController
     partnership_reserva_scope
       .includes(cabana: :filial)
       .where(start_date: year_range)
-      .find_each do |reserva|
+      .each do |reserva|
         counts_by_month_and_filial[reserva.start_date.month][reserva.cabana.filial&.name] += 1
       end
 
