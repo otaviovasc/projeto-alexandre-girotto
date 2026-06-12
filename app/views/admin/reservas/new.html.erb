@@ -1,17 +1,22 @@
-<div class="container py-4">
-  <h1 class="text-2xl font-bold mb-4">Nova Reserva</h1>
+<% partnership_form = @partnership_form.present? %>
+<% form_url = partnership_form ? partnership_reservas_path : admin_reservas_path %>
 
-  <%= form_with model: @reserva, url: admin_reservas_path, local: true, html: { class: 'needs-validation' } do |form| %>
+<div class="container py-4">
+  <h1 class="text-2xl font-bold mb-4"><%= partnership_form ? 'Nova Reserva de Parceria' : 'Nova Reserva' %></h1>
+
+  <%= form_with model: @reserva, url: form_url, local: true, html: { class: 'needs-validation' } do |form| %>
     
     <!-- Toggle para criar novo usuário -->
-    <div class="form-check mb-3">
-      <%= check_box_tag 'create_user', 'true', false, id: 'create_user_toggle', class: 'form-check-input' %>
-      <%= label_tag 'create_user_toggle', 'Criar Novo Usuário?', class: 'form-check-label' %>
-    </div>
+    <% unless partnership_form %>
+      <div class="form-check mb-3">
+        <%= check_box_tag 'create_user', 'true', false, id: 'create_user_toggle', class: 'form-check-input' %>
+        <%= label_tag 'create_user_toggle', 'Criar Novo Usuário?', class: 'form-check-label' %>
+      </div>
+    <% end %>
 
     <!-- Campos para novo usuário -->
-    <div id="new_user_fields" style="display:none;" class="border rounded p-3 mb-4">
-      <h5 class="mb-3">Detalhes do Novo Usuário</h5>
+    <div id="new_user_fields" style="<%= partnership_form ? '' : 'display:none;' %>" class="border rounded p-3 mb-4">
+      <h5 class="mb-3"><%= partnership_form ? 'Dados do Hóspede' : 'Detalhes do Novo Usuário' %></h5>
       
       <div class="mb-3">
         <%= label_tag :name, 'Nome *', class: 'form-label' %>
@@ -29,17 +34,23 @@
         <%= text_field_tag 'user[telephone]', nil, class: 'form-control', id: 'telephone_field' %>
       </div>
 
-      <div class="form-check mb-3">
-        <%= check_box_tag 'user[partner]', 'true', false, id: 'partner_checkbox', class: 'form-check-input' %>
-        <%= label_tag 'partner_checkbox', 'É Parceiro?', class: 'form-check-label' %>
-      </div>
+      <% if partnership_form %>
+        <%= hidden_field_tag 'user[partner]', 'true' %>
+      <% else %>
+        <div class="form-check mb-3">
+          <%= check_box_tag 'user[partner]', 'true', false, id: 'partner_checkbox', class: 'form-check-input' %>
+          <%= label_tag 'partner_checkbox', 'É Parceiro?', class: 'form-check-label' %>
+        </div>
+      <% end %>
     </div>
 
     <!-- Seleção de usuário existente -->
-    <div id="existing_user_fields" class="mb-3">
-      <%= form.label :user_id, 'Selecionar Usuário *', class: 'form-label' %>
-      <%= form.collection_select :user_id, User.all, :id, :email, { prompt: 'Selecione um usuário' }, { class: 'form-select', required: true, id: 'user_select' } %>
-    </div>
+    <% unless partnership_form %>
+      <div id="existing_user_fields" class="mb-3">
+        <%= form.label :user_id, 'Selecionar Usuário *', class: 'form-label' %>
+        <%= form.collection_select :user_id, User.all, :id, :email, { prompt: 'Selecione um usuário' }, { class: 'form-select', required: true, id: 'user_select' } %>
+      </div>
+    <% end %>
 
     <!-- Seleção de cabana -->
     <div class="mb-3">
@@ -63,10 +74,14 @@
     </div>
 
     <!-- Observation -->
-    <div class="mb-3">
-      <%= form.label :observation, 'Observação (origem da reserva)', class: 'form-label' %>
-      <%= form.text_area :observation, class: 'form-control', rows: 2, placeholder: 'Ex: Airbnb, Booking, Indicação...' %>
-    </div>
+    <% if partnership_form %>
+      <%= form.hidden_field :observation, value: 'Parceria' %>
+    <% else %>
+      <div class="mb-3">
+        <%= form.label :observation, 'Observação (origem da reserva)', class: 'form-label' %>
+        <%= form.text_area :observation, class: 'form-control', rows: 2, placeholder: 'Ex: Airbnb, Booking, Indicação...' %>
+      </div>
+    <% end %>
 
     <!-- Serviços -->
     <div class="mb-4" id="services-section">
@@ -137,8 +152,8 @@
 
     <!-- Botões -->
     <div class="d-flex gap-2 mt-4">
-      <%= form.submit 'Salvar', class: 'btn btn-primary', id: 'submit_btn' %>
-      <%= link_to 'Cancelar', :back, class: 'btn btn-secondary' %>
+      <%= form.submit partnership_form ? 'Criar Reserva de Parceria' : 'Salvar', class: 'btn btn-primary', id: 'submit_btn' %>
+      <%= link_to partnership_form ? 'Limpar' : 'Cancelar', partnership_form ? new_partnership_reserva_path : :back, class: 'btn btn-secondary' %>
     </div>
 
   <% end %>
@@ -366,16 +381,24 @@
     const userSelect = document.getElementById('user_select');
     
     // Inicializar Select2
-    $('#user_select').select2({
-      theme: 'bootstrap-5',
-      width: '100%',
-      placeholder: 'Selecione um usuário',
-      allowClear: true
-    });
+    if (userSelect) {
+      $('#user_select').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        placeholder: 'Selecione um usuário',
+        allowClear: true
+      });
+    }
 
     // Campos obrigatórios para novo usuário
     const nameField = document.querySelector('input[name="user[name]"]');
     const emailField = document.querySelector('input[name="user[email]"]');
+
+    if (!toggle) {
+      if (nameField) nameField.setAttribute("required", "true");
+      if (emailField) emailField.setAttribute("required", "true");
+      return;
+    }
 
     function updateRequiredFields() {
       if (toggle.checked) {
@@ -406,8 +429,10 @@
         // Limpar campos de novo usuário
         if (nameField) nameField.value = "";
         if (emailField) emailField.value = "";
-        document.getElementById('telephone_field').value = "";
-        document.getElementById('partner_checkbox').checked = false;
+        const telephoneField = document.getElementById('telephone_field');
+        const partnerCheckbox = document.getElementById('partner_checkbox');
+        if (telephoneField) telephoneField.value = "";
+        if (partnerCheckbox) partnerCheckbox.checked = false;
       }
     }
 

@@ -4,6 +4,11 @@ class User < ApplicationRecord
 
   # Reserva association
   has_many :reservas, dependent: :destroy
+  has_many :created_partnership_reservas,
+           class_name: 'Reserva',
+           foreign_key: :partnership_creator_id,
+           inverse_of: :partnership_creator,
+           dependent: :nullify
 
   # Cart association
   has_one :cart, dependent: :destroy
@@ -12,7 +17,15 @@ class User < ApplicationRecord
   after_create :send_welcome_email
 
   # Assigning custom values to the roles
-  enum role: { service_provider: 3, manager: 2, admin: 1, client: 0 }
+  enum role: { service_provider: 3, manager: 2, admin: 1, client: 0, partnership_agent: 4 }
+
+  ROLE_LABELS = {
+    'service_provider' => 'Prestador de serviço',
+    'manager' => 'Gerente',
+    'admin' => 'Admin',
+    'client' => 'Cliente',
+    'partnership_agent' => 'Parcerias'
+  }.freeze
 
   belongs_to :filial, optional: true
 
@@ -21,6 +34,7 @@ class User < ApplicationRecord
   scope :clients, -> { where(role: :client) }
   scope :managers, -> { where(role: :manager) }
   scope :admins, -> { where(role: :admin) }
+  scope :partnership_agents, -> { where(role: :partnership_agent) }
 
   # Scopes for partner status
   scope :partners, -> { where(partner: true) }
@@ -42,6 +56,21 @@ class User < ApplicationRecord
                 .first
 
     sync_filial_from_cabana!(reserva&.cabana)
+  end
+
+  def self.role_label(role)
+    ROLE_LABELS[role.to_s] || role.to_s.humanize
+  end
+
+  def self.role_options(include_admin: true)
+    keys = roles.keys
+    keys = keys.reject { |role| role == 'admin' } unless include_admin
+
+    keys.map { |role| [role_label(role), role] }
+  end
+
+  def role_label
+    self.class.role_label(role)
   end
 
   # Set default role to client

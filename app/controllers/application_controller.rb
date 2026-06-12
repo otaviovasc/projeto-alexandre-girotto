@@ -1,6 +1,7 @@
 class ApplicationController < ActionController::Base
   before_action :authenticate_user!
   before_action :store_user_location!, if: :should_store_location?
+  before_action :restrict_partnership_agent_access
 
   private
 
@@ -19,6 +20,8 @@ class ApplicationController < ActionController::Base
   def after_sign_in_path_for(resource)
     sync_user_filial_after_sign_in(resource)
 
+    return new_partnership_reserva_path if resource.respond_to?(:partnership_agent?) && resource.partnership_agent?
+
     if session[:reserva_params].present? && session[:cabana_id].present?
       auto_create_reservas_path
     else
@@ -35,5 +38,18 @@ class ApplicationController < ActionController::Base
     elsif resource.respond_to?(:sync_filial_from_latest_reserva!)
       resource.sync_filial_from_latest_reserva!
     end
+  end
+
+  def restrict_partnership_agent_access
+    return unless current_user&.partnership_agent?
+    return if devise_controller?
+    return if partnership_agent_allowed_path?
+
+    redirect_to new_partnership_reserva_path, alert: 'Seu acesso está limitado à criação de reservas de parceria.'
+  end
+
+  def partnership_agent_allowed_path?
+    request.path.start_with?('/parcerias') ||
+      request.path.match?(%r{\A/cabanas/\d+/unavailable_dates\z})
   end
 end

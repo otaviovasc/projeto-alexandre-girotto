@@ -71,7 +71,7 @@
     <!-- Campo Função -->
     <div class="mb-3">
       <%= form.label :role, 'Função', class: 'form-label' %>
-      <%= form.select :role, User.roles.keys.reject { |role| role == 'admin' }.map { |role| [role.humanize, role] }, { include_blank: 'Selecione uma função' }, { class: "form-select #{'is-invalid' if @user.errors[:role].any?}" } %>
+      <%= form.select :role, User.role_options(include_admin: false), { include_blank: 'Selecione uma função' }, { class: "form-select #{'is-invalid' if @user.errors[:role].any?}" } %>
       <% if @user.errors[:role].any? %>
         <div class="invalid-feedback">
           <%= @user.errors[:role].first %>

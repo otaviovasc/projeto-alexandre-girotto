@@ -5,7 +5,7 @@
     <%= form_with url: admin_users_path, method: :get, local: true, html: { class: 'row g-3 align-items-end' } do |form| %>
       <div class="col-md-3">
         <%= form.label :role, 'Filtrar por Função', class: 'form-label' %>
-        <%= form.select :role, User.roles.keys.map { |role| [role.humanize, role] }, { include_blank: 'Selecione uma função' }, { class: 'form-select' } %>
+        <%= form.select :role, User.role_options, { include_blank: 'Selecione uma função' }, { class: 'form-select' } %>
       </div>
 
       <div class="col-md-3">
@@ -46,7 +46,7 @@
           <tr>
             <td><%= user.email %></td>
             <td><%= user.telephone %></td>
-            <td><%= user.role.humanize %></td>
+            <td><%= user.role_label %></td>
             <td><%= user.filial ? user.filial.name : 'Nenhuma' %></td>
             <td><%= user.created_at.strftime('%d/%m/%Y') %></td>
             <td class="d-flex gap-2">

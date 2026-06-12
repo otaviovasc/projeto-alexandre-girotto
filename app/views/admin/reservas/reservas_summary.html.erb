@@ -38,6 +38,20 @@
         rgba(255, 192, 203, 0.3) 100%
       ) !important;
     }
+    .partnership-created-row {
+      --bs-table-bg: #fff8db;
+      --bs-table-striped-bg: #fff8db;
+      --bs-table-hover-bg: #ffefad;
+      background: #fff8db !important;
+      border: 2px dashed #f59e0b !important;
+      border-left: 5px solid #f59e0b !important;
+    }
+    .partnership-created-row td {
+      border-color: rgba(245, 158, 11, 0.35) !important;
+    }
+    .partnership-created-row:hover {
+      background: #ffefad !important;
+    }
     .ical-missing-row {
       --bs-table-bg: #fff1f2;
       --bs-table-striped-bg: #fff1f2;
@@ -233,6 +247,7 @@
           <% @reservas.each do |reserva| %>
             <% row_classes = [] %>
             <% row_classes << 'partner-row' if reserva.user.partner? %>
+            <% row_classes << 'partnership-created-row' if reserva.partnership_created? %>
             <% row_classes << 'ical-missing-row' if reserva.ical_missing? %>
             <tr id="reserva-<%= reserva.id %>" data-updated-at="<%= reserva.updated_at.to_i %>" class="<%= row_classes.join(' ') %>">
               <td><%= reserva.id %></td>
