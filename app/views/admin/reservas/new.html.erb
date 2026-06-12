@@ -1,5 +1,10 @@
 <% partnership_form = @partnership_form.present? %>
+<% creating_new_guest = @creating_new_guest.present? %>
 <% form_url = partnership_form ? partnership_reservas_path : admin_reservas_path %>
+<% user_collection = partnership_form ? (@existing_users || User.clients.order(:name, :email)) : User.all %>
+<% user_prompt = partnership_form ? 'Selecione um hóspede existente' : 'Selecione um usuário' %>
+<% user_options = user_collection.map { |user| [[user.name.presence, user.email.presence].compact.join(' - '), user.id] } %>
+<% selected_user_id = @reserva&.user_id || params.dig(:reserva, :user_id) %>
 
 <div class="container py-4">
   <h1 class="text-2xl font-bold mb-4"><%= partnership_form ? 'Nova Reserva de Parceria' : 'Nova Reserva' %></h1>
@@ -7,31 +12,29 @@
   <%= form_with model: @reserva, url: form_url, local: true, html: { class: 'needs-validation' } do |form| %>
     
     <!-- Toggle para criar novo usuário -->
-    <% unless partnership_form %>
-      <div class="form-check mb-3">
-        <%= check_box_tag 'create_user', 'true', false, id: 'create_user_toggle', class: 'form-check-input' %>
-        <%= label_tag 'create_user_toggle', 'Criar Novo Usuário?', class: 'form-check-label' %>
-      </div>
-    <% end %>
+    <div class="form-check mb-3">
+      <%= check_box_tag 'create_user', 'true', creating_new_guest, id: 'create_user_toggle', class: 'form-check-input' %>
+      <%= label_tag 'create_user_toggle', partnership_form ? 'Criar novo hóspede?' : 'Criar Novo Usuário?', class: 'form-check-label' %>
+    </div>
 
     <!-- Campos para novo usuário -->
-    <div id="new_user_fields" style="<%= partnership_form ? '' : 'display:none;' %>" class="border rounded p-3 mb-4">
+    <div id="new_user_fields" style="<%= creating_new_guest ? '' : 'display:none;' %>" class="border rounded p-3 mb-4">
       <h5 class="mb-3"><%= partnership_form ? 'Dados do Hóspede' : 'Detalhes do Novo Usuário' %></h5>
       
       <div class="mb-3">
         <%= label_tag :name, 'Nome *', class: 'form-label' %>
-        <%= text_field_tag 'user[name]', nil, class: 'form-control', required: true %>
+        <%= text_field_tag 'user[name]', params.dig(:user, :name), class: 'form-control', required: creating_new_guest %>
       </div>
 
       <div class="mb-3">
         <%= label_tag :email, 'E-mail *', class: 'form-label' %>
-        <%= text_field_tag 'user[email]', nil, class: 'form-control', type: 'email', required: true %>
+        <%= text_field_tag 'user[email]', params.dig(:user, :email), class: 'form-control', type: 'email', required: creating_new_guest %>
       </div>
 
       <div class="mb-3">
         <%= label_tag :telephone, 'Telefone', class: 'form-label' %>
         <small class="text-muted">(opcional)</small>
-        <%= text_field_tag 'user[telephone]', nil, class: 'form-control', id: 'telephone_field' %>
+        <%= text_field_tag 'user[telephone]', params.dig(:user, :telephone), class: 'form-control', id: 'telephone_field' %>
       </div>
 
       <% if partnership_form %>
@@ -45,12 +48,10 @@
     </div>
 
     <!-- Seleção de usuário existente -->
-    <% unless partnership_form %>
-      <div id="existing_user_fields" class="mb-3">
-        <%= form.label :user_id, 'Selecionar Usuário *', class: 'form-label' %>
-        <%= form.collection_select :user_id, User.all, :id, :email, { prompt: 'Selecione um usuário' }, { class: 'form-select', required: true, id: 'user_select' } %>
-      </div>
-    <% end %>
+    <div id="existing_user_fields" class="mb-3" style="<%= creating_new_guest ? 'display:none;' : '' %>">
+      <%= form.label :user_id, partnership_form ? 'Selecionar Hóspede Existente *' : 'Selecionar Usuário *', class: 'form-label' %>
+      <%= form.select :user_id, options_for_select(user_options, selected_user_id), { prompt: user_prompt }, { class: 'form-select', required: !creating_new_guest, id: 'user_select' } %>
+    </div>
 
     <!-- Seleção de cabana -->
     <div class="mb-3">
