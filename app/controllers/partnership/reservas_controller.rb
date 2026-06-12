@@ -10,14 +10,16 @@ class Partnership::ReservasController < ApplicationController
 
   def index
     @reference_date = partnership_reference_date
-    @previous_month = @reference_date.prev_month.strftime('%Y-%m')
-    @next_month = @reference_date.next_month.strftime('%Y-%m')
+    @summary_year = partnership_summary_year
+    @previous_year = @summary_year - 1
+    @next_year = @summary_year + 1
 
     @partnership_reservas = partnership_reserva_scope
                             .includes(:user, :partnership_creator, cabana: :filial)
                             .order(created_at: :desc)
 
     @monthly_goal_rows = partnership_monthly_goal_rows
+    @yearly_summary_rows = partnership_yearly_summary_rows
     @reservas_calendar = Reserva.includes(:cabana).where(payment_status: 'paid')
     @top_offset = calendar_top_offsets(@reservas_calendar)
   end
@@ -68,11 +70,17 @@ class Partnership::ReservasController < ApplicationController
   end
 
   def partnership_reference_date
-    return Date.strptime(params[:month], '%Y-%m') if params[:month].present?
+    date_param = params[:start_date].presence || params[:month].presence
+    return Date.strptime(date_param, '%Y-%m') if date_param&.match?(/\A\d{4}-\d{2}\z/)
+    return Date.parse(date_param).beginning_of_month if date_param.present?
 
-    Date.current
+    Date.current.beginning_of_month
   rescue ArgumentError
-    Date.current
+    Date.current.beginning_of_month
+  end
+
+  def partnership_summary_year
+    @reference_date.year
   end
 
   def partnership_monthly_goal_rows
@@ -100,6 +108,27 @@ class Partnership::ReservasController < ApplicationController
         max: goal[:max],
         count: count,
         status: status
+      }
+    end
+  end
+
+  def partnership_yearly_summary_rows
+    year_range = Date.new(@summary_year, 1, 1)..Date.new(@summary_year, 12, 31)
+    counts_by_month_and_filial = Hash.new { |hash, key| hash[key] = Hash.new(0) }
+
+    partnership_reserva_scope
+      .includes(cabana: :filial)
+      .where(start_date: year_range)
+      .find_each do |reserva|
+        counts_by_month_and_filial[reserva.start_date.month][reserva.cabana.filial&.name] += 1
+      end
+
+    (1..12).map do |month|
+      month_start = Date.new(@summary_year, month, 1)
+      {
+        month: month,
+        month_start: month_start,
+        counts: counts_by_month_and_filial[month]
       }
     end
   end

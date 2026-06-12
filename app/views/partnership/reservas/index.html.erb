@@ -21,6 +21,62 @@
       font-weight: 700;
       line-height: 1;
     }
+    .partnership-dashboard .year-summary-panel {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+    }
+    .partnership-dashboard .year-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.5rem;
+    }
+    .partnership-dashboard .year-month-link {
+      display: block;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 0.75rem;
+      color: inherit;
+      text-decoration: none;
+      background: #f8fafc;
+    }
+    .partnership-dashboard .year-month-link:hover {
+      border-color: #93c5fd;
+      background: #eff6ff;
+    }
+    .partnership-dashboard .year-month-link.active {
+      border-color: #2563eb;
+      background: #dbeafe;
+    }
+    .partnership-dashboard .year-count-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .partnership-dashboard .month-goal-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .partnership-dashboard .month-goal-item {
+      border: 1px solid #e2e8f0;
+      border-left-width: 5px;
+      border-radius: 6px;
+      padding: 0.75rem;
+      background: #f8fafc;
+    }
+    .partnership-dashboard .month-goal-item.goal-below {
+      border-left-color: #f59e0b;
+    }
+    .partnership-dashboard .month-goal-item.goal-ok {
+      border-left-color: #16a34a;
+    }
+    .partnership-dashboard .month-goal-item.goal-above {
+      border-left-color: #dc2626;
+    }
     .partnership-dashboard .calendar-card,
     .partnership-dashboard .list-card {
       border: 1px solid #e2e8f0;
@@ -44,66 +100,77 @@
     <%= link_to 'Nova Reserva de Parceria', new_partnership_reserva_path, class: 'btn btn-primary' %>
   </div>
 
-  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-    <%= link_to 'Mês anterior', partnership_dashboard_path(month: @previous_month), class: 'btn btn-outline-secondary btn-sm' %>
-    <div class="fw-semibold px-2">Metas de <%= @reference_date.strftime('%m/%Y') %> pela data da estadia</div>
-    <%= link_to 'Próximo mês', partnership_dashboard_path(month: @next_month), class: 'btn btn-outline-secondary btn-sm' %>
+  <div class="year-summary-panel p-3 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+      <h4 class="mb-0">Resumo de <%= @summary_year %></h4>
+      <div class="d-flex gap-2">
+        <%= link_to 'Ano anterior', partnership_dashboard_path(start_date: Date.new(@previous_year, 1, 1)), class: 'btn btn-outline-secondary btn-sm' %>
+        <%= link_to 'Próximo ano', partnership_dashboard_path(start_date: Date.new(@next_year, 1, 1)), class: 'btn btn-outline-secondary btn-sm' %>
+      </div>
+    </div>
+
+    <div class="year-summary-grid">
+      <% @yearly_summary_rows.each do |summary| %>
+        <% active_month = summary[:month_start].year == @reference_date.year && summary[:month_start].month == @reference_date.month %>
+        <%= link_to partnership_dashboard_path(start_date: summary[:month_start].strftime('%Y-%m-%d'), anchor: 'calendario-parcerias'),
+                    class: "year-month-link #{'active' if active_month}" do %>
+          <div class="fw-semibold mb-2"><%= t('date.month_names')[summary[:month]].capitalize %></div>
+          <% @monthly_goal_rows.each do |goal| %>
+            <% label = goal[:filial_name].include?('Serra') ? 'Serra' : 'Fattoria' %>
+            <div class="year-count-line">
+              <span><%= label %></span>
+              <strong><%= summary[:counts][goal[:filial_name]].to_i %></strong>
+            </div>
+          <% end %>
+        <% end %>
+      <% end %>
+    </div>
   </div>
 
-  <div class="row g-3 mb-4">
-    <% @monthly_goal_rows.each do |goal| %>
-      <% goal_class = "goal-#{goal[:status]}" %>
-      <% badge_class_name =
-        case goal[:status]
-        when :below
-          'bg-warning text-dark'
-        when :above
-          'bg-danger'
-        else
-          'bg-success'
-        end
-      %>
-      <% status_label =
-        case goal[:status]
-        when :below
-          'Abaixo do mínimo'
-        when :above
-          'Acima do máximo'
-        else
-          'Dentro da meta'
-        end
-      %>
-      <% progress_percent = goal[:max].positive? ? [((goal[:count].to_f / goal[:max]) * 100).round, 100].min : 0 %>
+  <div id="calendario-parcerias" class="calendar-card p-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h4 class="mb-0">Calendário de Disponibilidade</h4>
+        <div class="text-muted">Metas de <%= @reference_date.strftime('%m/%Y') %> pela data da estadia</div>
+      </div>
+      <span class="text-muted">Datas sem faixa colorida estão livres.</span>
+    </div>
 
-      <div class="col-md-6">
-        <div class="goal-card <%= goal_class %> p-3 h-100">
-          <div class="d-flex justify-content-between align-items-start gap-3">
+    <div class="month-goal-strip">
+      <% @monthly_goal_rows.each do |goal| %>
+        <% goal_class = "goal-#{goal[:status]}" %>
+        <% status_label =
+          case goal[:status]
+          when :below
+            'Abaixo do mínimo'
+          when :above
+            'Acima do máximo'
+          else
+            'Dentro da meta'
+          end
+        %>
+        <% progress_percent = goal[:max].positive? ? [((goal[:count].to_f / goal[:max]) * 100).round, 100].min : 0 %>
+        <div class="month-goal-item <%= goal_class %>">
+          <div class="d-flex justify-content-between align-items-start gap-2">
             <div>
-              <h5 class="mb-1"><%= goal[:filial_name] %></h5>
-              <div class="text-muted">Mínimo <%= goal[:min] %> e máximo <%= goal[:max] %> por mês</div>
+              <div class="fw-semibold"><%= goal[:filial_name] %></div>
+              <div class="text-muted">Meta <%= goal[:min] %> a <%= goal[:max] %></div>
             </div>
-            <span class="badge <%= badge_class_name %>"><%= status_label %></span>
+            <div class="text-end">
+              <div class="goal-count"><%= goal[:count] %></div>
+              <div class="text-muted"><%= status_label %></div>
+            </div>
           </div>
-          <div class="d-flex align-items-end gap-2 mt-3">
-            <div class="goal-count"><%= goal[:count] %></div>
-            <div class="text-muted mb-1">parcerias alocadas neste mês</div>
-          </div>
-          <div class="progress mt-3" style="height: 8px;">
+          <div class="progress mt-2" style="height: 8px;">
             <div class="progress-bar <%= goal[:status] == :above ? 'bg-danger' : 'bg-success' %>" style="width: <%= progress_percent %>%"></div>
           </div>
         </div>
-      </div>
-    <% end %>
-  </div>
-
-  <div class="calendar-card p-3 mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="mb-0">Calendário de Disponibilidade</h4>
-      <span class="text-muted">Datas sem faixa colorida estão livres.</span>
+      <% end %>
     </div>
 
     <%= month_calendar(
           events: @reservas_calendar,
+          start_date: @reference_date,
           attribute: :start_date,
           end_attribute: :end_date,
           previous_link: "<i class='bi bi-arrow-left'></i>".html_safe,
@@ -208,3 +275,23 @@
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener('turbo:load', function() {
+    const calendar = document.getElementById('calendario-parcerias');
+    if (!calendar) return;
+
+    calendar.querySelectorAll('.calendar-heading nav a').forEach(function(link) {
+      const href = link.getAttribute('href');
+      if (href && !href.includes('#')) {
+        link.setAttribute('href', href + '#calendario-parcerias');
+      }
+    });
+
+    if (window.location.hash === '#calendario-parcerias') {
+      requestAnimationFrame(function() {
+        calendar.scrollIntoView({ block: 'start' });
+      });
+    }
+  });
+</script>
