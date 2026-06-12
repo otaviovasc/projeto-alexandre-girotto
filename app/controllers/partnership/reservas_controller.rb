@@ -1,5 +1,26 @@
 class Partnership::ReservasController < ApplicationController
+  PARTNERSHIP_GOALS = {
+    'Serra da Mantiqueira' => { min: 4, max: 8 },
+    'Fattoria di Brauna' => { min: 2, max: 4 }
+  }.freeze
+
+  helper ReservasHelper
+
   before_action :authorize_partnership_access
+
+  def index
+    @reference_date = partnership_reference_date
+    @previous_month = @reference_date.prev_month.strftime('%Y-%m')
+    @next_month = @reference_date.next_month.strftime('%Y-%m')
+
+    @partnership_reservas = partnership_reserva_scope
+                            .includes(:user, :partnership_creator, cabana: :filial)
+                            .order(created_at: :desc)
+
+    @monthly_goal_rows = partnership_monthly_goal_rows
+    @reservas_calendar = Reserva.includes(:cabana).where(payment_status: 'paid')
+    @top_offset = calendar_top_offsets(@reservas_calendar)
+  end
 
   def new
     setup_form
@@ -25,7 +46,7 @@ class Partnership::ReservasController < ApplicationController
 
     if @reserva.save
       GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)) if GoogleSheetsExportService.configured?
-      redirect_to new_partnership_reserva_path, notice: 'Reserva de parceria criada com sucesso.'
+      redirect_to partnership_dashboard_path, notice: 'Reserva de parceria criada com sucesso.'
     else
       render_new_with_error("Não foi possível salvar a reserva. Verifique os dados informados: #{@reserva.errors.full_messages.join(', ')}")
     end
@@ -37,6 +58,58 @@ class Partnership::ReservasController < ApplicationController
     return if current_user&.partnership_agent? || current_user&.admin?
 
     redirect_to root_path, alert: 'Você não tem permissão para criar reservas de parceria.'
+  end
+
+  def partnership_reserva_scope
+    scope = Reserva.where.not(partnership_creator_id: nil)
+    return scope if current_user.admin?
+
+    scope.where(partnership_creator: current_user)
+  end
+
+  def partnership_reference_date
+    return Date.strptime(params[:month], '%Y-%m') if params[:month].present?
+
+    Date.current
+  rescue ArgumentError
+    Date.current
+  end
+
+  def partnership_monthly_goal_rows
+    month_range = @reference_date.beginning_of_month.beginning_of_day..@reference_date.end_of_month.end_of_day
+    counts_by_filial = partnership_reserva_scope
+                       .joins(cabana: :filial)
+                       .where(created_at: month_range)
+                       .group('filials.name')
+                       .count
+
+    PARTNERSHIP_GOALS.map do |filial_name, goal|
+      count = counts_by_filial[filial_name].to_i
+      status =
+        if count < goal[:min]
+          :below
+        elsif count > goal[:max]
+          :above
+        else
+          :ok
+        end
+
+      {
+        filial_name: filial_name,
+        min: goal[:min],
+        max: goal[:max],
+        count: count,
+        status: status
+      }
+    end
+  end
+
+  def calendar_top_offsets(reservas)
+    offsets = {}
+    reservas.map(&:cabana_id).uniq.each_with_index do |cabana_id, index|
+      offsets[cabana_id] = 20 + index * 15
+    end
+    offsets
   end
 
   def create_or_update_guest

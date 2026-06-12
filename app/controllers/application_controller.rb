@@ -20,7 +20,7 @@ class ApplicationController < ActionController::Base
   def after_sign_in_path_for(resource)
     sync_user_filial_after_sign_in(resource)
 
-    return new_partnership_reserva_path if resource.respond_to?(:partnership_agent?) && resource.partnership_agent?
+    return partnership_dashboard_path if resource.respond_to?(:partnership_agent?) && resource.partnership_agent?
 
     if session[:reserva_params].present? && session[:cabana_id].present?
       auto_create_reservas_path

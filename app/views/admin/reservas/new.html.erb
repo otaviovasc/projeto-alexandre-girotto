@@ -154,7 +154,12 @@
     <!-- Botões -->
     <div class="d-flex gap-2 mt-4">
       <%= form.submit partnership_form ? 'Criar Reserva de Parceria' : 'Salvar', class: 'btn btn-primary', id: 'submit_btn' %>
-      <%= link_to partnership_form ? 'Limpar' : 'Cancelar', partnership_form ? new_partnership_reserva_path : :back, class: 'btn btn-secondary' %>
+      <% if partnership_form %>
+        <%= link_to 'Limpar', new_partnership_reserva_path, class: 'btn btn-secondary' %>
+        <%= link_to 'Painel de Parcerias', partnership_dashboard_path, class: 'btn btn-outline-secondary' %>
+      <% else %>
+        <%= link_to 'Cancelar', :back, class: 'btn btn-secondary' %>
+      <% end %>
     </div>
 
   <% end %>

@@ -21,6 +21,7 @@ Rails.application.routes.draw do
   # Funil mailer
   post 'crete_mailer_entry', to: 'home#create_mailer_entry'
 
+  get 'parcerias', to: 'partnership/reservas#index', as: :partnership_dashboard
   namespace :partnership, path: 'parcerias' do
     resources :reservas, only: [:create]
   end
@@ -133,7 +134,7 @@ Rails.application.routes.draw do
 
   # Admin root
   authenticated :user, ->(u) { u.partnership_agent? } do
-    root to: 'partnership/reservas#new', as: :partnership_root
+    root to: 'partnership/reservas#index', as: :partnership_root
   end
 
   authenticated :user, ->(u) { !u.client? && !u.partnership_agent? } do
