@@ -2,6 +2,7 @@ class PortalReservaController < ApplicationController
   layout "portal_reserva"
   skip_before_action :authenticate_user!
   before_action :ensure_service_purchase_window_open!, only: [:servicos, :adicionar, :remover, :pagar]
+  helper_method :food_service_for_observation?
 
   # GET /minha-reserva
   def index
@@ -84,6 +85,7 @@ class PortalReservaController < ApplicationController
     service  = @reserva.cabana.filial.services.find(params[:service_id])
     quantity = 1
     service_dates_param = params[:service_dates] || []
+    observation = observation_for_service(service)
 
     if service_dates_param.include?("all_days")
       dates_to_add = (@reserva.start_date..@reserva.end_date).to_a
@@ -105,7 +107,8 @@ class PortalReservaController < ApplicationController
           reserva:      @reserva,
           service:      service,
           quantity:     quantity,
-          service_date: date
+          service_date: date,
+          observation:   observation
         )
         success = false unless cart_item.save
       end
@@ -224,6 +227,18 @@ class PortalReservaController < ApplicationController
 
   private
 
+  def food_service_for_observation?(service)
+    normalized_name = service.name.to_s.parameterize
+
+    normalized_name.include?("almoco") || normalized_name.include?("jantar")
+  end
+
+  def observation_for_service(service)
+    return unless food_service_for_observation?(service)
+
+    params[:observation].to_s.strip.presence
+  end
+
   def ensure_service_purchase_window_open!
     return unless session[:portal_reserva_id].present?
 
@@ -331,7 +346,9 @@ class PortalReservaController < ApplicationController
   end
 
   def purchase_summary_text(reserva, purchased_services)
-    grouped_services = purchased_services.group_by { |reserva_service| [reserva_service.service_id, reserva_service.service_date] }
+    grouped_services = purchased_services.group_by do |reserva_service|
+      [reserva_service.service_id, reserva_service.service_date, reserva_service.observation.to_s.strip]
+    end
     total = grouped_services.sum do |_key, items|
       first_item = items.first
       quantity = items.sum { |item| item.quantity.to_i }
@@ -355,8 +372,11 @@ class PortalReservaController < ApplicationController
       unit_price = first_item.unit_price_paid || first_item.service.price || 0
       subtotal = unit_price * quantity
       service_date = first_item.service_date&.strftime("%d/%m/%Y")
+      observation = first_item.observation.to_s.strip
 
-      lines << "- #{first_item.service.name} | #{quantity} #{quantity == 1 ? 'unidade' : 'unidades'} | #{service_date} | R$ #{format('%.2f', subtotal).tr('.', ',')}"
+      line = "- #{first_item.service.name} | #{quantity} #{quantity == 1 ? 'unidade' : 'unidades'} | #{service_date} | R$ #{format('%.2f', subtotal).tr('.', ',')}"
+      line += " | Obs: #{observation}" if observation.present?
+      lines << line
     end
 
     lines << ""

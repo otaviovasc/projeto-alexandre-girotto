@@ -78,7 +78,7 @@ class GoogleSheetsExportService
 
       result = service.append_spreadsheet_value(
         @spreadsheet_id,
-        quoted_range(sheet_title, 'A:E'),
+        quoted_range(sheet_title, 'A:F'),
         value_range,
         value_input_option: 'USER_ENTERED',
         insert_data_option: 'INSERT_ROWS'
@@ -232,15 +232,16 @@ class GoogleSheetsExportService
   end
 
   def ensure_service_purchases_headers!(service, sheet_title)
-    response = service.get_spreadsheet_values(@spreadsheet_id, quoted_range(sheet_title, 'A1:E1'))
-    return if response.values.present?
+    response = service.get_spreadsheet_values(@spreadsheet_id, quoted_range(sheet_title, 'A1:F1'))
+    headers = ['ID DA RESERVA', 'NOME DO CLIENTE', 'SERVICO', 'QUANTIDADE', 'VALOR', 'OBSERVACAO']
+    current_headers = Array(response.values&.first)
+    return if current_headers == headers
 
-    headers = [['ID DA RESERVA', 'NOME DO CLIENTE', 'SERVICO', 'QUANTIDADE', 'VALOR']]
-    value_range = Google::Apis::SheetsV4::ValueRange.new(values: headers)
+    value_range = Google::Apis::SheetsV4::ValueRange.new(values: [headers])
 
     service.update_spreadsheet_value(
       @spreadsheet_id,
-      quoted_range(sheet_title, 'A1:E1'),
+      quoted_range(sheet_title, 'A1:F1'),
       value_range,
       value_input_option: 'USER_ENTERED'
     )
@@ -253,7 +254,8 @@ class GoogleSheetsExportService
         reserva_service.reserva.user.name,
         reserva_service.service.name,
         reserva_service.quantity,
-        format_currency(reserva_service.total_paid || ((reserva_service.unit_price_paid || reserva_service.service.price || 0) * (reserva_service.quantity || 1)))
+        format_currency(reserva_service.total_paid || ((reserva_service.unit_price_paid || reserva_service.service.price || 0) * (reserva_service.quantity || 1))),
+        reserva_service.observation.presence || '-'
       ]
     end
   end

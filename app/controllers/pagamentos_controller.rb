@@ -106,7 +106,8 @@ class PagamentosController < ApplicationController
             payment_expires_at: cart_item.payment_expires_at,
             unit_price_paid: cart_item.unit_price_paid,
             total_paid: cart_item.total_paid,
-            paid_at: Time.current
+            paid_at: Time.current,
+            observation: cart_item.observation.presence
           )
         end
 
