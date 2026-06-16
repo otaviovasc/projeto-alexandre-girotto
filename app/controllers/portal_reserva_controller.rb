@@ -230,7 +230,9 @@ class PortalReservaController < ApplicationController
   def food_service_for_observation?(service)
     normalized_name = service.name.to_s.parameterize
 
-    normalized_name.include?("almoco") || normalized_name.include?("jantar")
+    ["almoco", "jantar", "piquenique", "cafe-da-manha"].any? do |keyword|
+      normalized_name.include?(keyword)
+    end
   end
 
   def observation_for_service(service)
