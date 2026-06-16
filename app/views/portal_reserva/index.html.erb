@@ -32,10 +32,10 @@
 
       <%= form_with url: portal_reserva_acessar_path, method: :post, local: true, class: "space-y-6" do |f| %>
 
-        <!-- Campo: Nome ou Email -->
+        <!-- Campo: Nome ou Plataforma -->
         <div>
           <label class="block text-white/80 text-xs font-semibold uppercase tracking-widest mb-2">
-            PRIMEIRO NOME OU PLATAFORMA QUE EFETUOU A RESERVA
+            PRIMEIRO NOME OU NOME DA PLATAFORMA EM QUE EFETUOU A RESERVA
           </label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -44,18 +44,18 @@
               </svg>
             </div>
             <%= f.text_field :identificador,
-                placeholder: "Primeiro nome ou plataforma que efetuou a reserva",
+                placeholder: "PRIMEIRO NOME OU NOME DA PLATAFORMA EM QUE EFETUOU A RESERVA",
                 required: true,
                 autocomplete: "off",
                 class: "w-full bg-white/10 border border-white/25 text-white placeholder-white/30 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] transition" %>
           </div>
-          <p class="text-white/40 text-xs mt-1.5">Primeiro nome ou plataforma que efetuou a reserva</p>
+          <p class="text-white/40 text-xs mt-1.5">PRIMEIRO NOME OU NOME DA PLATAFORMA EM QUE EFETUOU A RESERVA</p>
         </div>
 
         <!-- Campo: Código da Reserva -->
         <div>
           <label class="block text-white/80 text-xs font-semibold uppercase tracking-widest mb-2">
-            CÓDIGO DA RESERVA
+            NÚMERO ENTRE PARÊNTESES NO FINAL DO NOME DO GRUPO DE WHATSAPP
           </label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -64,12 +64,12 @@
               </svg>
             </div>
             <%= f.number_field :reserva_id,
-                placeholder: "Ex: 42",
+                placeholder: "NÚMERO ENTRE PARÊNTESES NO FINAL DO NOME DO GRUPO DE WHATSAPP",
                 required: true,
                 min: 1,
                 class: "w-full bg-white/10 border border-white/25 text-white placeholder-white/30 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] transition" %>
           </div>
-          <p class="text-white/40 text-xs mt-1.5">Código enviado no grupo de estadia</p>
+          <p class="text-white/40 text-xs mt-1.5">NÚMERO ENTRE PARÊNTESES NO FINAL DO NOME DO GRUPO DE WHATSAPP</p>
         </div>
 
         <!-- Botão -->
