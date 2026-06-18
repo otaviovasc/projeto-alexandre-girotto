@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_06_16_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_06_18_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -215,12 +215,14 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_16_120000) do
     t.boolean "manual_override", default: false, null: false
     t.boolean "ical_uid_from_feed", default: false, null: false
     t.datetime "ical_missing_since"
+    t.datetime "ical_date_change_since"
     t.boolean "breakfast_manual_override", default: false, null: false
     t.boolean "group_created", default: false, null: false
     t.bigint "partnership_creator_id"
     t.index ["cabana_id"], name: "index_reservas_on_cabana_id"
     t.index ["cabana_id", "platform_uid"], name: "index_reservas_on_cabana_id_and_platform_uid"
     t.index ["cabana_id", "origem", "ical_uid"], name: "index_reservas_on_imported_ical"
+    t.index ["ical_date_change_since"], name: "index_reservas_on_ical_date_change_since"
     t.index ["ical_missing_since"], name: "index_reservas_on_ical_missing_since"
     t.index ["partnership_creator_id"], name: "index_reservas_on_partnership_creator_id"
     t.index ["user_id"], name: "index_reservas_on_user_id"

@@ -52,6 +52,19 @@
     .partnership-created-row:hover {
       background: #ffefad !important;
     }
+    .ical-date-change-row {
+      --bs-table-bg: #fff7ed;
+      --bs-table-striped-bg: #fff7ed;
+      --bs-table-hover-bg: #ffedd5;
+      background: #fff7ed !important;
+      border-left: 5px solid #f97316 !important;
+    }
+    .ical-date-change-row td {
+      border-color: #fed7aa !important;
+    }
+    .ical-date-change-row:hover {
+      background: #ffedd5 !important;
+    }
     .ical-missing-row {
       --bs-table-bg: #fff1f2;
       --bs-table-striped-bg: #fff1f2;
@@ -248,6 +261,7 @@
             <% row_classes = [] %>
             <% row_classes << 'partner-row' if reserva.user.partner? %>
             <% row_classes << 'partnership-created-row' if reserva.partnership_created? %>
+            <% row_classes << 'ical-date-change-row' if reserva.ical_date_changed? && !reserva.ical_missing? %>
             <% row_classes << 'ical-missing-row' if reserva.ical_missing? %>
             <tr id="reserva-<%= reserva.id %>" data-updated-at="<%= reserva.updated_at.to_i %>" class="<%= row_classes.join(' ') %>">
               <td><%= reserva.id %></td>
@@ -278,6 +292,8 @@
                 </span>
                 <% if reserva.ical_missing? %>
                   <span class="badge bg-danger ms-1">Possível cancelamento iCal</span>
+                <% elsif reserva.ical_date_changed? %>
+                  <span class="badge bg-warning text-dark ms-1 ical-date-change-badge">Possível troca de datas</span>
                 <% end %>
               </td>
               <td><%= number_to_currency(reserva.total_price, unit: "R$") %></td>
@@ -285,6 +301,10 @@
                 <% if reserva.ical_missing? %>
                   <div class="text-danger fw-semibold mb-1">
                     Sumiu do iCal em <%= reserva.ical_missing_since.strftime("%d/%m/%Y - %H:%Mh") %>
+                  </div>
+                <% elsif reserva.ical_date_changed? %>
+                  <div class="fw-semibold mb-1 ical-date-change-message" style="color:#c2410c;">
+                    Possível troca de datas no iCal em <%= reserva.ical_date_change_since.strftime("%d/%m/%Y - %H:%Mh") %>
                   </div>
                 <% end %>
                 <span class="observation-text"><%= reserva.observation.present? ? reserva.observation : '-' %></span>
@@ -411,6 +431,15 @@ document.addEventListener('turbo:load', function() {
           }
 
           checkbox.checked = result.data.group_created;
+          if (result.data.ical_date_changed === false) {
+            const row = checkbox.closest('tr');
+            if (row) {
+              row.classList.remove('ical-date-change-row');
+              row.querySelectorAll('.ical-date-change-badge, .ical-date-change-message').forEach(function(element) {
+                element.remove();
+              });
+            }
+          }
           if (result.data.sheets_synced === false) {
             alert('Grupo salvo no sistema, mas o Google Sheets não sincronizou: ' + (result.data.error || 'erro desconhecido'));
           }

@@ -124,12 +124,16 @@ class Reserva < ApplicationRecord
     ical_missing_since.present?
   end
 
+  def ical_date_changed?
+    ical_date_change_since.present?
+  end
+
   def partnership_created?
     partnership_creator_id.present?
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    ["breakfast_manual_override", "cabana_id", "created_at", "end_date", "group_created", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "start_date", "total_price", "updated_at", "user_id"]
+    ["breakfast_manual_override", "cabana_id", "created_at", "end_date", "group_created", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "start_date", "total_price", "updated_at", "user_id"]
   end
 
   private

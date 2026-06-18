@@ -128,7 +128,7 @@ class Admin::ReservasController < ApplicationController
 
     @q = Reserva.ransack(params[:q])
     @reservas = @q.result.includes(:cabana, :user)
-                 .order(Arel.sql("CASE WHEN ical_missing_since IS NULL THEN 1 ELSE 0 END ASC"))
+                 .order(Arel.sql("CASE WHEN ical_missing_since IS NOT NULL OR ical_date_change_since IS NOT NULL THEN 0 ELSE 1 END ASC"))
                  .order(updated_at: :desc)
 
     # Estatísticas úteis
@@ -278,7 +278,11 @@ class Admin::ReservasController < ApplicationController
 
   def update_group_created
     group_created = ActiveModel::Type::Boolean.new.cast(params[:group_created])
-    @reserva.update_column(:group_created, group_created)
+    if group_created
+      @reserva.update_columns(group_created: true, ical_date_change_since: nil)
+    else
+      @reserva.update_column(:group_created, false)
+    end
 
     sheets_result = if GoogleSheetsExportService.configured?
                       GoogleSheetsExportService.export_reservas(
@@ -286,14 +290,19 @@ class Admin::ReservasController < ApplicationController
                       )
                     else
                       { success: true }
-                    end
+    end
 
     if sheets_result[:success]
-      render json: { success: true, group_created: @reserva.group_created? }
+      render json: {
+        success: true,
+        group_created: @reserva.group_created?,
+        ical_date_changed: @reserva.ical_date_changed?
+      }
     else
       render json: {
         success: true,
         group_created: @reserva.group_created?,
+        ical_date_changed: @reserva.ical_date_changed?,
         sheets_synced: false,
         error: sheets_result[:error]
       }, status: :accepted

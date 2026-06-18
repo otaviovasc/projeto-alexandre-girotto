@@ -22,7 +22,7 @@ class IcalReservationImporter
     'calendário importado'
   ].freeze
 
-  EventRange = Struct.new(:uid, :uid_from_feed, :start_date, :end_date, keyword_init: true)
+  EventRange = Struct.new(:uid, :uid_from_feed, :platform_uid, :start_date, :end_date, keyword_init: true)
   Result = Struct.new(:created, :updated, :skipped, :missing, keyword_init: true) do
     def imported_count
       created + updated
@@ -43,7 +43,9 @@ class IcalReservationImporter
     user = imported_user
     imported_ids = []
 
-    normalized_ranges.each do |event_range|
+    event_ranges = normalized_ranges
+
+    event_ranges.each do |event_range|
       reserva = find_existing_import(event_range)
 
       if reserva
@@ -60,7 +62,9 @@ class IcalReservationImporter
         else
           reserva.update!(import_attributes(event_range).merge(
             start_date: event_range.start_date,
-            end_date: event_range.end_date
+            end_date: event_range.end_date,
+            group_created: false,
+            ical_date_change_since: Time.current
           ))
           ensure_cleaning_services(reserva, force_dates: true)
           sync_breakfast_service_date(reserva)
@@ -84,7 +88,7 @@ class IcalReservationImporter
       end
     end
 
-    result.missing = mark_missing_imports(imported_ids)
+    result.missing = mark_missing_imports(imported_ids, event_ranges)
 
     result
   end
@@ -119,6 +123,7 @@ class IcalReservationImporter
     EventRange.new(
       uid: uid_for(event, start_date, end_date),
       uid_from_feed: event.uid.to_s.strip.present?,
+      platform_uid: platform_uid_for(event),
       start_date: start_date,
       end_date: end_date
     )
@@ -138,6 +143,10 @@ class IcalReservationImporter
   end
 
   def normalized_event_text(event)
+    I18n.transliterate(raw_event_text(event)).downcase.squish
+  end
+
+  def raw_event_text(event)
     [
       event.uid,
       event.summary,
@@ -145,9 +154,7 @@ class IcalReservationImporter
       event.location,
       event.organizer,
       event.categories
-    ].compact.map(&:to_s).join(' ').then do |text|
-      I18n.transliterate(text).downcase.squish
-    end
+    ].compact.map(&:to_s).join(' ')
   end
 
   def calendar_date(value)
@@ -170,12 +177,36 @@ class IcalReservationImporter
     uid.presence || Digest::SHA1.hexdigest([@platform, start_date, end_date, event.summary].join(':'))
   end
 
+  def platform_uid_for(event)
+    extracted_platform_uid(raw_event_text(event)).presence || event.uid.to_s.strip.presence
+  end
+
+  def extracted_platform_uid(text)
+    patterns = [
+      %r{/reservations/details/([A-Z0-9_-]+)}i,
+      /(?:res_id|reservation_id|booking_id|bookingid)\s*[=:]\s*([A-Z0-9_-]{4,})/i,
+      /(?:codigo|código|numero|número)\s+(?:da|de)\s+(?:reserva|booking)\s*[:#-]?\s*([A-Z0-9][A-Z0-9_-]{4,})/i,
+      /(?:reservation|reserva|booking)\s+(?:id|number|numero|número|code|codigo|código)\s*[:#-]?\s*([A-Z0-9][A-Z0-9_-]{4,})/i
+    ]
+
+    patterns.each do |pattern|
+      match = text.match(pattern)
+      return match[1].to_s.strip.upcase if match
+    end
+
+    nil
+  end
+
   def find_existing_import(event_range)
+    if event_range.platform_uid.present?
+      by_platform_uid = imported_reservas
+                        .where.not(platform_uid: [nil, ''])
+                        .find_by(platform_uid: event_range.platform_uid)
+      return by_platform_uid if by_platform_uid
+    end
+
     by_uid = imported_reservas.find_by(ical_uid: event_range.uid)
     return by_uid if by_uid
-
-    by_platform_uid = imported_reservas.find_by(platform_uid: event_range.uid)
-    return by_platform_uid if by_platform_uid
 
     by_imported_dates = imported_reservas
                         .where(imported_start_date: event_range.start_date, imported_end_date: event_range.end_date)
@@ -212,7 +243,7 @@ class IcalReservationImporter
   def import_attributes(event_range)
     {
       ical_uid: event_range.uid,
-      platform_uid: event_range.uid_from_feed ? event_range.uid : nil,
+      platform_uid: event_range.platform_uid,
       ical_uid_from_feed: event_range.uid_from_feed,
       imported_start_date: event_range.start_date,
       imported_end_date: event_range.end_date,
@@ -224,7 +255,7 @@ class IcalReservationImporter
   def update_import_metadata(reserva, event_range)
     reserva.update_columns(
       ical_uid: event_range.uid,
-      platform_uid: event_range.uid_from_feed ? event_range.uid : nil,
+      platform_uid: event_range.platform_uid,
       ical_uid_from_feed: event_range.uid_from_feed,
       imported_start_date: event_range.start_date,
       imported_end_date: event_range.end_date,
@@ -244,7 +275,7 @@ class IcalReservationImporter
     BreakfastServicesAssigner.new(reserva, source: @platform).sync_automatic_service_dates
   end
 
-  def mark_missing_imports(imported_ids)
+  def mark_missing_imports(imported_ids, event_ranges)
     missing_scope = Reserva.where(cabana_id: @cabana.id)
                            .where('LOWER(origem) = ?', @platform)
                            .where(payment_status: %w[pending waiting_payment paid])
@@ -252,11 +283,27 @@ class IcalReservationImporter
                            .where('start_date <= ?', @today + @lookahead)
                            .where(
                              "(ical_uid_from_feed = ? AND ical_uid IS NOT NULL AND ical_uid != '') OR " \
-                             "(ical_uid IS NULL AND platform_uid IS NOT NULL AND platform_uid != '')",
+                             "(platform_uid IS NOT NULL AND platform_uid != '')",
                              true
                            )
 
     missing_scope = missing_scope.where.not(id: imported_ids) if imported_ids.any?
+
+    current_platform_uids = event_ranges.map(&:platform_uid).compact_blank.uniq
+    if current_platform_uids.any?
+      date_change_scope = missing_scope.where(platform_uid: current_platform_uids)
+      date_change_ids = date_change_scope.pluck(:id)
+
+      if date_change_ids.any?
+        date_change_scope.update_all(
+          ical_missing_since: nil,
+          ical_date_change_since: Time.current,
+          group_created: false,
+          updated_at: Time.current
+        )
+        missing_scope = missing_scope.where.not(id: date_change_ids)
+      end
+    end
 
     missing_scope.where(ical_missing_since: nil).update_all(ical_missing_since: Time.current)
     missing_scope.count
