@@ -1,7 +1,7 @@
 class Admin::ReservasController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin
-  before_action :set_reserva, only: [:edit, :update, :destroy, :show, :update_observation, :update_group_created, :update_service_purchase_access]
+  before_action :set_reserva, only: [:edit, :update, :destroy, :show, :update_observation, :update_group_created, :acknowledge_ical_date_change, :update_service_purchase_access]
   before_action :check_reservations_on_new, only: [:reservas_summary]
 
   def index
@@ -128,7 +128,12 @@ class Admin::ReservasController < ApplicationController
 
     @q = Reserva.ransack(params[:q])
     @reservas = @q.result.includes(:cabana, :user)
-                 .order(Arel.sql("CASE WHEN ical_missing_since IS NOT NULL OR ical_date_change_since IS NOT NULL THEN 0 ELSE 1 END ASC"))
+                 .order(Arel.sql(
+                   "CASE " \
+                   "WHEN ical_date_change_since IS NOT NULL THEN 0 " \
+                   "WHEN ical_missing_since IS NOT NULL THEN 1 " \
+                   "ELSE 2 END ASC"
+                 ))
                  .order(updated_at: :desc)
 
     # Estatísticas úteis
@@ -278,11 +283,7 @@ class Admin::ReservasController < ApplicationController
 
   def update_group_created
     group_created = ActiveModel::Type::Boolean.new.cast(params[:group_created])
-    if group_created
-      @reserva.update_columns(group_created: true, ical_date_change_since: nil)
-    else
-      @reserva.update_column(:group_created, false)
-    end
+    @reserva.update_column(:group_created, group_created)
 
     sheets_result = if GoogleSheetsExportService.configured?
                       GoogleSheetsExportService.export_reservas(
@@ -309,6 +310,20 @@ class Admin::ReservasController < ApplicationController
     end
   rescue => e
     render json: { success: false, error: e.message }, status: :unprocessable_entity
+  end
+
+  def acknowledge_ical_date_change
+    acknowledged_at = Time.current
+
+    Reserva.transaction do
+      @reserva.update_column(:ical_date_change_since, nil)
+      @reserva.ical_reservation_changes
+              .where(acknowledged_at: nil)
+              .update_all(acknowledged_at: acknowledged_at, updated_at: acknowledged_at)
+    end
+
+    redirect_to admin_reservas_summary_path,
+                notice: "Troca de datas da reserva ##{@reserva.id} marcada como concluída."
   end
 
   def update_service_purchase_access

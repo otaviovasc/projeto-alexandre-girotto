@@ -312,6 +312,15 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
     assert_not reserva.group_created?
     assert reserva.ical_date_changed?
     assert_not reserva.ical_missing?
+
+    change = reserva.ical_reservation_changes.last
+    assert_equal Date.new(2026, 6, 21), change.old_start_date
+    assert_equal Date.new(2026, 6, 22), change.old_end_date
+    assert_equal Date.new(2026, 7, 5), change.new_start_date
+    assert_equal Date.new(2026, 7, 6), change.new_end_date
+    assert_equal "BK123456", change.old_uid
+    assert_equal "BK123456", change.new_uid
+    assert_not change.acknowledged?
   end
 
   test "infers a booking date change when one event disappears and one appears" do
@@ -353,6 +362,15 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
     assert_not reserva.group_created?
     assert reserva.ical_date_changed?
     assert_not reserva.ical_missing?
+
+    change = reserva.ical_reservation_changes.last
+    assert_equal "booking-old-hash@booking.com", change.old_uid
+    assert_equal "booking-new-hash@booking.com", change.new_uid
+    assert_equal Date.new(2026, 6, 21), change.old_start_date
+    assert_equal Date.new(2026, 6, 23), change.old_end_date
+    assert_equal Date.new(2026, 8, 2), change.new_start_date
+    assert_equal Date.new(2026, 8, 5), change.new_end_date
+    assert_not change.acknowledged?
   end
 
   test "does not infer booking date changes when multiple pairs are ambiguous" do
@@ -401,6 +419,7 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
     assert_equal 2, result.missing
     assert_equal 4, @cabana.reservas.where(origem: "booking").count
     assert old_reservas.all?(&:ical_missing?)
+    assert_equal 0, IcalReservationChange.count
   end
 
   test "keeps manual override when feed uid changes but source dates stay the same" do

@@ -64,12 +64,7 @@ class IcalReservationImporter
           ensure_cleaning_services(reserva)
           result.skipped += 1
         else
-          reserva.update!(import_attributes(event_range).merge(
-            start_date: event_range.start_date,
-            end_date: event_range.end_date,
-            group_created: false,
-            ical_date_change_since: Time.current
-          ))
+          apply_imported_date_change(reserva, event_range)
           ensure_cleaning_services(reserva, force_dates: true)
           sync_breakfast_service_date(reserva)
           result.updated += 1
@@ -311,6 +306,34 @@ class IcalReservationImporter
       imported_end_date: event_range.end_date,
       ical_missing_since: nil
     )
+  end
+
+  def apply_imported_date_change(reserva, event_range)
+    detected_at = Time.current
+    previous_uid = reserva.platform_uid.presence || reserva.ical_uid
+    previous_start_date = reserva.start_date
+    previous_end_date = reserva.end_date
+
+    Reserva.transaction do
+      reserva.update!(import_attributes(event_range).merge(
+        start_date: event_range.start_date,
+        end_date: event_range.end_date,
+        group_created: false,
+        ical_date_change_since: detected_at
+      ))
+
+      reserva.ical_reservation_changes.create!(
+        platform: @platform,
+        old_uid: previous_uid,
+        new_uid: event_range.platform_uid.presence || event_range.uid,
+        old_start_date: previous_start_date,
+        old_end_date: previous_end_date,
+        new_start_date: event_range.start_date,
+        new_end_date: event_range.end_date,
+        created_at: detected_at,
+        updated_at: detected_at
+      )
+    end
   end
 
   def ensure_cleaning_services(reserva, force_dates: false)

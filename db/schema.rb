@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_06_21_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_06_21_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -114,6 +114,22 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_21_120000) do
     t.date "date"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "ical_reservation_changes", force: :cascade do |t|
+    t.bigint "reserva_id", null: false
+    t.string "platform", null: false
+    t.string "old_uid"
+    t.string "new_uid"
+    t.date "old_start_date", null: false
+    t.date "old_end_date", null: false
+    t.date "new_start_date", null: false
+    t.date "new_end_date", null: false
+    t.datetime "acknowledged_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reserva_id", "acknowledged_at"], name: "index_ical_changes_on_reserva_and_acknowledged"
+    t.index ["reserva_id"], name: "index_ical_reservation_changes_on_reserva_id"
   end
 
   create_table "info_da_cabanas", force: :cascade do |t|
@@ -274,6 +290,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_21_120000) do
   add_foreign_key "cart_items", "services"
   add_foreign_key "carts", "users"
   add_foreign_key "info_da_cabanas", "cabanas"
+  add_foreign_key "ical_reservation_changes", "reservas"
   add_foreign_key "items", "filials"
   add_foreign_key "price_rules", "cabanas"
   add_foreign_key "promotions", "cabanas"

@@ -17,6 +17,7 @@ class Reserva < ApplicationRecord
 
   has_many :reserva_items, dependent: :destroy
   has_many :items, through: :reserva_items
+  has_many :ical_reservation_changes, dependent: :destroy
 
   validate :start_date_cannot_be_in_the_past
   validate :end_date_after_start_date

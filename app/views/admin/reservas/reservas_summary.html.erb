@@ -306,6 +306,12 @@
                   <div class="fw-semibold mb-1 ical-date-change-message" style="color:#c2410c;">
                     Possível troca de datas no iCal em <%= reserva.ical_date_change_since.strftime("%d/%m/%Y - %H:%Mh") %>
                   </div>
+                  <%= button_to acknowledge_ical_date_change_admin_reserva_path(reserva),
+                      method: :patch,
+                      class: "btn btn-sm btn-outline-success mb-2",
+                      form_class: "d-inline" do %>
+                    <i class="bi bi-check-circle me-1"></i> Concluído
+                  <% end %>
                 <% end %>
                 <span class="observation-text"><%= reserva.observation.present? ? reserva.observation : '-' %></span>
                 <a href="#" class="edit-observation-btn ms-2" data-reserva-id="<%= reserva.id %>">
@@ -431,15 +437,6 @@ document.addEventListener('turbo:load', function() {
           }
 
           checkbox.checked = result.data.group_created;
-          if (result.data.ical_date_changed === false) {
-            const row = checkbox.closest('tr');
-            if (row) {
-              row.classList.remove('ical-date-change-row');
-              row.querySelectorAll('.ical-date-change-badge, .ical-date-change-message').forEach(function(element) {
-                element.remove();
-              });
-            }
-          }
           if (result.data.sheets_synced === false) {
             alert('Grupo salvo no sistema, mas o Google Sheets não sincronizou: ' + (result.data.error || 'erro desconhecido'));
           }
