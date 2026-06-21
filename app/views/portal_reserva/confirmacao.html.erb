@@ -1,6 +1,8 @@
 <% content_for :title, "#{@payment_paid ? 'Compra confirmada' : 'Aguardando pagamento'} - Villaggio Girotto" %>
 
-<% grouped_services = @purchased_services.group_by { |reserva_service| [reserva_service.service_id, reserva_service.service_date] } %>
+<% grouped_services = @purchased_services.group_by do |reserva_service|
+     [reserva_service.service_id, reserva_service.service_date, reserva_service.observation.to_s.strip]
+   end %>
 <% total = grouped_services.sum do |_key, items|
      first_item = items.first
      quantity = items.sum { |item| item.quantity.to_i }
@@ -98,6 +100,9 @@
                   - <%= first_item.service_date.strftime("%d/%m/%Y") %>
                 <% end %>
               </p>
+              <% if first_item.observation.present? %>
+                <p class="text-sm text-gray-600 mt-1">Observação: <%= first_item.observation %></p>
+              <% end %>
             </div>
             <p class="font-bold text-[#1a2e1a] whitespace-nowrap"><%= number_to_currency(subtotal) %></p>
           </div>
@@ -117,9 +122,16 @@
         </label>
         <textarea id="purchase-summary" readonly rows="9" class="w-full rounded-lg border border-gray-200 bg-[#faf9f6] p-4 text-sm text-gray-700 leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"><%= @summary_text %></textarea>
 
-        <button type="button" id="copy-summary-button" class="mt-4 w-full sm:w-auto bg-[#1a2e1a] hover:bg-[#2d4a2d] text-white text-sm font-bold px-5 py-3 rounded-lg transition">
-          Copiar resumo
-        </button>
+        <% whatsapp_url = "https://wa.me/?text=#{ERB::Util.url_encode(@summary_text)}" %>
+        <div class="mt-4 flex flex-col sm:flex-row gap-3">
+          <%= link_to "Enviar pelo WhatsApp", whatsapp_url,
+              target: "_blank",
+              rel: "noopener",
+              class: "w-full sm:w-auto bg-[#1f7a4c] hover:bg-[#17633d] text-white text-sm font-bold px-5 py-3 rounded-lg transition text-center" %>
+          <button type="button" id="copy-summary-button" class="w-full sm:w-auto bg-[#1a2e1a] hover:bg-[#2d4a2d] text-white text-sm font-bold px-5 py-3 rounded-lg transition">
+            Copiar resumo
+          </button>
+        </div>
         <p id="copy-summary-feedback" class="text-sm text-[#2d6a3a] font-medium mt-3 hidden" role="status">
           Resumo copiado. Agora e so enviar no grupo do WhatsApp.
         </p>

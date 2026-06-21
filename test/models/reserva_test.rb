@@ -20,4 +20,15 @@ class ReservaTest < ActiveSupport::TestCase
       assert_not reserva.service_purchase_window_open?
     end
   end
+
+  test "service purchase override stays open through check in" do
+    reserva = Reserva.new(
+      start_date: Date.new(2026, 1, 26),
+      service_purchase_override: true
+    )
+
+    assert reserva.service_purchase_window_open?(Date.new(2026, 1, 20))
+    assert reserva.service_purchase_window_open?(Date.new(2026, 1, 26))
+    assert_not reserva.service_purchase_window_open?(Date.new(2026, 1, 27))
+  end
 end

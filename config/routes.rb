@@ -56,6 +56,7 @@ Rails.application.routes.draw do
       member do
         patch 'update_observation'
         patch 'update_group_created'
+        patch 'update_service_purchase_access'
       end
       collection do
         get :import_airbnb_calendar

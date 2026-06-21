@@ -1,7 +1,7 @@
 class Admin::ReservasController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin
-  before_action :set_reserva, only: [:edit, :update, :destroy, :show, :update_observation, :update_group_created]
+  before_action :set_reserva, only: [:edit, :update, :destroy, :show, :update_observation, :update_group_created, :update_service_purchase_access]
   before_action :check_reservations_on_new, only: [:reservas_summary]
 
   def index
@@ -309,6 +309,25 @@ class Admin::ReservasController < ApplicationController
     end
   rescue => e
     render json: { success: false, error: e.message }, status: :unprocessable_entity
+  end
+
+  def update_service_purchase_access
+    enabled = ActiveModel::Type::Boolean.new.cast(params[:service_purchase_override])
+
+    if enabled && (@reserva.start_date.blank? || Date.current > @reserva.start_date)
+      redirect_to admin_reserva_path(@reserva), alert: 'O check-in desta reserva já passou; não é possível liberar novas compras.'
+      return
+    end
+
+    @reserva.update_columns(service_purchase_override: enabled, updated_at: Time.current)
+
+    message = if enabled
+                "Compra de serviços liberada para esta reserva até o check-in em #{@reserva.start_date.strftime('%d/%m/%Y')}."
+              else
+                'Liberação especial de compra de serviços revogada.'
+              end
+
+    redirect_to admin_reserva_path(@reserva), notice: message
   end
 
   def import_platform_calendar

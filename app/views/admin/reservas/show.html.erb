@@ -208,6 +208,34 @@
     color: #475569;
     border-left: 3px solid #3b82f6;
   }
+
+  .purchase-access-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .purchase-access-copy {
+    color: #475569;
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  .purchase-access-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .purchase-access-status.open { background: #dcfce7; color: #166534; }
+  .purchase-access-status.closed { background: #fee2e2; color: #991b1b; }
+  .purchase-access-status.normal { background: #dbeafe; color: #1e40af; }
 </style>
 
 <div class="reserva-show-container">
@@ -266,6 +294,46 @@
         <div class="observation-text"><%= @reserva.observation %></div>
       </div>
     <% end %>
+  </div>
+
+  <% normal_purchase_window_open = @reserva.service_purchase_block_date.present? && Date.current < @reserva.service_purchase_block_date %>
+  <% special_purchase_access_open = @reserva.service_purchase_override_open? %>
+
+  <div class="info-card">
+    <h3 class="info-card-title">Compra de serviços pelo hóspede</h3>
+    <div class="purchase-access-row">
+      <div>
+        <% if special_purchase_access_open %>
+          <span class="purchase-access-status open">Liberação especial ativa</span>
+          <p class="purchase-access-copy">Esta reserva pode comprar serviços até o check-in em <%= @reserva.start_date.strftime('%d/%m/%Y') %>.</p>
+        <% elsif normal_purchase_window_open %>
+          <span class="purchase-access-status normal">Prazo normal aberto</span>
+          <p class="purchase-access-copy">As compras ficam abertas normalmente até <%= @reserva.service_purchase_block_date.strftime('%d/%m/%Y') %>.</p>
+        <% elsif @reserva.start_date.present? && Date.current <= @reserva.start_date %>
+          <span class="purchase-access-status closed">Prazo normal encerrado</span>
+          <p class="purchase-access-copy">Você pode liberar uma exceção somente para esta reserva.</p>
+        <% else %>
+          <span class="purchase-access-status closed">Check-in já iniciado</span>
+          <p class="purchase-access-copy">Não é possível liberar novas compras depois do check-in.</p>
+        <% end %>
+      </div>
+
+      <% if @reserva.service_purchase_override? %>
+        <%= button_to 'Revogar liberação',
+            update_service_purchase_access_admin_reserva_path(@reserva),
+            method: :patch,
+            params: { service_purchase_override: false },
+            class: 'btn btn-secondary',
+            form_class: 'd-inline' %>
+      <% elsif !normal_purchase_window_open && @reserva.start_date.present? && Date.current <= @reserva.start_date %>
+        <%= button_to 'Liberar até o check-in',
+            update_service_purchase_access_admin_reserva_path(@reserva),
+            method: :patch,
+            params: { service_purchase_override: true },
+            class: 'btn btn-primary',
+            form_class: 'd-inline' %>
+      <% end %>
+    </div>
   </div>
 
   <!-- Serviços -->

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_06_18_100000) do
+ActiveRecord::Schema[7.0].define(version: 2026_06_21_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -219,6 +219,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_18_100000) do
     t.boolean "breakfast_manual_override", default: false, null: false
     t.boolean "group_created", default: false, null: false
     t.bigint "partnership_creator_id"
+    t.boolean "service_purchase_override", default: false, null: false
     t.index ["cabana_id"], name: "index_reservas_on_cabana_id"
     t.index ["cabana_id", "platform_uid"], name: "index_reservas_on_cabana_id_and_platform_uid"
     t.index ["cabana_id", "origem", "ical_uid"], name: "index_reservas_on_imported_ical"
