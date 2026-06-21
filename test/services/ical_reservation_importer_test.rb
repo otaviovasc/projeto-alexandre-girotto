@@ -314,6 +314,95 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
     assert_not reserva.ical_missing?
   end
 
+  test "infers a booking date change when one event disappears and one appears" do
+    import_booking(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:booking-old-hash@booking.com
+      DTSTART;VALUE=DATE:20260621
+      DTEND;VALUE=DATE:20260623
+      SUMMARY:CLOSED - Not available
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    reserva = @cabana.reservas.find_by!(origem: "booking")
+    reserva.update!(group_created: true)
+
+    result = import_booking(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:booking-new-hash@booking.com
+      DTSTART;VALUE=DATE:20260802
+      DTEND;VALUE=DATE:20260805
+      SUMMARY:CLOSED - Not available
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    reserva.reload
+
+    assert_equal 0, result.created
+    assert_equal 1, result.updated
+    assert_equal 1, @cabana.reservas.where(origem: "booking").count
+    assert_equal Date.new(2026, 8, 2), reserva.start_date
+    assert_equal Date.new(2026, 8, 5), reserva.end_date
+    assert_equal "booking-new-hash@booking.com", reserva.ical_uid
+    assert_not reserva.group_created?
+    assert reserva.ical_date_changed?
+    assert_not reserva.ical_missing?
+  end
+
+  test "does not infer booking date changes when multiple pairs are ambiguous" do
+    import_booking(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:booking-old-one@booking.com
+      DTSTART;VALUE=DATE:20260621
+      DTEND;VALUE=DATE:20260623
+      SUMMARY:CLOSED - Not available
+      END:VEVENT
+      BEGIN:VEVENT
+      UID:booking-old-two@booking.com
+      DTSTART;VALUE=DATE:20260710
+      DTEND;VALUE=DATE:20260712
+      SUMMARY:CLOSED - Not available
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    result = import_booking(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:booking-new-one@booking.com
+      DTSTART;VALUE=DATE:20260802
+      DTEND;VALUE=DATE:20260804
+      SUMMARY:CLOSED - Not available
+      END:VEVENT
+      BEGIN:VEVENT
+      UID:booking-new-two@booking.com
+      DTSTART;VALUE=DATE:20260910
+      DTEND;VALUE=DATE:20260912
+      SUMMARY:CLOSED - Not available
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    old_reservas = @cabana.reservas.where(
+      ical_uid: ["booking-old-one@booking.com", "booking-old-two@booking.com"]
+    )
+
+    assert_equal 2, result.created
+    assert_equal 0, result.updated
+    assert_equal 2, result.missing
+    assert_equal 4, @cabana.reservas.where(origem: "booking").count
+    assert old_reservas.all?(&:ical_missing?)
+  end
+
   test "keeps manual override when feed uid changes but source dates stay the same" do
     import_holmy(<<~ICS)
       BEGIN:VCALENDAR

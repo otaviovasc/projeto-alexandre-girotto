@@ -44,9 +44,13 @@ class IcalReservationImporter
     imported_ids = []
 
     event_ranges = normalized_ranges
+    matched_reservas = event_ranges.to_h do |event_range|
+      [event_range.object_id, find_existing_import(event_range)]
+    end
+    infer_booking_date_changes(event_ranges, matched_reservas)
 
     event_ranges.each do |event_range|
-      reserva = find_existing_import(event_range)
+      reserva = matched_reservas[event_range.object_id]
 
       if reserva
         imported_ids << reserva.id
@@ -227,6 +231,52 @@ class IcalReservationImporter
       .first
   end
 
+  def infer_booking_date_changes(event_ranges, matched_reservas)
+    return unless @platform == 'booking'
+
+    unmatched_ranges = event_ranges.select { |event_range| matched_reservas[event_range.object_id].nil? }
+    return if unmatched_ranges.empty?
+
+    matched_ids = matched_reservas.values.compact.map(&:id)
+    candidates_scope = missing_import_scope.where(ical_missing_since: nil)
+    candidates_scope = candidates_scope.where.not(id: matched_ids) if matched_ids.any?
+    candidates = candidates_scope.to_a
+    return if candidates.empty?
+
+    inferred_date_change_pairs(unmatched_ranges, candidates).each do |event_range, reserva|
+      matched_reservas[event_range.object_id] = reserva
+      Rails.logger.info(
+        "Possivel troca de datas Booking: reserva ##{reserva.id} " \
+        "#{reserva.start_date} -> #{reserva.end_date} para " \
+        "#{event_range.start_date} -> #{event_range.end_date}"
+      )
+    end
+  end
+
+  def inferred_date_change_pairs(unmatched_ranges, candidates)
+    return [[unmatched_ranges.first, candidates.first]] if unmatched_ranges.one? && candidates.one?
+
+    ranges_by_duration = unmatched_ranges.group_by { |event_range| event_duration(event_range) }
+    candidates_by_duration = candidates.group_by { |reserva| reservation_source_duration(reserva) }
+
+    ranges_by_duration.filter_map do |duration, ranges|
+      duration_candidates = candidates_by_duration[duration] || []
+      next unless ranges.one? && duration_candidates.one?
+
+      [ranges.first, duration_candidates.first]
+    end
+  end
+
+  def event_duration(event_range)
+    (event_range.end_date - event_range.start_date).to_i
+  end
+
+  def reservation_source_duration(reserva)
+    source_start = reserva.imported_start_date || reserva.start_date
+    source_end = reserva.imported_end_date || reserva.end_date
+    (source_end - source_start).to_i
+  end
+
   def imported_reservas
     Reserva.where(cabana_id: @cabana.id)
            .where('LOWER(origem) = ?', @platform)
@@ -276,16 +326,7 @@ class IcalReservationImporter
   end
 
   def mark_missing_imports(imported_ids, event_ranges)
-    missing_scope = Reserva.where(cabana_id: @cabana.id)
-                           .where('LOWER(origem) = ?', @platform)
-                           .where(payment_status: %w[pending waiting_payment paid])
-                           .where('end_date > ?', @today)
-                           .where('start_date <= ?', @today + @lookahead)
-                           .where(
-                             "(ical_uid_from_feed = ? AND ical_uid IS NOT NULL AND ical_uid != '') OR " \
-                             "(platform_uid IS NOT NULL AND platform_uid != '')",
-                             true
-                           )
+    missing_scope = missing_import_scope
 
     missing_scope = missing_scope.where.not(id: imported_ids) if imported_ids.any?
 
@@ -307,6 +348,19 @@ class IcalReservationImporter
 
     missing_scope.where(ical_missing_since: nil).update_all(ical_missing_since: Time.current)
     missing_scope.count
+  end
+
+  def missing_import_scope
+    Reserva.where(cabana_id: @cabana.id)
+           .where('LOWER(origem) = ?', @platform)
+           .where(payment_status: %w[pending waiting_payment paid])
+           .where('end_date > ?', @today)
+           .where('start_date <= ?', @today + @lookahead)
+           .where(
+             "(ical_uid_from_feed = ? AND ical_uid IS NOT NULL AND ical_uid != '') OR " \
+             "(platform_uid IS NOT NULL AND platform_uid != '')",
+             true
+           )
   end
 
   def imported_user
