@@ -338,6 +338,8 @@
     <% end %>
   </div>
 
+  <%= render 'fnrh_panel', reserva: @reserva %>
+
   <% if @reserva.ical_reservation_changes.exists? %>
     <div class="info-card">
       <div class="ical-history-header">

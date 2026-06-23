@@ -1,0 +1,86 @@
+<style>
+  .fnrh-panel-header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; }
+  .fnrh-status { display:inline-flex; align-items:center; padding:.35rem .6rem; border-radius:6px; font-size:.8rem; font-weight:700; }
+  .fnrh-status.not_eligible { background:#f1f5f9; color:#475569; }
+  .fnrh-status.awaiting_precheckin { background:#fef3c7; color:#92400e; }
+  .fnrh-status.precheckin_completed { background:#dbeafe; color:#1d4ed8; }
+  .fnrh-status.checked_in { background:#dcfce7; color:#166534; }
+  .fnrh-status.checked_out { background:#e0e7ff; color:#3730a3; }
+  .fnrh-status.cancelled, .fnrh-status.no_show, .fnrh-status.error { background:#fee2e2; color:#991b1b; }
+  .fnrh-meta { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1rem; margin-top:1rem; }
+  .fnrh-actions { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1.25rem; }
+  .fnrh-history { margin-top:1.25rem; border-top:1px solid #e2e8f0; padding-top:1rem; }
+  .fnrh-event { display:flex; justify-content:space-between; gap:1rem; padding:.55rem 0; border-bottom:1px solid #f1f5f9; font-size:.86rem; }
+  .fnrh-error { margin-top:1rem; padding:.75rem; border-left:4px solid #dc2626; background:#fef2f2; color:#991b1b; }
+</style>
+
+<section class="info-card">
+  <div class="fnrh-panel-header">
+    <div>
+      <h3 class="info-card-title" style="margin-bottom:.25rem;">FNRH Digital</h3>
+      <p style="margin:0;color:#64748b;font-size:.9rem;">
+        <%= Fnrh::Configuration.mock? ? 'Simulação local, sem envio externo.' : 'Integração oficial.' %>
+      </p>
+    </div>
+    <span class="fnrh-status <%= reserva.fnrh_status %>"><%= reserva.fnrh_status_label %></span>
+  </div>
+
+  <div class="fnrh-meta">
+    <div>
+      <span class="info-label">Critérios</span>
+      <span class="info-value"><%= reserva.fnrh_eligible? ? 'Preço e grupo confirmados' : 'Aguardando preço, grupo ou situação válida' %></span>
+    </div>
+    <div>
+      <span class="info-label">Identificador FNRH</span>
+      <span class="info-value"><%= reserva.fnrh_reservation_id.presence || 'Ainda não criado' %></span>
+    </div>
+    <div>
+      <span class="info-label">Check-in programado</span>
+      <span class="info-value"><%= reserva.fnrh_scheduled_checkin_at&.in_time_zone&.strftime('%d/%m/%Y às %H:%M') || 'Ainda não programado' %></span>
+    </div>
+    <div>
+      <span class="info-label">Última sincronização</span>
+      <span class="info-value"><%= reserva.fnrh_synced_at&.in_time_zone&.strftime('%d/%m/%Y às %H:%M') || 'Nunca' %></span>
+    </div>
+  </div>
+
+  <% if reserva.fnrh_last_error.present? %>
+    <div class="fnrh-error"><strong>Erro:</strong> <%= reserva.fnrh_last_error %></div>
+  <% end %>
+
+  <div class="fnrh-actions">
+    <% if reserva.fnrh_reservation_id.blank? %>
+      <%= button_to 'Sincronizar FNRH',
+          sync_fnrh_admin_reserva_path(reserva),
+          method: :post,
+          class: 'btn btn-primary',
+          form: { data: { turbo_confirm: "Confirmar envio da reserva ##{reserva.id} para a FNRH?" } } %>
+    <% else %>
+      <% if reserva.fnrh_status.in?(%w[awaiting_precheckin precheckin_completed error]) %>
+        <%= button_to 'Fazer check-in agora', fnrh_check_in_admin_reserva_path(reserva), method: :post, class: 'btn btn-success' %>
+        <%= button_to 'Marcar no-show', fnrh_no_show_admin_reserva_path(reserva), method: :post, class: 'btn btn-warning' %>
+      <% end %>
+      <% if reserva.fnrh_status == 'checked_in' %>
+        <%= button_to 'Fazer checkout agora', fnrh_checkout_admin_reserva_path(reserva), method: :post, class: 'btn btn-primary' %>
+      <% end %>
+      <% unless reserva.fnrh_status.in?(%w[cancelled checked_out]) %>
+        <%= button_to 'Cancelar na FNRH', fnrh_cancel_admin_reserva_path(reserva), method: :post, class: 'btn btn-danger', form: { data: { turbo_confirm: 'Confirmar cancelamento na FNRH?' } } %>
+      <% end %>
+      <% if reserva.fnrh_precheckin_url.present? && Fnrh::Configuration.mock? %>
+        <%= link_to 'Abrir pré-check-in simulado', reserva.fnrh_precheckin_url, class: 'btn btn-secondary', target: '_blank', rel: 'noopener' %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if reserva.fnrh_events.exists? %>
+    <div class="fnrh-history">
+      <span class="info-label">Histórico</span>
+      <% reserva.fnrh_events.recent_first.limit(8).each do |event| %>
+        <div class="fnrh-event">
+          <span><strong><%= event.message %></strong><br><span style="color:#64748b"><%= event.source.humanize %></span></span>
+          <span style="white-space:nowrap;color:#64748b"><%= event.occurred_at.in_time_zone.strftime('%d/%m %H:%M') %></span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</section>

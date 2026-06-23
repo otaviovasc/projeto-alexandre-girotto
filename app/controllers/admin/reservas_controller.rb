@@ -1,7 +1,11 @@
 class Admin::ReservasController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin
-  before_action :set_reserva, only: [:edit, :update, :destroy, :show, :update_observation, :update_group_created, :acknowledge_ical_date_change, :update_service_purchase_access]
+  before_action :set_reserva, only: [
+    :edit, :update, :destroy, :show, :update_observation, :update_group_created,
+    :acknowledge_ical_date_change, :update_service_purchase_access, :sync_fnrh,
+    :fnrh_check_in, :fnrh_no_show, :fnrh_checkout, :fnrh_cancel
+  ]
   before_action :check_reservations_on_new, only: [:reservas_summary]
 
   def index
@@ -116,6 +120,8 @@ class Admin::ReservasController < ApplicationController
   end
 
   def destroy
+    Fnrh::TransitionService.new(@reserva, source: 'manual').cancel if @reserva.fnrh_reservation_id.present?
+
     # Sincroniza exclusão com Google Sheets
     GoogleSheetsExportService.delete_reserva(@reserva.id)
     
@@ -284,6 +290,7 @@ class Admin::ReservasController < ApplicationController
   def update_group_created
     group_created = ActiveModel::Type::Boolean.new.cast(params[:group_created])
     @reserva.update_column(:group_created, group_created)
+    Fnrh::ReservationSyncService.new(@reserva, source: 'admin').call if group_created
 
     sheets_result = if GoogleSheetsExportService.configured?
                       GoogleSheetsExportService.export_reservas(
@@ -310,6 +317,42 @@ class Admin::ReservasController < ApplicationController
     end
   rescue => e
     render json: { success: false, error: e.message }, status: :unprocessable_entity
+  end
+
+  def sync_fnrh
+    if Fnrh::ReservationSyncService.new(@reserva, source: 'manual').call(force: true)
+      redirect_to admin_reserva_path(@reserva), notice: 'Reserva sincronizada com a FNRH.'
+    else
+      redirect_to admin_reserva_path(@reserva), alert: @reserva.reload.fnrh_last_error.presence || 'A reserva ainda não atende aos critérios da FNRH.'
+    end
+  end
+
+  def fnrh_check_in
+    Fnrh::TransitionService.new(@reserva, source: 'manual').check_in
+    redirect_to admin_reserva_path(@reserva), notice: 'Check-in registrado na FNRH.'
+  rescue => e
+    redirect_to admin_reserva_path(@reserva), alert: e.message
+  end
+
+  def fnrh_no_show
+    Fnrh::TransitionService.new(@reserva, source: 'manual').no_show
+    redirect_to admin_reserva_path(@reserva), notice: 'No-show registrado na FNRH.'
+  rescue => e
+    redirect_to admin_reserva_path(@reserva), alert: e.message
+  end
+
+  def fnrh_checkout
+    Fnrh::TransitionService.new(@reserva, source: 'manual').check_out
+    redirect_to admin_reserva_path(@reserva), notice: 'Checkout registrado na FNRH.'
+  rescue => e
+    redirect_to admin_reserva_path(@reserva), alert: e.message
+  end
+
+  def fnrh_cancel
+    Fnrh::TransitionService.new(@reserva, source: 'manual').cancel
+    redirect_to admin_reserva_path(@reserva), notice: 'Cancelamento registrado na FNRH.'
+  rescue => e
+    redirect_to admin_reserva_path(@reserva), alert: e.message
   end
 
   def acknowledge_ical_date_change

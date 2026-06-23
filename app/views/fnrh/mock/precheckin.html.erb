@@ -1,0 +1,37 @@
+<% content_for :title, 'Simulação FNRH' %>
+
+<main class="min-h-screen px-4 py-10">
+  <div class="mx-auto max-w-2xl">
+    <div class="mb-5 border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+      Esta tela simula o ambiente oficial da FNRH. Nenhum dado será enviado externamente.
+    </div>
+
+    <header class="mb-7">
+      <p class="text-sm font-semibold text-[#5f755f]">FNRH simulada</p>
+      <h1 class="mt-1 text-3xl font-semibold">Pré-check-in</h1>
+      <p class="mt-2 text-sm text-[#637066]"><%= @reserva.cabana.filial.name %></p>
+    </header>
+
+    <section class="border border-[#d9dfd7] bg-white p-6 shadow-sm">
+      <dl class="grid gap-5 sm:grid-cols-2">
+        <div><dt class="text-xs font-semibold uppercase text-[#728077]">Responsável</dt><dd class="mt-1"><%= @reserva.user.name %></dd></div>
+        <div><dt class="text-xs font-semibold uppercase text-[#728077]">Reserva</dt><dd class="mt-1">#<%= @reserva.id %></dd></div>
+        <div><dt class="text-xs font-semibold uppercase text-[#728077]">Entrada</dt><dd class="mt-1"><%= @reserva.start_date.strftime('%d/%m/%Y') %></dd></div>
+        <div><dt class="text-xs font-semibold uppercase text-[#728077]">Saída</dt><dd class="mt-1"><%= @reserva.end_date.strftime('%d/%m/%Y') %></dd></div>
+      </dl>
+
+      <div class="mt-7 border-t border-[#e4e8e2] pt-6">
+        <label class="flex items-start gap-3 text-sm">
+          <input type="checkbox" required form="mock-precheckin-form" class="mt-1 h-4 w-4">
+          <span>Li e aceito os termos e condições de hospedagem apresentados nesta simulação.</span>
+        </label>
+      </div>
+
+      <%= form_with url: fnrh_mock_complete_precheckin_path(@reserva.fnrh_reservation_id), method: :post, id: 'mock-precheckin-form', class: 'mt-6' do %>
+        <button type="submit" class="w-full bg-[#315b3a] px-4 py-3 font-semibold text-white hover:bg-[#264a2e]">
+          Concluir pré-check-in simulado
+        </button>
+      <% end %>
+    </section>
+  </div>
+</main>

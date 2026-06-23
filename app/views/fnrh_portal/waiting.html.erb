@@ -1,0 +1,42 @@
+<% content_for :title, 'Pré-check-in em análise - Villaggio Girotto' %>
+
+<main class="min-h-screen flex items-center justify-center px-4 py-10">
+  <div class="w-full max-w-lg">
+    <% if flash[:alert].present? %>
+      <div class="mb-5 border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <%= flash[:alert] %>
+      </div>
+    <% end %>
+
+    <section class="border border-[#d9dfd7] bg-white p-7 shadow-sm">
+      <p class="text-sm font-semibold text-[#5f755f]">Villaggio Girotto</p>
+      <h1 class="mt-2 text-3xl font-semibold">Pré-check-in em análise</h1>
+      <p class="mt-4 text-base leading-7 text-[#58645d]">
+        Assim que o gov.br confirmar o preenchimento da FNRH, liberamos o acesso ao material do hóspede e às informações da hospedagem.
+      </p>
+
+      <div class="mt-6 border-t border-[#e4e8e2] pt-5 text-sm text-[#637066]">
+        <p><strong>Reserva:</strong> #<%= @reserva.id %></p>
+        <p><strong>Cabana:</strong> <%= @reserva.cabana.name %></p>
+        <p><strong>Entrada:</strong> <%= @reserva.start_date.strftime('%d/%m/%Y') %></p>
+      </div>
+
+      <div class="mt-7 flex flex-col gap-3 sm:flex-row">
+        <%= button_to 'Já preenchi, verificar novamente',
+            fnrh_portal_verify_path,
+            method: :post,
+            class: 'w-full bg-[#315b3a] px-4 py-3 font-semibold text-white hover:bg-[#264a2e] sm:w-auto' %>
+
+        <% if @reserva.fnrh_precheckin_url.present? %>
+          <%= link_to 'Abrir pré-check-in novamente',
+              @reserva.fnrh_precheckin_url,
+              class: 'w-full border border-[#315b3a] px-4 py-3 text-center font-semibold text-[#315b3a] hover:bg-[#eef4ee] sm:w-auto',
+              target: '_blank',
+              rel: 'noopener' %>
+        <% end %>
+      </div>
+    </section>
+
+    <%= button_to 'Sair', fnrh_portal_logout_path, method: :delete, class: 'mt-5 text-sm font-medium text-[#315b3a] underline' %>
+  </div>
+</main>

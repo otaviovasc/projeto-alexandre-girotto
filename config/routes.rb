@@ -58,6 +58,11 @@ Rails.application.routes.draw do
         patch 'update_group_created'
         patch 'acknowledge_ical_date_change'
         patch 'update_service_purchase_access'
+        post 'sync_fnrh'
+        post 'fnrh_check_in'
+        post 'fnrh_no_show'
+        post 'fnrh_checkout'
+        post 'fnrh_cancel'
       end
       collection do
         get :import_airbnb_calendar
@@ -160,6 +165,19 @@ Rails.application.routes.draw do
   delete 'minha-reserva/remover/:id', to: 'portal_reserva#remover', as: :portal_reserva_remover
   post 'minha-reserva/pagar',    to: 'portal_reserva#pagar',    as: :portal_reserva_pagar
   delete 'minha-reserva/sair',   to: 'portal_reserva#sair',    as: :portal_reserva_sair
+
+  # Portal público do pré-check-in FNRH
+  get    'pre-checkin',         to: 'fnrh_portal#index',  as: :fnrh_portal
+  post   'pre-checkin/acessar', to: 'fnrh_portal#access', as: :fnrh_portal_access
+  get    'pre-checkin/aguardando', to: 'fnrh_portal#waiting', as: :fnrh_portal_waiting
+  post   'pre-checkin/verificar', to: 'fnrh_portal#verify', as: :fnrh_portal_verify
+  get    'pre-checkin/informacoes', to: 'fnrh_portal#information', as: :fnrh_portal_information
+  delete 'pre-checkin/sair',    to: 'fnrh_portal#logout', as: :fnrh_portal_logout
+
+  namespace :fnrh, path: 'fnrh-simulacao' do
+    get  'precheckin/:reservation_id', to: 'mock#precheckin', as: :mock_precheckin
+    post 'precheckin/:reservation_id/complete', to: 'mock#complete_precheckin', as: :mock_complete_precheckin
+  end
 
   # Unlogged route
   root to: 'home#root'

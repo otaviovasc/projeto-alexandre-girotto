@@ -295,6 +295,9 @@
                 <% elsif reserva.ical_date_changed? %>
                   <span class="badge bg-warning text-dark ms-1 ical-date-change-badge">Possível troca de datas</span>
                 <% end %>
+                <% if reserva.fnrh_reservation_id.present? || reserva.fnrh_eligible? %>
+                  <span class="badge bg-secondary ms-1"><%= reserva.fnrh_status_label %></span>
+                <% end %>
               </td>
               <td><%= number_to_currency(reserva.total_price, unit: "R$") %></td>
               <td>

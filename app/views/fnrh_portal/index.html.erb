@@ -1,0 +1,48 @@
+<% content_for :title, 'Pré-check-in - Villaggio Girotto' %>
+
+<main class="min-h-screen flex items-center justify-center px-4 py-10">
+  <div class="w-full max-w-md">
+    <header class="mb-7">
+      <p class="text-sm font-semibold text-[#5f755f]">Villaggio Girotto</p>
+      <h1 class="mt-1 text-3xl font-semibold">Acessar pré-check-in</h1>
+      <p class="mt-2 text-sm text-[#637066]">Use os dados informados no grupo da sua estadia.</p>
+    </header>
+
+    <% if flash[:alert].present? %>
+      <div class="mb-5 border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <%= flash[:alert] %>
+      </div>
+    <% end %>
+
+    <section class="border border-[#d9dfd7] bg-white p-6 shadow-sm">
+      <%= form_with url: fnrh_portal_access_path, method: :post, local: true, class: 'space-y-5' do |form| %>
+        <div>
+          <%= form.label :guest_name, 'Nome do responsável', class: 'block text-sm font-medium' %>
+          <%= form.text_field :guest_name,
+              required: true,
+              autocomplete: 'name',
+              placeholder: 'Primeiro nome ou nome completo',
+              class: 'mt-2 w-full border border-[#c9d1c7] px-3 py-3 text-base focus:border-[#3f6747] focus:outline-none focus:ring-1 focus:ring-[#3f6747]' %>
+        </div>
+
+        <div>
+          <%= form.label :reservation_code, 'Código da reserva', class: 'block text-sm font-medium' %>
+          <%= form.number_field :reservation_code,
+              required: true,
+              min: 1,
+              inputmode: 'numeric',
+              placeholder: 'Número no nome do grupo',
+              class: 'mt-2 w-full border border-[#c9d1c7] px-3 py-3 text-base focus:border-[#3f6747] focus:outline-none focus:ring-1 focus:ring-[#3f6747]' %>
+        </div>
+
+        <button type="submit" class="w-full bg-[#315b3a] px-4 py-3 font-semibold text-white hover:bg-[#264a2e]">
+          Continuar
+        </button>
+      <% end %>
+    </section>
+
+    <% if Fnrh::Configuration.mock? %>
+      <p class="mt-4 text-center text-xs font-medium text-amber-700">Ambiente local de simulação</p>
+    <% end %>
+  </div>
+</main>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_06_21_230000) do
+ActiveRecord::Schema[7.0].define(version: 2026_06_22_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -99,6 +99,20 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_21_230000) do
     t.string "pagarme_api_key"
     t.string "pagarme_encryption_key"
     t.string "region"
+  end
+
+  create_table "fnrh_events", force: :cascade do |t|
+    t.bigint "reserva_id", null: false
+    t.string "event_type", null: false
+    t.string "source", null: false
+    t.string "status", null: false
+    t.text "message"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "occurred_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reserva_id", "occurred_at"], name: "index_fnrh_events_on_reserva_id_and_occurred_at"
+    t.index ["reserva_id"], name: "index_fnrh_events_on_reserva_id"
   end
 
   create_table "funil_mailers", force: :cascade do |t|
@@ -231,14 +245,30 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_21_230000) do
     t.boolean "manual_override", default: false, null: false
     t.boolean "ical_uid_from_feed", default: false, null: false
     t.datetime "ical_missing_since"
-    t.datetime "ical_date_change_since"
     t.boolean "breakfast_manual_override", default: false, null: false
     t.boolean "group_created", default: false, null: false
     t.bigint "partnership_creator_id"
+    t.datetime "ical_date_change_since"
     t.boolean "service_purchase_override", default: false, null: false
-    t.index ["cabana_id"], name: "index_reservas_on_cabana_id"
-    t.index ["cabana_id", "platform_uid"], name: "index_reservas_on_cabana_id_and_platform_uid"
+    t.string "fnrh_status", default: "not_eligible", null: false
+    t.string "fnrh_reservation_id"
+    t.text "fnrh_precheckin_url"
+    t.integer "fnrh_adults", default: 1, null: false
+    t.integer "fnrh_minors", default: 0, null: false
+    t.datetime "fnrh_scheduled_checkin_at"
+    t.datetime "fnrh_precheckin_at"
+    t.datetime "fnrh_checkin_at"
+    t.datetime "fnrh_checkout_at"
+    t.datetime "fnrh_cancelled_at"
+    t.datetime "fnrh_no_show_at"
+    t.datetime "fnrh_synced_at"
+    t.text "fnrh_last_error"
     t.index ["cabana_id", "origem", "ical_uid"], name: "index_reservas_on_imported_ical"
+    t.index ["cabana_id", "platform_uid"], name: "index_reservas_on_cabana_id_and_platform_uid"
+    t.index ["cabana_id"], name: "index_reservas_on_cabana_id"
+    t.index ["fnrh_reservation_id"], name: "index_reservas_on_fnrh_reservation_id", unique: true
+    t.index ["fnrh_scheduled_checkin_at"], name: "index_reservas_on_fnrh_scheduled_checkin_at"
+    t.index ["fnrh_status"], name: "index_reservas_on_fnrh_status"
     t.index ["ical_date_change_since"], name: "index_reservas_on_ical_date_change_since"
     t.index ["ical_missing_since"], name: "index_reservas_on_ical_missing_since"
     t.index ["partnership_creator_id"], name: "index_reservas_on_partnership_creator_id"
@@ -289,8 +319,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_21_230000) do
   add_foreign_key "cart_items", "reservas", on_delete: :cascade
   add_foreign_key "cart_items", "services"
   add_foreign_key "carts", "users"
-  add_foreign_key "info_da_cabanas", "cabanas"
+  add_foreign_key "fnrh_events", "reservas"
   add_foreign_key "ical_reservation_changes", "reservas"
+  add_foreign_key "info_da_cabanas", "cabanas"
   add_foreign_key "items", "filials"
   add_foreign_key "price_rules", "cabanas"
   add_foreign_key "promotions", "cabanas"
@@ -299,8 +330,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_21_230000) do
   add_foreign_key "reserva_services", "reservas"
   add_foreign_key "reserva_services", "services"
   add_foreign_key "reservas", "cabanas"
-  add_foreign_key "reservas", "users", column: "partnership_creator_id"
   add_foreign_key "reservas", "users"
+  add_foreign_key "reservas", "users", column: "partnership_creator_id"
   add_foreign_key "services", "filials"
   add_foreign_key "services", "users"
   add_foreign_key "users", "filials"

@@ -12,3 +12,14 @@ scheduler.every '10m' do
     Rails.logger.error "Erro no scheduler: #{e.message}"
   end
 end
+
+scheduler.every '5m' do
+  next unless Fnrh::Configuration.enabled?
+
+  Rails.logger.info 'Iniciando automações da FNRH...'
+  begin
+    Fnrh::AutomationJob.run
+  rescue => e
+    Rails.logger.error "Erro nas automações da FNRH: #{e.message}"
+  end
+end

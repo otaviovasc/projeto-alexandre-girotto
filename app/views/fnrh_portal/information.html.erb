@@ -1,0 +1,33 @@
+<% content_for :title, 'Informações da hospedagem - Villaggio Girotto' %>
+
+<main class="min-h-screen px-4 py-10">
+  <div class="mx-auto max-w-2xl">
+    <% if flash[:notice].present? %>
+      <div class="mb-5 border-l-4 border-green-600 bg-green-50 px-4 py-3 text-sm text-green-800"><%= flash[:notice] %></div>
+    <% end %>
+
+    <header class="mb-7">
+      <p class="text-sm font-semibold text-[#5f755f]">Pré-check-in concluído</p>
+      <h1 class="mt-1 text-3xl font-semibold">Informações da hospedagem</h1>
+    </header>
+
+    <section class="border border-[#d9dfd7] bg-white p-6 shadow-sm">
+      <dl class="grid gap-5 sm:grid-cols-2">
+        <div><dt class="text-xs font-semibold uppercase text-[#728077]">Reserva</dt><dd class="mt-1 text-lg">#<%= @reserva.id %></dd></div>
+        <div><dt class="text-xs font-semibold uppercase text-[#728077]">Cabana</dt><dd class="mt-1 text-lg"><%= @reserva.cabana.name %></dd></div>
+        <div><dt class="text-xs font-semibold uppercase text-[#728077]">Entrada</dt><dd class="mt-1"><%= @reserva.start_date.strftime('%d/%m/%Y') %></dd></div>
+        <div><dt class="text-xs font-semibold uppercase text-[#728077]">Saída</dt><dd class="mt-1"><%= @reserva.end_date.strftime('%d/%m/%Y') %></dd></div>
+      </dl>
+
+      <div class="mt-7 border-t border-[#e4e8e2] pt-6">
+        <% if @reserva.cabana.link_guia.present? %>
+          <%= link_to 'Abrir guia da hospedagem', @reserva.cabana.link_guia, class: 'inline-block bg-[#315b3a] px-5 py-3 font-semibold text-white hover:bg-[#264a2e]', target: '_blank', rel: 'noopener' %>
+        <% else %>
+          <p class="text-sm text-[#637066]">O PDF informativo será conectado aqui antes da publicação.</p>
+        <% end %>
+      </div>
+    </section>
+
+    <%= button_to 'Sair', fnrh_portal_logout_path, method: :delete, class: 'mt-5 text-sm font-medium text-[#315b3a] underline' %>
+  </div>
+</main>

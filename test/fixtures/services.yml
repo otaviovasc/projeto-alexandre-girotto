@@ -8,6 +8,7 @@ one:
   start_time: 2024-09-11 09:22:20
   end_time: 2024-09-11 09:22:20
   filial: one
+  user: one
 
 two:
   name: MyString
@@ -17,3 +18,4 @@ two:
   start_time: 2024-09-11 09:22:20
   end_time: 2024-09-11 09:22:20
   filial: two
+  user: two

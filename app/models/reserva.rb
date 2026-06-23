@@ -18,6 +18,7 @@ class Reserva < ApplicationRecord
   has_many :reserva_items, dependent: :destroy
   has_many :items, through: :reserva_items
   has_many :ical_reservation_changes, dependent: :destroy
+  has_many :fnrh_events, dependent: :destroy
 
   validate :start_date_cannot_be_in_the_past
   validate :end_date_after_start_date
@@ -37,6 +38,18 @@ class Reserva < ApplicationRecord
   after_update :shift_reservation_services_after_start_date_change, if: :saved_change_to_start_date?
   after_update :ensure_required_cleaning_services_after_schedule_change, if: :cleaning_schedule_changed?
   after_update :sync_automatic_breakfast_service_date, if: :cleaning_schedule_changed?
+  after_commit :sync_fnrh_after_relevant_change, on: [:create, :update]
+
+  FNRH_STATUS_LABELS = {
+    'not_eligible' => 'Aguardando liberação',
+    'awaiting_precheckin' => 'Aguardando pré-check-in',
+    'precheckin_completed' => 'Pré-check-in concluído',
+    'checked_in' => 'Check-in realizado',
+    'checked_out' => 'Checkout realizado',
+    'cancelled' => 'Cancelada',
+    'no_show' => 'No-show',
+    'error' => 'Erro'
+  }.freeze
 
   def calculate_total_price!
     self.total_price = PriceCalculator.new(self).total_price
@@ -139,6 +152,18 @@ class Reserva < ApplicationRecord
     partnership_creator_id.present?
   end
 
+  def fnrh_eligible?
+    total_price.to_d.positive? && group_created? && paid? && end_date.present? && end_date >= Date.current
+  end
+
+  def fnrh_status_label
+    FNRH_STATUS_LABELS.fetch(fnrh_status.to_s, fnrh_status.to_s.humanize)
+  end
+
+  def fnrh_information_released?
+    fnrh_status.in?(%w[precheckin_completed checked_in checked_out])
+  end
+
   def self.ransackable_attributes(auth_object = nil)
     ["breakfast_manual_override", "cabana_id", "created_at", "end_date", "group_created", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
   end
@@ -168,6 +193,14 @@ class Reserva < ApplicationRecord
 
   def cleaning_schedule_changed?
     saved_change_to_start_date? || saved_change_to_end_date? || saved_change_to_cabana_id?
+  end
+
+  def sync_fnrh_after_relevant_change
+    relevant_fields = %w[total_price group_created payment_status start_date end_date cabana_id]
+    return if (previous_changes.keys & relevant_fields).empty?
+    return unless Fnrh::Configuration.enabled?
+
+    Fnrh::ReservationSyncService.new(self).call
   end
 
   def set_default_fields
