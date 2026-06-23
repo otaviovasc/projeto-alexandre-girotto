@@ -68,13 +68,14 @@ class PagarmePaymentLinkService
 
   def payload
     amount_in_cents = normalized_items.sum { |item| item[:amount] * item[:default_quantity] }
+    expires_in_seconds = @expires_in.to_i * 60
 
     {
       is_building: false,
       type: 'order',
       name: @name.to_s.first(64),
       order_code: @order_code,
-      expires_in: @expires_in,
+      expires_in: expires_in_seconds,
       max_paid_sessions: 1,
       payment_settings: {
         credit_card_settings: {
@@ -87,7 +88,7 @@ class PagarmePaymentLinkService
           operation_type: 'auth_and_capture'
         },
         pix_settings: {
-          expires_in: @expires_in * 60
+          expires_in: expires_in_seconds
         },
         accepted_payment_methods: [
           'credit_card',
