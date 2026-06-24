@@ -166,7 +166,9 @@ Rails.application.routes.draw do
   post 'minha-reserva/pagar',    to: 'portal_reserva#pagar',    as: :portal_reserva_pagar
   delete 'minha-reserva/sair',   to: 'portal_reserva#sair',    as: :portal_reserva_sair
 
-  # Portal público do pré-check-in FNRH
+  # Portal público de termos e pré-check-in FNRH
+  get    'termos-hospedagem',         to: 'fnrh_portal#terms', as: :fnrh_terms
+  post   'termos-hospedagem/acessar', to: 'fnrh_portal#terms_access', as: :fnrh_terms_access
   get    'pre-checkin',         to: 'fnrh_portal#index',  as: :fnrh_portal
   post   'pre-checkin/acessar', to: 'fnrh_portal#access', as: :fnrh_portal_access
   get    'pre-checkin/orientacao', to: 'fnrh_portal#orientation', as: :fnrh_portal_orientation

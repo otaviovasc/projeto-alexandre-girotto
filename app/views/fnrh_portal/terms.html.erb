@@ -1,0 +1,135 @@
+<% content_for :title, 'Termos de hospedagem - Villaggio Girotto' %>
+
+<main class="min-h-screen px-4 py-8 sm:py-12">
+  <div class="mx-auto max-w-3xl">
+    <header class="mb-8">
+      <p class="text-sm font-semibold text-[#5f755f]">Villaggio Girotto</p>
+      <h1 class="mt-1 text-3xl font-semibold sm:text-4xl">Termos de hospedagem</h1>
+      <p class="mt-3 text-sm leading-6 text-[#637066]">
+        Leia as políticas da estadia e, ao final, informe os dados da reserva para seguir para o pré-check-in ou acessar o material do hóspede.
+      </p>
+    </header>
+
+    <% if flash[:alert].present? %>
+      <div class="mb-6 border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <%= flash[:alert] %>
+      </div>
+    <% end %>
+
+    <section class="space-y-6 border border-[#d9dfd7] bg-white p-6 leading-7 shadow-sm sm:p-8">
+      <section>
+        <h2 class="text-xl font-semibold">Política de Reservas / Desistência</h2>
+        <p class="mt-3 text-[#58645d]">Do período de locação</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold">Animais de estimação (pets)</h2>
+        <p class="mt-3 text-[#58645d]">Taxa de R$200,00.</p>
+        <p class="mt-3 text-[#58645d]">O locatário tem plena ciência da obrigação de manter o imóvel limpo, internamente e externamente, durante toda a estadia.</p>
+        <p class="mt-3 text-[#58645d]">Ao trazer seu pet, o hóspede concorda que:</p>
+        <ul class="mt-3 list-disc space-y-2 pl-5 text-[#58645d]">
+          <li>É obrigatório recolher as necessidades do animal e manter o ambiente sempre limpo.</li>
+          <li>O pet não deve subir em camas, sofás ou itens de tecido. Caso utilize, pedimos que use uma manta/lençol por cima.</li>
+          <li>O animal não deve ser deixado sozinho na cabana por longos períodos, principalmente se estiver latindo ou agitado.</li>
+          <li>Qualquer dano causado ao imóvel, mobília ou utensílios deverá ser ressarcido pelo hóspede.</li>
+        </ul>
+        <p class="mt-3 text-[#58645d]">O Villaggio não se responsabiliza por qualquer acidente, fuga ou dano causado ao seu animal de estimação durante a estadia.</p>
+        <p class="mt-3 text-[#58645d]">Não nos responsabilizamos por qualquer acidente ou dano causado ao seu animal de estimação (Pet).</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold">Visitas e número de hóspedes</h2>
+        <p class="mt-3 text-[#58645d]">A reserva é válida somente para os hóspedes informados no momento da contratação.</p>
+        <ul class="mt-3 list-disc space-y-2 pl-5 text-[#58645d]">
+          <li>Não é permitido receber visitas ou trazer pessoas extras sem autorização prévia do Villaggio.</li>
+          <li>Caso seja identificada a presença de pessoas não informadas na reserva, o Villaggio poderá solicitar a saída imediata dos visitantes e/ou aplicar cobrança adicional.</li>
+          <li>Em hipótese alguma o imóvel poderá ser utilizado para festas, eventos, confraternizações, ensaios fotográficos ou qualquer atividade que fuja do padrão de hospedagem.</li>
+        </ul>
+        <p class="mt-3 text-[#58645d]">Nosso objetivo é preservar a tranquilidade do local e a experiência de todos.</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold">Objetos especiais</h2>
+        <p class="mt-3 text-[#58645d]">O hóspede é responsável por seus pertences durante toda a estadia.</p>
+        <ul class="mt-3 list-disc space-y-2 pl-5 text-[#58645d]">
+          <li>O Villaggio não se responsabiliza por perdas, extravios ou furtos de objetos pessoais.</li>
+          <li>Também não nos responsabilizamos por itens esquecidos na cabana após o check-out.</li>
+          <li>Caso encontremos algum item, podemos ajudar na devolução, porém o custo de envio/entrega será por conta do hóspede.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold">Regras gerais</h2>
+        <ul class="mt-3 list-disc space-y-2 pl-5 text-[#58645d]">
+          <li>Voltagem da hospedagem é 220v. Não nos responsabilizamos por aparelhos queimados por incompatibilidade.</li>
+          <li>Não é permitido fumar dentro da cabana, incluindo cigarro, vape, narguilé ou similares.</li>
+          <li>Caso o hóspede deseje fumar, pedimos que seja somente em área externa, com cuidado total no descarte de bitucas e cinzas.</li>
+          <li>Caso seja identificado cheiro forte de fumaça dentro do imóvel, poderá ser cobrada taxa de higienização extra, devido à necessidade de limpeza profunda e troca/neutralização de odores em tecidos.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold">Desistência da locação</h2>
+        <p class="mt-3 text-[#58645d]">Caso realize a desistência até 15 dias antes da data de entrada no Villaggio, poderá optar por:</p>
+        <ul class="mt-3 list-disc space-y-2 pl-5 text-[#58645d]">
+          <li>reagendar o período da locação mediante disponibilidade e após o pagamento da parcela restante; ou</li>
+          <li>realizar a desistência sem direito de reembolso da parcela já paga.</li>
+        </ul>
+        <p class="mt-3 text-[#58645d]">Caso realize a desistência em até 24 horas após realizar a reserva, será reembolsado 100% do valor já pago.</p>
+        <p class="mt-3 text-[#58645d]">Só será permitido um reagendamento, esse passível de reajuste de preço a depender da data. Os preços das datas podem variar por ser feriado, datas festivas ou por praticarmos novos preços.</p>
+        <p class="mt-3 text-[#58645d]">Será cobrada uma taxa de R$200,00 para que ocorra a alteração de datas.</p>
+        <p class="mt-3 text-[#58645d]">Reembolsos são feitos pelo mesmo meio de pagamento em que a reserva foi realizada. Em caso de compras por cartão, é a própria operadora do cartão/banco que define como devolver o dinheiro.</p>
+        <p class="mt-3 text-[#58645d]">Em alguns casos pode voltar como depósito/PIX, assim como a devolução pode ser por parcelas ou como crédito na próxima fatura.</p>
+        <p class="mt-3 text-[#58645d]">Obs.: o estorno demora um mínimo de 3 dias úteis para ocorrer.</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold">Responsabilidades</h2>
+        <ul class="mt-3 list-disc space-y-2 pl-5 text-[#58645d]">
+          <li>Todo e qualquer dano aos objetos, bem como à estrutura decorrente do mau uso, deverá ser ressarcido pelo locatário.</li>
+          <li>O locatário é responsável pela sua segurança durante a hospedagem. O locador não se responsabiliza em caso de algum acidente durante a estadia.</li>
+          <li>O locatário é responsável pela chegada até o Villaggio e pelo veículo para o transporte. O locador não se responsabiliza pela chegada do locatário ao imóvel.</li>
+          <li>O locatário declara ciente da infraestrutura, benfeitorias, utensílios e acomodações da cabana em madeira, aceitando a contratação diante da descrição previamente disponibilizada no Memorial Descritivo.</li>
+          <li>O locatário se compromete a zelar pela manutenção e bom uso de todos os seus itens, responsabilizando-se por eventuais danos.</li>
+          <li>O locador não se responsabilizará por eventuais acidentes que possam ocorrer com as pessoas que frequentarem o imóvel e nem por objetos deixados no local.</li>
+          <li>Fica esclarecido que em hipótese alguma o imóvel poderá ser locado para fins de eventos públicos.</li>
+        </ul>
+      </section>
+    </section>
+
+    <section class="mt-8 border border-[#d9dfd7] bg-white p-6 shadow-sm sm:p-8">
+      <h2 class="text-2xl font-semibold">Confirmar leitura e continuar</h2>
+      <p class="mt-3 text-sm leading-6 text-[#637066]">
+        Ao continuar, você confirma que leu os termos e condições de hospedagem.
+      </p>
+
+      <%= form_with url: fnrh_terms_access_path, method: :post, local: true, data: { fnrh_loading: true }, class: 'mt-6 space-y-5' do |form| %>
+        <div>
+          <%= form.label :guest_name, 'Nome ou nome do aplicativo em que a reserva foi realizada', class: 'block text-sm font-medium' %>
+          <%= form.text_field :guest_name,
+              required: true,
+              autocomplete: 'name',
+              placeholder: 'Ex.: Maria, Airbnb, Booking ou Holmy',
+              class: 'mt-2 w-full border border-[#c9d1c7] px-3 py-3 text-base focus:border-[#3f6747] focus:outline-none focus:ring-1 focus:ring-[#3f6747]' %>
+        </div>
+
+        <div>
+          <%= form.label :reservation_code, 'Código da reserva', class: 'block text-sm font-medium' %>
+          <%= form.number_field :reservation_code,
+              required: true,
+              min: 1,
+              inputmode: 'numeric',
+              placeholder: 'Ex.: 843',
+              class: 'mt-2 w-full border border-[#c9d1c7] px-3 py-3 text-base focus:border-[#3f6747] focus:outline-none focus:ring-1 focus:ring-[#3f6747]' %>
+          <p class="mt-2 text-sm text-[#637066]">
+            Código da reserva: números que ficam entre parênteses no final do nome do seu grupo do WhatsApp.
+          </p>
+        </div>
+
+        <button type="submit" class="w-full bg-[#315b3a] px-4 py-3 font-semibold text-white hover:bg-[#264a2e]">
+          Pré-check-in / material do hóspede
+        </button>
+      <% end %>
+    </section>
+  </div>
+</main>

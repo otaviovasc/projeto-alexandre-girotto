@@ -33,6 +33,22 @@ class FnrhPortalControllerTest < ActionDispatch::IntegrationTest
     assert_select 'form button', 'Entrar pelo gov.br'
   end
 
+  test 'terms page records acceptance and continues to precheckin flow' do
+    get fnrh_terms_path
+
+    assert_response :success
+    assert_select 'h1', 'Termos de hospedagem'
+
+    assert_difference -> { @reserva.fnrh_events.where(event_type: 'terms_accepted').count }, 1 do
+      post fnrh_terms_access_path, params: {
+        guest_name: 'Maria',
+        reservation_code: @reserva.id
+      }
+    end
+
+    assert_redirected_to fnrh_portal_orientation_path
+  end
+
   test 'opens stored precheckin link after orientation' do
     post fnrh_portal_access_path, params: {
       guest_name: 'Maria',
