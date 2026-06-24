@@ -169,6 +169,8 @@ Rails.application.routes.draw do
   # Portal público do pré-check-in FNRH
   get    'pre-checkin',         to: 'fnrh_portal#index',  as: :fnrh_portal
   post   'pre-checkin/acessar', to: 'fnrh_portal#access', as: :fnrh_portal_access
+  get    'pre-checkin/orientacao', to: 'fnrh_portal#orientation', as: :fnrh_portal_orientation
+  post   'pre-checkin/iniciar', to: 'fnrh_portal#start_precheckin', as: :fnrh_portal_start_precheckin
   get    'pre-checkin/aguardando', to: 'fnrh_portal#waiting', as: :fnrh_portal_waiting
   post   'pre-checkin/verificar', to: 'fnrh_portal#verify', as: :fnrh_portal_verify
   get    'pre-checkin/informacoes', to: 'fnrh_portal#information', as: :fnrh_portal_information

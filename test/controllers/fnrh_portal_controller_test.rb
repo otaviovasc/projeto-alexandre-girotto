@@ -21,11 +21,25 @@ class FnrhPortalControllerTest < ActionDispatch::IntegrationTest
     Fnrh::ReservationSyncService.new(@reserva).call(force: true)
   end
 
-  test 'identifies reservation and redirects to its stored precheckin link' do
+  test 'identifies reservation and shows orientation before opening precheckin link' do
     post fnrh_portal_access_path, params: {
       guest_name: 'Maria',
       reservation_code: @reserva.id
     }
+
+    assert_redirected_to fnrh_portal_orientation_path
+    follow_redirect!
+    assert_select 'h1', 'Pré-check-in gov.br'
+    assert_select 'form button', 'Entrar pelo gov.br'
+  end
+
+  test 'opens stored precheckin link after orientation' do
+    post fnrh_portal_access_path, params: {
+      guest_name: 'Maria',
+      reservation_code: @reserva.id
+    }
+
+    post fnrh_portal_start_precheckin_path
 
     assert_redirected_to @reserva.reload.fnrh_precheckin_url
   end
@@ -35,6 +49,7 @@ class FnrhPortalControllerTest < ActionDispatch::IntegrationTest
       guest_name: 'Maria',
       reservation_code: @reserva.id
     }
+    post fnrh_portal_start_precheckin_path
     post fnrh_mock_complete_precheckin_path(@reserva.fnrh_reservation_id)
     follow_redirect!
 

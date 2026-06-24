@@ -1,0 +1,37 @@
+<% content_for :title, 'Orientação pré-check-in - Villaggio Girotto' %>
+
+<main class="min-h-screen flex items-center justify-center px-4 py-10">
+  <div class="w-full max-w-lg">
+    <section class="border border-[#d9dfd7] bg-white p-7 shadow-sm">
+      <p class="text-sm font-semibold text-[#5f755f]">Villaggio Girotto</p>
+      <h1 class="mt-2 text-3xl font-semibold">Pré-check-in gov.br</h1>
+
+      <div class="mt-5 space-y-4 text-base leading-7 text-[#58645d]">
+        <p>
+          Para cumprir a exigência oficial da FNRH (Ficha Nacional de Registro de Hóspedes) / Cadastur,
+          prevista pela Lei nº 11.771/2008 e pelo Decreto nº 7.381/2010, o responsável pela reserva
+          precisa realizar o pré-check-in usando a conta gov.br.
+        </p>
+
+        <p>
+          Após finalizar, volte ao link inicial em alguns minutos para acessar o material do hóspede.
+        </p>
+      </div>
+
+      <div class="mt-6 border-t border-[#e4e8e2] pt-5 text-sm text-[#637066]">
+        <p><strong>Reserva:</strong> #<%= @reserva.id %></p>
+        <p><strong>Cabana:</strong> <%= @reserva.cabana.name %></p>
+        <p><strong>Entrada:</strong> <%= @reserva.start_date.strftime('%d/%m/%Y') %></p>
+      </div>
+
+      <div class="mt-7 flex flex-col gap-3">
+        <%= button_to 'Entrar pelo gov.br',
+            fnrh_portal_start_precheckin_path,
+            method: :post,
+            class: 'w-full bg-[#315b3a] px-4 py-3 font-semibold text-white hover:bg-[#264a2e]' %>
+
+        <%= link_to 'Voltar', fnrh_portal_path, class: 'text-center text-sm font-medium text-[#315b3a] underline' %>
+      </div>
+    </section>
+  </div>
+</main>

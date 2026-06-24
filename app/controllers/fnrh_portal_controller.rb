@@ -42,8 +42,34 @@ class FnrhPortalController < ApplicationController
     elsif precheckin_link_already_opened?(reserva)
       redirect_to fnrh_portal_waiting_path
     else
-      record_precheckin_link_opened(reserva)
-      redirect_to reserva.fnrh_precheckin_url, allow_other_host: true
+      redirect_to fnrh_portal_orientation_path
+    end
+  end
+
+  def orientation
+    @reserva = portal_reserva
+    redirect_to fnrh_portal_path, alert: 'Informe os dados da sua reserva para iniciar o pré-check-in.' and return unless @reserva
+
+    Fnrh::PrecheckinStatusSyncService.new(@reserva, source: 'guest_portal').call
+    @reserva.reload
+
+    redirect_to fnrh_portal_information_path if @reserva.fnrh_information_released?
+  end
+
+  def start_precheckin
+    @reserva = portal_reserva
+    redirect_to fnrh_portal_path, alert: 'Informe os dados da sua reserva para iniciar o pré-check-in.' and return unless @reserva
+
+    Fnrh::PrecheckinStatusSyncService.new(@reserva, source: 'guest_portal').call
+    @reserva.reload
+
+    if @reserva.fnrh_information_released?
+      redirect_to fnrh_portal_information_path
+    elsif @reserva.fnrh_precheckin_url.present?
+      record_precheckin_link_opened(@reserva) unless precheckin_link_already_opened?(@reserva)
+      redirect_to @reserva.fnrh_precheckin_url, allow_other_host: true
+    else
+      redirect_to fnrh_portal_path, alert: 'Não foi possível abrir o pré-check-in agora. Tente novamente em alguns minutos.'
     end
   end
 
