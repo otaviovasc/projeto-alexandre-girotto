@@ -12,6 +12,7 @@ module Fnrh
       run_reservation_syncs
       run_precheckin_status_syncs
       run_cancellations
+      run_expired_precheckin_no_shows
       run_checkins
       run_checkouts
     end
@@ -56,6 +57,19 @@ module Fnrh
         TransitionService.new(reserva, source: 'automatic').check_in(at: @now)
       rescue => e
         Rails.logger.error("Erro no check-in automático FNRH da reserva ##{reserva.id}: #{e.message}")
+      end
+    end
+
+    def run_expired_precheckin_no_shows
+      Reserva.where(fnrh_status: 'awaiting_precheckin')
+             .where.not(fnrh_reservation_id: nil)
+             .where('end_date <= ?', @now.to_date)
+             .find_each do |reserva|
+        next if Schedule.checkout_at(reserva) > @now
+
+        TransitionService.new(reserva, source: 'automatic').no_show(at: @now)
+      rescue => e
+        Rails.logger.error("Erro no no-show automático FNRH da reserva ##{reserva.id}: #{e.message}")
       end
     end
 

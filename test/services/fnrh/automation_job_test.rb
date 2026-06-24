@@ -69,6 +69,26 @@ module Fnrh
       assert_equal 0, @reserva.fnrh_events.where(event_type: 'checkin').count
     end
 
+    test 'keeps awaiting precheckin before the checkout deadline' do
+      checkout_at = Schedule.checkout_at(@reserva)
+
+      AutomationJob.run(now: checkout_at - 1.minute)
+
+      assert_equal 'awaiting_precheckin', @reserva.reload.fnrh_status
+      assert_equal 0, @reserva.fnrh_events.where(event_type: 'no_show').count
+    end
+
+    test 'marks awaiting precheckin as no-show after the checkout deadline' do
+      checkout_at = Schedule.checkout_at(@reserva)
+
+      AutomationJob.run(now: checkout_at + 1.minute)
+
+      assert_equal 'no_show', @reserva.reload.fnrh_status
+      assert_equal 'automatic', @reserva.fnrh_events.where(event_type: 'no_show').last.source
+      assert_equal 0, @reserva.fnrh_events.where(event_type: 'checkin').count
+      assert_equal 0, @reserva.fnrh_events.where(event_type: 'checkout').count
+    end
+
     test 'checks out automatically at the configured checkout time' do
       TransitionService.new(@reserva, source: 'manual').check_in(at: @reserva.start_date.in_time_zone)
       checkout_at = Schedule.checkout_at(@reserva)
