@@ -20,7 +20,6 @@ module Fnrh
 
     def run_reservation_syncs
       Reserva.where(fnrh_reservation_id: nil, payment_status: 'paid', group_created: true)
-             .where('total_price > 0')
              .where('end_date >= ?', Date.current)
              .find_each do |reserva|
         ReservationSyncService.new(reserva, source: 'automatic').call(force: true)

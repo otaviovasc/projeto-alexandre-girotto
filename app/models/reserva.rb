@@ -152,8 +152,14 @@ class Reserva < ApplicationRecord
     partnership_creator_id.present?
   end
 
+  def partnership_reservation?
+    partnership_created? ||
+      user&.partner? ||
+      I18n.transliterate(observation.to_s).downcase.include?('parceria')
+  end
+
   def fnrh_eligible?
-    total_price.to_d.positive? && group_created? && paid? && end_date.present? && end_date >= Date.current
+    group_created? && paid? && end_date.present? && end_date >= Date.current && !partnership_reservation?
   end
 
   def fnrh_status_label

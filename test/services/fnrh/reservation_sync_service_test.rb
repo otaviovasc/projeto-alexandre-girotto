@@ -12,8 +12,8 @@ module Fnrh
       )
     end
 
-    test 'creates a mock FNRH reservation when price and group are ready' do
-      reserva = create_reserva(group_created: true, total_price: 500)
+    test 'creates a mock FNRH reservation when group is ready even with zero price' do
+      reserva = create_reserva(group_created: true, total_price: 0)
 
       assert ReservationSyncService.new(reserva).call(force: true)
 
@@ -25,12 +25,56 @@ module Fnrh
       assert_equal 'reservation_created', reserva.fnrh_events.last.event_type
     end
 
-    test 'does not create FNRH reservation without price or group' do
+    test 'does not create FNRH reservation without group' do
       reserva = create_reserva(group_created: false, total_price: 0)
 
       assert_not ReservationSyncService.new(reserva).call(force: true)
       assert_nil reserva.reload.fnrh_reservation_id
       assert_equal 'not_eligible', reserva.fnrh_status
+    end
+
+    test 'does not create FNRH reservation for partnership observation' do
+      reserva = create_reserva(group_created: true, total_price: 500, observation: 'Parceria')
+
+      assert_not ReservationSyncService.new(reserva).call(force: true)
+      assert_nil reserva.reload.fnrh_reservation_id
+      assert_equal 'not_eligible', reserva.fnrh_status
+    end
+
+    test 'does not create FNRH reservation for partner guest' do
+      @user.update!(partner: true)
+      reserva = create_reserva(group_created: true, total_price: 500)
+
+      assert_not ReservationSyncService.new(reserva).call(force: true)
+      assert_nil reserva.reload.fnrh_reservation_id
+      assert_equal 'not_eligible', reserva.fnrh_status
+    end
+
+    test 'does not create FNRH reservation for partnership creator' do
+      creator = User.create!(
+        name: 'Milena Parcerias',
+        email: 'milena-fnrh@example.com',
+        password: 'password123',
+        role: :partnership_agent
+      )
+      reserva = create_reserva(group_created: true, total_price: 500, partnership_creator: creator)
+
+      assert_not ReservationSyncService.new(reserva).call(force: true)
+      assert_nil reserva.reload.fnrh_reservation_id
+      assert_equal 'not_eligible', reserva.fnrh_status
+    end
+
+    test 'creates a mock FNRH reservation when group is ready' do
+      reserva = create_reserva(group_created: true, total_price: 500)
+
+      assert ReservationSyncService.new(reserva).call(force: true)
+
+      reserva.reload
+      assert_equal 'awaiting_precheckin', reserva.fnrh_status
+      assert reserva.fnrh_reservation_id.present?
+      assert_equal "/fnrh-simulacao/precheckin/#{reserva.fnrh_reservation_id}", reserva.fnrh_precheckin_url
+      assert reserva.fnrh_scheduled_checkin_at.present?
+      assert_equal 'reservation_created', reserva.fnrh_events.last.event_type
     end
 
     test 'updates the existing FNRH reservation without creating a duplicate' do
@@ -49,7 +93,7 @@ module Fnrh
 
     private
 
-    def create_reserva(group_created:, total_price:)
+    def create_reserva(group_created:, total_price:, observation: 'Sistema', partnership_creator: nil)
       Reserva.create!(
         cabana: @cabana,
         user: @user,
@@ -57,7 +101,9 @@ module Fnrh
         end_date: Date.current + 12.days,
         payment_status: 'paid',
         group_created: group_created,
-        total_price: total_price
+        total_price: total_price,
+        observation: observation,
+        partnership_creator: partnership_creator
       )
     end
   end
