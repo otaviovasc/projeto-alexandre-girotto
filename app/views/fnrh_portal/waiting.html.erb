@@ -25,6 +25,7 @@
         <%= button_to 'Já preenchi, verificar novamente',
             fnrh_portal_verify_path,
             method: :post,
+            form: { data: { fnrh_loading: true } },
             class: 'w-full bg-[#315b3a] px-4 py-3 font-semibold text-white hover:bg-[#264a2e] sm:w-auto' %>
 
         <% if @reserva.fnrh_precheckin_url.present? %>

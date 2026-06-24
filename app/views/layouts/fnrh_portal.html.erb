@@ -6,8 +6,174 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      .fnrh-loading-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        background: rgba(243, 245, 241, 0.92);
+        backdrop-filter: blur(6px);
+      }
+
+      .fnrh-loading-overlay.is-visible {
+        display: flex;
+      }
+
+      .fnrh-loading-panel {
+        width: min(100%, 22rem);
+        border: 1px solid #d9dfd7;
+        background: #ffffff;
+        padding: 1.75rem;
+        text-align: center;
+        box-shadow: 0 18px 40px rgba(23, 32, 25, 0.12);
+      }
+
+      .fnrh-loading-scene {
+        position: relative;
+        width: 12rem;
+        height: 8rem;
+        margin: 0 auto 1.25rem;
+        overflow: hidden;
+        border: 1px solid #d9dfd7;
+        background: linear-gradient(180deg, #dce9ed 0%, #f7e6c8 52%, #edf2e8 100%);
+      }
+
+      .fnrh-sun,
+      .fnrh-full-moon {
+        position: absolute;
+        left: 50%;
+        top: 4.8rem;
+        width: 2.3rem;
+        height: 2.3rem;
+        border-radius: 999px;
+        transform: translateX(-50%);
+      }
+
+      .fnrh-sun {
+        background: #f6b94f;
+        box-shadow: 0 0 22px rgba(246, 185, 79, 0.78);
+        animation: fnrh-sun-rise 3.6s ease-in-out infinite;
+      }
+
+      .fnrh-full-moon {
+        background: #fff8df;
+        border: 1px solid rgba(210, 203, 172, 0.8);
+        box-shadow: 0 0 18px rgba(255, 248, 223, 0.85);
+        opacity: 0;
+        animation: fnrh-moon-rise 3.6s ease-in-out infinite;
+      }
+
+      .fnrh-mountain {
+        position: absolute;
+        bottom: 0;
+        width: 8rem;
+        height: 4.8rem;
+        background: #315b3a;
+        clip-path: polygon(50% 0, 100% 100%, 0 100%);
+      }
+
+      .fnrh-mountain-left {
+        left: -1rem;
+        background: #5f755f;
+      }
+
+      .fnrh-mountain-center {
+        left: 2.2rem;
+        width: 9rem;
+        height: 5.8rem;
+        background: #315b3a;
+      }
+
+      .fnrh-mountain-right {
+        right: -1.4rem;
+        background: #476a4d;
+      }
+
+      .fnrh-ground {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 1.3rem;
+        background: #edf2e8;
+      }
+
+      @keyframes fnrh-sun-rise {
+        0% { top: 5.2rem; opacity: 0; }
+        18% { top: 1.2rem; opacity: 1; }
+        42% { top: 1.2rem; opacity: 1; }
+        56% { top: 5.2rem; opacity: 0; }
+        100% { top: 5.2rem; opacity: 0; }
+      }
+
+      @keyframes fnrh-moon-rise {
+        0%, 48% { top: 5.2rem; opacity: 0; }
+        66% { top: 1.2rem; opacity: 1; }
+        88% { top: 1.2rem; opacity: 1; }
+        100% { top: 5.2rem; opacity: 0; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .fnrh-sun,
+        .fnrh-full-moon {
+          animation: none;
+        }
+
+        .fnrh-sun {
+          top: 1.2rem;
+          opacity: 1;
+        }
+
+        .fnrh-full-moon {
+          display: none;
+        }
+      }
+    </style>
   </head>
   <body class="min-h-screen bg-[#f3f5f1] text-[#172019]">
     <%= yield %>
+
+    <div id="fnrh-loading" class="fnrh-loading-overlay" aria-hidden="true">
+      <div class="fnrh-loading-panel" role="status" aria-live="polite">
+        <div class="fnrh-loading-scene" aria-hidden="true">
+          <span class="fnrh-sun"></span>
+          <span class="fnrh-full-moon"></span>
+          <span class="fnrh-mountain fnrh-mountain-left"></span>
+          <span class="fnrh-mountain fnrh-mountain-center"></span>
+          <span class="fnrh-mountain fnrh-mountain-right"></span>
+          <span class="fnrh-ground"></span>
+        </div>
+        <p class="text-lg font-semibold text-[#172019]">Consultando pré-check-in</p>
+        <p class="mt-2 text-sm text-[#637066]">Estamos verificando a confirmação da FNRH.</p>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        var loading = document.getElementById("fnrh-loading");
+        if (!loading) return;
+
+        function showLoading() {
+          loading.classList.add("is-visible");
+          loading.setAttribute("aria-hidden", "false");
+        }
+
+        document.querySelectorAll("form[data-fnrh-loading='true']").forEach(function(form) {
+          form.addEventListener("submit", function(event) {
+            if (form.checkValidity && !form.checkValidity()) return;
+            showLoading();
+          });
+        });
+
+        window.addEventListener("pageshow", function() {
+          loading.classList.remove("is-visible");
+          loading.setAttribute("aria-hidden", "true");
+        });
+      });
+    </script>
   </body>
 </html>

@@ -28,6 +28,7 @@
         <%= button_to 'Entrar pelo gov.br',
             fnrh_portal_start_precheckin_path,
             method: :post,
+            form: { data: { fnrh_loading: true } },
             class: 'w-full bg-[#315b3a] px-4 py-3 font-semibold text-white hover:bg-[#264a2e]' %>
 
         <%= link_to 'Voltar', fnrh_portal_path, class: 'text-center text-sm font-medium text-[#315b3a] underline' %>

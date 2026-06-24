@@ -15,7 +15,7 @@
     <% end %>
 
     <section class="border border-[#d9dfd7] bg-white p-6 shadow-sm">
-      <%= form_with url: fnrh_portal_access_path, method: :post, local: true, class: 'space-y-5' do |form| %>
+      <%= form_with url: fnrh_portal_access_path, method: :post, local: true, data: { fnrh_loading: true }, class: 'space-y-5' do |form| %>
         <div>
           <%= form.label :guest_name, 'Nome do responsável', class: 'block text-sm font-medium' %>
           <%= form.text_field :guest_name,
