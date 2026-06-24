@@ -443,6 +443,7 @@ document.addEventListener('turbo:load', function() {
           if (result.data.sheets_synced === false) {
             alert('Grupo salvo no sistema, mas o Google Sheets não sincronizou: ' + (result.data.error || 'erro desconhecido'));
           }
+          window.location.reload();
         })
         .catch(function(error) {
           checkbox.checked = previousValue;

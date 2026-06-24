@@ -136,9 +136,10 @@ class Admin::ReservasController < ApplicationController
     @reservas = @q.result.includes(:cabana, :user)
                  .order(Arel.sql(
                    "CASE " \
-                   "WHEN ical_date_change_since IS NOT NULL THEN 0 " \
-                   "WHEN ical_missing_since IS NOT NULL THEN 1 " \
-                   "ELSE 2 END ASC"
+                   "WHEN group_created = FALSE THEN 0 " \
+                   "WHEN ical_date_change_since IS NOT NULL THEN 1 " \
+                   "WHEN ical_missing_since IS NOT NULL THEN 2 " \
+                   "ELSE 3 END ASC"
                  ))
                  .order(updated_at: :desc)
 
