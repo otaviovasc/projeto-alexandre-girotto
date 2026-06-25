@@ -87,6 +87,24 @@ module Fnrh
       assert bypassed.fnrh_information_released?
     end
 
+    test 'does not automatically sync reservations that already exist in FNRH' do
+      duplicated = Reserva.create!(
+        cabana: @reserva.cabana,
+        user: @reserva.user,
+        start_date: Date.current + 20.days,
+        end_date: Date.current + 22.days,
+        payment_status: 'paid',
+        group_created: true,
+        total_price: 800
+      )
+      duplicated.update_columns(fnrh_status: 'duplicate_in_fnrh')
+
+      AutomationJob.run
+
+      assert_nil duplicated.reload.fnrh_reservation_id
+      assert_equal 'duplicate_in_fnrh', duplicated.fnrh_status
+    end
+
     test 'cancels an external reservation after a confirmed local cancellation' do
       @reserva.update_column(:payment_status, 'canceled')
 

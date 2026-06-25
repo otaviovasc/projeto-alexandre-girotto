@@ -1,5 +1,8 @@
 module Fnrh
   class ReservationSyncService
+    AUTOMATIC_SKIP_STATUSES = %w[precheckin_bypassed duplicate_in_fnrh].freeze
+    DUPLICATE_CODE_MESSAGE = 'ja existe uma reserva com o codigo informado'.freeze
+
     def initialize(reserva, source: 'system')
       @reserva = reserva
       @source = source
@@ -7,11 +10,15 @@ module Fnrh
 
     def call(force: false)
       return false unless force || Configuration.enabled?
-      return false if @reserva.fnrh_status == 'precheckin_bypassed' && !force
-      return mark_not_eligible unless @reserva.fnrh_eligible?
 
-      @reserva.fnrh_reservation_id.present? ? update_reservation : create_reservation
-      true
+      @reserva.with_lock do
+        @reserva.reload
+        return false if AUTOMATIC_SKIP_STATUSES.include?(@reserva.fnrh_status) && !force
+        return mark_not_eligible unless @reserva.fnrh_eligible?
+
+        @reserva.fnrh_reservation_id.present? ? update_reservation : create_reservation
+        true
+      end
     rescue => e
       record_error(e)
       false
@@ -61,8 +68,17 @@ module Fnrh
 
     def record_error(error)
       now = Time.current
-      @reserva.update_columns(fnrh_status: 'error', fnrh_last_error: error.message, updated_at: now)
-      record_event('sync_error', 'error', error.message)
+      duplicate = duplicate_code_error?(error)
+      @reserva.update_columns(
+        fnrh_status: duplicate ? 'duplicate_in_fnrh' : 'error',
+        fnrh_last_error: error.message,
+        updated_at: now
+      )
+      record_event(duplicate ? 'duplicate_reservation' : 'sync_error', 'error', error.message)
+    end
+
+    def duplicate_code_error?(error)
+      I18n.transliterate(error.message.to_s).downcase.include?(DUPLICATE_CODE_MESSAGE)
     end
 
     def record_event(event_type, status, message)

@@ -5,6 +5,7 @@
   .fnrh-status.awaiting_precheckin { background:#fef3c7; color:#92400e; }
   .fnrh-status.precheckin_completed { background:#dbeafe; color:#1d4ed8; }
   .fnrh-status.precheckin_bypassed { background:#ecfccb; color:#3f6212; }
+  .fnrh-status.duplicate_in_fnrh { background:#ffedd5; color:#9a3412; }
   .fnrh-status.checked_in { background:#dcfce7; color:#166534; }
   .fnrh-status.checked_out { background:#e0e7ff; color:#3730a3; }
   .fnrh-status.cancelled, .fnrh-status.no_show, .fnrh-status.error { background:#fee2e2; color:#991b1b; }
@@ -60,11 +61,15 @@
     <% end %>
 
     <% if reserva.fnrh_reservation_id.blank? %>
+      <% if reserva.fnrh_status == 'duplicate_in_fnrh' %>
+        <span class="btn btn-outline-secondary disabled">Sincronização pausada</span>
+      <% else %>
       <%= button_to 'Sincronizar FNRH',
           sync_fnrh_admin_reserva_path(reserva),
           method: :post,
           class: 'btn btn-primary',
           form: { data: { turbo_confirm: "Confirmar envio da reserva ##{reserva.id} para a FNRH?" } } %>
+      <% end %>
     <% else %>
       <% if reserva.fnrh_status.in?(%w[awaiting_precheckin precheckin_completed error]) %>
         <%= button_to 'Fazer check-in agora', fnrh_check_in_admin_reserva_path(reserva), method: :post, class: 'btn btn-success' %>

@@ -91,6 +91,24 @@ module Fnrh
       assert_equal 1, reserva.fnrh_events.where(event_type: 'reservation_updated').count
     end
 
+    test 'pauses reservation when FNRH says the reservation code already exists' do
+      reserva = create_reserva(group_created: true, total_price: 500)
+      fake_client = Object.new
+      fake_client.define_singleton_method(:create_reservation) do |_reserva|
+        raise 'FNRH 400: {"message":"Já existe uma reserva com o código informado."}'
+      end
+
+      Fnrh::Client.stub(:build, fake_client) do
+        assert_not ReservationSyncService.new(reserva).call(force: true)
+      end
+
+      reserva.reload
+      assert_nil reserva.fnrh_reservation_id
+      assert_equal 'duplicate_in_fnrh', reserva.fnrh_status
+      assert_includes reserva.fnrh_last_error, 'Já existe uma reserva'
+      assert_equal 'duplicate_reservation', reserva.fnrh_events.last.event_type
+    end
+
     private
 
     def create_reserva(group_created:, total_price:, observation: 'Sistema', partnership_creator: nil)

@@ -45,6 +45,7 @@ class Reserva < ApplicationRecord
     'awaiting_precheckin' => 'Aguardando pré-check-in',
     'precheckin_completed' => 'Pré-check-in concluído',
     'precheckin_bypassed' => 'FNRH pulada',
+    'duplicate_in_fnrh' => 'Já existe na FNRH',
     'checked_in' => 'Check-in realizado',
     'checked_out' => 'Checkout realizado',
     'cancelled' => 'Cancelada',
