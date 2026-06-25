@@ -49,6 +49,25 @@ module Fnrh
       assert unsynced.fnrh_reservation_id.present?
     end
 
+    test 'does not automatically retry reservations with sync error' do
+      failed = Reserva.create!(
+        cabana: @reserva.cabana,
+        user: @reserva.user,
+        start_date: Date.current + 20.days,
+        end_date: Date.current + 22.days,
+        payment_status: 'paid',
+        group_created: true,
+        total_price: 800
+      )
+      failed.update_columns(fnrh_status: 'error', fnrh_last_error: 'FNRH 500')
+
+      AutomationJob.run
+
+      assert_nil failed.reload.fnrh_reservation_id
+      assert_equal 'error', failed.fnrh_status
+      assert_equal 'FNRH 500', failed.fnrh_last_error
+    end
+
     test 'cancels an external reservation after a confirmed local cancellation' do
       @reserva.update_column(:payment_status, 'canceled')
 
