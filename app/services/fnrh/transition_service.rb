@@ -8,7 +8,7 @@ module Fnrh
     def complete_precheckin(at: Time.current, message: 'Pré-check-in concluído na FNRH', metadata: {})
       ensure_external_reservation!
       raise 'Reserva cancelada ou marcada como no-show' if @reserva.fnrh_status.in?(%w[cancelled no_show])
-      return true if @reserva.fnrh_status.in?(%w[precheckin_completed checked_in checked_out])
+      return true if @reserva.fnrh_status.in?(%w[precheckin_completed precheckin_bypassed checked_in checked_out])
 
       transition!(
         event_type: 'precheckin_completed',
@@ -18,6 +18,28 @@ module Fnrh
         message: message,
         metadata: metadata
       )
+    end
+
+    def bypass_precheckin(at: Time.current)
+      raise 'Reserva cancelada ou marcada como no-show' if @reserva.fnrh_status.in?(%w[cancelled no_show])
+      return true if @reserva.fnrh_information_released?
+
+      now = Time.current
+      @reserva.update_columns(
+        fnrh_status: 'precheckin_bypassed',
+        fnrh_precheckin_at: at,
+        fnrh_last_error: nil,
+        updated_at: now
+      )
+      @reserva.fnrh_events.create!(
+        event_type: 'precheckin_bypassed',
+        source: @source,
+        status: 'success',
+        message: 'FNRH pulada manualmente',
+        metadata: { internal_release: true },
+        occurred_at: at
+      )
+      true
     end
 
     def check_in(at: Time.current)

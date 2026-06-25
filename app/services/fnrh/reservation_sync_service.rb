@@ -7,6 +7,7 @@ module Fnrh
 
     def call(force: false)
       return false unless force || Configuration.enabled?
+      return false if @reserva.fnrh_status == 'precheckin_bypassed' && !force
       return mark_not_eligible unless @reserva.fnrh_eligible?
 
       @reserva.fnrh_reservation_id.present? ? update_reservation : create_reservation

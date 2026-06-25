@@ -4,6 +4,7 @@
   .fnrh-status.not_eligible { background:#f1f5f9; color:#475569; }
   .fnrh-status.awaiting_precheckin { background:#fef3c7; color:#92400e; }
   .fnrh-status.precheckin_completed { background:#dbeafe; color:#1d4ed8; }
+  .fnrh-status.precheckin_bypassed { background:#ecfccb; color:#3f6212; }
   .fnrh-status.checked_in { background:#dcfce7; color:#166534; }
   .fnrh-status.checked_out { background:#e0e7ff; color:#3730a3; }
   .fnrh-status.cancelled, .fnrh-status.no_show, .fnrh-status.error { background:#fee2e2; color:#991b1b; }
@@ -49,6 +50,15 @@
   <% end %>
 
   <div class="fnrh-actions">
+    <% can_bypass_fnrh = !reserva.fnrh_information_released? && !reserva.fnrh_status.in?(%w[cancelled no_show checked_out]) %>
+    <% if can_bypass_fnrh %>
+      <%= button_to 'Pular FNRH',
+          fnrh_bypass_precheckin_admin_reserva_path(reserva),
+          method: :post,
+          class: 'btn btn-outline-warning',
+          form: { data: { turbo_confirm: 'Liberar material do hóspede sem concluir a FNRH?' } } %>
+    <% end %>
+
     <% if reserva.fnrh_reservation_id.blank? %>
       <%= button_to 'Sincronizar FNRH',
           sync_fnrh_admin_reserva_path(reserva),

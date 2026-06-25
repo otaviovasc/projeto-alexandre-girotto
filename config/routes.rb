@@ -63,6 +63,7 @@ Rails.application.routes.draw do
         post 'fnrh_no_show'
         post 'fnrh_checkout'
         post 'fnrh_cancel'
+        post 'fnrh_bypass_precheckin'
       end
       collection do
         get :import_airbnb_calendar

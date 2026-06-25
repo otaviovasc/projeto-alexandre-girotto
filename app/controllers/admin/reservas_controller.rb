@@ -4,7 +4,7 @@ class Admin::ReservasController < ApplicationController
   before_action :set_reserva, only: [
     :edit, :update, :destroy, :show, :update_observation, :update_group_created,
     :acknowledge_ical_date_change, :update_service_purchase_access, :sync_fnrh,
-    :fnrh_check_in, :fnrh_no_show, :fnrh_checkout, :fnrh_cancel
+    :fnrh_check_in, :fnrh_no_show, :fnrh_checkout, :fnrh_cancel, :fnrh_bypass_precheckin
   ]
   before_action :check_reservations_on_new, only: [:reservas_summary]
 
@@ -352,6 +352,13 @@ class Admin::ReservasController < ApplicationController
   def fnrh_cancel
     Fnrh::TransitionService.new(@reserva, source: 'manual').cancel
     redirect_to admin_reserva_path(@reserva), notice: 'Cancelamento registrado na FNRH.'
+  rescue => e
+    redirect_to admin_reserva_path(@reserva), alert: e.message
+  end
+
+  def fnrh_bypass_precheckin
+    Fnrh::TransitionService.new(@reserva, source: 'manual').bypass_precheckin
+    redirect_to admin_reserva_path(@reserva), notice: 'FNRH pulada manualmente. O material do hóspede foi liberado.'
   rescue => e
     redirect_to admin_reserva_path(@reserva), alert: e.message
   end

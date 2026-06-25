@@ -68,6 +68,25 @@ module Fnrh
       assert_equal 'FNRH 500', failed.fnrh_last_error
     end
 
+    test 'does not automatically sync reservations with bypassed precheckin' do
+      bypassed = Reserva.create!(
+        cabana: @reserva.cabana,
+        user: @reserva.user,
+        start_date: Date.current + 20.days,
+        end_date: Date.current + 22.days,
+        payment_status: 'paid',
+        group_created: true,
+        total_price: 800
+      )
+      Fnrh::TransitionService.new(bypassed, source: 'manual').bypass_precheckin
+
+      AutomationJob.run
+
+      assert_nil bypassed.reload.fnrh_reservation_id
+      assert_equal 'precheckin_bypassed', bypassed.fnrh_status
+      assert bypassed.fnrh_information_released?
+    end
+
     test 'cancels an external reservation after a confirmed local cancellation' do
       @reserva.update_column(:payment_status, 'canceled')
 

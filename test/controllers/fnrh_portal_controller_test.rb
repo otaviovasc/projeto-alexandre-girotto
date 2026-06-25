@@ -74,6 +74,21 @@ class FnrhPortalControllerTest < ActionDispatch::IntegrationTest
     assert_equal 'precheckin_completed', @reserva.reload.fnrh_status
   end
 
+  test 'releases information after admin bypasses precheckin' do
+    Fnrh::TransitionService.new(@reserva, source: 'manual').bypass_precheckin
+
+    post fnrh_portal_access_path, params: {
+      guest_name: 'Maria',
+      reservation_code: @reserva.id
+    }
+
+    assert_redirected_to fnrh_portal_information_path
+    follow_redirect!
+    assert_response :success
+    assert_select 'h1', 'Informações da hospedagem'
+    assert_equal 'precheckin_bypassed', @reserva.reload.fnrh_status
+  end
+
   test 'shows waiting page when guest returns before precheckin confirmation' do
     post fnrh_portal_access_path, params: {
       guest_name: 'Maria',

@@ -44,6 +44,7 @@ class Reserva < ApplicationRecord
     'not_eligible' => 'Aguardando liberação',
     'awaiting_precheckin' => 'Aguardando pré-check-in',
     'precheckin_completed' => 'Pré-check-in concluído',
+    'precheckin_bypassed' => 'FNRH pulada',
     'checked_in' => 'Check-in realizado',
     'checked_out' => 'Checkout realizado',
     'cancelled' => 'Cancelada',
@@ -167,7 +168,7 @@ class Reserva < ApplicationRecord
   end
 
   def fnrh_information_released?
-    fnrh_status.in?(%w[precheckin_completed checked_in checked_out])
+    fnrh_status.in?(%w[precheckin_completed precheckin_bypassed checked_in checked_out])
   end
 
   def self.ransackable_attributes(auth_object = nil)
