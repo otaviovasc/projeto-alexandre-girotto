@@ -30,7 +30,15 @@
   <div class="fnrh-meta">
     <div>
       <span class="info-label">Critérios</span>
-      <span class="info-value"><%= reserva.fnrh_eligible? ? 'Grupo confirmado e reserva válida' : 'Aguardando grupo, situação válida ou reserva não parceria' %></span>
+      <span class="info-value">
+        <% if reserva.partnership_reservation? %>
+          Parceria: FNRH dispensada e material liberado
+        <% elsif reserva.fnrh_eligible? %>
+          Grupo confirmado e reserva válida
+        <% else %>
+          Aguardando grupo ou situação válida
+        <% end %>
+      </span>
     </div>
     <div>
       <span class="info-label">Identificador FNRH</span>

@@ -89,6 +89,47 @@ class FnrhPortalControllerTest < ActionDispatch::IntegrationTest
     assert_equal 'precheckin_bypassed', @reserva.reload.fnrh_status
   end
 
+  test 'ignores accents when matching the guest name' do
+    @reserva.user.update!(name: 'Rômulo da Silva')
+
+    post fnrh_portal_access_path, params: {
+      guest_name: 'Romulo',
+      reservation_code: @reserva.id
+    }
+
+    assert_redirected_to fnrh_portal_orientation_path
+  end
+
+  test 'releases a bypassed reservation even when it is no longer eligible for FNRH' do
+    @reserva.update_column(:group_created, false)
+    Fnrh::TransitionService.new(@reserva, source: 'manual').bypass_precheckin
+
+    post fnrh_portal_access_path, params: {
+      guest_name: 'Maria',
+      reservation_code: @reserva.id
+    }
+
+    assert_redirected_to fnrh_portal_information_path
+  end
+
+  test 'releases partnership information without creating an FNRH reservation' do
+    @reserva.user.update_column(:partner, true)
+    @reserva.update_columns(
+      group_created: false,
+      fnrh_status: 'not_eligible',
+      fnrh_reservation_id: nil,
+      fnrh_precheckin_url: nil
+    )
+
+    post fnrh_portal_access_path, params: {
+      guest_name: 'Maria',
+      reservation_code: @reserva.id
+    }
+
+    assert_redirected_to fnrh_portal_information_path
+    assert_nil @reserva.reload.fnrh_reservation_id
+  end
+
   test 'shows waiting page when guest returns before precheckin confirmation' do
     post fnrh_portal_access_path, params: {
       guest_name: 'Maria',

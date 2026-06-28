@@ -103,6 +103,12 @@ class FnrhPortalController < ApplicationController
 
     record_terms_accepted(reserva) if record_terms
 
+    if reserva.fnrh_information_released?
+      session[:fnrh_portal_reserva_id] = reserva.id
+      redirect_to fnrh_portal_information_path
+      return
+    end
+
     unless reserva.fnrh_eligible?
       redirect_to failure_path, alert: 'Seu acesso ao pré-check-in ainda está sendo preparado. Tente novamente em alguns minutos.'
       return

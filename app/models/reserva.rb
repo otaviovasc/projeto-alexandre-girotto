@@ -165,11 +165,13 @@ class Reserva < ApplicationRecord
   end
 
   def fnrh_status_label
+    return 'FNRH dispensada' if partnership_reservation? && fnrh_status == 'not_eligible'
+
     FNRH_STATUS_LABELS.fetch(fnrh_status.to_s, fnrh_status.to_s.humanize)
   end
 
   def fnrh_information_released?
-    fnrh_status.in?(%w[precheckin_completed precheckin_bypassed checked_in checked_out])
+    partnership_reservation? || fnrh_status.in?(%w[precheckin_completed precheckin_bypassed checked_in checked_out])
   end
 
   def self.ransackable_attributes(auth_object = nil)
