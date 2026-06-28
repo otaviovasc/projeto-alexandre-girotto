@@ -31,4 +31,10 @@ class ReservaTest < ActiveSupport::TestCase
     assert reserva.service_purchase_window_open?(Date.new(2026, 1, 26))
     assert_not reserva.service_purchase_window_open?(Date.new(2026, 1, 27))
   end
+
+  test "recognizes reservations marked as partnership" do
+    assert Reserva.new(user: User.new(partner: true)).partnership_reservation?
+    assert Reserva.new(user: User.new(partner: false), partnership_creator_id: 123).partnership_reservation?
+    assert_not Reserva.new(user: User.new(partner: false)).partnership_reservation?
+  end
 end

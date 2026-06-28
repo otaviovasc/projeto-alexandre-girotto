@@ -2,7 +2,7 @@ class PortalReservaController < ApplicationController
   layout "portal_reserva"
   skip_before_action :authenticate_user!
   before_action :ensure_service_purchase_window_open!, only: [:servicos, :adicionar, :remover, :pagar]
-  helper_method :food_service_for_observation?
+  helper_method :food_service_for_observation?, :service_price_for
 
   # GET /minha-reserva
   def index
@@ -15,7 +15,7 @@ class PortalReservaController < ApplicationController
   # POST /minha-reserva/acessar
   def acessar
     reserva_id = params[:reserva_id].to_i
-    identificador = params[:identificador].to_s.strip.downcase
+    identificador = params[:identificador].to_s
 
     reserva = Reserva.find_by(id: reserva_id)
 
@@ -26,12 +26,7 @@ class PortalReservaController < ApplicationController
 
     user = reserva.user
 
-    # Aceita email OU primeiro nome OU nome completo (case insensitive)
-    nome_completo_match = user.name.to_s.downcase == identificador
-    primeiro_nome_match = user.name.to_s.split.first.to_s.downcase == identificador
-    email_match         = user.email.to_s.downcase == identificador
-
-    unless nome_completo_match || primeiro_nome_match || email_match
+    unless user.matches_reservation_identifier?(identificador)
       flash[:alert] = "Nome ou e-mail não corresponde a esta reserva."
       redirect_to portal_reserva_path and return
     end
@@ -241,6 +236,10 @@ class PortalReservaController < ApplicationController
     params[:observation].to_s.strip.presence
   end
 
+  def service_price_for(service, reserva = @reserva)
+    service.price_for(reserva)
+  end
+
   def ensure_service_purchase_window_open!
     return unless session[:portal_reserva_id].present?
 
@@ -272,7 +271,7 @@ class PortalReservaController < ApplicationController
     now = Time.current
 
     @portal_cart_items.find_each do |cart_item|
-      unit_price = cart_item.service.price || 0
+      unit_price = service_price_for(cart_item.service) || 0
       quantity = cart_item.quantity || 1
 
       cart_item.update_columns(
@@ -354,7 +353,7 @@ class PortalReservaController < ApplicationController
     total = grouped_services.sum do |_key, items|
       first_item = items.first
       quantity = items.sum { |item| item.quantity.to_i }
-      unit_price = first_item.unit_price_paid || first_item.service.price || 0
+      unit_price = first_item.unit_price_paid || service_price_for(first_item.service, reserva) || 0
 
       unit_price * quantity
     end
@@ -371,7 +370,7 @@ class PortalReservaController < ApplicationController
     grouped_services.each_value do |items|
       first_item = items.first
       quantity = items.sum { |item| item.quantity.to_i }
-      unit_price = first_item.unit_price_paid || first_item.service.price || 0
+      unit_price = first_item.unit_price_paid || service_price_for(first_item.service, reserva) || 0
       subtotal = unit_price * quantity
       service_date = first_item.service_date&.strftime("%d/%m/%Y")
       observation = first_item.observation.to_s.strip
@@ -395,7 +394,7 @@ class PortalReservaController < ApplicationController
       {
         id: reserva_service.id,
         name: name,
-        unit_price: reserva_service.service.price,
+        unit_price: service_price_for(reserva_service.service),
         quantity: reserva_service.quantity
       }
     end
@@ -405,7 +404,7 @@ class PortalReservaController < ApplicationController
     [{
       id: "reserva-#{@reserva.id}-servicos",
       name: "Serviços adicionais - Reserva #{@reserva.id}",
-      unit_price: @portal_cart_items.sum { |reserva_service| reserva_service.service.price * reserva_service.quantity },
+      unit_price: @portal_cart_items.sum { |reserva_service| service_price_for(reserva_service.service) * reserva_service.quantity },
       quantity: 1
     }]
   end

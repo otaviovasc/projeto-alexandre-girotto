@@ -377,7 +377,7 @@
                       <span class="active-badge">✓ Ativo</span>
                     <% end %>
                   </div>
-                  <span class="service-price">R$ <%= number_with_precision(rs.service.price * rs.quantity, precision: 2) %></span>
+                  <span class="service-price">R$ <%= number_with_precision((rs.unit_price_paid || rs.service.price_for(@reserva)) * rs.quantity, precision: 2) %></span>
                 </div>
                 
                 <% if rs.cancelled? %>
@@ -447,11 +447,12 @@
               <select id="service-select" class="form-control">
                 <option value="">Selecione ou digite para buscar...</option>
                 <% @services.each do |service| %>
+                  <% displayed_price = service.price_for(@reserva) %>
                   <option value="<%= service.id %>" 
                           data-name="<%= service.name %>" 
-                          data-price="<%= service.price %>"
+                          data-price="<%= displayed_price %>"
                           data-region="<%= service.region %>">
-                    <%= service.name %> - R$ <%= number_with_precision(service.price, precision: 2) %> (<%= service.region %>)
+                    <%= service.name %> - R$ <%= number_with_precision(displayed_price, precision: 2) %> (<%= service.region %>)
                   </option>
                 <% end %>
               </select>
@@ -816,4 +817,3 @@
     }
   });
 </script>
-

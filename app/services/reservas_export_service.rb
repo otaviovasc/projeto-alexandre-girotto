@@ -115,7 +115,7 @@ class ReservasExportService
       format_date(rs.service_date),
       rs.quantity,
       rs.cancelled? ? 'Cancelado' : 'Ativo',
-      format_currency(rs.service&.price.to_f * rs.quantity.to_i),
+      format_currency((rs.unit_price_paid || rs.service&.price_for(reserva)).to_f * rs.quantity.to_i),
       '-',
       format_datetime(rs.created_at),
       rs.observation.presence || '-',

@@ -172,12 +172,6 @@ class FnrhPortalController < ApplicationController
   def reservation_matches?(reserva, identifier)
     return false unless reserva
 
-    normalized = I18n.transliterate(identifier.to_s).downcase.squish
-    user = reserva.user
-    candidates = [user.name, user.name.to_s.split.first, user.email].map do |value|
-      I18n.transliterate(value.to_s).downcase.squish
-    end
-
-    normalized.present? && candidates.include?(normalized)
+    reserva.user.matches_reservation_identifier?(identifier)
   end
 end

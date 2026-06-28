@@ -344,7 +344,7 @@
         
         <div class="form-row">
           <div class="form-group">
-            <%= form.label :price, 'Preço por pessoa (R$) *' %>
+            <%= form.label :price, 'Preço para hóspede (R$) *' %>
             <div class="input-prefix">
               <span>R$</span>
               <%= form.number_field :price, step: 0.01, class: "form-control", placeholder: "0,00" %>
@@ -352,9 +352,17 @@
           </div>
 
           <div class="form-group">
-            <%= form.label :duration, 'Duração (minutos)' %>
-            <%= form.number_field :duration, class: "form-control", placeholder: "Ex: 60" %>
+            <%= form.label :partner_price, 'Preço para parceria (R$) *' %>
+            <div class="input-prefix">
+              <span>R$</span>
+              <%= form.number_field :partner_price, step: 0.01, class: "form-control", placeholder: "0,00" %>
+            </div>
           </div>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :duration, 'Duração (minutos)' %>
+          <%= form.number_field :duration, class: "form-control", placeholder: "Ex: 60" %>
         </div>
       </div>
 

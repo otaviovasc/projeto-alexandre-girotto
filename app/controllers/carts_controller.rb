@@ -1,5 +1,6 @@
 class CartsController < ApplicationController
   layout "clientside"
+  helper_method :cart_item_unit_price
   before_action :find_or_create_cart
   before_action :check_active_reserva
   before_action :ensure_service_purchase_window_open_for_service!, only: [:add_item, :update_item]
@@ -160,8 +161,7 @@ class CartsController < ApplicationController
     now = Time.current
 
     cart_items.find_each do |cart_item|
-      product = cart_item.item || cart_item.service
-      unit_price = product.price || 0
+      unit_price = cart_item_unit_price(cart_item) || 0
       quantity = cart_item.quantity || 1
 
       cart_item.update_columns(
@@ -186,7 +186,7 @@ class CartsController < ApplicationController
       {
         id: cart_item.id,
         name: product.name,
-        unit_price: product.price,
+        unit_price: cart_item_unit_price(cart_item),
         quantity: cart_item.quantity
       }
     end
@@ -196,8 +196,14 @@ class CartsController < ApplicationController
     [{
       id: "cart-#{@cart.id}",
       name: "Itens adicionais - Reserva #{@reserva.id}",
-      unit_price: cart_items.sum { |cart_item| (cart_item.item&.price || cart_item.service&.price || 0) * cart_item.quantity },
+      unit_price: cart_items.sum { |cart_item| cart_item_unit_price(cart_item) * cart_item.quantity },
       quantity: 1
     }]
+  end
+
+  def cart_item_unit_price(cart_item)
+    return cart_item.item.price if cart_item.item.present?
+
+    cart_item.service.price_for(@reserva)
   end
 end

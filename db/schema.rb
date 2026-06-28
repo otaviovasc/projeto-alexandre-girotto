@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_06_22_120100) do
+ActiveRecord::Schema[7.0].define(version: 2026_06_28_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -288,6 +288,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_22_120100) do
     t.bigint "user_id", null: false
     t.boolean "show_in_marketplace"
     t.string "region", default: "SP"
+    t.decimal "partner_price", null: false
     t.index ["filial_id"], name: "index_services_on_filial_id"
     t.index ["user_id"], name: "index_services_on_user_id"
   end

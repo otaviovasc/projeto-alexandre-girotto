@@ -3,7 +3,7 @@
 <% form_url = partnership_form ? partnership_reservas_path : admin_reservas_path %>
 <% user_collection = partnership_form ? (@existing_users || User.clients.order(:name, :email)) : User.all %>
 <% user_prompt = partnership_form ? 'Selecione um hóspede existente' : 'Selecione um usuário' %>
-<% user_options = user_collection.map { |user| [[user.name.presence, user.email.presence].compact.join(' - '), user.id] } %>
+<% user_options = user_collection.map { |user| [[user.name.presence, user.email.presence].compact.join(' - '), user.id, { 'data-partner': user.partner? }] } %>
 <% selected_user_id = @reserva&.user_id || params.dig(:reserva, :user_id) %>
 
 <div class="container py-4">
@@ -108,11 +108,14 @@
             <select id="service-select" class="form-control">
               <option value="">Selecione ou digite para buscar...</option>
               <% @services.each do |service| %>
+                <% displayed_price = partnership_form ? service.partner_price : service.price %>
                 <option value="<%= service.id %>" 
                         data-name="<%= service.name %>" 
-                        data-price="<%= service.price %>"
+                        data-price="<%= displayed_price %>"
+                        data-guest-price="<%= service.price %>"
+                        data-partner-price="<%= service.partner_price %>"
                         data-region="<%= service.region %>">
-                  <%= service.name %> - R$ <%= number_with_precision(service.price, precision: 2) %> (<%= service.region %>)
+                  <%= service.name %> - R$ <%= number_with_precision(displayed_price, precision: 2) %> (<%= service.region %>)
                 </option>
               <% end %>
             </select>
@@ -183,6 +186,36 @@
     // Filtro por região
     const regionFilter = document.getElementById('service-region-filter');
     const serviceSelect = document.getElementById('service-select');
+    const partnershipForm = <%= partnership_form.to_json %>;
+    const createUserToggle = document.getElementById('create_user_toggle');
+    const partnerCheckbox = document.getElementById('partner_checkbox');
+    const userSelect = document.getElementById('user_select');
+
+    function usePartnerPrice() {
+      if (partnershipForm) return true;
+      if (createUserToggle?.checked) return partnerCheckbox?.checked === true;
+
+      return userSelect?.selectedOptions[0]?.dataset.partner === 'true';
+    }
+
+    function updateServicePrices() {
+      const partnerPrice = usePartnerPrice();
+
+      serviceSelect.querySelectorAll('option').forEach(option => {
+        if (!option.value) return;
+
+        const price = partnerPrice ? option.dataset.partnerPrice : option.dataset.guestPrice;
+        option.dataset.price = price;
+        option.textContent = `${option.dataset.name} - R$ ${Number(price).toFixed(2).replace('.', ',')} (${option.dataset.region})`;
+      });
+
+      $('#service-select').trigger('change.select2');
+    }
+
+    createUserToggle?.addEventListener('change', updateServicePrices);
+    partnerCheckbox?.addEventListener('change', updateServicePrices);
+    userSelect?.addEventListener('change', updateServicePrices);
+    updateServicePrices();
 
     if (regionFilter) {
       regionFilter.addEventListener('change', function() {

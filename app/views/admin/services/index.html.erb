@@ -284,7 +284,8 @@
               <% end %>
             </div>
             <div class="service-price">
-              <%= number_to_currency(service.price, unit: "R$") %>
+              <div>Hóspede: <%= number_to_currency(service.price, unit: "R$") %></div>
+              <div>Parceria: <%= number_to_currency(service.partner_price, unit: "R$") %></div>
             </div>
             <div class="service-actions">
               <%= link_to edit_admin_service_path(service), class: 'btn-action btn-edit' do %>

@@ -28,7 +28,7 @@
           <div>
             <h2 class="text-xl lg:text-2xl font-alice text-preto-fill mb-4"><%= service.name %></h2>
             <p class="text-base lg:text-lg text-gray-600 mb-4"><%= service.description %></p>
-            <p class="text-lg lg:text-xl text-verde-escuro font-bold"><strong>Preço:</strong> <%= number_to_currency(service.price) %></p>
+            <p class="text-lg lg:text-xl text-verde-escuro font-bold"><strong>Preço:</strong> <%= number_to_currency(service.price_for(@reserva)) %></p>
           </div>
 
           <!-- Botão de Visualização -->

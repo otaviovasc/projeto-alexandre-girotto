@@ -29,6 +29,7 @@ class ReservasController < ApplicationController
     reserva_data = session[:reserva_params] || {}
 
     @reserva = @cabana.reservas.new(reserva_data)
+    @reserva.user = current_user if user_signed_in?
     @breakfast_service = Service.find_by(name: 'Café da Manhã')
     @infos_da_cabana = InfoDaCabana.where(cabana_id: @cabana.id)
   end
@@ -230,13 +231,14 @@ class ReservasController < ApplicationController
 
     cabana = Cabana.find(params[:cabana_id])
     reserva = Reserva.new(start_date: start_date, end_date: end_date, cabana: cabana)
+    reserva.user = current_user if user_signed_in?
 
     total_price = reserva.calculate_total_price! || 0  # Ensure total_price is a number
 
     if include_breakfast
       breakfast_service = Service.find_by(name: 'Café da Manhã')
       days_stayed = (start_date...end_date).count
-      total_price += breakfast_service.price * days_stayed * breakfast_quantity
+      total_price += breakfast_service.price_for(reserva) * days_stayed * breakfast_quantity
     end
 
     render json: { total_price: total_price.to_f }  # Ensure total_price is a float

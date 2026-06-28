@@ -73,6 +73,16 @@ class User < ApplicationRecord
     self.class.role_label(role)
   end
 
+  def matches_reservation_identifier?(identifier)
+    normalized_identifier = normalize_reservation_identifier(identifier)
+    return false if normalized_identifier.blank?
+
+    candidates = [name, name.to_s.squish.split.first, email]
+    candidates.any? do |candidate|
+      normalize_reservation_identifier(candidate) == normalized_identifier
+    end
+  end
+
   # Set default role to client
   after_initialize do
     if self.new_record?
@@ -94,6 +104,10 @@ class User < ApplicationRecord
   before_validation :sanitize_telephone
 
   private
+
+  def normalize_reservation_identifier(value)
+    I18n.transliterate(value.to_s).downcase.squish
+  end
 
   def sanitize_telephone
     if telephone.present?

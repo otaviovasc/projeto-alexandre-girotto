@@ -191,7 +191,7 @@ class PagamentosController < ApplicationController
   def ensure_paid_amount!(reserva_service)
     return if reserva_service.unit_price_paid.present? && reserva_service.total_paid.present?
 
-    unit_price = reserva_service.service.price || 0
+    unit_price = reserva_service.service.price_for(reserva_service.reserva) || 0
     quantity = reserva_service.quantity || 1
 
     reserva_service.update_columns(

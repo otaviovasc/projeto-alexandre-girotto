@@ -35,7 +35,7 @@
         <i class="bi bi-cash-stack"></i> Total do pedido
       </h2>
       <p class="text-xl font-bold text-gray-800">
-        <%= number_to_currency(@cart_items.sum { |cart_item| (cart_item.service&.price || cart_item.item&.price || 0) * cart_item.quantity }) %>
+        <%= number_to_currency(@cart_items.sum { |cart_item| (cart_item.unit_price_paid || cart_item_unit_price(cart_item)) * cart_item.quantity }) %>
       </p>
     </div>
 
@@ -47,7 +47,7 @@
         <% @cart_items.each do |cart_item| %>
           <li>
             <strong><%= cart_item.service&.name || cart_item.item&.name %></strong>,
-            <strong>Preço:</strong> <%= number_to_currency(cart_item.service&.price || cart_item.item&.price) %>,
+            <strong>Preço:</strong> <%= number_to_currency(cart_item.unit_price_paid || cart_item_unit_price(cart_item)) %>,
             <strong>Quantidade:</strong> <%= cart_item.quantity %>
           </li>
         <% end %>

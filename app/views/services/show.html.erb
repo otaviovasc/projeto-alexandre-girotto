@@ -17,8 +17,8 @@
     <% if @service.description.present? %>
       <p class="text-lg lg:text-xl text-gray-600"><strong>Descrição:</strong> <%= @service.description %></p>
     <% end %>
-    <% if @service.price.present? %>
-      <p class="text-lg lg:text-xl font-bold text-verde-escuro"><strong>Preço:</strong> <%= number_to_currency(@service.price) %></p>
+    <% if @service.price_for(@reserva).present? %>
+      <p class="text-lg lg:text-xl font-bold text-verde-escuro"><strong>Preço:</strong> <%= number_to_currency(@service.price_for(@reserva)) %></p>
     <% end %>
     <% if @service.duration.present? %>
       <p class="text-lg lg:text-xl text-gray-600"><strong>Duração:</strong> <%= @service.duration %> minutos</p>

@@ -6,7 +6,7 @@
 <% total = grouped_services.sum do |_key, items|
      first_item = items.first
      quantity = items.sum { |item| item.quantity.to_i }
-     unit_price = first_item.unit_price_paid || first_item.service.price || 0
+     unit_price = first_item.unit_price_paid || first_item.service.price_for(first_item.reserva) || 0
      unit_price * quantity
    end %>
 
@@ -88,7 +88,7 @@
         <% grouped_services.each_value do |items| %>
           <% first_item = items.first %>
           <% quantity = items.sum { |item| item.quantity.to_i } %>
-          <% unit_price = first_item.unit_price_paid || first_item.service.price || 0 %>
+          <% unit_price = first_item.unit_price_paid || first_item.service.price_for(first_item.reserva) || 0 %>
           <% subtotal = unit_price * quantity %>
 
           <div class="px-5 py-4 sm:px-7 flex items-start justify-between gap-4">

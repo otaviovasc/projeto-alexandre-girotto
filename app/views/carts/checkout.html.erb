@@ -22,7 +22,7 @@
           <!-- Detalhes do Item -->
           <div class="flex flex-col gap-2 text-center sm:text-left">
             <h4 class="text-lg font-alice text-preto-fill"><%= cart_item.item&.name || cart_item.service&.name %></h4>
-            <p class="text-sm lg:text-base text-gray-600">Preço: <%= number_to_currency(cart_item.item&.price || cart_item.service&.price) %></p>
+            <p class="text-sm lg:text-base text-gray-600">Preço: <%= number_to_currency(cart_item_unit_price(cart_item)) %></p>
           </div>
 
           <!-- Ações do Item -->

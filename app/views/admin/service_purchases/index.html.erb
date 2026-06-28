@@ -179,7 +179,7 @@
                 <td><%= purchase.service.name %></td>
                 <td><%= purchase.service_date&.strftime("%d/%m/%Y") || "-" %></td>
                 <td><%= purchase.quantity %></td>
-                <td><%= number_to_currency(purchase.unit_price_paid || purchase.service.price || 0, unit: "R$") %></td>
+                <td><%= number_to_currency(purchase.unit_price_paid || purchase.service.price_for(purchase.reserva) || 0, unit: "R$") %></td>
                 <td><strong><%= number_to_currency(purchase.total_paid || 0, unit: "R$") %></strong></td>
                 <td><%= purchase.paid_at&.in_time_zone("America/Sao_Paulo")&.strftime("%d/%m/%Y %H:%M") || "-" %></td>
               </tr>

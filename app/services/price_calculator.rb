@@ -62,11 +62,12 @@ class PriceCalculator
     days_stayed = @date_range.count
     @reservation.reserva_services.sum do |reserva_service|
       service = reserva_service.service
+      unit_price = reserva_service.unit_price_paid || service.price_for(@reservation)
       next 0 if CleaningServicesAssigner.cleaning_service?(service)
       next 0 if BreakfastServicesAssigner.included_breakfast_service?(reserva_service)
-      next reserva_service.quantity * service.price if BreakfastServicesAssigner.breakfast_service?(service)
+      next reserva_service.quantity * unit_price if BreakfastServicesAssigner.breakfast_service?(service)
 
-      reserva_service.quantity * service.price * days_stayed
+      reserva_service.quantity * unit_price * days_stayed
     end
   end
 end

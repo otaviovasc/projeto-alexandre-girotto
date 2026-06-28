@@ -100,7 +100,7 @@
 
         <div id="breakfast_quantity_container" class="flex flex-col gap-2 pl-6 hidden">
           <label class="font-dm text-lg text-terracota">
-             Café da manhã: R$<%= @breakfast_service.price %>/dia
+             Café da manhã: R$<%= @breakfast_service.price_for(@reserva) %>/dia
           </label>
 
           <div class="flex items-center gap-2">
