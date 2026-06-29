@@ -65,7 +65,9 @@ class ReservasExportService
       'Observação',
       'Data Criação',
       'Observação de Serviços',
-      'Grupo Criado'
+      'Grupo Criado',
+      'Nome Real do Hóspede',
+      'Telefone Real do Hóspede'
     ]
   end
 
@@ -93,7 +95,9 @@ class ReservasExportService
       reserva.observation,
       format_datetime(reserva.created_at),
       '-',
-      group_created_label(reserva)
+      group_created_label(reserva),
+      reserva.guest_name,
+      reserva.guest_phone
     ]
   end
 
@@ -119,7 +123,9 @@ class ReservasExportService
       '-',
       format_datetime(rs.created_at),
       rs.observation.presence || '-',
-      group_created_label(reserva)
+      group_created_label(reserva),
+      reserva.guest_name,
+      reserva.guest_phone
     ]
   end
 

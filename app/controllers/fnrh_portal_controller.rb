@@ -96,6 +96,11 @@ class FnrhPortalController < ApplicationController
   private
 
   def process_reservation_access(failure_path:, record_terms:)
+    if params[:guest_name].to_s.match?(/\s/)
+      redirect_to failure_path, alert: 'Digite somente o primeiro nome, sem espaços.'
+      return
+    end
+
     reserva = Reserva.includes(:user, cabana: :filial).find_by(id: params[:reservation_code].to_i)
 
     unless reservation_matches?(reserva, params[:guest_name])
@@ -180,6 +185,6 @@ class FnrhPortalController < ApplicationController
   def reservation_matches?(reserva, identifier)
     return false unless reserva
 
-    reserva.user.matches_reservation_identifier?(identifier)
+    reserva.matches_reservation_identifier?(identifier)
   end
 end

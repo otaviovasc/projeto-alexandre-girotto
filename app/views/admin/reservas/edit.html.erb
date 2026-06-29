@@ -325,6 +325,25 @@
             <%= user_fields.label :partner, 'Marcar como Parceiro', class: 'form-check-label' %>
           <% end %>
         </div>
+
+        <% if @reserva.imported? %>
+          <div class="form-section" style="margin-top: 1.5rem; margin-bottom: 0;">
+            <h3 class="form-section-title">Dados reais do hóspede importado</h3>
+            <p class="form-subtitle" style="margin-bottom: 1rem;">
+              Estes dados não alteram o usuário <%= @reserva.user.name %> nem as colunas existentes do Sheets.
+            </p>
+            <div class="form-row">
+              <div class="form-group">
+                <%= form.label :guest_name, 'Nome real do hóspede', class: 'form-label' %>
+                <%= form.text_field :guest_name, class: 'form-control', maxlength: 120, placeholder: 'Ex.: Bruna Ferreira' %>
+              </div>
+              <div class="form-group">
+                <%= form.label :guest_phone, 'Telefone real do hóspede', class: 'form-label' %>
+                <%= form.telephone_field :guest_phone, class: 'form-control', maxlength: 20, inputmode: 'tel', placeholder: 'Ex.: 11999999999' %>
+              </div>
+            </div>
+          </div>
+        <% end %>
       </div>
 
       <!-- Datas -->

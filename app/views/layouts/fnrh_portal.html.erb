@@ -157,6 +157,12 @@
         var loading = document.getElementById("fnrh-loading");
         if (!loading) return;
 
+        document.querySelectorAll("[data-first-name-only='true']").forEach(function(field) {
+          field.addEventListener("input", function() {
+            field.value = field.value.trimStart().split(/\s/)[0];
+          });
+        });
+
         function showLoading() {
           loading.classList.add("is-visible");
           loading.setAttribute("aria-hidden", "false");

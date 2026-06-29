@@ -23,6 +23,8 @@ class Reserva < ApplicationRecord
   validate :start_date_cannot_be_in_the_past
   validate :end_date_after_start_date
   validate :dates_available
+  validates :guest_name, length: { maximum: 120 }, allow_blank: true
+  validates :guest_phone, length: { in: 8..15 }, allow_blank: true
 
   enum payment_status: {
     pending: 'pending',
@@ -34,6 +36,7 @@ class Reserva < ApplicationRecord
 
   before_create :set_default_fields
   before_create :set_default_payment_status
+  before_validation :normalize_guest_details
   after_create :ensure_required_cleaning_services
   after_update :shift_reservation_services_after_start_date_change, if: :saved_change_to_start_date?
   after_update :ensure_required_cleaning_services_after_schedule_change, if: :cleaning_schedule_changed?
@@ -174,11 +177,32 @@ class Reserva < ApplicationRecord
     partnership_reservation? || fnrh_status.in?(%w[precheckin_completed precheckin_bypassed checked_in checked_out])
   end
 
+  def matches_reservation_identifier?(identifier)
+    normalized_identifier = normalize_reservation_identifier(identifier)
+    return false if normalized_identifier.blank?
+
+    guest_candidates = [guest_name, guest_name.to_s.squish.split.first]
+    guest_matches = guest_candidates.any? do |candidate|
+      normalize_reservation_identifier(candidate) == normalized_identifier
+    end
+
+    guest_matches || user&.matches_reservation_identifier?(identifier)
+  end
+
   def self.ransackable_attributes(auth_object = nil)
-    ["breakfast_manual_override", "cabana_id", "created_at", "end_date", "group_created", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
+    ["breakfast_manual_override", "cabana_id", "created_at", "end_date", "group_created", "guest_name", "guest_phone", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
   end
 
   private
+
+  def normalize_guest_details
+    self.guest_name = guest_name.to_s.squish.presence
+    self.guest_phone = guest_phone.to_s.gsub(/\D/, '').presence
+  end
+
+  def normalize_reservation_identifier(value)
+    I18n.transliterate(value.to_s).downcase.squish
+  end
 
   def ensure_required_cleaning_services
     CleaningServicesAssigner.new(self).call

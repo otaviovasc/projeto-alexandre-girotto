@@ -17,12 +17,16 @@
     <section class="border border-[#d9dfd7] bg-white p-6 shadow-sm">
       <%= form_with url: fnrh_portal_access_path, method: :post, local: true, data: { fnrh_loading: true }, class: 'space-y-5' do |form| %>
         <div>
-          <%= form.label :guest_name, 'Nome do responsável', class: 'block text-sm font-medium' %>
+          <%= form.label :guest_name, 'Primeiro nome ou aplicativo da reserva', class: 'block text-sm font-medium' %>
           <%= form.text_field :guest_name,
               required: true,
-              autocomplete: 'name',
-              placeholder: 'Primeiro nome ou nome completo',
+              autocomplete: 'given-name',
+              pattern: '\\S+',
+              title: 'Digite somente o primeiro nome, sem espaços',
+              data: { first_name_only: true },
+              placeholder: 'Ex.: Maria, Airbnb, Booking ou Holmy',
               class: 'mt-2 w-full border border-[#c9d1c7] px-3 py-3 text-base focus:border-[#3f6747] focus:outline-none focus:ring-1 focus:ring-[#3f6747]' %>
+          <p class="mt-2 text-sm text-[#637066]">Digite somente o primeiro nome, sem sobrenome e sem espaços.</p>
         </div>
 
         <div>

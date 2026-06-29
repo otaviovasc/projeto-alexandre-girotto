@@ -113,6 +113,29 @@ class FnrhPortalControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to fnrh_portal_orientation_path
   end
 
+  test 'matches the real guest first name stored on an imported reservation' do
+    @reserva.user.update!(name: 'Airbnb')
+    @reserva.update!(guest_name: 'Bruna Ferreira', guest_phone: '(11) 99999-9999')
+
+    post fnrh_portal_access_path, params: {
+      guest_name: 'Bruna',
+      reservation_code: @reserva.id
+    }
+
+    assert_redirected_to fnrh_portal_orientation_path
+    assert_equal '11999999999', @reserva.reload.guest_phone
+  end
+
+  test 'rejects a name containing spaces' do
+    post fnrh_portal_access_path, params: {
+      guest_name: 'Maria da Silva',
+      reservation_code: @reserva.id
+    }
+
+    assert_redirected_to fnrh_portal_path
+    assert_equal 'Digite somente o primeiro nome, sem espaços.', flash[:alert]
+  end
+
   test 'releases a bypassed reservation even when it is no longer eligible for FNRH' do
     @reserva.update_column(:group_created, false)
     Fnrh::TransitionService.new(@reserva, source: 'manual').bypass_precheckin

@@ -312,6 +312,16 @@
         <span class="info-label">Telefone</span>
         <span class="info-value"><%= @reserva.user.telephone || '—' %></span>
       </div>
+      <% if @reserva.imported? %>
+        <div class="info-item">
+          <span class="info-label">Nome real do hóspede</span>
+          <span class="info-value"><%= @reserva.guest_name.presence || 'Ainda não informado' %></span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Telefone real do hóspede</span>
+          <span class="info-value"><%= @reserva.guest_phone.presence || 'Ainda não informado' %></span>
+        </div>
+      <% end %>
       <div class="info-item">
         <span class="info-label">Check-in</span>
         <span class="info-value"><%= l @reserva.start_date, format: :long rescue @reserva.start_date %></span>
