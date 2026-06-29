@@ -41,12 +41,25 @@ class FnrhPortalControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference -> { @reserva.fnrh_events.where(event_type: 'terms_accepted').count }, 1 do
       post fnrh_terms_access_path, params: {
+        terms_accepted: '1',
         guest_name: 'Maria',
         reservation_code: @reserva.id
       }
     end
 
     assert_redirected_to fnrh_portal_orientation_path
+  end
+
+  test 'terms page requires explicit acceptance' do
+    assert_no_difference -> { @reserva.fnrh_events.where(event_type: 'terms_accepted').count } do
+      post fnrh_terms_access_path, params: {
+        guest_name: 'Maria',
+        reservation_code: @reserva.id
+      }
+    end
+
+    assert_redirected_to fnrh_terms_path
+    assert_equal 'Confirme que leu e concorda com os termos para continuar.', flash[:alert]
   end
 
   test 'opens stored precheckin link after orientation' do

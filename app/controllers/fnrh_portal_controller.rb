@@ -1,4 +1,6 @@
 class FnrhPortalController < ApplicationController
+  TERMS_VERSION = '2026-06-29'.freeze
+
   layout 'fnrh_portal'
   skip_before_action :authenticate_user!
 
@@ -16,6 +18,11 @@ class FnrhPortalController < ApplicationController
   end
 
   def terms_access
+    unless ActiveModel::Type::Boolean.new.cast(params[:terms_accepted])
+      redirect_to fnrh_terms_path, alert: 'Confirme que leu e concorda com os termos para continuar.'
+      return
+    end
+
     process_reservation_access(
       failure_path: fnrh_terms_path,
       record_terms: true
@@ -162,6 +169,7 @@ class FnrhPortalController < ApplicationController
       status: 'success',
       message: 'Hóspede confirmou leitura dos termos e condições',
       metadata: {
+        terms_version: TERMS_VERSION,
         ip: request.remote_ip,
         user_agent: request.user_agent.to_s[0, 300]
       },
