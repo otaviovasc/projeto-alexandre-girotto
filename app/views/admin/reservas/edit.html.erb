@@ -310,7 +310,8 @@
         <div class="form-row">
           <div class="form-group">
             <%= form.label :cabana_id, 'Cabana *', class: 'form-label' %>
-            <%= form.collection_select :cabana_id, Cabana.all, :id, :name, { prompt: 'Selecione' }, { class: 'form-control', id: 'reserva_cabana_id', required: true } %>
+            <% cabana_options = Cabana.all.map { |cabana| [cabana.name, cabana.id, { 'data-filial-id': cabana.filial_id }] } %>
+            <%= form.select :cabana_id, options_for_select(cabana_options, @reserva.cabana_id), { prompt: 'Selecione' }, { class: 'form-control', id: 'reserva_cabana_id', required: true } %>
           </div>
 
           <div class="form-group">
@@ -606,13 +607,8 @@
     }
 
     function filterServicesForCabana() {
-      const cabanaId = cabanaSelect?.value;
-      if (!cabanaId) return applyServiceFilial(null);
-
-      fetch(`/cabanas/${cabanaId}/region`)
-        .then(response => response.json())
-        .then(data => applyServiceFilial(data.filial_id))
-        .catch(() => applyServiceFilial(null));
+      const filialId = cabanaSelect?.selectedOptions[0]?.dataset.filialId;
+      applyServiceFilial(filialId);
     }
 
     cabanaSelect?.addEventListener('change', function() {
