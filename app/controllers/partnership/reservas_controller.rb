@@ -197,6 +197,8 @@ class Partnership::ReservasController < ApplicationController
       :cabana_id,
       :start_date,
       :end_date,
+      :early_checkin,
+      :late_checkout,
       :total_price,
       :observation,
       :user_id,

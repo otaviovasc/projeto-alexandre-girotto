@@ -23,6 +23,7 @@ class Reserva < ApplicationRecord
   validate :start_date_cannot_be_in_the_past
   validate :end_date_after_start_date
   validate :dates_available
+  validate :imported_operational_extensions_available
   validates :guest_name, length: { maximum: 120 }, allow_blank: true
   validates :guest_phone, length: { in: 8..15 }, allow_blank: true
 
@@ -40,7 +41,7 @@ class Reserva < ApplicationRecord
   after_create :ensure_required_cleaning_services
   after_update :shift_reservation_services_after_start_date_change, if: :saved_change_to_start_date?
   after_update :ensure_required_cleaning_services_after_schedule_change, if: :cleaning_schedule_changed?
-  after_update :sync_automatic_breakfast_service_date, if: :cleaning_schedule_changed?
+  after_update :sync_automatic_breakfast_service_date, if: :breakfast_schedule_changed?
   after_commit :sync_fnrh_after_relevant_change, on: [:create, :update]
 
   FNRH_STATUS_LABELS = {
@@ -90,15 +91,43 @@ class Reserva < ApplicationRecord
   def available?
     check_and_cancel_expired_reservations
 
-    new_reserva_range = start_date...end_date
+    return false if cabana.blank? || availability_range.blank?
+
     overlapping_reservas = Reserva.where(cabana_id: cabana.id)
                                   .where(payment_status: [:pending, :waiting_payment, :paid])
+    overlapping_reservas = overlapping_reservas.where.not(id: id) if persisted?
 
     overlapping_reservas.each do |existing_reserva|
-      existing_reserva_range = existing_reserva.start_date...existing_reserva.end_date
-      return false if new_reserva_range.overlaps?(existing_reserva_range)
+      existing_range = existing_reserva.availability_range
+      return false if existing_range.present? && availability_range.overlaps?(existing_range)
     end
     true
+  end
+
+  def availability_start_date
+    return if start_date.blank?
+
+    early_checkin? ? start_date - 1.day : start_date
+  end
+
+  def availability_end_date
+    return if end_date.blank?
+
+    late_checkout? ? end_date + 1.day : end_date
+  end
+
+  def availability_range
+    return if availability_start_date.blank? || availability_end_date.blank?
+
+    availability_start_date...availability_end_date
+  end
+
+  def early_checkin_block_date
+    start_date - 1.day if early_checkin? && start_date.present?
+  end
+
+  def late_checkout_block_date
+    end_date if late_checkout? && end_date.present?
   end
 
   def start_date_cannot_be_in_the_past
@@ -124,6 +153,7 @@ class Reserva < ApplicationRecord
   def dates_available
     # Ignora validação se for reserva importada
     return if imported?
+    return if cabana.blank? || availability_range.blank?
 
     overlapping_reservas = Reserva.where(cabana_id: cabana.id)
                                   .where(payment_status: [:pending, :waiting_payment, :paid])
@@ -131,10 +161,9 @@ class Reserva < ApplicationRecord
     # Exclui a própria reserva quando está editando (não é novo registro)
     overlapping_reservas = overlapping_reservas.where.not(id: self.id) if self.persisted?
 
-    new_reserva_range = start_date...end_date
     overlapping_reservas.each do |existing_reserva|
-      existing_reserva_range = existing_reserva.start_date...existing_reserva.end_date
-      if new_reserva_range.overlaps?(existing_reserva_range)
+      existing_range = existing_reserva.availability_range
+      if existing_range.present? && availability_range.overlaps?(existing_range)
         errors.add(:base, "A Cabana está indisponível na data selecionada.")
         break
       end
@@ -190,7 +219,7 @@ class Reserva < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    ["breakfast_manual_override", "cabana_id", "created_at", "end_date", "group_created", "guest_name", "guest_phone", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
+    ["breakfast_manual_override", "cabana_id", "created_at", "early_checkin", "end_date", "group_created", "guest_name", "guest_phone", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "late_checkout", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
   end
 
   private
@@ -218,7 +247,8 @@ class Reserva < ApplicationRecord
   end
 
   def ensure_required_cleaning_services_after_schedule_change
-    CleaningServicesAssigner.new(self, force_dates: true).call
+    force_dates = saved_change_to_start_date? || saved_change_to_end_date? || saved_change_to_cabana_id?
+    CleaningServicesAssigner.new(self, force_dates: force_dates).call
   end
 
   def sync_automatic_breakfast_service_date
@@ -226,7 +256,32 @@ class Reserva < ApplicationRecord
   end
 
   def cleaning_schedule_changed?
+    saved_change_to_start_date? || saved_change_to_end_date? || saved_change_to_cabana_id? ||
+      saved_change_to_early_checkin? || saved_change_to_late_checkout?
+  end
+
+  def breakfast_schedule_changed?
     saved_change_to_start_date? || saved_change_to_end_date? || saved_change_to_cabana_id?
+  end
+
+  def imported_operational_extensions_available
+    return unless imported?
+    return if cabana.blank? || start_date.blank? || end_date.blank?
+
+    validate_imported_extension(:early_checkin, (start_date - 1.day)...start_date) if will_save_change_to_early_checkin? && early_checkin?
+    validate_imported_extension(:late_checkout, end_date...(end_date + 1.day)) if will_save_change_to_late_checkout? && late_checkout?
+  end
+
+  def validate_imported_extension(attribute, extension_range)
+    occupied = Reserva.where(cabana_id: cabana_id, payment_status: [:pending, :waiting_payment, :paid])
+    occupied = occupied.where.not(id: id) if persisted?
+    return unless occupied.any? do |reserva|
+      existing_range = reserva.availability_range
+      existing_range.present? && extension_range.overlaps?(existing_range)
+    end
+
+    label = attribute == :early_checkin ? 'early check-in' : 'late checkout'
+    errors.add(attribute, "não pode ser ativado porque a diária extra do #{label} já está ocupada.")
   end
 
   def sync_fnrh_after_relevant_change

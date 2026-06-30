@@ -39,7 +39,18 @@
   right: 0;
   height: 10px; /* Ensure it is displayed on top of day-content */
   /* top is set inline based on index (stacking) */
-  /* background-color is also set inline based on the cabana color */
+  background-color: var(--reserva-color);
+}
+
+.reserva-line.operational-block {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--reserva-color) 0,
+    var(--reserva-color) 4px,
+    #fff 4px,
+    #fff 7px
+  );
+  box-shadow: inset 0 0 0 1px var(--reserva-color);
 }
 
 /* MIDDLE day in the range: fill the entire cell horizontally */
@@ -79,6 +90,17 @@
   height: 16px;
   border-radius: 4px;
   display: inline-block;
+}
+
+.legend-color.operational-block {
+  background: repeating-linear-gradient(
+    135deg,
+    #495057 0,
+    #495057 4px,
+    #fff 4px,
+    #fff 7px
+  );
+  border: 1px solid #495057;
 }
 
 .highlight {

@@ -20,6 +20,6 @@ class CabanasController < ApplicationController
   # Retorna a região da filial da cabana (usado para filtrar serviços)
   def region
     cabana = Cabana.find(params[:id])
-    render json: { region: cabana.filial&.region }
+    render json: { region: cabana.filial&.region, filial_id: cabana.filial_id }
   end
 end

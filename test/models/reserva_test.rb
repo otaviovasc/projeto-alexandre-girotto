@@ -37,4 +37,76 @@ class ReservaTest < ActiveSupport::TestCase
     assert Reserva.new(user: User.new(partner: false), partnership_creator_id: 123).partnership_reservation?
     assert_not Reserva.new(user: User.new(partner: false)).partnership_reservation?
   end
+
+  test "uses operational dates without changing official dates" do
+    reserva = Reserva.new(
+      start_date: Date.new(2027, 8, 10),
+      end_date: Date.new(2027, 8, 12),
+      early_checkin: true,
+      late_checkout: true
+    )
+
+    assert_equal Date.new(2027, 8, 10), reserva.start_date
+    assert_equal Date.new(2027, 8, 12), reserva.end_date
+    assert_equal Date.new(2027, 8, 9), reserva.availability_start_date
+    assert_equal Date.new(2027, 8, 13), reserva.availability_end_date
+  end
+
+  test "prevents an early check in from occupying an existing previous night" do
+    filial = Filial.create!(name: "Filial conflito")
+    cabana = Cabana.create!(name: "Cabana conflito", price: 100, filial: filial)
+    existing = create_reserva(cabana, "existing@example.com", Date.new(2027, 8, 10), Date.new(2027, 8, 12))
+    candidate = Reserva.new(
+      cabana: cabana,
+      user: create_user("candidate@example.com"),
+      start_date: existing.end_date,
+      end_date: Date.new(2027, 8, 14),
+      early_checkin: true,
+      payment_status: "paid",
+      total_price: 0
+    )
+
+    assert_not candidate.valid?
+    assert_includes candidate.errors[:base], "A Cabana está indisponível na data selecionada."
+  end
+
+  test "validates an operational extension added manually to an imported reservation" do
+    filial = Filial.create!(name: "Filial importada")
+    cabana = Cabana.create!(name: "Cabana importada", price: 100, filial: filial)
+    existing = create_reserva(cabana, "existing-imported@example.com", Date.new(2027, 9, 10), Date.new(2027, 9, 12))
+    imported = Reserva.create!(
+      cabana: cabana,
+      user: create_user("imported@example.com"),
+      start_date: existing.end_date,
+      end_date: Date.new(2027, 9, 14),
+      origem: 'booking',
+      payment_status: "paid",
+      total_price: 0
+    )
+
+    assert_not imported.update(early_checkin: true)
+    assert_includes imported.errors[:early_checkin], "não pode ser ativado porque a diária extra do early check-in já está ocupada."
+  end
+
+  private
+
+  def create_reserva(cabana, email, start_date, end_date)
+    Reserva.create!(
+      cabana: cabana,
+      user: create_user(email),
+      start_date: start_date,
+      end_date: end_date,
+      payment_status: "paid",
+      total_price: 0
+    )
+  end
+
+  def create_user(email)
+    User.create!(
+      email: email,
+      password: "password",
+      password_confirmation: "password",
+      name: "Teste"
+    )
+  end
 end

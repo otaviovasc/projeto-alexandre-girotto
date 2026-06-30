@@ -203,15 +203,18 @@ class ReservasController < ApplicationController
 
     # Categorize dates
     reservas.each do |reserva|
-      if reserva.start_date == reserva.end_date
+      availability_start = reserva.availability_start_date
+      availability_end = reserva.availability_end_date
+
+      if availability_start == availability_end
         # Single day reservation - fully unavailable
-        fully_unavailable_dates << reserva.start_date
+        fully_unavailable_dates << availability_start
       else
         # Multi-day reservation
-        start_dates << reserva.start_date
-        end_dates << reserva.end_date
+        start_dates << availability_start
+        end_dates << availability_end
         # Middle days are completely unavailable
-        ((reserva.start_date + 1)...reserva.end_date).each do |date|
+        ((availability_start + 1)...availability_end).each do |date|
           fully_unavailable_dates << date
         end
       end

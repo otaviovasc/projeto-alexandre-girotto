@@ -1,6 +1,16 @@
 require "test_helper"
 
 class CleaningServicesAssignerTest < ActiveSupport::TestCase
+  include ActiveSupport::Testing::TimeHelpers
+
+  setup do
+    travel_to Time.zone.local(2026, 1, 1, 12)
+  end
+
+  teardown do
+    travel_back
+  end
+
   test "adds required cleaning services when a reservation is created" do
     filial = Filial.create!(name: "Serra da Mantiqueira")
     cabana = Cabana.create!(name: "Cabana MG", price: 100, filial: filial)
@@ -134,6 +144,58 @@ class CleaningServicesAssignerTest < ActiveSupport::TestCase
     assert_not entrada_service.manual_date_override?
     assert_equal Date.new(2026, 6, 15), saida_service.service_date
     assert saida_service.manual_date_override?
+  end
+
+  test "moves cleaning services outside the official stay for early check in and late checkout" do
+    filial = Filial.create!(name: "Serra da Mantiqueira")
+    cabana = Cabana.create!(name: "Cabana operacional", price: 100, filial: filial)
+    user = create_user("guest-operational@example.com")
+    create_cleaning_services(filial)
+
+    reserva = Reserva.create!(
+      cabana: cabana,
+      user: user,
+      start_date: Date.new(2026, 8, 10),
+      end_date: Date.new(2026, 8, 12),
+      early_checkin: true,
+      late_checkout: true,
+      payment_status: "paid",
+      total_price: 0
+    )
+
+    entrada = reserva.reserva_services.joins(:service).find_by!(services: { name: "➡️ Limpeza Entrada (MG)" })
+    saida = reserva.reserva_services.joins(:service).find_by!(services: { name: "⬅️ Limpeza de Saida (MG)" })
+
+    assert_equal Date.new(2026, 8, 9), entrada.service_date
+    assert_equal CleaningServicesAssigner::EARLY_CHECKIN_NOTE, entrada.observation
+    assert_equal Date.new(2026, 8, 13), saida.service_date
+    assert_equal CleaningServicesAssigner::LATE_CHECKOUT_NOTE, saida.observation
+  end
+
+  test "removes automatic operational notes when the options are disabled" do
+    filial = Filial.create!(name: "Serra da Mantiqueira")
+    cabana = Cabana.create!(name: "Cabana sem extensão", price: 100, filial: filial)
+    user = create_user("guest-remove-note@example.com")
+    create_cleaning_services(filial)
+    reserva = Reserva.create!(
+      cabana: cabana,
+      user: user,
+      start_date: Date.new(2026, 9, 10),
+      end_date: Date.new(2026, 9, 12),
+      early_checkin: true,
+      late_checkout: true,
+      payment_status: "paid",
+      total_price: 0
+    )
+
+    reserva.update!(early_checkin: false, late_checkout: false)
+    entrada = reserva.reserva_services.joins(:service).find_by!(services: { name: "➡️ Limpeza Entrada (MG)" })
+    saida = reserva.reserva_services.joins(:service).find_by!(services: { name: "⬅️ Limpeza de Saida (MG)" })
+
+    assert_equal reserva.start_date, entrada.service_date
+    assert_nil entrada.observation
+    assert_equal reserva.end_date, saida.service_date
+    assert_nil saida.observation
   end
 
   private

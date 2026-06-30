@@ -19,4 +19,33 @@ module ReservasHelper
     else 'bg-light text-dark'               # Branco padrão
     end
   end
+
+  def calendar_reservation_segments(reserva, date)
+    segments = []
+
+    if date.between?(reserva.start_date, reserva.end_date)
+      css_class = if reserva.start_date == reserva.end_date
+                    'start-end'
+                  elsif date == reserva.start_date
+                    'start'
+                  elsif date == reserva.end_date
+                    'end'
+                  else
+                    'middle'
+                  end
+      segments << { css_class: css_class, operational: false }
+    end
+
+    if reserva.early_checkin?
+      segments << { css_class: 'start', operational: true } if date == reserva.start_date - 1.day
+      segments << { css_class: 'end', operational: true } if date == reserva.start_date
+    end
+
+    if reserva.late_checkout?
+      segments << { css_class: 'start', operational: true } if date == reserva.end_date
+      segments << { css_class: 'end', operational: true } if date == reserva.end_date + 1.day
+    end
+
+    segments
+  end
 end

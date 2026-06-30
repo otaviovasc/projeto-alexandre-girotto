@@ -331,6 +331,14 @@
         <span class="info-value"><%= l @reserva.end_date, format: :long rescue @reserva.end_date %></span>
       </div>
       <div class="info-item">
+        <span class="info-label">Early check-in</span>
+        <span class="info-value"><%= @reserva.early_checkin? ? 'Sim - diária anterior bloqueada' : 'Não' %></span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Late checkout</span>
+        <span class="info-value"><%= @reserva.late_checkout? ? 'Sim - diária seguinte bloqueada' : 'Não' %></span>
+      </div>
+      <div class="info-item">
         <span class="info-label">Noites</span>
         <span class="info-value"><%= (@reserva.end_date - @reserva.start_date).to_i %></span>
       </div>

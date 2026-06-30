@@ -13,8 +13,8 @@ module Public
 
       reservas.each do |reserva|
         event = Icalendar::Event.new
-        event.dtstart = Icalendar::Values::Date.new(reserva.start_date)
-        event.dtend   = Icalendar::Values::Date.new(reserva.end_date)
+        event.dtstart = Icalendar::Values::Date.new(reserva.availability_start_date)
+        event.dtend   = Icalendar::Values::Date.new(reserva.availability_end_date)
         event.summary = "Conforme Site Oficial - Villaggio Girotto"
         event.description = "Bloqueio importado do sistema oficial Villaggio Girotto"
         event.uid = "reserva-#{reserva.id}@meusistema.com"

@@ -67,6 +67,23 @@
       <%= form.hidden_field :end_date, id: "end_date", required: true %>
     </div>
 
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <div class="form-check">
+          <%= form.check_box :early_checkin, class: 'form-check-input' %>
+          <%= form.label :early_checkin, 'Early check-in', class: 'form-check-label fw-bold' %>
+        </div>
+        <small class="text-muted">Bloqueia também a diária anterior, sem alterar as datas da FNRH.</small>
+      </div>
+      <div class="col-md-6">
+        <div class="form-check">
+          <%= form.check_box :late_checkout, class: 'form-check-input' %>
+          <%= form.label :late_checkout, 'Late checkout', class: 'form-check-label fw-bold' %>
+        </div>
+        <small class="text-muted">Bloqueia também a diária seguinte, sem alterar as datas da FNRH.</small>
+      </div>
+    </div>
+
     <!-- Preço total -->
     <div class="mb-3">
       <%= form.label :total_price, 'Preço Total *', class: 'form-label' %>
@@ -88,18 +105,6 @@
     <div class="mb-4" id="services-section">
       <h5 class="mb-3">Serviços</h5>
       
-      <!-- Filtro por Região -->
-      <div class="row mb-3">
-        <div class="col-md-4">
-          <label class="form-label fw-bold">Filtrar por Região</label>
-          <select id="service-region-filter" class="form-control">
-            <option value="">Todas as regiões</option>
-            <option value="SP">São Paulo (SP)</option>
-            <option value="MG">Minas Gerais (MG)</option>
-          </select>
-        </div>
-      </div>
-      
       <!-- Adicionar Serviço -->
       <div class="add-service-box border rounded p-3 mb-3" style="background: #f8fafc;">
         <div class="row align-items-end">
@@ -114,6 +119,7 @@
                         data-price="<%= displayed_price %>"
                         data-guest-price="<%= service.price %>"
                         data-partner-price="<%= service.partner_price %>"
+                        data-filial-id="<%= service.filial_id %>"
                         data-region="<%= service.region %>">
                   <%= service.name %> - R$ <%= number_with_precision(displayed_price, precision: 2) %> (<%= service.region %>)
                 </option>
@@ -122,7 +128,7 @@
           </div>
           <div class="col-md-2 mb-2 mb-md-0">
             <label class="form-label fw-bold">Data *</label>
-            <input type="date" id="service-date-input" class="form-control">
+            <input type="date" id="service-date-input" class="form-control" disabled>
           </div>
           <div class="col-md-1 mb-2 mb-md-0">
             <label class="form-label fw-bold">Qtd</label>
@@ -180,12 +186,16 @@
       theme: 'bootstrap-5',
       width: '100%',
       placeholder: 'Selecione ou digite para buscar...',
-      allowClear: true
+      allowClear: true,
+      matcher: function(params, data) {
+        if (data.element?.disabled) return null;
+        if (!params.term || data.text.toLowerCase().includes(params.term.toLowerCase())) return data;
+        return null;
+      }
     });
 
-    // Filtro por região
-    const regionFilter = document.getElementById('service-region-filter');
     const serviceSelect = document.getElementById('service-select');
+    const cabanaSelect = document.getElementById('reserva_cabana_id');
     const partnershipForm = <%= partnership_form.to_json %>;
     const createUserToggle = document.getElementById('create_user_toggle');
     const partnerCheckbox = document.getElementById('partner_checkbox');
@@ -217,28 +227,57 @@
     userSelect?.addEventListener('change', updateServicePrices);
     updateServicePrices();
 
-    if (regionFilter) {
-      regionFilter.addEventListener('change', function() {
-        const selectedRegion = this.value;
-        const options = serviceSelect.querySelectorAll('option');
-        
-        options.forEach(option => {
-          if (option.value === '') return; // Skip placeholder
-          const region = option.dataset.region;
-          if (selectedRegion === '' || region === selectedRegion) {
-            option.style.display = '';
-            option.disabled = false;
-          } else {
-            option.style.display = 'none';
-            option.disabled = true;
-          }
-        });
-        
-        // Resetar seleção e atualizar Select2
-        $('#service-select').val('').trigger('change');
+    function applyServiceFilial(filialId) {
+      serviceSelect.querySelectorAll('option').forEach(option => {
+        if (!option.value) return;
+
+        const matches = filialId && option.dataset.filialId === String(filialId);
+        option.style.display = matches ? '' : 'none';
+        option.disabled = !matches;
       });
+
+      $('#service-select').prop('disabled', !filialId).val('').trigger('change');
     }
+
+    function filterServicesForCabana() {
+      const cabanaId = cabanaSelect?.value;
+      if (!cabanaId) return applyServiceFilial(null);
+
+      fetch(`/cabanas/${cabanaId}/region`)
+        .then(response => response.json())
+        .then(data => applyServiceFilial(data.filial_id))
+        .catch(() => applyServiceFilial(null));
+    }
+
+    cabanaSelect?.addEventListener('change', function() {
+      addedServices = [];
+      renderServicesList();
+      filterServicesForCabana();
+    });
+    filterServicesForCabana();
   });
+
+  function updateServiceDateBounds() {
+    const dateInput = document.getElementById('service-date-input');
+    const startDate = document.getElementById('start_date')?.value;
+    const endDate = document.getElementById('end_date')?.value;
+    if (!dateInput) return;
+
+    if (!startDate || !endDate) {
+      dateInput.value = '';
+      dateInput.disabled = true;
+      dateInput.removeAttribute('min');
+      dateInput.removeAttribute('max');
+      return;
+    }
+
+    dateInput.disabled = false;
+    dateInput.min = startDate;
+    dateInput.max = endDate;
+    if (!dateInput.value || dateInput.value < startDate || dateInput.value > endDate) {
+      dateInput.value = startDate;
+    }
+  }
 
   function addServiceToList() {
     const selectEl = document.getElementById('service-select');
@@ -261,6 +300,12 @@
     }
     if (!serviceDate) {
       alert('Por favor, selecione a data do serviço.');
+      return;
+    }
+    const startDate = document.getElementById('start_date')?.value;
+    const endDate = document.getElementById('end_date')?.value;
+    if (serviceDate < startDate || serviceDate > endDate) {
+      alert('A data do serviço deve estar entre o check-in e o check-out da reserva.');
       return;
     }
 
@@ -287,7 +332,7 @@
 
     // Limpar inputs
     $('#service-select').val('').trigger('change');
-    dateInput.value = '';
+    dateInput.value = document.getElementById('start_date')?.value || '';
     quantityInput.value = '1';
     if (observationInput) observationInput.value = '';
   }
@@ -375,6 +420,7 @@
               if (selectedDates.length === 2) {
                 startDateInput.value = instance.formatDate(selectedDates[0], "Y-m-d");
                 endDateInput.value = instance.formatDate(selectedDates[1], "Y-m-d");
+                updateServiceDateBounds();
                 
                 // Marcar o campo como válido quando as datas são selecionadas
                 dateRangeInput.setCustomValidity('');
@@ -382,6 +428,7 @@
                 // Limpar os campos hidden se não há seleção completa
                 startDateInput.value = '';
                 endDateInput.value = '';
+                updateServiceDateBounds();
                 dateRangeInput.setCustomValidity('Por favor, selecione as datas de início e fim');
               }
             },
@@ -407,6 +454,7 @@
     if (cabanaSelect.value) {
       initializeFlatpickr(cabanaSelect.value);
     }
+    updateServiceDateBounds();
   });
 </script>
 

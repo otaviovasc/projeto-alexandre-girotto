@@ -1,4 +1,8 @@
 class CleaningServicesAssigner
+  EARLY_CHECKIN_NOTE = 'Entram no próximo dia mais cedo que o padrão.'
+  LATE_CHECKOUT_NOTE = 'Saem no dia anterior mais tarde que o padrão.'
+  AUTOMATIC_NOTES = [EARLY_CHECKIN_NOTE, LATE_CHECKOUT_NOTE].freeze
+
   RULES_BY_FILIAL = {
     'serra da mantiqueira' => [
       { service_key: 'limpeza entrada mg', date_attribute: :start_date },
@@ -20,7 +24,12 @@ class CleaningServicesAssigner
     rule = rule_for_service(service)
     return unless rule
 
-    reserva.public_send(rule[:date_attribute])
+    case rule[:date_attribute]
+    when :start_date
+      reserva.early_checkin? ? reserva.start_date - 1.day : reserva.start_date
+    when :end_date
+      reserva.late_checkout? ? reserva.end_date + 1.day : reserva.end_date
+    end
   end
 
   def self.rule_for_service(service)
@@ -54,7 +63,8 @@ class CleaningServicesAssigner
 
       reserva_service = ReservaService.find_or_initialize_by(reserva: @reserva, service: service)
       reserva_service.quantity ||= 1
-      assign_date(reserva_service, @reserva.public_send(rule[:date_attribute]))
+      assign_date(reserva_service, self.class.expected_date_for(@reserva, service))
+      assign_observation(reserva_service, automatic_note_for(rule))
       reserva_service.save! if reserva_service.new_record? || reserva_service.changed?
     end
   end
@@ -68,6 +78,19 @@ class CleaningServicesAssigner
 
     reserva_service.service_date = expected_date
     reserva_service.manual_date_override = false if reserva_service.respond_to?(:manual_date_override=)
+  end
+
+  def assign_observation(reserva_service, automatic_note)
+    manual_lines = reserva_service.observation.to_s.lines.map(&:strip).reject do |line|
+      line.blank? || AUTOMATIC_NOTES.include?(line)
+    end
+    manual_lines << automatic_note if automatic_note.present?
+    reserva_service.observation = manual_lines.join("\n").presence
+  end
+
+  def automatic_note_for(rule)
+    return EARLY_CHECKIN_NOTE if rule[:date_attribute] == :start_date && @reserva.early_checkin?
+    return LATE_CHECKOUT_NOTE if rule[:date_attribute] == :end_date && @reserva.late_checkout?
   end
 
   def rules

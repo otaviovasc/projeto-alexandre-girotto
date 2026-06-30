@@ -470,6 +470,8 @@ class Admin::ReservasController < ApplicationController
       :user_id, 
       :start_date, 
       :end_date, 
+      :early_checkin,
+      :late_checkout,
       :total_price, 
       :observation,
       :group_created,
