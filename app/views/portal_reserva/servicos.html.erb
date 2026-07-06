@@ -9,12 +9,15 @@
         <h1 class="text-xl font-bold leading-tight"><%= @reserva.cabana.name %></h1>
       </div>
 
-      <%= button_to portal_reserva_sair_path, method: :delete, class: "flex items-center gap-1.5 text-white/60 hover:text-white text-xs transition shrink-0", form_class: "inline" do %>
+      <div class="flex items-center gap-4 shrink-0">
+        <%= link_to "Início", portal_reserva_inicio_path, class: "text-white/70 hover:text-white text-xs transition" %>
+        <%= button_to portal_reserva_sair_path, method: :delete, class: "flex items-center gap-1.5 text-white/60 hover:text-white text-xs transition", form_class: "inline" do %>
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
         </svg>
         Sair
-      <% end %>
+        <% end %>
+      </div>
     </div>
   </div>
 
@@ -74,14 +77,16 @@
                     </div>
                   </div>
 
-                  <% if food_service_for_observation?(service) %>
+                  <% if food_service_for_observation?(service) || decoration_service_for_observation?(service) %>
                     <div>
-                      <label class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Restrição alimentar ou alergia (opcional)</label>
+                      <label class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2 block">
+                        <%= food_service_for_observation?(service) ? "Restrição alimentar ou alergia (opcional)" : "Detalhes da decoração ou surpresa (opcional)" %>
+                      </label>
                       <%= f.text_area :observation,
                           rows: 2,
                           maxlength: 500,
                           id: "service_#{service.id}_observation",
-                          placeholder: "Ex: intolerância à lactose, alergia a castanhas, sem cebola...",
+                          placeholder: food_service_for_observation?(service) ? "Ex: intolerância à lactose, alergia a castanhas, sem cebola..." : "Ex: escrever 'Feliz aniversário' e preparar durante o passeio a cavalo...",
                           class: "w-full bg-white border border-gray-200 text-gray-700 placeholder-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] transition resize-none" %>
                       <p class="text-gray-400 text-[11px] mt-1">Essa observação será enviada junto com o serviço.</p>
                     </div>

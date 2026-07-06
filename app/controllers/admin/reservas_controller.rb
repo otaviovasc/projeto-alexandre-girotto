@@ -3,7 +3,7 @@ class Admin::ReservasController < ApplicationController
   before_action :authorize_admin
   before_action :set_reserva, only: [
     :edit, :update, :destroy, :show, :update_observation, :update_group_created,
-    :acknowledge_ical_date_change, :update_service_purchase_access, :sync_fnrh,
+    :acknowledge_ical_date_change, :update_service_purchase_access, :update_service_installments, :sync_fnrh,
     :fnrh_check_in, :fnrh_no_show, :fnrh_checkout, :fnrh_cancel, :fnrh_bypass_precheckin
   ]
   before_action :check_reservations_on_new, only: [:reservas_summary]
@@ -394,6 +394,18 @@ class Admin::ReservasController < ApplicationController
               end
 
     redirect_to admin_reserva_path(@reserva), notice: message
+  end
+
+  def update_service_installments
+    max_installments = params[:service_max_installments].to_i
+
+    unless max_installments.between?(1, 12)
+      redirect_to admin_reserva_path(@reserva), alert: 'Selecione entre 1x e 12x para os serviços.'
+      return
+    end
+
+    @reserva.update_columns(service_max_installments: max_installments, updated_at: Time.current)
+    redirect_to admin_reserva_path(@reserva), notice: "Parcelamento dos serviços definido em até #{max_installments}x."
   end
 
   def import_platform_calendar

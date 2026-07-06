@@ -58,6 +58,7 @@ Rails.application.routes.draw do
         patch 'update_group_created'
         patch 'acknowledge_ical_date_change'
         patch 'update_service_purchase_access'
+        patch 'update_service_installments'
         post 'sync_fnrh'
         post 'fnrh_check_in'
         post 'fnrh_no_show'
@@ -159,6 +160,8 @@ Rails.application.routes.draw do
   # Portal da Reserva (acesso sem login obrigatório via ID + nome/email)
   get  'minha-reserva',          to: 'portal_reserva#index',    as: :portal_reserva
   post 'minha-reserva/acessar',  to: 'portal_reserva#acessar',  as: :portal_reserva_acessar
+  get  'minha-reserva/inicio',   to: 'portal_reserva#inicio',   as: :portal_reserva_inicio
+  get  'minha-reserva/comprados', to: 'portal_reserva#comprados', as: :portal_reserva_comprados
   get  'minha-reserva/servicos', to: 'portal_reserva#servicos', as: :portal_reserva_servicos
   get  'minha-reserva/confirmacao', to: 'portal_reserva#confirmacao', as: :portal_reserva_confirmacao
   get  'minha-reserva/confirmacao/status', to: 'portal_reserva#confirmacao_status', as: :portal_reserva_confirmacao_status

@@ -1,0 +1,54 @@
+<% content_for :title, "Meus serviços - Villaggio Girotto" %>
+
+<div class="min-h-screen bg-[#f7f5f0]">
+  <header class="bg-[#1a2e1a] text-white px-4 py-5 shadow-lg">
+    <div class="max-w-3xl mx-auto flex items-center justify-between gap-4">
+      <div>
+        <p class="text-white/50 text-xs uppercase tracking-widest">Reserva #<%= @reserva.id %></p>
+        <h1 class="text-xl font-bold leading-tight"><%= @reserva.cabana.name %></h1>
+      </div>
+      <%= button_to portal_reserva_sair_path, method: :delete, class: "text-white/60 hover:text-white text-xs transition", form_class: "inline" do %>
+        Sair
+      <% end %>
+    </div>
+  </header>
+
+  <% if flash[:alert].present? %>
+    <div class="max-w-3xl mx-auto px-4 pt-5">
+      <div class="bg-red-50 border border-red-200 text-red-800 text-sm rounded-lg px-4 py-3"><%= flash[:alert] %></div>
+    </div>
+  <% end %>
+
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    <h2 class="text-lg font-bold text-[#1a2e1a] mb-5">O que você deseja fazer?</h2>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <%= link_to portal_reserva_comprados_path, class: "bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-[#c8a96e] transition block" do %>
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 class="font-bold text-[#1a2e1a]">Ver serviços comprados</h3>
+            <p class="text-sm text-gray-500 mt-1"><%= pluralize(@purchased_services_count, "serviço confirmado", "serviços confirmados") %></p>
+          </div>
+          <span class="text-[#c8a96e] text-xl">›</span>
+        </div>
+      <% end %>
+
+      <% if @reserva.service_purchase_window_open? %>
+        <%= link_to portal_reserva_servicos_path, class: "bg-[#1a2e1a] border border-[#1a2e1a] rounded-lg p-5 shadow-sm hover:bg-[#2d4a2d] transition block" do %>
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="font-bold text-white">Comprar novos serviços</h3>
+              <p class="text-sm text-white/60 mt-1">Ver serviços disponíveis</p>
+            </div>
+            <span class="text-[#c8a96e] text-xl">›</span>
+          </div>
+        <% end %>
+      <% else %>
+        <div class="bg-gray-100 border border-gray-200 rounded-lg p-5 text-gray-500">
+          <h3 class="font-bold">Novas compras indisponíveis</h3>
+          <p class="text-sm mt-1"><%= @reserva.service_purchase_closed_message %></p>
+        </div>
+      <% end %>
+    </div>
+  </main>
+</div>

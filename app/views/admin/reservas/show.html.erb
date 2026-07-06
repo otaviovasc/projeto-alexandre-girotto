@@ -444,6 +444,21 @@
             form_class: 'd-inline' %>
       <% end %>
     </div>
+
+    <div class="purchase-access-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+      <div>
+        <span class="purchase-access-status normal">Cartão em até <%= @reserva.service_max_installments %>x</span>
+        <p class="purchase-access-copy">Vale somente para novas compras de serviços desta reserva. A hospedagem não é alterada.</p>
+      </div>
+
+      <%= form_with url: update_service_installments_admin_reserva_path(@reserva), method: :patch, local: true, class: 'd-flex align-items-center gap-2' do %>
+        <%= select_tag :service_max_installments,
+            options_for_select((1..12).map { |number| ["#{number}x", number] }, @reserva.service_max_installments),
+            class: 'form-select',
+            style: 'width: auto;' %>
+        <%= submit_tag 'Salvar parcelas', class: 'btn btn-primary' %>
+      <% end %>
+    </div>
   </div>
 
   <!-- Serviços -->

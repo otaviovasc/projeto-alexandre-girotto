@@ -16,7 +16,7 @@ class PagarmePaymentLinkService
     end
   end
 
-  def initialize(api_key:, name:, order_code:, items:, success_url:, failure_url: success_url, expires_in: 30)
+  def initialize(api_key:, name:, order_code:, items:, success_url:, failure_url: success_url, expires_in: 30, max_installments: 1)
     @api_key = api_key.to_s.strip
     @name = name
     @order_code = order_code
@@ -24,6 +24,7 @@ class PagarmePaymentLinkService
     @success_url = success_url
     @failure_url = failure_url
     @expires_in = expires_in
+    @max_installments = max_installments.to_i.clamp(1, 12)
   end
 
   def call
@@ -82,7 +83,7 @@ class PagarmePaymentLinkService
           installments_setup: {
             interest_type: 'simple',
             interest_rate: 0,
-            max_installments: 1,
+            max_installments: @max_installments,
             amount: amount_in_cents
           },
           operation_type: 'auth_and_capture'

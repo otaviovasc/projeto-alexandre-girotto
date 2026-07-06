@@ -154,7 +154,8 @@ class CartsController < ApplicationController
       items: pagarme_cart_items(cart_items),
       success_url: payment_cart_url,
       failure_url: checkout_cart_url,
-      expires_in: expires_in
+      expires_in: expires_in,
+      max_installments: service_only_cart?(cart_items) ? @reserva.service_max_installments : 1
     ).call
 
     payment_expires_at = expires_in.minutes.from_now
@@ -205,5 +206,9 @@ class CartsController < ApplicationController
     return cart_item.item.price if cart_item.item.present?
 
     cart_item.service.price_for(@reserva)
+  end
+
+  def service_only_cart?(cart_items)
+    cart_items.all? { |cart_item| cart_item.service_id.present? }
   end
 end

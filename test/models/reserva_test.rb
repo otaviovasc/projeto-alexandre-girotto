@@ -88,6 +88,14 @@ class ReservaTest < ActiveSupport::TestCase
     assert_includes imported.errors[:early_checkin], "não pode ser ativado porque a diária extra do early check-in já está ocupada."
   end
 
+  test "service installments must stay between one and twelve" do
+    reserva = Reserva.new(service_max_installments: 13)
+
+    reserva.valid?
+
+    assert reserva.errors.of_kind?(:service_max_installments, :inclusion)
+  end
+
   private
 
   def create_reserva(cabana, email, start_date, end_date)

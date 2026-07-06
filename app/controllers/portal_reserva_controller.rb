@@ -2,13 +2,13 @@ class PortalReservaController < ApplicationController
   layout "portal_reserva"
   skip_before_action :authenticate_user!
   before_action :ensure_service_purchase_window_open!, only: [:servicos, :adicionar, :remover, :pagar]
-  helper_method :food_service_for_observation?, :service_price_for
+  helper_method :food_service_for_observation?, :decoration_service_for_observation?, :service_price_for
 
   # GET /minha-reserva
   def index
-    # Se já tem reserva na sessão, redireciona direto pro catálogo
+    # Se já tem reserva na sessão, redireciona para as opções do portal
     if session[:portal_reserva_id].present?
-      redirect_to portal_reserva_servicos_path
+      redirect_to portal_reserva_inicio_path
     end
   end
 
@@ -24,16 +24,8 @@ class PortalReservaController < ApplicationController
       redirect_to portal_reserva_path and return
     end
 
-    user = reserva.user
-
-    unless user.matches_reservation_identifier?(identificador)
+    unless reserva.matches_reservation_identifier?(identificador)
       flash[:alert] = "Nome ou e-mail não corresponde a esta reserva."
-      redirect_to portal_reserva_path and return
-    end
-
-    unless reserva.service_purchase_window_open?
-      portal_cart_items(reserva).destroy_all
-      flash[:alert] = reserva.service_purchase_closed_message
       redirect_to portal_reserva_path and return
     end
 
@@ -42,7 +34,28 @@ class PortalReservaController < ApplicationController
     
     expire_stale_portal_cart_items(reserva)
     
-    redirect_to portal_reserva_servicos_path
+    redirect_to portal_reserva_inicio_path
+  end
+
+  # GET /minha-reserva/inicio
+  def inicio
+    unless session[:portal_reserva_id].present?
+      redirect_to portal_reserva_path, alert: "Por favor, acesse sua reserva primeiro." and return
+    end
+
+    @reserva = Reserva.includes(:user, cabana: :filial).find(session[:portal_reserva_id])
+    expire_stale_portal_cart_items(@reserva)
+    @purchased_services_count = purchased_portal_services(@reserva).count
+  end
+
+  # GET /minha-reserva/comprados
+  def comprados
+    unless session[:portal_reserva_id].present?
+      redirect_to portal_reserva_path, alert: "Por favor, acesse sua reserva primeiro." and return
+    end
+
+    @reserva = Reserva.includes(:user, cabana: :filial).find(session[:portal_reserva_id])
+    @purchased_services = purchased_portal_services(@reserva)
   end
 
   # GET /minha-reserva/servicos
@@ -230,8 +243,16 @@ class PortalReservaController < ApplicationController
     end
   end
 
+  def decoration_service_for_observation?(service)
+    normalized_name = service.name.to_s.parameterize
+
+    ["decoracao", "petala", "luzinha", "espumante", "foto-impress"].any? do |keyword|
+      normalized_name.include?(keyword)
+    end
+  end
+
   def observation_for_service(service)
-    return unless food_service_for_observation?(service)
+    return unless food_service_for_observation?(service) || decoration_service_for_observation?(service)
 
     params[:observation].to_s.strip.presence
   end
@@ -247,9 +268,8 @@ class PortalReservaController < ApplicationController
     return if reserva.blank? || reserva.service_purchase_window_open?
 
     portal_cart_items(reserva).destroy_all
-    session.delete(:portal_reserva_id)
     flash[:alert] = reserva.service_purchase_closed_message
-    redirect_to portal_reserva_path
+    redirect_to portal_reserva_inicio_path
   end
 
   def create_portal_payment_link
@@ -264,7 +284,8 @@ class PortalReservaController < ApplicationController
       items: pagarme_items,
       success_url: portal_reserva_confirmacao_url(codigo: order_code),
       failure_url: portal_reserva_servicos_url,
-      expires_in: expires_in
+      expires_in: expires_in,
+      max_installments: @reserva.service_max_installments
     ).call
 
     payment_expires_at = expires_in.minutes.from_now
@@ -326,6 +347,13 @@ class PortalReservaController < ApplicationController
     ReservaService.includes(:service, reserva: [:user, :cabana])
                   .where(payment_order_code: order_code, reserva_id: session[:portal_reserva_id])
                   .order(:service_date, :id)
+  end
+
+  def purchased_portal_services(reserva)
+    reserva.reserva_services
+           .includes(:service)
+           .where(payment_status: "paid")
+           .order(:service_date, :id)
   end
 
   def purchase_payment_status(purchased_services)

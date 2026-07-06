@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_06_29_180000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_06_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -252,6 +252,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_29_180000) do
     t.bigint "partnership_creator_id"
     t.datetime "ical_date_change_since"
     t.boolean "service_purchase_override", default: false, null: false
+    t.integer "service_max_installments", default: 1, null: false
     t.string "fnrh_status", default: "not_eligible", null: false
     t.string "fnrh_reservation_id"
     t.text "fnrh_precheckin_url"

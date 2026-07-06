@@ -40,5 +40,21 @@ class PagarmePaymentLinkServiceTest < ActiveSupport::TestCase
 
     assert_equal 600, payload["expires_in"]
     assert_equal 600, payload.dig("payment_settings", "pix_settings", "expires_in")
+    assert_equal 1, payload.dig("payment_settings", "credit_card_settings", "installments_setup", "max_installments")
+  end
+
+  test "allows a custom installment limit for service purchases" do
+    service = PagarmePaymentLinkService.new(
+      api_key: "sk_test_123",
+      name: "Servicos Reserva 614",
+      order_code: "portal-services-614",
+      items: [{ id: 1, name: "Almoco", unit_price: 100, quantity: 1 }],
+      success_url: "https://example.com/success",
+      max_installments: 6
+    )
+
+    payload = service.send(:payload)
+
+    assert_equal 6, payload.dig(:payment_settings, :credit_card_settings, :installments_setup, :max_installments)
   end
 end

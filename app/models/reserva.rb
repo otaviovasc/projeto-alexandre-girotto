@@ -26,6 +26,7 @@ class Reserva < ApplicationRecord
   validate :imported_operational_extensions_available
   validates :guest_name, length: { maximum: 120 }, allow_blank: true
   validates :guest_phone, length: { in: 8..15 }, allow_blank: true
+  validates :service_max_installments, inclusion: { in: 1..12 }
 
   enum payment_status: {
     pending: 'pending',
@@ -219,7 +220,7 @@ class Reserva < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    ["breakfast_manual_override", "cabana_id", "created_at", "early_checkin", "end_date", "group_created", "guest_name", "guest_phone", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "late_checkout", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
+    ["breakfast_manual_override", "cabana_id", "created_at", "early_checkin", "end_date", "group_created", "guest_name", "guest_phone", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "late_checkout", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_max_installments", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
   end
 
   private
