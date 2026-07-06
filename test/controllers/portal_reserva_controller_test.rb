@@ -10,6 +10,11 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     }
 
     assert_redirected_to portal_reserva_inicio_path
+
+    get portal_reserva_servicos_path
+
+    assert_redirected_to portal_reserva_inicio_path
+    assert_match "10 dias antes do check-in", flash[:alert]
   end
 
   test "accepts observations for decorations and surprises" do

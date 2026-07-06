@@ -33,20 +33,13 @@
         </div>
       <% end %>
 
-      <% if @reserva.service_purchase_window_open? %>
-        <%= link_to portal_reserva_servicos_path, class: "bg-[#1a2e1a] border border-[#1a2e1a] rounded-lg p-5 shadow-sm hover:bg-[#2d4a2d] transition block" do %>
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <h3 class="font-bold text-white">Comprar novos serviços</h3>
-              <p class="text-sm text-white/60 mt-1">Ver serviços disponíveis</p>
-            </div>
-            <span class="text-[#c8a96e] text-xl">›</span>
+      <%= link_to portal_reserva_servicos_path, class: "bg-[#1a2e1a] border border-[#1a2e1a] rounded-lg p-5 shadow-sm hover:bg-[#2d4a2d] transition block" do %>
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 class="font-bold text-white">Comprar novos serviços</h3>
+            <p class="text-sm text-white/60 mt-1">Ver serviços disponíveis</p>
           </div>
-        <% end %>
-      <% else %>
-        <div class="bg-gray-100 border border-gray-200 rounded-lg p-5 text-gray-500">
-          <h3 class="font-bold">Novas compras indisponíveis</h3>
-          <p class="text-sm mt-1"><%= @reserva.service_purchase_closed_message %></p>
+          <span class="text-[#c8a96e] text-xl">›</span>
         </div>
       <% end %>
     </div>
