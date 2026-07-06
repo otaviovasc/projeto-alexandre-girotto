@@ -59,6 +59,7 @@ Rails.application.routes.draw do
         patch 'acknowledge_ical_date_change'
         patch 'update_service_purchase_access'
         patch 'update_service_installments'
+        patch 'confirm_reservation'
         post 'sync_fnrh'
         post 'fnrh_check_in'
         post 'fnrh_no_show'

@@ -4,7 +4,8 @@ class Admin::ReservasController < ApplicationController
   before_action :set_reserva, only: [
     :edit, :update, :destroy, :show, :update_observation, :update_group_created,
     :acknowledge_ical_date_change, :update_service_purchase_access, :update_service_installments, :sync_fnrh,
-    :fnrh_check_in, :fnrh_no_show, :fnrh_checkout, :fnrh_cancel, :fnrh_bypass_precheckin
+    :fnrh_check_in, :fnrh_no_show, :fnrh_checkout, :fnrh_cancel, :fnrh_bypass_precheckin,
+    :confirm_reservation
   ]
   before_action :check_reservations_on_new, only: [:reservas_summary]
 
@@ -34,61 +35,101 @@ class Admin::ReservasController < ApplicationController
   end
 
   def new
-    @reserva = Reserva.new
-    @services = Service.all
+    @reserva = Reserva.new(observation: 'Sistema')
+    load_new_form_collections
   end
 
   def create
-    if params[:create_user] == "true"
-      # Criação de um novo usuário
+    @creating_new_guest = params[:create_user] == "true"
+    @reserva = Reserva.new(reserva_params.except(:user_id))
+
+    if @creating_new_guest
       generated_password = SecureRandom.alphanumeric(8)
       user_attributes = user_params.merge(
-        password: generated_password, 
+        password: generated_password,
         password_confirmation: generated_password
       )
-      
-      # Adicionar o campo partner se estiver presente
-      user_attributes[:partner] = params[:user][:partner] == 'true' if params[:user] && params[:user][:partner].present?
-      
+      user_attributes[:partner] = params.dig(:user, :partner) == 'true'
       @user = User.new(user_attributes)
+      @reserva.user = @user
 
-      if @user.save
-        @reserva = Reserva.new(reserva_params.merge(user_id: @user.id))
-      else
-        flash[:alert] = "Não foi possível criar o usuário. Verifique os dados informados: #{@user.errors.full_messages.join(', ')}"
-        render :new and return
+      unless @user.valid?
+        load_new_form_collections
+        flash.now[:alert] = "Não foi possível criar o usuário. Corrija os dados sem perder a reserva: #{@user.errors.full_messages.join(', ')}"
+        render :new, status: :unprocessable_entity
+        return
       end
     elsif params[:reserva][:user_id].present?
-      # Seleção de um usuário existente
       @user = User.find_by(id: params[:reserva][:user_id])
       unless @user
-        flash[:alert] = "Usuário selecionado não encontrado."
-        render :new and return
+        load_new_form_collections
+        flash.now[:alert] = "Usuário selecionado não encontrado."
+        render :new, status: :unprocessable_entity
+        return
       end
-      @reserva = Reserva.new(reserva_params.merge(user_id: @user.id))
     else
-      flash[:alert] = "Você deve selecionar um usuário existente ou criar um novo."
-      render :new and return
+      load_new_form_collections
+      flash.now[:alert] = "Você deve selecionar um usuário existente ou criar um novo."
+      render :new, status: :unprocessable_entity
+      return
     end
 
-    # Cálculo do preço total da reserva, se o total_price não estiver presente
+    @reserva.user = @user
+    @reserva.observation = @user.partner? ? 'Parceria' : @reserva.observation.presence || 'Sistema'
+
+    if params[:reservation_state] == 'pending'
+      @reserva.payment_status = 'pending'
+      @reserva.blocks_availability = false
+    else
+      @reserva.payment_status = 'paid'
+      @reserva.blocks_availability = true
+    end
+
     unless params[:reserva][:total_price].present?
       @reserva.total_price = @reserva.calculate_total_price!
     end
-    @reserva.payment_status = "paid"
+
+    begin
+      Reserva.transaction do
+        @user.save! if @user.new_record?
+        @reserva.save!
+      end
+
+      if @reserva.blocks_availability?
+        BreakfastServicesAssigner.new(@reserva, source: 'sistema').add_if_configured
+      end
+
+      sync_all_reservas_to_sheets
+
+      message = if @reserva.blocks_availability?
+                  'Reserva criada e datas bloqueadas com sucesso.'
+                else
+                  'Reserva salva como pendente, sem bloquear as datas.'
+                end
+      redirect_to admin_reservas_summary_path, notice: message
+    rescue ActiveRecord::RecordInvalid => error
+      load_new_form_collections
+      record_errors = error.record.errors.full_messages
+      flash.now[:alert] = "Não foi possível salvar. Corrija os dados sem perder a reserva: #{record_errors.join(', ')}"
+      render :new, status: :unprocessable_entity
+    end
+  end
+
+  def confirm_reservation
+    unless @reserva.pending? && !@reserva.blocks_availability?
+      redirect_to admin_reserva_path(@reserva), alert: 'Esta reserva não está pendente de confirmação.'
+      return
+    end
+
+    @reserva.assign_attributes(payment_status: 'paid', blocks_availability: true)
 
     if @reserva.save
+      CleaningServicesAssigner.new(@reserva).call
       BreakfastServicesAssigner.new(@reserva, source: 'sistema').add_if_configured
-
-      # Sincroniza automaticamente com Google Sheets ao criar
-      GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)) if GoogleSheetsExportService.configured?
-      
-      # UserMailer.reserva_paid(@user, @reserva).deliver_now
-      # UserMailer.notify_adm(@user, @reserva).deliver_now
-      redirect_to admin_reservas_summary_path, notice: 'Reserva criada com sucesso e sincronizada com Google Sheets.'
+      sync_all_reservas_to_sheets
+      redirect_to admin_reserva_path(@reserva), notice: 'Reserva confirmada. As datas agora estão bloqueadas.'
     else
-      flash[:alert] = "Não foi possível salvar a reserva. Verifique os dados informados: #{@reserva.errors.full_messages.join(', ')}"
-      render :new
+      redirect_to admin_reserva_path(@reserva), alert: "Não foi possível reservar estas datas: #{@reserva.errors.full_messages.join(', ')}"
     end
   end
 
@@ -132,8 +173,9 @@ class Admin::ReservasController < ApplicationController
   def reservas_summary
     return unless current_user.admin?
 
-    @q = Reserva.ransack(params[:q])
-    @reservas = @q.result.includes(:cabana, :user)
+    @q = Reserva.ransack(summary_ransack_params)
+    filtered_reservas = apply_general_search(@q.result)
+    @reservas = filtered_reservas.includes(:cabana, :user)
                  .order(Arel.sql(
                    "CASE " \
                    "WHEN group_created = FALSE THEN 0 " \
@@ -187,7 +229,10 @@ class Admin::ReservasController < ApplicationController
   end
 
   def export_csv
-    @reservas = Reserva.includes(:cabana, :user, reserva_services: :service)
+    @reservas = Reserva.ransack(summary_ransack_params)
+                        .result
+                        .includes(:cabana, :user, reserva_services: :service)
+    @reservas = apply_general_search(@reservas)
     
     # Filtros opcionais
     @reservas = @reservas.where(cabana_id: params[:cabana_id]) if params[:cabana_id].present?
@@ -217,9 +262,10 @@ class Admin::ReservasController < ApplicationController
 
     # Aplica os mesmos filtros do Ransack se estiverem presentes
     if params[:q].present?
-      @q = Reserva.ransack(params[:q])
+      @q = Reserva.ransack(summary_ransack_params)
       @reservas = @q.result.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
     end
+    @reservas = apply_general_search(@reservas)
     
     # Filtros manuais (se houver, compatibilidade com export_csv)
     @reservas = @reservas.where(cabana_id: params[:cabana_id]) if params[:cabana_id].present?
@@ -235,7 +281,7 @@ class Admin::ReservasController < ApplicationController
                     elsif params[:id].present? && params[:redirect_to] == 'show'
                       admin_reserva_path(params[:id])
                     else
-                      admin_reservas_summary_path(q: params[:q]&.permit!) # Mantém os filtros no redirect
+                      admin_reservas_summary_path(q: summary_ransack_params, search: params[:search])
                     end
     
     if result[:success]
@@ -470,6 +516,46 @@ class Admin::ReservasController < ApplicationController
   end
 
   private
+
+  def load_new_form_collections
+    @services = Service.order(:name)
+  end
+
+  def sync_all_reservas_to_sheets
+    return unless GoogleSheetsExportService.configured?
+
+    GoogleSheetsExportService.export_reservas(
+      Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
+    )
+  end
+
+  def summary_ransack_params
+    return {} unless params[:q].present?
+
+    params.require(:q).permit(:payment_status_eq)
+  end
+
+  def apply_general_search(scope)
+    search = params[:search].to_s.squish
+    return scope if search.blank?
+
+    term = "%#{ActiveRecord::Base.sanitize_sql_like(search.downcase)}%"
+    scope.left_joins(:user, :cabana)
+         .where(
+           <<~SQL.squish,
+             LOWER(CAST(reservas.id AS VARCHAR)) LIKE :term OR
+             LOWER(COALESCE(users.name, '')) LIKE :term OR
+             LOWER(COALESCE(users.email, '')) LIKE :term OR
+             LOWER(COALESCE(users.telephone, '')) LIKE :term OR
+             LOWER(COALESCE(cabanas.name, '')) LIKE :term OR
+             LOWER(COALESCE(reservas.observation, '')) LIKE :term OR
+             LOWER(COALESCE(reservas.origem, '')) LIKE :term OR
+             LOWER(COALESCE(reservas.guest_name, '')) LIKE :term OR
+             LOWER(COALESCE(reservas.guest_phone, '')) LIKE :term
+           SQL
+           term: term
+         )
+  end
 
   def set_reserva
     @reserva = Reserva.find(params[:id])

@@ -5,7 +5,7 @@ module Public
 
     def export
       cabana = Cabana.find(params[:id])
-      reservas = cabana.reservas.where(payment_status: 'paid') 
+      reservas = cabana.reservas.where(payment_status: 'paid', blocks_availability: true)
 
       calendar = Icalendar::Calendar.new
       calendar.prodid = "-//Meu Sistema de Reservas//iCal Export//PT-BR"

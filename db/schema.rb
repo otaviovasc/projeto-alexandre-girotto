@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_06_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_06_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -268,6 +268,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_06_120000) do
     t.text "fnrh_last_error"
     t.string "guest_name"
     t.string "guest_phone"
+    t.boolean "blocks_availability", default: true, null: false
+    t.index ["cabana_id", "blocks_availability"], name: "index_reservas_on_cabana_and_availability"
     t.index ["cabana_id", "origem", "ical_uid"], name: "index_reservas_on_imported_ical"
     t.index ["cabana_id", "platform_uid"], name: "index_reservas_on_cabana_id_and_platform_uid"
     t.index ["cabana_id"], name: "index_reservas_on_cabana_id"

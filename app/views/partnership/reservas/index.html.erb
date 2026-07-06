@@ -105,9 +105,9 @@
         <% reservas_for_date.each do |reserva| %>
           <% top_offset_value = @top_offset[reserva.cabana_id] || 0 %>
           <% calendar_reservation_segments(reserva, date).each do |segment| %>
-            <div class="reserva-line <%= segment[:css_class] %> <%= 'operational-block' if segment[:operational] %>"
+            <div class="reserva-line <%= segment[:css_class] %> <%= 'operational-block' if segment[:operational] %> <%= "#{segment[:operational_type]}-block" if segment[:operational_type] %> <%= 'joins-operational' if segment[:joins_operational] %>"
                  style="--reserva-color: <%= reserva.cabana.color %>; top: <%= top_offset_value %>px;"
-                 title="<%= segment[:operational] ? 'Bloqueio de early check-in / late checkout' : reserva.cabana.name %>"></div>
+                 title="<%= segment[:operational_type] == 'early-checkin' ? 'Early check-in' : segment[:operational_type] == 'late-checkout' ? 'Late checkout' : reserva.cabana.name %>"></div>
           <% end %>
         <% end %>
       </div>

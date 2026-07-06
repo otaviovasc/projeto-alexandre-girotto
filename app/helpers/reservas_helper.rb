@@ -33,17 +33,19 @@ module ReservasHelper
                   else
                     'middle'
                   end
-      segments << { css_class: css_class, operational: false }
+      joins_operational = (date == reserva.start_date && reserva.early_checkin?) ||
+                          (date == reserva.end_date && reserva.late_checkout?)
+      segments << { css_class: css_class, operational: false, joins_operational: joins_operational }
     end
 
     if reserva.early_checkin?
-      segments << { css_class: 'start', operational: true } if date == reserva.start_date - 1.day
-      segments << { css_class: 'end', operational: true } if date == reserva.start_date
+      segments << { css_class: 'start', operational: true, operational_type: 'early-checkin' } if date == reserva.start_date - 1.day
+      segments << { css_class: 'end', operational: true, operational_type: 'early-checkin' } if date == reserva.start_date
     end
 
     if reserva.late_checkout?
-      segments << { css_class: 'start', operational: true } if date == reserva.end_date
-      segments << { css_class: 'end', operational: true } if date == reserva.end_date + 1.day
+      segments << { css_class: 'start', operational: true, operational_type: 'late-checkout' } if date == reserva.end_date
+      segments << { css_class: 'end', operational: true, operational_type: 'late-checkout' } if date == reserva.end_date + 1.day
     end
 
     segments

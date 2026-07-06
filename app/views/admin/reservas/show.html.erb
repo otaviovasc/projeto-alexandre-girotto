@@ -290,6 +290,9 @@
     <span class="status-badge status-<%= @reserva.payment_status %>">
       <%= @reserva.payment_status.humanize %>
     </span>
+    <% unless @reserva.blocks_availability? %>
+      <span class="status-badge status-pending">Não bloqueia datas</span>
+    <% end %>
   </div>
 
   <!-- Informações Principais -->
@@ -503,6 +506,15 @@
 
   <!-- Ações -->
   <div class="action-buttons">
+    <% if @reserva.pending? && !@reserva.blocks_availability? %>
+      <%= button_to confirm_reservation_admin_reserva_path(@reserva),
+          method: :patch,
+          class: 'btn btn-success',
+          form_class: 'd-inline',
+          data: { turbo_confirm: 'Confirmar a reserva e bloquear estas datas?' } do %>
+        <i class="bi bi-calendar-check"></i> Reservado
+      <% end %>
+    <% end %>
     <%= link_to '✏️ Editar Reserva', edit_admin_reserva_path(@reserva), class: 'btn btn-primary' %>
     <%= link_to export_sheets_admin_reservas_path(redirect_to: 'show', id: @reserva.id), class: 'btn btn-warning', style: "background: #f59e0b; color: white;", data: { turbo_method: :get } do %>
       <i class="bi bi-cloud-upload"></i> Sincronizar com Sheets

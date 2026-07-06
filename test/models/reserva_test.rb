@@ -96,6 +96,51 @@ class ReservaTest < ActiveSupport::TestCase
     assert reserva.errors.of_kind?(:service_max_installments, :inclusion)
   end
 
+  test "administrative pending reservation does not block availability" do
+    filial = Filial.create!(name: "Filial pendente")
+    cabana = Cabana.create!(name: "Cabana pendente", price: 100, filial: filial)
+    pending = Reserva.create!(
+      cabana: cabana,
+      user: create_user("pending@example.com"),
+      start_date: Date.new(2027, 10, 10),
+      end_date: Date.new(2027, 10, 12),
+      payment_status: "pending",
+      blocks_availability: false,
+      total_price: 0
+    )
+    candidate = Reserva.new(
+      cabana: cabana,
+      user: create_user("confirmed@example.com"),
+      start_date: pending.start_date,
+      end_date: pending.end_date,
+      payment_status: "paid",
+      blocks_availability: true,
+      total_price: 0
+    )
+
+    assert candidate.valid?
+  end
+
+  test "pending reservation cannot be confirmed when dates became occupied" do
+    filial = Filial.create!(name: "Filial confirmação")
+    cabana = Cabana.create!(name: "Cabana confirmação", price: 100, filial: filial)
+    pending = Reserva.create!(
+      cabana: cabana,
+      user: create_user("pending-confirm@example.com"),
+      start_date: Date.new(2027, 11, 10),
+      end_date: Date.new(2027, 11, 12),
+      payment_status: "pending",
+      blocks_availability: false,
+      total_price: 0
+    )
+    create_reserva(cabana, "occupied@example.com", pending.start_date, pending.end_date)
+
+    pending.assign_attributes(payment_status: "paid", blocks_availability: true)
+
+    assert_not pending.valid?
+    assert_includes pending.errors[:base], "A Cabana está indisponível na data selecionada."
+  end
+
   private
 
   def create_reserva(cabana, email, start_date, end_date)

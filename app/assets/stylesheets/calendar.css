@@ -42,7 +42,8 @@
   background-color: var(--reserva-color);
 }
 
-.reserva-line.operational-block {
+.reserva-line.operational-block,
+.legend-color.operational-block {
   background: repeating-linear-gradient(
     135deg,
     var(--reserva-color) 0,
@@ -53,6 +54,17 @@
   box-shadow: inset 0 0 0 1px var(--reserva-color);
 }
 
+.reserva-line.operational-block.late-checkout-block,
+.legend-color.operational-block.late-checkout-block {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--reserva-color) 0,
+    var(--reserva-color) 4px,
+    #fff 4px,
+    #fff 7px
+  );
+}
+
 /* MIDDLE day in the range: fill the entire cell horizontally */
 .reserva-line.middle {
   left: 0;
@@ -61,7 +73,7 @@
 
 /* START day: fill from 50% to the right edge */
 .reserva-line.start {
-  left: 55%;
+  left: 50%;
   right: 0;
   border-top-left-radius: 5px;
   border-bottom-left-radius: 5px;
@@ -70,9 +82,21 @@
 /* END day: fill from left edge to 50% */
 .reserva-line.end {
   left: 0;
-  right: 55%;
+  right: 50%;
   border-top-right-radius: 5px;
   border-bottom-right-radius: 5px;
+}
+
+.reserva-line.start.joins-operational,
+.reserva-line.operational-block.late-checkout-block.start {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.reserva-line.end.joins-operational,
+.reserva-line.operational-block.early-checkin-block.end {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 /* Single-day reservation: basically a small circle in the center */
@@ -93,14 +117,9 @@
 }
 
 .legend-color.operational-block {
-  background: repeating-linear-gradient(
-    135deg,
-    #495057 0,
-    #495057 4px,
-    #fff 4px,
-    #fff 7px
-  );
+  --reserva-color: #495057;
   border: 1px solid #495057;
+  box-shadow: none;
 }
 
 .highlight {

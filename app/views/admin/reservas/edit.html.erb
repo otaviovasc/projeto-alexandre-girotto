@@ -560,8 +560,15 @@
 
 <script>
   // Array para armazenar os novos serviços adicionados
-  let addedServices = [];
-  let serviceIndex = <%= @reserva.reserva_services.size %>;
+  var addedServices = [];
+  var serviceIndex = <%= @reserva.reserva_services.size %>;
+
+  function normalizeServiceSearch(value) {
+    return (value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  }
 
   document.addEventListener("turbo:load", function() {
     // Resetar estado dos serviços a cada carregamento de página (evita acumular entre reservas)
@@ -586,7 +593,7 @@
       allowClear: true,
       matcher: function(params, data) {
         if (data.element?.disabled) return null;
-        if (!params.term || data.text.toLowerCase().includes(params.term.toLowerCase())) return data;
+        if (!params.term || normalizeServiceSearch(data.text).includes(normalizeServiceSearch(params.term))) return data;
         return null;
       }
     });
@@ -650,7 +657,7 @@
     const serviceId = selectEl.value;
     const selectedOption = selectEl.options[selectEl.selectedIndex];
     const serviceName = selectedOption.dataset.name;
-    const servicePrice = parseFloat(selectedOption.dataset.price);
+    const servicePrice = Number(String(selectedOption?.dataset.price || '').replace(',', '.'));
     const serviceDate = dateInput.value;
     const quantity = parseInt(quantityInput.value) || 1;
     const observation = observationInput ? observationInput.value.trim() : '';
@@ -658,6 +665,10 @@
     // Validações
     if (!serviceId) {
       alert('Por favor, selecione um serviço.');
+      return;
+    }
+    if (!Number.isFinite(servicePrice)) {
+      alert('Não foi possível identificar o preço deste serviço. Atualize a página e tente novamente.');
       return;
     }
     if (!serviceDate) {

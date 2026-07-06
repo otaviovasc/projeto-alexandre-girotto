@@ -376,6 +376,7 @@ class IcalReservationImporter
   def missing_import_scope
     Reserva.where(cabana_id: @cabana.id)
            .where('LOWER(origem) = ?', @platform)
+           .where(blocks_availability: true)
            .where(payment_status: %w[pending waiting_payment paid])
            .where('end_date > ?', @today)
            .where('start_date <= ?', @today + @lookahead)

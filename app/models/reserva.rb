@@ -92,9 +92,11 @@ class Reserva < ApplicationRecord
   def available?
     check_and_cancel_expired_reservations
 
+    return true unless blocks_availability?
     return false if cabana.blank? || availability_range.blank?
 
     overlapping_reservas = Reserva.where(cabana_id: cabana.id)
+                                  .where(blocks_availability: true)
                                   .where(payment_status: [:pending, :waiting_payment, :paid])
     overlapping_reservas = overlapping_reservas.where.not(id: id) if persisted?
 
@@ -154,9 +156,11 @@ class Reserva < ApplicationRecord
   def dates_available
     # Ignora validação se for reserva importada
     return if imported?
+    return unless blocks_availability?
     return if cabana.blank? || availability_range.blank?
 
     overlapping_reservas = Reserva.where(cabana_id: cabana.id)
+                                  .where(blocks_availability: true)
                                   .where(payment_status: [:pending, :waiting_payment, :paid])
     
     # Exclui a própria reserva quando está editando (não é novo registro)
@@ -220,7 +224,7 @@ class Reserva < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    ["breakfast_manual_override", "cabana_id", "created_at", "early_checkin", "end_date", "group_created", "guest_name", "guest_phone", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "late_checkout", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_max_installments", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
+    ["blocks_availability", "breakfast_manual_override", "cabana_id", "created_at", "early_checkin", "end_date", "group_created", "guest_name", "guest_phone", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "late_checkout", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_max_installments", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
   end
 
   private
@@ -235,6 +239,8 @@ class Reserva < ApplicationRecord
   end
 
   def ensure_required_cleaning_services
+    return unless blocks_availability?
+
     CleaningServicesAssigner.new(self).call
   end
 
@@ -248,6 +254,8 @@ class Reserva < ApplicationRecord
   end
 
   def ensure_required_cleaning_services_after_schedule_change
+    return unless blocks_availability?
+
     force_dates = saved_change_to_start_date? || saved_change_to_end_date? || saved_change_to_cabana_id?
     CleaningServicesAssigner.new(self, force_dates: force_dates).call
   end
@@ -275,6 +283,7 @@ class Reserva < ApplicationRecord
 
   def validate_imported_extension(attribute, extension_range)
     occupied = Reserva.where(cabana_id: cabana_id, payment_status: [:pending, :waiting_payment, :paid])
+                       .where(blocks_availability: true)
     occupied = occupied.where.not(id: id) if persisted?
     return unless occupied.any? do |reserva|
       existing_range = reserva.availability_range
@@ -294,7 +303,7 @@ class Reserva < ApplicationRecord
   end
 
   def set_default_fields
-    self.observation ||= 'sistema'
+    self.observation ||= 'Sistema'
     self.origem ||= 'sistema'
   end
 
