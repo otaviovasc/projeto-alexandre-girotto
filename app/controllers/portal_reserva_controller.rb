@@ -45,7 +45,7 @@ class PortalReservaController < ApplicationController
 
     @reserva = Reserva.includes(:user, cabana: :filial).find(session[:portal_reserva_id])
     expire_stale_portal_cart_items(@reserva)
-    @purchased_services_count = purchased_portal_services(@reserva).count
+    @purchased_services_count = reservation_services_for_portal(@reserva).count + operational_services_for_portal(@reserva).count
   end
 
   # GET /minha-reserva/comprados
@@ -55,7 +55,8 @@ class PortalReservaController < ApplicationController
     end
 
     @reserva = Reserva.includes(:user, cabana: :filial).find(session[:portal_reserva_id])
-    @purchased_services = purchased_portal_services(@reserva)
+    @purchased_services = reservation_services_for_portal(@reserva)
+    @operational_services = operational_services_for_portal(@reserva)
   end
 
   # GET /minha-reserva/servicos
@@ -349,11 +350,18 @@ class PortalReservaController < ApplicationController
                   .order(:service_date, :id)
   end
 
-  def purchased_portal_services(reserva)
+  def reservation_services_for_portal(reserva)
     reserva.reserva_services
            .includes(:service)
-           .where(payment_status: "paid")
            .order(:service_date, :id)
+           .reject { |reserva_service| CleaningServicesAssigner.cleaning_service?(reserva_service.service) }
+  end
+
+  def operational_services_for_portal(reserva)
+    services = []
+    services << { name: "Early check-in", date: reserva.start_date } if reserva.early_checkin?
+    services << { name: "Late checkout", date: reserva.end_date } if reserva.late_checkout?
+    services
   end
 
   def purchase_payment_status(purchased_services)
