@@ -7,6 +7,7 @@ class Partnership::ReservasController < ApplicationController
   helper ReservasHelper
 
   before_action :authorize_partnership_access
+  before_action :set_partnership_reserva, only: [:edit, :update]
 
   def index
     @reference_date = partnership_reference_date
@@ -54,7 +55,32 @@ class Partnership::ReservasController < ApplicationController
     end
   end
 
+  def edit
+  end
+
+  def update
+    if @reserva.update(partnership_date_params)
+      if GoogleSheetsExportService.configured?
+        GoogleSheetsExportService.export_reservas(
+          Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
+        )
+      end
+
+      redirect_to partnership_dashboard_path(
+        start_date: @reserva.start_date.beginning_of_month,
+        anchor: 'calendario-parcerias'
+      ), notice: 'Datas da parceria atualizadas com sucesso.'
+    else
+      flash.now[:alert] = "Não foi possível alterar as datas: #{@reserva.errors.full_messages.join(', ')}"
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
   private
+
+  def set_partnership_reserva
+    @reserva = partnership_reserva_scope.find(params[:id])
+  end
 
   def authorize_partnership_access
     return if current_user&.partnership_agent? || current_user&.admin?
@@ -208,5 +234,9 @@ class Partnership::ReservasController < ApplicationController
 
   def partnership_user_params
     params.require(:user).permit(:email, :name, :telephone)
+  end
+
+  def partnership_date_params
+    params.require(:reserva).permit(:start_date, :end_date)
   end
 end

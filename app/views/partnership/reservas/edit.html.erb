@@ -1,0 +1,45 @@
+<div class="container py-4" style="max-width: 720px;">
+  <div class="d-flex align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h1 class="h3 mb-1">Alterar datas da parceria</h1>
+      <p class="text-muted mb-0">Reserva #<%= @reserva.id %></p>
+    </div>
+    <%= link_to partnership_dashboard_path, class: 'btn btn-outline-secondary', title: 'Voltar' do %>
+      <i class="bi bi-arrow-left"></i>
+      Voltar
+    <% end %>
+  </div>
+
+  <div class="border rounded bg-white p-4 shadow-sm">
+    <dl class="row mb-4">
+      <dt class="col-sm-3 text-muted">Hóspede</dt>
+      <dd class="col-sm-9"><%= @reserva.user.name.presence || @reserva.user.email %></dd>
+      <dt class="col-sm-3 text-muted">Cabana</dt>
+      <dd class="col-sm-9"><%= @reserva.cabana.name %></dd>
+    </dl>
+
+    <%= form_with model: @reserva, url: partnership_reserva_path(@reserva), method: :patch, local: true do |form| %>
+      <% if @reserva.errors.any? %>
+        <div class="alert alert-danger">
+          <%= @reserva.errors.full_messages.join(', ') %>
+        </div>
+      <% end %>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= form.label :start_date, 'Check-in', class: 'form-label fw-semibold' %>
+          <%= form.date_field :start_date, class: 'form-control', required: true %>
+        </div>
+        <div class="col-md-6">
+          <%= form.label :end_date, 'Check-out', class: 'form-label fw-semibold' %>
+          <%= form.date_field :end_date, class: 'form-control', required: true %>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 mt-4">
+        <%= form.submit 'Salvar novas datas', class: 'btn btn-primary' %>
+        <%= link_to 'Cancelar', partnership_dashboard_path, class: 'btn btn-outline-secondary' %>
+      </div>
+    <% end %>
+  </div>
+</div>

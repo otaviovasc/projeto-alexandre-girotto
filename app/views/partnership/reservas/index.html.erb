@@ -138,6 +138,7 @@
             <% if current_user.admin? %>
               <th>Criada por</th>
             <% end %>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -168,11 +169,19 @@
                 <% if current_user.admin? %>
                   <td><%= reserva.partnership_creator&.name || reserva.partnership_creator&.email || '-' %></td>
                 <% end %>
+                <td>
+                  <%= link_to edit_partnership_reserva_path(reserva),
+                      class: 'btn btn-sm btn-outline-primary',
+                      title: 'Alterar datas' do %>
+                    <i class="bi bi-calendar-event"></i>
+                    Alterar datas
+                  <% end %>
+                </td>
               </tr>
             <% end %>
           <% else %>
             <tr>
-              <td colspan="<%= current_user.admin? ? 11 : 10 %>" class="text-center text-muted py-4">
+              <td colspan="<%= current_user.admin? ? 12 : 11 %>" class="text-center text-muted py-4">
                 Nenhuma parceria criada ainda.
               </td>
             </tr>

@@ -23,7 +23,7 @@ Rails.application.routes.draw do
 
   get 'parcerias', to: 'partnership/reservas#index', as: :partnership_dashboard
   namespace :partnership, path: 'parcerias' do
-    resources :reservas, only: [:create]
+    resources :reservas, only: [:create, :edit, :update]
   end
   get 'parcerias/nova-reserva', to: 'partnership/reservas#new', as: :new_partnership_reserva
 
