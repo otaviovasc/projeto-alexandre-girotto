@@ -361,7 +361,10 @@ class PortalReservaController < ApplicationController
     return true if CleaningServicesAssigner.cleaning_service?(service)
 
     normalized_name = service.name.to_s.parameterize
-    normalized_name.include?("enviar") && normalized_name.include?("avaliacao")
+    evaluation_service = normalized_name.include?("enviar") && normalized_name.include?("avaliacao")
+    charge_service = normalized_name.split("-").include?("cobrar")
+
+    evaluation_service || charge_service
   end
 
   def operational_services_for_portal(reserva)

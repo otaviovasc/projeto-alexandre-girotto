@@ -54,6 +54,18 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
       quantity: 1,
       service_date: reserva.end_date
     )
+    charge_service = Service.create!(
+      name: "Cobrar",
+      price: 0,
+      filial: regular_service.filial,
+      user: regular_service.user
+    )
+    charge_item = ReservaService.create!(
+      reserva: reserva,
+      service: charge_service,
+      quantity: 1,
+      service_date: reserva.end_date
+    )
     reserva.update_columns(early_checkin: true, late_checkout: true)
     controller = PortalReservaController.new
 
@@ -63,6 +75,7 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     assert_includes services.map(&:service), regular_service
     assert_not_includes services, cleaning_item
     assert_not_includes services, evaluation_item
+    assert_not_includes services, charge_item
     assert_equal ["Early check-in", "Late checkout"], operational_services.map { |service| service[:name] }
   end
 end
