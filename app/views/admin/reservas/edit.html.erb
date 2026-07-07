@@ -477,6 +477,7 @@
                           data-name="<%= service.name %>" 
                           data-price="<%= displayed_price %>"
                           data-filial-id="<%= service.filial_id %>"
+                          data-free-date="<%= ReservaService.free_date_service?(service) %>"
                           data-region="<%= service.region %>">
                     <%= service.name %> - R$ <%= number_with_precision(displayed_price, precision: 2) %> (<%= service.region %>)
                   </option>
@@ -601,6 +602,8 @@
     const serviceSelect = document.getElementById('service-select');
     const cabanaSelect = document.getElementById('reserva_cabana_id');
 
+    serviceSelect?.addEventListener('change', updateServiceDateBounds);
+
     function applyServiceFilial(filialId) {
       serviceSelect.querySelectorAll('option').forEach(option => {
         if (!option.value) return;
@@ -628,9 +631,18 @@
 
   function updateServiceDateBounds() {
     const dateInput = document.getElementById('service-date-input');
+    const serviceSelect = document.getElementById('service-select');
+    const freeDate = serviceSelect?.selectedOptions[0]?.dataset.freeDate === 'true';
     const startDate = document.getElementById('start_date')?.value;
     const endDate = document.getElementById('end_date')?.value;
     if (!dateInput) return;
+
+    if (freeDate) {
+      dateInput.disabled = false;
+      dateInput.removeAttribute('min');
+      dateInput.removeAttribute('max');
+      return;
+    }
 
     if (!startDate || !endDate) {
       dateInput.value = '';
@@ -659,6 +671,7 @@
     const serviceName = selectedOption.dataset.name;
     const servicePrice = Number(String(selectedOption?.dataset.price || '').replace(',', '.'));
     const serviceDate = dateInput.value;
+    const freeDate = selectedOption?.dataset.freeDate === 'true';
     const quantity = parseInt(quantityInput.value) || 1;
     const observation = observationInput ? observationInput.value.trim() : '';
 
@@ -677,7 +690,7 @@
     }
     const startDate = document.getElementById('start_date')?.value;
     const endDate = document.getElementById('end_date')?.value;
-    if (serviceDate < startDate || serviceDate > endDate) {
+    if (!freeDate && (serviceDate < startDate || serviceDate > endDate)) {
       alert('A data do serviço deve estar entre o check-in e o check-out da reserva.');
       return;
     }

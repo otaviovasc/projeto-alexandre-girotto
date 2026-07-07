@@ -27,6 +27,15 @@ class ReservaService < ApplicationRecord
     update!(status: 'cancelled')
   end
 
+  def self.free_date_service?(service)
+    normalized_name = I18n.transliterate(service&.name.to_s)
+                          .downcase
+                          .gsub(/[^a-z0-9]+/, ' ')
+                          .squish
+
+    normalized_name.split.any? { |word| word.start_with?('cobr') }
+  end
+
   private
 
   def cleaning_service?
@@ -39,6 +48,7 @@ class ReservaService < ApplicationRecord
 
   def service_date_within_official_stay
     return if cleaning_service?
+    return if self.class.free_date_service?(service)
     return if reserva.blank? || reserva.start_date.blank? || reserva.end_date.blank? || service_date.blank?
     return if service_date.between?(reserva.start_date, reserva.end_date)
 
