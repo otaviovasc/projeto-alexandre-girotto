@@ -237,6 +237,6 @@ class Partnership::ReservasController < ApplicationController
   end
 
   def partnership_date_params
-    params.require(:reserva).permit(:start_date, :end_date)
+    params.require(:reserva).permit(:cabana_id, :start_date, :end_date)
   end
 end

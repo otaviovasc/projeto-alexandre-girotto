@@ -198,6 +198,45 @@ class CleaningServicesAssignerTest < ActiveSupport::TestCase
     assert_nil saida.observation
   end
 
+  test "replaces cleaning services when reservation changes region" do
+    mg_filial = Filial.create!(name: "Serra da Mantiqueira")
+    sp_filial = Filial.create!(name: "Fattoria di Braúna")
+    mg_cabana = Cabana.create!(name: "Cabana MG troca", price: 100, filial: mg_filial)
+    sp_cabana = Cabana.create!(name: "Cabana SP troca", price: 100, filial: sp_filial)
+    user = create_user("guest-change-region@example.com")
+
+    [
+      ["➡️ Limpeza Entrada (MG)", mg_filial],
+      ["⬅️ Limpeza de Saida (MG)", mg_filial],
+      ["➡️ Limpeza Entrada (SP)", sp_filial],
+      ["⬅️ Limpeza de Saida (SP)", sp_filial]
+    ].each do |name, filial|
+      Service.create!(
+        name: name,
+        price: 0,
+        filial: filial,
+        user: create_user("#{name.parameterize}-change-region@example.com")
+      )
+    end
+
+    reserva = Reserva.create!(
+      cabana: mg_cabana,
+      user: user,
+      start_date: Date.new(2026, 10, 10),
+      end_date: Date.new(2026, 10, 12),
+      payment_status: "paid",
+      total_price: 0
+    )
+
+    reserva.update!(cabana: sp_cabana)
+
+    service_names = reserva.reload.services.pluck(:name)
+    assert_includes service_names, "➡️ Limpeza Entrada (SP)"
+    assert_includes service_names, "⬅️ Limpeza de Saida (SP)"
+    assert_not_includes service_names, "➡️ Limpeza Entrada (MG)"
+    assert_not_includes service_names, "⬅️ Limpeza de Saida (MG)"
+  end
+
   private
 
   def create_cleaning_services(filial)

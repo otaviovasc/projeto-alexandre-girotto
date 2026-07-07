@@ -20,6 +20,7 @@ class Partnership::ReservasControllerTest < ActionDispatch::IntegrationTest
     )
     filial = Filial.create!(name: "Filial parceria")
     cabana = Cabana.create!(name: "Cabana parceria", price: 100, filial: filial)
+    @new_cabana = Cabana.create!(name: "Nova cabana parceria", price: 150, filial: filial)
     @reserva = Reserva.create!(
       cabana: cabana,
       user: guest,
@@ -38,6 +39,7 @@ class Partnership::ReservasControllerTest < ActionDispatch::IntegrationTest
       reserva: {
         start_date: "2027-09-15",
         end_date: "2027-09-17",
+        cabana_id: @new_cabana.id,
         total_price: 99_999
       }
     }
@@ -49,6 +51,7 @@ class Partnership::ReservasControllerTest < ActionDispatch::IntegrationTest
     @reserva.reload
     assert_equal Date.new(2027, 9, 15), @reserva.start_date
     assert_equal Date.new(2027, 9, 17), @reserva.end_date
+    assert_equal @new_cabana, @reserva.cabana
     assert_equal 0, @reserva.total_price
   end
 end

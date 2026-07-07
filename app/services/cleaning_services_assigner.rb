@@ -57,6 +57,8 @@ class CleaningServicesAssigner
   end
 
   def call
+    remove_cleaning_services_from_other_regions
+
     rules.each do |rule|
       service = service_matching(rule[:service_key])
       next unless service
@@ -70,6 +72,18 @@ class CleaningServicesAssigner
   end
 
   private
+
+  def remove_cleaning_services_from_other_regions
+    desired_service_keys = rules.map { |rule| rule[:service_key] }
+    return if desired_service_keys.empty?
+
+    @reserva.reserva_services.includes(:service).each do |reserva_service|
+      next unless self.class.cleaning_service?(reserva_service.service)
+      next if desired_service_keys.include?(self.class.service_key(reserva_service.service.name))
+
+      reserva_service.destroy!
+    end
+  end
 
   def assign_date(reserva_service, expected_date)
     manual_override = reserva_service.respond_to?(:manual_date_override?) &&
