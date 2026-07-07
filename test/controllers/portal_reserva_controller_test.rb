@@ -26,7 +26,7 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     assert_not controller.send(:decoration_service_for_observation?, Service.new(name: "Passeio a Cavalo"))
   end
 
-  test "shows linked services except cleaning and includes operational services" do
+  test "shows guest services while hiding internal services" do
     reserva = reservas(:one)
     regular_service = services(:one)
     regular_service.update_column(:name, "Passeio a Cavalo")
@@ -42,6 +42,18 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
       quantity: 1,
       service_date: reserva.start_date
     )
+    evaluation_service = Service.create!(
+      name: "Enviar Avaliação",
+      price: 0,
+      filial: regular_service.filial,
+      user: regular_service.user
+    )
+    evaluation_item = ReservaService.create!(
+      reserva: reserva,
+      service: evaluation_service,
+      quantity: 1,
+      service_date: reserva.end_date
+    )
     reserva.update_columns(early_checkin: true, late_checkout: true)
     controller = PortalReservaController.new
 
@@ -50,6 +62,7 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
 
     assert_includes services.map(&:service), regular_service
     assert_not_includes services, cleaning_item
+    assert_not_includes services, evaluation_item
     assert_equal ["Early check-in", "Late checkout"], operational_services.map { |service| service[:name] }
   end
 end

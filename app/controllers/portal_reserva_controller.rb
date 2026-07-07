@@ -354,7 +354,14 @@ class PortalReservaController < ApplicationController
     reserva.reserva_services
            .includes(:service)
            .order(:service_date, :id)
-           .reject { |reserva_service| CleaningServicesAssigner.cleaning_service?(reserva_service.service) }
+           .reject { |reserva_service| internal_service_for_portal?(reserva_service.service) }
+  end
+
+  def internal_service_for_portal?(service)
+    return true if CleaningServicesAssigner.cleaning_service?(service)
+
+    normalized_name = service.name.to_s.parameterize
+    normalized_name.include?("enviar") && normalized_name.include?("avaliacao")
   end
 
   def operational_services_for_portal(reserva)
