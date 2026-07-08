@@ -26,6 +26,19 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     assert_not controller.send(:decoration_service_for_observation?, Service.new(name: "Passeio a Cavalo"))
   end
 
+  test "requires and includes the fondue choice in the observation" do
+    controller = PortalReservaController.new
+    service = Service.new(name: "Kit de Fondue")
+    controller.params = ActionController::Parameters.new(
+      fondue_choice: "chocolate",
+      observation: "Sem lactose"
+    )
+
+    assert controller.send(:fondue_service?, service)
+    assert controller.send(:food_service_for_observation?, service)
+    assert_equal "Fondue: chocolate. Sem lactose", controller.send(:observation_for_service, service)
+  end
+
   test "shows guest services while hiding internal services" do
     reserva = reservas(:one)
     regular_service = services(:one)

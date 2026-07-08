@@ -2,7 +2,7 @@ class PortalReservaController < ApplicationController
   layout "portal_reserva"
   skip_before_action :authenticate_user!
   before_action :ensure_service_purchase_window_open!, only: [:servicos, :adicionar, :remover, :pagar]
-  helper_method :food_service_for_observation?, :decoration_service_for_observation?, :service_price_for
+  helper_method :food_service_for_observation?, :decoration_service_for_observation?, :fondue_service?, :service_price_for
 
   # GET /minha-reserva
   def index
@@ -94,6 +94,12 @@ class PortalReservaController < ApplicationController
     service  = @reserva.cabana.filial.services.find(params[:service_id])
     quantity = 1
     service_dates_param = params[:service_dates] || []
+
+    if fondue_service?(service) && fondue_choice.blank?
+      flash[:alert] = "Escolha se deseja fondue de queijo ou de chocolate."
+      redirect_to portal_reserva_servicos_path and return
+    end
+
     observation = observation_for_service(service)
 
     if service_dates_param.include?("all_days")
@@ -239,9 +245,13 @@ class PortalReservaController < ApplicationController
   def food_service_for_observation?(service)
     normalized_name = service.name.to_s.parameterize
 
-    ["almoco", "jantar", "piquenique", "cafe-da-manha"].any? do |keyword|
+    ["almoco", "jantar", "piquenique", "cafe-da-manha", "fondue"].any? do |keyword|
       normalized_name.include?(keyword)
     end
+  end
+
+  def fondue_service?(service)
+    service.name.to_s.parameterize.include?("fondue")
   end
 
   def decoration_service_for_observation?(service)
@@ -255,7 +265,17 @@ class PortalReservaController < ApplicationController
   def observation_for_service(service)
     return unless food_service_for_observation?(service) || decoration_service_for_observation?(service)
 
-    params[:observation].to_s.strip.presence
+    notes = []
+    notes << "Fondue: #{fondue_choice}" if fondue_service?(service)
+    notes << params[:observation].to_s.strip if params[:observation].present?
+    notes.join(". ").presence
+  end
+
+  def fondue_choice
+    {
+      "queijo" => "queijo",
+      "chocolate" => "chocolate"
+    }[params[:fondue_choice].to_s]
   end
 
   def service_price_for(service, reserva = @reserva)
