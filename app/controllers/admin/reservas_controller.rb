@@ -99,7 +99,7 @@ class Admin::ReservasController < ApplicationController
         BreakfastServicesAssigner.new(@reserva, source: 'sistema').add_if_configured
       end
 
-      sync_all_reservas_to_sheets
+      sync_all_reservas_to_sheets if @reserva.integration_ready?
 
       message = if @reserva.blocks_availability?
                   'Reserva criada e datas bloqueadas com sucesso.'
@@ -150,7 +150,7 @@ class Admin::ReservasController < ApplicationController
       end
       BreakfastServicesAssigner.new(@reserva).remove_automatic_services if @reserva.user&.partner?
 
-      GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)) if GoogleSheetsExportService.configured?
+      sync_all_reservas_to_sheets if @reserva.integration_ready?
       
       redirect_to admin_reservas_summary_path, notice: 'Reserva foi atualizada com sucesso.'
     else

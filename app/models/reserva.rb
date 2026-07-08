@@ -36,6 +36,8 @@ class Reserva < ApplicationRecord
     canceled: 'canceled'
   }
 
+  scope :integration_ready, -> { where(reservas: { payment_status: 'paid', blocks_availability: true }) }
+
   before_create :set_default_fields
   before_create :set_default_payment_status
   before_validation :normalize_guest_details
@@ -105,6 +107,10 @@ class Reserva < ApplicationRecord
       return false if existing_range.present? && availability_range.overlaps?(existing_range)
     end
     true
+  end
+
+  def integration_ready?
+    paid? && blocks_availability?
   end
 
   def availability_start_date
@@ -198,7 +204,7 @@ class Reserva < ApplicationRecord
   end
 
   def fnrh_eligible?
-    group_created? && paid? && end_date.present? && end_date >= Date.current && !partnership_reservation?
+    group_created? && integration_ready? && end_date.present? && end_date >= Date.current && !partnership_reservation?
   end
 
   def fnrh_status_label

@@ -285,9 +285,13 @@
   }
 </style>
 
+<% partnership_form = @partnership_form.present? %>
+<% form_url = partnership_form ? partnership_reserva_path(@reserva) : admin_reserva_path(@reserva) %>
+<% back_path = partnership_form ? partnership_dashboard_path : admin_reservas_summary_path %>
+
 <div class="reserva-edit-container">
   <div class="form-card">
-    <h1 class="form-title">✏️ Editar Reserva #<%= @reserva.id %></h1>
+    <h1 class="form-title">✏️ Editar <%= partnership_form ? 'Parceria' : 'Reserva' %> #<%= @reserva.id %></h1>
     <p class="form-subtitle">Atualize as informações da reserva</p>
 
     <% if @reserva.errors.any? %>
@@ -301,7 +305,7 @@
       </div>
     <% end %>
 
-    <%= form_with model: [:admin, @reserva], local: true do |form| %>
+    <%= form_with model: @reserva, url: form_url, method: :patch, local: true do |form| %>
       
       <!-- Informações Básicas -->
       <div class="form-section">
@@ -316,16 +320,19 @@
 
           <div class="form-group">
             <%= form.label :user_id, 'Hóspede *', class: 'form-label' %>
-            <%= form.collection_select :user_id, User.all, :id, :email, { prompt: 'Selecione' }, { class: 'form-control', required: true, id: 'user_select' } %>
+            <% user_collection = partnership_form ? User.clients.order(:name, :email) : User.all %>
+            <%= form.collection_select :user_id, user_collection, :id, :email, { prompt: 'Selecione' }, { class: 'form-control', required: true, id: 'user_select' } %>
           </div>
         </div>
 
-        <div class="form-check">
-          <%= form.fields_for :user do |user_fields| %>
-            <%= user_fields.check_box :partner, class: 'form-check-input', id: 'partner_checkbox' %>
-            <%= user_fields.label :partner, 'Marcar como Parceiro', class: 'form-check-label' %>
-          <% end %>
-        </div>
+        <% unless partnership_form %>
+          <div class="form-check">
+            <%= form.fields_for :user do |user_fields| %>
+              <%= user_fields.check_box :partner, class: 'form-check-input', id: 'partner_checkbox' %>
+              <%= user_fields.label :partner, 'Marcar como Parceiro', class: 'form-check-label' %>
+            <% end %>
+          </div>
+        <% end %>
 
         <% if @reserva.imported? %>
           <div class="form-section" style="margin-top: 1.5rem; margin-bottom: 0;">
@@ -359,6 +366,10 @@
                  data-reserva-id="<%= @reserva.id %>" />
           <%= form.hidden_field :start_date, id: "start_date", required: true %>
           <%= form.hidden_field :end_date, id: "end_date", required: true %>
+          <div class="operational-calendar-legend">
+            <span><i class="operational-calendar-swatch"></i> Early check-in</span>
+            <span><i class="operational-calendar-swatch late"></i> Late checkout</span>
+          </div>
         </div>
 
         <div class="form-row">
@@ -521,10 +532,12 @@
       <!-- Ações -->
       <div class="form-actions">
         <%= form.submit '💾 Salvar Alterações', class: 'btn btn-primary' %>
-        <%= link_to export_sheets_admin_reservas_path(redirect_to: 'edit', id: @reserva.id), class: 'btn btn-warning', data: { turbo_method: :get } do %>
-          <i class="bi bi-cloud-upload"></i> Sincronizar com Sheets
+        <% unless partnership_form %>
+          <%= link_to export_sheets_admin_reservas_path(redirect_to: 'edit', id: @reserva.id), class: 'btn btn-warning', data: { turbo_method: :get } do %>
+            <i class="bi bi-cloud-upload"></i> Sincronizar com Sheets
+          <% end %>
         <% end %>
-        <%= link_to '← Voltar', admin_reservas_summary_path, class: 'btn btn-secondary' %>
+        <%= link_to '← Voltar', back_path, class: 'btn btn-secondary' %>
       </div>
     <% end %>
   </div>
@@ -798,9 +811,13 @@
       if (!cabanaId) return;
 
       // Passa o ID da reserva para excluir suas próprias datas
-      fetch(`/cabanas/${cabanaId}/unavailable_dates?exclude_reserva_id=${currentReservaId}`)
+      fetch(`/cabanas/${cabanaId}/unavailable_dates?exclude_reserva_id=${currentReservaId}&details=true`)
         .then(response => response.json())
-        .then(disabledDates => {
+        .then(payload => {
+          const disabledDates = Array.isArray(payload) ? payload : payload.disabled_dates;
+          const operationalBlocks = Array.isArray(payload) ? [] : payload.operational_blocks;
+          const blocksByDate = new Map(operationalBlocks.map(block => [block.date, block]));
+
           if (dateRangeInput._flatpickr) {
             dateRangeInput._flatpickr.destroy();
           }
@@ -835,6 +852,22 @@
               }
             },
             onDayCreate: function(dObj, dStr, fp, dayElem) {
+              const dateKey = fp.formatDate(dayElem.dateObj, 'Y-m-d');
+              const operationalBlock = blocksByDate.get(dateKey);
+
+              if (operationalBlock) {
+                const className = operationalBlock.type === 'early_checkin'
+                  ? 'early-checkin-blocked'
+                  : 'late-checkout-blocked';
+                const label = operationalBlock.type === 'early_checkin'
+                  ? 'Early check-in: diária anterior bloqueada'
+                  : 'Late checkout: diária seguinte bloqueada';
+
+                dayElem.classList.add(className);
+                dayElem.style.setProperty('--operational-color', operationalBlock.color || '#334155');
+                dayElem.title = label;
+              }
+
               dayElem.addEventListener('mouseenter', function() {
                 if (fp.selectedDates.length === 1) {
                   dayElem.classList.remove('flatpickr-disabled');

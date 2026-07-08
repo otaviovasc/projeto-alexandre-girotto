@@ -20,7 +20,7 @@ module Fnrh
     private
 
     def run_reservation_syncs
-      Reserva.where(fnrh_reservation_id: nil, payment_status: 'paid', group_created: true)
+      Reserva.integration_ready.where(fnrh_reservation_id: nil, group_created: true)
              .where.not(fnrh_status: %w[error precheckin_bypassed duplicate_in_fnrh])
              .where('end_date >= ?', Date.current)
              .find_each do |reserva|

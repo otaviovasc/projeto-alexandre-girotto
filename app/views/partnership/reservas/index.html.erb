@@ -158,6 +158,9 @@
                   <span class="badge <%= badge_class(reserva.payment_status) %>">
                     <%= status_translate(reserva.payment_status) %>
                   </span>
+                  <% unless reserva.blocks_availability? %>
+                    <span class="badge bg-light text-dark border">Não bloqueia datas</span>
+                  <% end %>
                 </td>
                 <td><%= number_to_currency(reserva.total_price, unit: 'R$') %></td>
                 <td>
@@ -175,6 +178,16 @@
                       title: 'Alterar parceria' do %>
                     <i class="bi bi-calendar-event"></i>
                     Alterar
+                  <% end %>
+                  <% if reserva.pending? && !reserva.blocks_availability? %>
+                    <%= button_to confirm_reservation_partnership_reserva_path(reserva),
+                        method: :patch,
+                        class: 'btn btn-sm btn-success mt-1',
+                        form_class: 'd-inline',
+                        data: { turbo_confirm: 'Confirmar a parceria e bloquear estas datas?' } do %>
+                      <i class="bi bi-calendar-check"></i>
+                      Reservado
+                    <% end %>
                   <% end %>
                 </td>
               </tr>

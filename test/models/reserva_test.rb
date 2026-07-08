@@ -119,6 +119,8 @@ class ReservaTest < ActiveSupport::TestCase
     )
 
     assert candidate.valid?
+    assert_not pending.integration_ready?
+    assert_not_includes Reserva.integration_ready, pending
   end
 
   test "pending reservation cannot be confirmed when dates became occupied" do
@@ -139,6 +141,20 @@ class ReservaTest < ActiveSupport::TestCase
 
     assert_not pending.valid?
     assert_includes pending.errors[:base], "A Cabana está indisponível na data selecionada."
+  end
+
+  test "confirmed reservation is ready for external integrations" do
+    filial = Filial.create!(name: "Filial integrada")
+    cabana = Cabana.create!(name: "Cabana integrada", price: 100, filial: filial)
+    confirmed = create_reserva(
+      cabana,
+      "integration-ready@example.com",
+      Date.new(2027, 12, 10),
+      Date.new(2027, 12, 12)
+    )
+
+    assert confirmed.integration_ready?
+    assert_includes Reserva.integration_ready, confirmed
   end
 
   private

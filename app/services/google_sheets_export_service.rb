@@ -22,7 +22,13 @@ class GoogleSheetsExportService
   
   class << self
     def export_reservas(reservas)
-      new.export(reservas)
+      ready_reservas = if reservas.respond_to?(:where)
+                         reservas.where(reservas: { payment_status: 'paid', blocks_availability: true })
+                       else
+                         Array(reservas).select(&:integration_ready?)
+                       end
+
+      new.export(ready_reservas)
     end
 
     def delete_reserva(reserva_id)

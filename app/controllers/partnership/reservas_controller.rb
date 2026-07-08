@@ -7,7 +7,7 @@ class Partnership::ReservasController < ApplicationController
   helper ReservasHelper
 
   before_action :authorize_partnership_access
-  before_action :set_partnership_reserva, only: [:edit, :update]
+  before_action :set_partnership_reserva, only: [:edit, :update, :confirm_reservation]
 
   def index
     @reference_date = partnership_reference_date
@@ -21,7 +21,7 @@ class Partnership::ReservasController < ApplicationController
 
     @monthly_goal_rows = partnership_monthly_goal_rows
     @yearly_summary_rows = partnership_yearly_summary_rows
-    @reservas_calendar = Reserva.includes(:cabana).where(payment_status: 'paid')
+    @reservas_calendar = Reserva.includes(:cabana).integration_ready
     @top_offset = calendar_top_offsets(@reservas_calendar)
   end
 
@@ -38,9 +38,11 @@ class Partnership::ReservasController < ApplicationController
 
     @user.update_column(:partner, true) unless @user.partner?
 
+    pending = params[:reservation_state] == 'pending'
     @reserva = Reserva.new(partnership_reserva_params.except(:user_id).merge(
       user: @user,
-      payment_status: 'paid',
+      payment_status: pending ? 'pending' : 'paid',
+      blocks_availability: !pending,
       observation: partnership_reserva_params[:observation].presence || 'Parceria',
       origem: 'sistema',
       partnership_creator: current_user
@@ -48,31 +50,61 @@ class Partnership::ReservasController < ApplicationController
     @reserva.total_price = @reserva.calculate_total_price! if @reserva.total_price.blank?
 
     if @reserva.save
-      GoogleSheetsExportService.export_reservas(Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)) if GoogleSheetsExportService.configured?
-      redirect_to partnership_dashboard_path, notice: 'Reserva de parceria criada com sucesso.'
+      sync_all_reservas_to_sheets if @reserva.integration_ready?
+      notice = pending ? 'Parceria salva como pendente, sem bloquear datas.' : 'Reserva de parceria criada com sucesso.'
+      redirect_to partnership_dashboard_path, notice: notice
     else
       render_new_with_error("Não foi possível salvar a reserva. Verifique os dados informados: #{@reserva.errors.full_messages.join(', ')}")
     end
   end
 
   def edit
+    setup_edit_form
+    render template: 'admin/reservas/edit'
   end
 
   def update
-    if @reserva.update(partnership_date_params)
-      if GoogleSheetsExportService.configured?
-        GoogleSheetsExportService.export_reservas(
-          Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
-        )
-      end
+    attrs = partnership_reserva_params
+    selected_user = User.clients.find_by(id: attrs[:user_id])
+    unless selected_user
+      setup_edit_form
+      flash.now[:alert] = 'Selecione um hóspede válido.'
+      render template: 'admin/reservas/edit', status: :unprocessable_entity
+      return
+    end
+
+    selected_user.update_column(:partner, true) unless selected_user.partner?
+
+    if @reserva.update(attrs.merge(user_id: selected_user.id))
+      BreakfastServicesAssigner.new(@reserva).remove_automatic_services
+      sync_all_reservas_to_sheets if @reserva.integration_ready?
 
       redirect_to partnership_dashboard_path(
         start_date: @reserva.start_date.beginning_of_month,
         anchor: 'calendario-parcerias'
-      ), notice: 'Datas da parceria atualizadas com sucesso.'
+      ), notice: 'Parceria atualizada com sucesso.'
     else
-      flash.now[:alert] = "Não foi possível alterar as datas: #{@reserva.errors.full_messages.join(', ')}"
-      render :edit, status: :unprocessable_entity
+      setup_edit_form
+      flash.now[:alert] = "Não foi possível alterar a parceria: #{@reserva.errors.full_messages.join(', ')}"
+      render template: 'admin/reservas/edit', status: :unprocessable_entity
+    end
+  end
+
+  def confirm_reservation
+    unless @reserva.pending? && !@reserva.blocks_availability?
+      redirect_to partnership_dashboard_path, alert: 'Esta parceria não está pendente de confirmação.'
+      return
+    end
+
+    @reserva.assign_attributes(payment_status: 'paid', blocks_availability: true)
+
+    if @reserva.save
+      CleaningServicesAssigner.new(@reserva).call
+      sync_all_reservas_to_sheets
+      redirect_to partnership_dashboard_path, notice: 'Parceria confirmada e datas bloqueadas.'
+    else
+      redirect_to partnership_dashboard_path,
+                  alert: "Não foi possível reservar estas datas: #{@reserva.errors.full_messages.join(', ')}"
     end
   end
 
@@ -113,7 +145,7 @@ class Partnership::ReservasController < ApplicationController
 
   def partnership_monthly_goal_rows
     month_range = @reference_date.beginning_of_month..@reference_date.end_of_month
-    counts_by_filial = partnership_reserva_scope
+    counts_by_filial = partnership_reserva_scope.integration_ready
                        .joins(cabana: :filial)
                        .where(start_date: month_range)
                        .group('filials.name')
@@ -144,7 +176,7 @@ class Partnership::ReservasController < ApplicationController
     year_range = Date.new(@summary_year, 1, 1)..Date.new(@summary_year, 12, 31)
     counts_by_month_and_filial = Hash.new { |hash, key| hash[key] = Hash.new(0) }
 
-    partnership_reserva_scope
+    partnership_reserva_scope.integration_ready
       .includes(cabana: :filial)
       .where(start_date: year_range)
       .each do |reserva|
@@ -210,6 +242,19 @@ class Partnership::ReservasController < ApplicationController
     @services = Service.all
   end
 
+  def setup_edit_form
+    @partnership_form = true
+    @services = Service.order(:name)
+  end
+
+  def sync_all_reservas_to_sheets
+    return unless GoogleSheetsExportService.configured?
+
+    GoogleSheetsExportService.export_reservas(
+      Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
+    )
+  end
+
   def render_new_with_error(message)
     setup_form
     @creating_new_guest = params[:create_user] == 'true'
@@ -236,7 +281,4 @@ class Partnership::ReservasController < ApplicationController
     params.require(:user).permit(:email, :name, :telephone)
   end
 
-  def partnership_date_params
-    params.require(:reserva).permit(:cabana_id, :start_date, :end_date)
-  end
 end

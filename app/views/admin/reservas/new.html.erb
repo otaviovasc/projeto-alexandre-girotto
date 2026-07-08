@@ -81,6 +81,10 @@
       <input type="text" id="reservation_date_range" placeholder="Selecione as datas" class="form-control" required />
       <%= form.hidden_field :start_date, id: "start_date", required: true %>
       <%= form.hidden_field :end_date, id: "end_date", required: true %>
+      <div class="operational-calendar-legend">
+        <span><i class="operational-calendar-swatch"></i> Early check-in</span>
+        <span><i class="operational-calendar-swatch late"></i> Late checkout</span>
+      </div>
     </div>
 
     <div class="row mb-3">
@@ -180,7 +184,8 @@
     <!-- Botões -->
     <div class="d-flex gap-2 mt-4">
       <% if partnership_form %>
-        <%= form.submit 'Criar Reserva de Parceria', class: 'btn btn-primary', id: 'submit_btn' %>
+        <%= form.button 'Reservado', name: 'reservation_state', value: 'confirmed', class: 'btn btn-primary', id: 'submit_btn' %>
+        <%= form.button 'Salvar como pendente', name: 'reservation_state', value: 'pending', class: 'btn btn-outline-warning' %>
       <% else %>
         <%= form.button 'Reservado', name: 'reservation_state', value: 'confirmed', class: 'btn btn-primary', id: 'submit_btn' %>
         <%= form.button 'Salvar como pendente', name: 'reservation_state', value: 'pending', class: 'btn btn-outline-warning' %>
@@ -449,9 +454,13 @@
     function initializeFlatpickr(cabanaId) {
       if (!cabanaId) return;
 
-      fetch(`/cabanas/${cabanaId}/unavailable_dates`)
+      fetch(`/cabanas/${cabanaId}/unavailable_dates?details=true`)
         .then(response => response.json())
-        .then(disabledDates => {
+        .then(payload => {
+          const disabledDates = Array.isArray(payload) ? payload : payload.disabled_dates;
+          const operationalBlocks = Array.isArray(payload) ? [] : payload.operational_blocks;
+          const blocksByDate = new Map(operationalBlocks.map(block => [block.date, block]));
+
           if (dateRangeInput._flatpickr) {
             dateRangeInput._flatpickr.destroy();
           }
@@ -479,6 +488,22 @@
               }
             },
             onDayCreate: function (dObj, dStr, fp, dayElem) {
+              const dateKey = fp.formatDate(dayElem.dateObj, 'Y-m-d');
+              const operationalBlock = blocksByDate.get(dateKey);
+
+              if (operationalBlock) {
+                const className = operationalBlock.type === 'early_checkin'
+                  ? 'early-checkin-blocked'
+                  : 'late-checkout-blocked';
+                const label = operationalBlock.type === 'early_checkin'
+                  ? 'Early check-in: diária anterior bloqueada'
+                  : 'Late checkout: diária seguinte bloqueada';
+
+                dayElem.classList.add(className);
+                dayElem.style.setProperty('--operational-color', operationalBlock.color || '#334155');
+                dayElem.title = label;
+              }
+
               dayElem.addEventListener('mouseenter', function () {
                 if (fp.selectedDates.length === 1) {
                   dayElem.classList.remove('flatpickr-disabled');

@@ -201,11 +201,27 @@ class ReservasController < ApplicationController
     start_dates = []
     # Collection of dates that are already an end date for some reservation
     end_dates = []
+    operational_blocks = []
 
     # Categorize dates
     reservas.each do |reserva|
       availability_start = reserva.availability_start_date
       availability_end = reserva.availability_end_date
+
+      if reserva.early_checkin?
+        operational_blocks << {
+          date: reserva.early_checkin_block_date,
+          type: 'early_checkin',
+          color: reserva.cabana.color
+        }
+      end
+      if reserva.late_checkout?
+        operational_blocks << {
+          date: reserva.late_checkout_block_date,
+          type: 'late_checkout',
+          color: reserva.cabana.color
+        }
+      end
 
       if availability_start == availability_end
         # Single day reservation - fully unavailable
@@ -221,9 +237,16 @@ class ReservasController < ApplicationController
       end
     end
 
-    # Return a simple list of unavailable dates for now
-    # We'll process this more intelligently in the frontend
-    render json: fully_unavailable_dates + start_dates
+    disabled_dates = (fully_unavailable_dates + start_dates).compact.uniq
+
+    if ActiveModel::Type::Boolean.new.cast(params[:details])
+      render json: {
+        disabled_dates: disabled_dates,
+        operational_blocks: operational_blocks
+      }
+    else
+      render json: disabled_dates
+    end
   end
 
 
