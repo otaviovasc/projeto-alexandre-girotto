@@ -1,4 +1,6 @@
 class Admin::ReservasController < ApplicationController
+  RESERVAS_SUMMARY_RECENT_LIMIT = 20
+
   before_action :authenticate_user!
   before_action :authorize_admin
   before_action :set_reserva, only: [
@@ -189,23 +191,28 @@ class Admin::ReservasController < ApplicationController
 
     @q = Reserva.active_for_operations.ransack(summary_ransack_params)
     filtered_reservas = apply_general_search(@q.result)
-    @reservas = filtered_reservas.includes(:cabana, :user)
-                 .order(Arel.sql(
-                   "CASE " \
-                   "WHEN group_created = FALSE THEN 0 " \
-                   "WHEN ical_date_change_since IS NOT NULL THEN 1 " \
-                   "WHEN ical_missing_since IS NOT NULL THEN 2 " \
-                   "ELSE 3 END ASC"
-                 ))
-                 .order(updated_at: :desc)
 
     # Estatísticas úteis
-    @total_reservas = @reservas.count
-    @total_receita  = @reservas.sum(:total_price)
-    @reservas_por_status = @reservas.unscope(:order).group(:payment_status).count
-    @reservas_por_cabana = @reservas.unscope(:order).joins(:cabana).group('cabanas.name').count
+    @total_reservas = filtered_reservas.count
+    @total_receita  = filtered_reservas.sum(:total_price)
+    @reservas_por_status = filtered_reservas.unscope(:order).group(:payment_status).count
+    @reservas_por_cabana = filtered_reservas.unscope(:order).joins(:cabana).group('cabanas.name').count
 
-    @reservas_calendar = Reserva.includes(:cabana).integration_ready
+    @summary_list_limited = summary_list_limited?
+    @reservas = summary_list_scope(filtered_reservas)
+                .includes(:cabana, :user)
+                .order(summary_priority_order)
+                .order(updated_at: :desc)
+    @displayed_reservas_count = @reservas.size
+
+    @calendar_start_date = summary_calendar_start_date
+    calendar_start = @calendar_start_date.beginning_of_month.beginning_of_week
+    calendar_end = @calendar_start_date.end_of_month.end_of_week
+
+    @reservas_calendar = Reserva.includes(:cabana)
+                                 .integration_ready
+                                 .where('start_date <= ? AND end_date >= ?', calendar_end + 1.day, calendar_start - 1.day)
+                                 .order(:start_date)
 
     cabana_ids = @reservas_calendar.map(&:cabana_id).uniq
     @top_offset = {}
@@ -533,15 +540,49 @@ class Admin::ReservasController < ApplicationController
   end
 
   def check_reservations_on_new
-    @reservas = Reserva.active_for_operations.where('end_date > ?', Date.today)
-    @reservas.each do |reserva|
-      if reserva.expired? && (reserva.waiting_payment? || reserva.pending?)
-        reserva.update_column(:payment_status, 'canceled')
-      end
-    end
+    Reserva.active_for_operations
+           .where(payment_status: %w[pending waiting_payment])
+           .where.not(payment_expires_at: nil)
+           .where('payment_expires_at < ?', Time.current)
+           .update_all(payment_status: 'canceled', updated_at: Time.current)
   end
 
   private
+
+  def summary_priority_order
+    Arel.sql(
+      "CASE " \
+      "WHEN group_created = FALSE THEN 0 " \
+      "WHEN ical_date_change_since IS NOT NULL THEN 1 " \
+      "WHEN ical_missing_since IS NOT NULL THEN 2 " \
+      "ELSE 3 END ASC"
+    )
+  end
+
+  def summary_list_limited?
+    params[:search].blank? && summary_ransack_params.to_h.values.all?(&:blank?)
+  end
+
+  def summary_list_scope(scope)
+    return scope unless summary_list_limited?
+
+    priority_scope = scope.where(
+      'group_created = FALSE OR ical_date_change_since IS NOT NULL OR ical_missing_since IS NOT NULL'
+    )
+    priority_ids = priority_scope.pluck(:id)
+    recent_ids = scope.where.not(id: priority_ids)
+                      .order(updated_at: :desc)
+                      .limit(RESERVAS_SUMMARY_RECENT_LIMIT)
+                      .pluck(:id)
+
+    scope.where(id: priority_ids + recent_ids)
+  end
+
+  def summary_calendar_start_date
+    Date.parse(params[:start_date].to_s)
+  rescue ArgumentError, TypeError
+    Date.current
+  end
 
   def load_new_form_collections
     @services = Service.order(:name)

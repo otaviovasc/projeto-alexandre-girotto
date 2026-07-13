@@ -92,6 +92,7 @@
   <div class="container my-8 p-4 bg-light shadow-sm">
     <%= month_calendar(
           events: @reservas_calendar,
+          start_date: @calendar_start_date,
           attribute: :availability_start_date,
           end_attribute: :availability_end_date,
           previous_link: "<i class='bi bi-arrow-left'></i>".html_safe,
@@ -223,6 +224,16 @@
     <div class="card-header bg-dark text-white">
       <h5 class="mb-0">Lista de Reservas</h5>
     </div>
+    <% if @summary_list_limited %>
+      <div class="alert alert-light border mb-0 rounded-0">
+        Mostrando reservas sem grupo, alertas do iCal e as <%= Admin::ReservasController::RESERVAS_SUMMARY_RECENT_LIMIT %> reservas normais mais recentes.
+        Para encontrar reservas antigas, use a busca.
+      </div>
+    <% else %>
+      <div class="alert alert-light border mb-0 rounded-0">
+        Mostrando <%= @displayed_reservas_count %> de <%= @total_reservas %> reserva(s) encontradas.
+      </div>
+    <% end %>
     <div class="table-responsive">
       <table class="table table-striped align-middle">
         <thead class="table-dark">
