@@ -84,7 +84,7 @@ class GoogleSheetsExportService
 
       result = service.append_spreadsheet_value(
         @spreadsheet_id,
-        quoted_range(sheet_title, 'A:F'),
+        quoted_range(sheet_title, 'A:G'),
         value_range,
         value_input_option: 'USER_ENTERED',
         insert_data_option: 'INSERT_ROWS'
@@ -123,12 +123,12 @@ class GoogleSheetsExportService
         'Check-in', 'Check-out', 'Noites', 'Valor', 'Status Pagamento',
         'Nome Serviço', 'Data Serviço', 'Quantidade', 'Status Serviço', 
         'Valor Serviço', 'Observação', 'Data Criação', 'Observação de Serviços',
-        'Grupo Criado', 'Nome Real do Hóspede', 'Telefone Real do Hóspede'
+        'Grupo Criado', 'Nome Real do Hóspede', 'Telefone Real do Hóspede', 'PDF Fotos'
       ]
       rows = export_service.generate_array
 
       # Limpa a planilha e insere novos dados
-      clear_range = 'A:W'
+      clear_range = 'A:X'
       service.clear_values(@spreadsheet_id, clear_range)
 
       # Insere headers + dados
@@ -238,8 +238,8 @@ class GoogleSheetsExportService
   end
 
   def ensure_service_purchases_headers!(service, sheet_title)
-    response = service.get_spreadsheet_values(@spreadsheet_id, quoted_range(sheet_title, 'A1:F1'))
-    headers = ['ID DA RESERVA', 'NOME DO CLIENTE', 'SERVICO', 'QUANTIDADE', 'VALOR', 'OBSERVACAO']
+    response = service.get_spreadsheet_values(@spreadsheet_id, quoted_range(sheet_title, 'A1:G1'))
+    headers = ['ID DA RESERVA', 'NOME DO CLIENTE', 'SERVICO', 'QUANTIDADE', 'VALOR', 'OBSERVACAO', 'PDF FOTOS']
     current_headers = Array(response.values&.first)
     return if current_headers == headers
 
@@ -247,7 +247,7 @@ class GoogleSheetsExportService
 
     service.update_spreadsheet_value(
       @spreadsheet_id,
-      quoted_range(sheet_title, 'A1:F1'),
+      quoted_range(sheet_title, 'A1:G1'),
       value_range,
       value_input_option: 'USER_ENTERED'
     )
@@ -261,7 +261,8 @@ class GoogleSheetsExportService
         reserva_service.service.name,
         reserva_service.quantity,
         format_currency(reserva_service.total_paid || ((reserva_service.unit_price_paid || reserva_service.service.price_for(reserva_service.reserva) || 0) * (reserva_service.quantity || 1))),
-        reserva_service.observation.presence || '-'
+        reserva_service.observation.presence || '-',
+        reserva_service.photo_print_pdf_download_url.presence || '-'
       ]
     end
   end

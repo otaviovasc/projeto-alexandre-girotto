@@ -67,7 +67,8 @@ class ReservasExportService
       'Observação de Serviços',
       'Grupo Criado',
       'Nome Real do Hóspede',
-      'Telefone Real do Hóspede'
+      'Telefone Real do Hóspede',
+      'PDF Fotos'
     ]
   end
 
@@ -97,7 +98,8 @@ class ReservasExportService
       '-',
       group_created_label(reserva),
       reserva.guest_name,
-      reserva.guest_phone
+      reserva.guest_phone,
+      '-'
     ]
   end
 
@@ -125,7 +127,8 @@ class ReservasExportService
       rs.observation.presence || '-',
       group_created_label(reserva),
       reserva.guest_name,
-      reserva.guest_phone
+      reserva.guest_phone,
+      rs.photo_print_pdf_download_url.presence || '-'
     ]
   end
 

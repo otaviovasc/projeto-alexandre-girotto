@@ -16,11 +16,13 @@ class ReservasExportServiceTest < ActiveSupport::TestCase
     assert_equal 'Grupo Criado', headers[20]
     assert_equal 'Nome Real do Hóspede', headers[21]
     assert_equal 'Telefone Real do Hóspede', headers[22]
+    assert_equal 'PDF Fotos', headers[23]
 
     rows.each do |row|
       assert_equal 'Sim', row[20]
       assert_equal 'Bruna Ferreira', row[21]
       assert_equal '11999999999', row[22]
+      assert_equal '-', row[23]
     end
   end
 end

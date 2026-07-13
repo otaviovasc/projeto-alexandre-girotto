@@ -4,6 +4,9 @@ class CartItem < ApplicationRecord
   belongs_to :service, optional: true
   belongs_to :reserva
 
+  has_many_attached :photo_print_images
+  has_one_attached :photo_print_pdf
+
   validate :item_or_service_present
 
   private

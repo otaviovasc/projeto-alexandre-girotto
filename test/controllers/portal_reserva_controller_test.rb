@@ -39,6 +39,22 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Fondue: chocolate. Sem lactose", controller.send(:observation_for_service, service)
   end
 
+  test "requires photos for printed photos service" do
+    controller = PortalReservaController.new
+    service = Service.new(name: "Fotos Impressas (até 3)")
+
+    assert controller.send(:photo_print_service?, service)
+    assert_equal "Envie as fotos para comprar Fotos Impressas.", controller.send(:photo_print_upload_error, service, [])
+  end
+
+  test "limits printed photos to three uploads" do
+    controller = PortalReservaController.new
+    service = Service.new(name: "Fotos Impressas")
+    uploads = Array.new(4) { Struct.new(:content_type, :size).new("image/jpeg", 100) }
+
+    assert_equal "Envie no máximo 3 fotos.", controller.send(:photo_print_upload_error, service, uploads)
+  end
+
   test "shows guest services while hiding internal services" do
     reserva = reservas(:one)
     regular_service = services(:one)

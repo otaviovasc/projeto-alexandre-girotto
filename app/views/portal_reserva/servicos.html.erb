@@ -91,7 +91,7 @@
                     </div>
 
                     <div class="border-t border-gray-100 bg-[#faf9f6] px-4 py-4">
-                      <%= form_with url: portal_reserva_adicionar_path, method: :post, local: true, class: "space-y-3" do |f| %>
+                      <%= form_with url: portal_reserva_adicionar_path, method: :post, local: true, multipart: true, class: "space-y-3" do |f| %>
                         <%= f.hidden_field :service_id, value: service.id %>
                         <%= f.hidden_field :quantity, value: 1 %>
 
@@ -131,6 +131,20 @@
                                 placeholder: food_service_for_observation?(service) ? "Ex: intolerância à lactose, alergia a castanhas, sem cebola..." : "Ex: escrever 'Feliz aniversário' e preparar durante o passeio a cavalo...",
                                 class: "w-full bg-white border border-gray-200 text-gray-700 placeholder-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] transition resize-none" %>
                             <p class="text-gray-400 text-[11px] mt-1">Essa observação será enviada junto com o serviço.</p>
+                          </div>
+                        <% end %>
+
+                        <% if photo_print_service?(service) %>
+                          <div data-photo-print-field>
+                            <label for="service_<%= service.id %>_photo_print_images" class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Fotos para impressão</label>
+                            <%= file_field_tag "photo_print_images[]",
+                                id: "service_#{service.id}_photo_print_images",
+                                multiple: true,
+                                required: true,
+                                accept: "image/jpeg,image/png",
+                                data: { photo_print_input: true },
+                                class: "w-full bg-white border border-gray-200 text-gray-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] transition file:mr-3 file:rounded file:border-0 file:bg-[#eef2ed] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#1a2e1a]" %>
+                            <p class="text-gray-400 text-[11px] mt-1" data-photo-print-feedback>Envie de 1 a 3 fotos. Com 3 fotos, a terceira será virada para horizontal no PDF.</p>
                           </div>
                         <% end %>
 
@@ -185,6 +199,9 @@
                   <% if first_item.observation.present? %>
                     <p class="text-xs text-gray-500 mt-1 leading-snug">Obs: <%= first_item.observation %></p>
                   <% end %>
+                  <% if first_item.respond_to?(:photo_print_pdf) && first_item.photo_print_pdf.attached? %>
+                    <p class="text-xs text-[#7a571d] mt-1 leading-snug">PDF das fotos anexado</p>
+                  <% end %>
                 </div>
                 <div class="flex flex-col items-end gap-1 shrink-0">
                   <span class="text-sm font-semibold text-[#1a2e1a]"><%= number_to_currency(subtotal) %></span>
@@ -224,3 +241,110 @@
     </div>
   </div>
 </div>
+
+<script>
+  (function() {
+    function setupPhotoPrintInputs() {
+      document.querySelectorAll("[data-photo-print-input]").forEach(function(input) {
+        if (input.dataset.photoPrintReady === "true") return;
+        input.dataset.photoPrintReady = "true";
+
+        input.addEventListener("change", function() {
+          preparePhotoPrintFiles(input);
+        });
+      });
+    }
+
+    async function preparePhotoPrintFiles(input) {
+      var wrapper = input.closest("[data-photo-print-field]");
+      var feedback = wrapper ? wrapper.querySelector("[data-photo-print-feedback]") : null;
+      var files = Array.from(input.files || []);
+
+      input.setCustomValidity("");
+
+      if (files.length > 3) {
+        input.setCustomValidity("Envie no máximo 3 fotos.");
+        if (feedback) feedback.textContent = "Envie no máximo 3 fotos.";
+        return;
+      }
+
+      if (!files.length || typeof DataTransfer === "undefined") return;
+
+      if (feedback) feedback.textContent = "Preparando fotos...";
+
+      try {
+        var compressedFiles = await Promise.all(files.map(function(file, index) {
+          return compressPhoto(file, files.length === 3 && index === 2);
+        }));
+        var dataTransfer = new DataTransfer();
+        compressedFiles.forEach(function(file) {
+          dataTransfer.items.add(file);
+        });
+        input.files = dataTransfer.files;
+        if (feedback) feedback.textContent = files.length === 3 ? "Fotos prontas. A terceira será impressa na horizontal." : "Fotos prontas para gerar o PDF.";
+      } catch (_error) {
+        input.setCustomValidity("Não foi possível preparar as fotos. Tente enviar JPG ou PNG.");
+        if (feedback) feedback.textContent = "Não foi possível preparar as fotos. Tente enviar JPG ou PNG.";
+      }
+    }
+
+    function compressPhoto(file, rotate) {
+      return new Promise(function(resolve, reject) {
+        if (!/^image\/(jpeg|png)$/.test(file.type)) {
+          reject(new Error("Formato inválido"));
+          return;
+        }
+
+        var image = new Image();
+        var url = URL.createObjectURL(file);
+
+        image.onload = function() {
+          URL.revokeObjectURL(url);
+
+          var maxSide = 1800;
+          var width = image.naturalWidth || image.width;
+          var height = image.naturalHeight || image.height;
+          var scale = Math.min(1, maxSide / Math.max(width, height));
+          var drawWidth = Math.round(width * scale);
+          var drawHeight = Math.round(height * scale);
+          var canvas = document.createElement("canvas");
+
+          canvas.width = rotate ? drawHeight : drawWidth;
+          canvas.height = rotate ? drawWidth : drawHeight;
+
+          var context = canvas.getContext("2d");
+          context.fillStyle = "#ffffff";
+          context.fillRect(0, 0, canvas.width, canvas.height);
+
+          if (rotate) {
+            context.translate(canvas.width / 2, canvas.height / 2);
+            context.rotate(Math.PI / 2);
+            context.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+          } else {
+            context.drawImage(image, 0, 0, drawWidth, drawHeight);
+          }
+
+          canvas.toBlob(function(blob) {
+            if (!blob) {
+              reject(new Error("Imagem inválida"));
+              return;
+            }
+
+            var filename = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+            resolve(new File([blob], filename, { type: "image/jpeg", lastModified: Date.now() }));
+          }, "image/jpeg", 0.82);
+        };
+
+        image.onerror = function() {
+          URL.revokeObjectURL(url);
+          reject(new Error("Imagem inválida"));
+        };
+
+        image.src = url;
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", setupPhotoPrintInputs);
+    document.addEventListener("turbo:load", setupPhotoPrintInputs);
+  })();
+</script>

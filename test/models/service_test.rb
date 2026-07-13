@@ -30,6 +30,11 @@ class ServiceTest < ActiveSupport::TestCase
     assert_equal "Decorações e surpresas", Service.new(name: "Fotos Impressas (até 3)").portal_category
   end
 
+  test "recognizes printed photos service" do
+    assert Service.new(name: "Fotos Impressas (até 3)").photo_print_service?
+    assert_not Service.new(name: "Decoração de Pétalas e Luzinhas").photo_print_service?
+  end
+
   test "shows the correct people label in the portal" do
     assert_equal "Para até 2 pessoas", Service.new(name: "Trilha a Pé").portal_people_label
     assert_equal "Para 1 pessoa", Service.new(name: "Massagem para uma pessoa").portal_people_label

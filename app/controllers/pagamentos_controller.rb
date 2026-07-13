@@ -93,7 +93,7 @@ class PagamentosController < ApplicationController
             quantity: cart_item.quantity
           )
         elsif cart_item.service.present?
-          created_reserva_services << ReservaService.create!(
+          reserva_service = ReservaService.create!(
             reserva: cart_item.reserva,
             service: cart_item.service,
             quantity: cart_item.quantity,
@@ -109,6 +109,8 @@ class PagamentosController < ApplicationController
             paid_at: Time.current,
             observation: cart_item.observation.presence
           )
+          copy_photo_print_attachments(cart_item, reserva_service)
+          created_reserva_services << reserva_service
         end
 
         increment_reserva_total!(cart_item.reserva, cart_item.total_paid)
@@ -224,5 +226,13 @@ class PagamentosController < ApplicationController
     Rails.logger.warn("Google Sheets service purchases export failed: #{result[:error]}") unless result[:success]
   rescue => e
     Rails.logger.error("Google Sheets service purchases export error: #{e.message}")
+  end
+
+  def copy_photo_print_attachments(cart_item, reserva_service)
+    if cart_item.photo_print_images.attached?
+      reserva_service.photo_print_images.attach(cart_item.photo_print_images.attachments.map(&:blob))
+    end
+
+    reserva_service.photo_print_pdf.attach(cart_item.photo_print_pdf.blob) if cart_item.photo_print_pdf.attached?
   end
 end

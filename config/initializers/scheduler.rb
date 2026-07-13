@@ -23,3 +23,12 @@ scheduler.every '5m' do
     Rails.logger.error "Erro nas automações da FNRH: #{e.message}"
   end
 end
+
+scheduler.every '1d', first_in: '15m' do
+  Rails.logger.info 'Limpando PDFs antigos de fotos impressas...'
+  begin
+    PhotoPrintAttachmentCleanup.run
+  rescue => e
+    Rails.logger.error "Erro na limpeza de fotos impressas: #{e.message}"
+  end
+end

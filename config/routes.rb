@@ -91,6 +91,12 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :reserva_services, only: [] do
+      member do
+        get :photo_print_pdf
+      end
+    end
+
     resources :service_purchases, only: [:index]
 
     resources :filials do

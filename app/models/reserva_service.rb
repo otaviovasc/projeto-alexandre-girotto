@@ -4,6 +4,9 @@ class ReservaService < ApplicationRecord
   belongs_to :reserva
   belongs_to :service
 
+  has_many_attached :photo_print_images
+  has_one_attached :photo_print_pdf
+
   enum status: {
     active: 'active',
     cancelled: 'cancelled',
@@ -34,6 +37,19 @@ class ReservaService < ApplicationRecord
                           .squish
 
     normalized_name.split.any? { |word| word.start_with?('cobr') }
+  end
+
+  def photo_print_pdf_download_url
+    return unless photo_print_pdf.attached?
+
+    host = ENV['APP_HOST'].presence || ENV['RENDER_EXTERNAL_HOSTNAME'].presence || 'villaggio-stock.onrender.com'
+    host = host.sub(%r{\Ahttps?://}, '')
+
+    Rails.application.routes.url_helpers.photo_print_pdf_admin_reserva_service_url(
+      self,
+      host: host,
+      protocol: 'https'
+    )
   end
 
   private

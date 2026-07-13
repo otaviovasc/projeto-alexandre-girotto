@@ -2,7 +2,12 @@ class PortalReservaController < ApplicationController
   layout "portal_reserva"
   skip_before_action :authenticate_user!
   before_action :ensure_service_purchase_window_open!, only: [:servicos, :adicionar, :remover, :pagar]
-  helper_method :food_service_for_observation?, :decoration_service_for_observation?, :fondue_service?, :service_price_for
+  helper_method :food_service_for_observation?, :decoration_service_for_observation?,
+                :fondue_service?, :photo_print_service?, :service_price_for
+
+  PARTNER_SERVICE_CREDIT_CARD_INTEREST_RATE = 3
+  PHOTO_PRINT_ALLOWED_CONTENT_TYPES = %w[image/jpeg image/png].freeze
+  PHOTO_PRINT_MAX_FILE_SIZE = 10.megabytes
 
   # GET /minha-reserva
   def index
@@ -94,9 +99,15 @@ class PortalReservaController < ApplicationController
     service  = @reserva.cabana.filial.services.find(params[:service_id])
     quantity = 1
     service_dates_param = params[:service_dates] || []
+    photo_uploads = photo_print_uploads
 
     if fondue_service?(service) && fondue_choice.blank?
       flash[:alert] = "Escolha se deseja fondue de queijo ou de chocolate."
+      redirect_to portal_reserva_servicos_path and return
+    end
+
+    if (photo_print_error = photo_print_upload_error(service, photo_uploads))
+      flash[:alert] = photo_print_error
       redirect_to portal_reserva_servicos_path and return
     end
 
@@ -114,19 +125,34 @@ class PortalReservaController < ApplicationController
     end
 
     success = true
-    dates_to_add.each do |date|
-      # Valida se a data está dentro do período da reserva
-      if date >= @reserva.start_date && date <= @reserva.end_date
-        cart_item = portal_cart_items(@reserva).new(
-          cart:         portal_cart(@reserva),
-          reserva:      @reserva,
-          service:      service,
-          quantity:     quantity,
-          service_date: date,
-          observation:   observation
-        )
-        success = false unless cart_item.save
+    created_cart_items = []
+
+    begin
+      CartItem.transaction do
+        dates_to_add.each do |date|
+          # Valida se a data está dentro do período da reserva
+          if date >= @reserva.start_date && date <= @reserva.end_date
+            cart_item = portal_cart_items(@reserva).new(
+              cart:         portal_cart(@reserva),
+              reserva:      @reserva,
+              service:      service,
+              quantity:     quantity,
+              service_date: date,
+              observation:   observation
+            )
+            if cart_item.save
+              created_cart_items << cart_item
+            else
+              success = false
+            end
+          end
+        end
+
+        attach_photo_print_files!(created_cart_items, photo_uploads) if success && photo_print_service?(service)
       end
+    rescue PhotoPrintPdfGenerator::Error => e
+      flash[:alert] = e.message
+      redirect_to portal_reserva_servicos_path and return
     end
 
     if success
@@ -254,6 +280,10 @@ class PortalReservaController < ApplicationController
     service.name.to_s.parameterize.include?("fondue")
   end
 
+  def photo_print_service?(service)
+    service.respond_to?(:photo_print_service?) ? service.photo_print_service? : service.name.to_s.parameterize.match?(/foto.*impress/)
+  end
+
   def decoration_service_for_observation?(service)
     normalized_name = service.name.to_s.parameterize
 
@@ -306,7 +336,8 @@ class PortalReservaController < ApplicationController
       success_url: portal_reserva_confirmacao_url(codigo: order_code),
       failure_url: portal_reserva_servicos_url,
       expires_in: expires_in,
-      max_installments: @reserva.service_max_installments
+      max_installments: @reserva.service_max_installments,
+      credit_card_interest_rate: service_credit_card_interest_rate
     ).call
 
     payment_expires_at = expires_in.minutes.from_now
@@ -473,5 +504,41 @@ class PortalReservaController < ApplicationController
       unit_price: @portal_cart_items.sum { |reserva_service| service_price_for(reserva_service.service) * reserva_service.quantity },
       quantity: 1
     }]
+  end
+
+  def photo_print_uploads
+    Array(params[:photo_print_images]).reject(&:blank?)
+  end
+
+  def photo_print_upload_error(service, uploads)
+    return unless photo_print_service?(service)
+    return "Envie as fotos para comprar Fotos Impressas." if uploads.empty?
+    return "Envie no máximo 3 fotos." if uploads.size > 3
+
+    invalid_type = uploads.any? { |upload| !PHOTO_PRINT_ALLOWED_CONTENT_TYPES.include?(upload.content_type.to_s) }
+    return "Envie fotos em JPG ou PNG." if invalid_type
+
+    oversized = uploads.any? { |upload| upload.respond_to?(:size) && upload.size.to_i > PHOTO_PRINT_MAX_FILE_SIZE }
+    return "Cada foto pode ter no máximo 10 MB." if oversized
+  end
+
+  def attach_photo_print_files!(cart_items, uploads)
+    raise PhotoPrintPdfGenerator::Error, "Envie as fotos para comprar Fotos Impressas." if cart_items.blank?
+
+    primary_item = cart_items.first
+    primary_item.photo_print_images.attach(uploads)
+    PhotoPrintPdfGenerator.new(primary_item).call
+
+    image_blobs = primary_item.photo_print_images.attachments.map(&:blob)
+    pdf_blob = primary_item.photo_print_pdf.blob
+
+    cart_items.drop(1).each do |cart_item|
+      cart_item.photo_print_images.attach(image_blobs)
+      cart_item.photo_print_pdf.attach(pdf_blob)
+    end
+  end
+
+  def service_credit_card_interest_rate
+    @reserva.partnership_reservation? ? PARTNER_SERVICE_CREDIT_CARD_INTEREST_RATE : 0
   end
 end

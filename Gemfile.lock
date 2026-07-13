@@ -251,7 +251,12 @@ GEM
     pagarme (2.4.0)
       multi_json
       rest-client
+    pdf-core (0.10.0)
     pg (1.5.6)
+    prawn (2.5.0)
+      matrix (~> 0.4)
+      pdf-core (~> 0.10.0)
+      ttfunk (~> 1.8)
     psych (5.1.2)
       stringio
     public_suffix (6.0.1)
@@ -364,6 +369,7 @@ GEM
       actionpack (>= 6.0.0)
       activejob (>= 6.0.0)
       railties (>= 6.0.0)
+    ttfunk (1.8.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     uber (0.1.0)
@@ -411,6 +417,7 @@ DEPENDENCIES
   multi_xml (= 0.7.1)
   pagarme (= 2.4.0)
   pg
+  prawn (~> 2.5)
   puma (~> 5.0)
   rails (~> 7.0.8, >= 7.0.8.4)
   ransack

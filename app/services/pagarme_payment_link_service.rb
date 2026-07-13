@@ -16,7 +16,7 @@ class PagarmePaymentLinkService
     end
   end
 
-  def initialize(api_key:, name:, order_code:, items:, success_url:, failure_url: success_url, expires_in: 30, max_installments: 1)
+  def initialize(api_key:, name:, order_code:, items:, success_url:, failure_url: success_url, expires_in: 30, max_installments: 1, credit_card_interest_rate: 0)
     @api_key = api_key.to_s.strip
     @name = name
     @order_code = order_code
@@ -25,6 +25,7 @@ class PagarmePaymentLinkService
     @failure_url = failure_url
     @expires_in = expires_in
     @max_installments = max_installments.to_i.clamp(1, 12)
+    @credit_card_interest_rate = BigDecimal(credit_card_interest_rate.to_s).clamp(0, 100)
   end
 
   def call
@@ -82,7 +83,7 @@ class PagarmePaymentLinkService
         credit_card_settings: {
           installments_setup: {
             interest_type: 'simple',
-            interest_rate: 0,
+            interest_rate: @credit_card_interest_rate.to_f,
             max_installments: @max_installments,
             amount: amount_in_cents
           },

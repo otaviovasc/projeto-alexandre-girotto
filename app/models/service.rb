@@ -61,6 +61,10 @@ class Service < ApplicationRecord
     filial&.region.presence || region
   end
 
+  def photo_print_service?
+    name.to_s.parameterize.match?(/foto.*impress/)
+  end
+
   def self.ransackable_attributes(auth_object = nil)
     ["created_at", "description", "duration", "end_time", "filial_id", "id", "name", "partner_price", "price", "region", "show_in_marketplace", "start_time", "updated_at", "user_id"]
   end

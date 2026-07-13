@@ -495,6 +495,14 @@
               📝 <%= rs.observation %>
             </div>
           <% end %>
+          <% if rs.photo_print_pdf.attached? %>
+            <div style="padding: 0.35rem 0.5rem 0.75rem; margin-left: 0.25rem;">
+              <%= link_to '📄 Baixar PDF das fotos',
+                  photo_print_pdf_admin_reserva_service_path(rs),
+                  class: 'btn btn-sm btn-outline-primary',
+                  data: { turbo: false } %>
+            </div>
+          <% end %>
         <% end %>
       </div>
     <% else %>

@@ -155,7 +155,8 @@ class CartsController < ApplicationController
       success_url: payment_cart_url,
       failure_url: checkout_cart_url,
       expires_in: expires_in,
-      max_installments: service_only_cart?(cart_items) ? @reserva.service_max_installments : 1
+      max_installments: service_only_cart?(cart_items) ? @reserva.service_max_installments : 1,
+      credit_card_interest_rate: service_credit_card_interest_rate(cart_items)
     ).call
 
     payment_expires_at = expires_in.minutes.from_now
@@ -210,5 +211,9 @@ class CartsController < ApplicationController
 
   def service_only_cart?(cart_items)
     cart_items.all? { |cart_item| cart_item.service_id.present? }
+  end
+
+  def service_credit_card_interest_rate(cart_items)
+    service_only_cart?(cart_items) && @reserva.partnership_reservation? ? 3 : 0
   end
 end
