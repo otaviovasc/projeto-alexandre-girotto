@@ -64,6 +64,7 @@ Rails.application.routes.draw do
         patch 'update_service_purchase_access'
         patch 'update_service_installments'
         patch 'confirm_reservation'
+        patch 'cancel'
         post 'sync_fnrh'
         post 'fnrh_check_in'
         post 'fnrh_no_show'
@@ -74,6 +75,7 @@ Rails.application.routes.draw do
       collection do
         get :import_airbnb_calendar
         get :reservas_summary
+        get :canceladas
         get :export_csv
         get :export_sheets
 
@@ -97,7 +99,11 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :service_purchases, only: [:index]
+    resources :service_purchases, only: [:index] do
+      collection do
+        get :closing
+      end
+    end
 
     resources :filials do
       resources :items do

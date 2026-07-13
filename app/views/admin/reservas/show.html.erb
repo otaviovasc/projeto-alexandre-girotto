@@ -514,7 +514,9 @@
 
   <!-- Ações -->
   <div class="action-buttons">
-    <% if @reserva.pending? && !@reserva.blocks_availability? %>
+    <% if @reserva.canceled? %>
+      <%= link_to '← Reservas Canceladas', canceladas_admin_reservas_path, class: 'btn btn-secondary' %>
+    <% elsif @reserva.pending? && !@reserva.blocks_availability? %>
       <%= button_to confirm_reservation_admin_reserva_path(@reserva),
           method: :patch,
           class: 'btn btn-success',
@@ -523,11 +525,19 @@
         <i class="bi bi-calendar-check"></i> Reservado
       <% end %>
     <% end %>
-    <%= link_to '✏️ Editar Reserva', edit_admin_reserva_path(@reserva), class: 'btn btn-primary' %>
-    <%= link_to export_sheets_admin_reservas_path(redirect_to: 'show', id: @reserva.id), class: 'btn btn-warning', style: "background: #f59e0b; color: white;", data: { turbo_method: :get } do %>
-      <i class="bi bi-cloud-upload"></i> Sincronizar com Sheets
+    <% unless @reserva.canceled? %>
+      <%= link_to '✏️ Editar Reserva', edit_admin_reserva_path(@reserva), class: 'btn btn-primary' %>
+      <%= link_to export_sheets_admin_reservas_path(redirect_to: 'show', id: @reserva.id), class: 'btn btn-warning', style: "background: #f59e0b; color: white;", data: { turbo_method: :get } do %>
+        <i class="bi bi-cloud-upload"></i> Sincronizar com Sheets
+      <% end %>
+      <%= button_to cancel_admin_reserva_path(@reserva),
+          method: :patch,
+          class: 'btn btn-danger',
+          form_class: 'd-inline',
+          data: { turbo_confirm: 'Cancelar esta reserva? Ela sairá da operação ativa, mas o histórico será preservado.' } do %>
+        <i class="bi bi-x-circle"></i> Cancelar reserva
+      <% end %>
+      <%= link_to '← Voltar', admin_reservas_summary_path, class: 'btn btn-secondary' %>
     <% end %>
-    <%= link_to '🗑️ Excluir', admin_reserva_path(@reserva), data: { turbo_method: :delete, turbo_confirm: 'Tem certeza que deseja excluir esta reserva?' }, class: 'btn btn-danger' %>
-    <%= link_to '← Voltar', admin_reservas_summary_path, class: 'btn btn-secondary' %>
   </div>
 </div>

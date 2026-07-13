@@ -129,6 +129,9 @@
     <%= link_to export_sheets_admin_reservas_path(request.query_parameters), class: 'btn btn-warning d-flex align-items-center', data: { turbo_method: :get } do %>
       <i class="bi bi-cloud-upload me-1"></i> Enviar p/ Google Sheets
     <% end %>
+    <%= link_to canceladas_admin_reservas_path, class: 'btn btn-outline-danger d-flex align-items-center' do %>
+      <i class="bi bi-archive me-1"></i> Reservas Canceladas
+    <% end %>
   </div>
 
   <div class="card p-3 mb-4 shadow-sm">
@@ -165,8 +168,7 @@
               ['Pendente', 'pending'],
               ['Aguardando Pagamento', 'waiting_payment'],
               ['Pago', 'paid'],
-              ['Recusado', 'refused'],
-              ['Cancelado', 'canceled']
+              ['Recusado', 'refused']
             ], selected: params.dig(:q, :payment_status_eq)), 
             {}, 
             { class: "form-select" } %>

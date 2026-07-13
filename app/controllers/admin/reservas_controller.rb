@@ -2,7 +2,7 @@ class Admin::ReservasController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin
   before_action :set_reserva, only: [
-    :edit, :update, :destroy, :show, :update_observation, :update_group_created,
+    :edit, :update, :destroy, :cancel, :show, :update_observation, :update_group_created,
     :acknowledge_ical_date_change, :update_service_purchase_access, :update_service_installments, :sync_fnrh,
     :fnrh_check_in, :fnrh_no_show, :fnrh_checkout, :fnrh_cancel, :fnrh_bypass_precheckin,
     :confirm_reservation
@@ -10,7 +10,7 @@ class Admin::ReservasController < ApplicationController
   before_action :check_reservations_on_new, only: [:reservas_summary]
 
   def index
-    @reservas = Reserva.includes(:cabana, :user).all
+    @reservas = Reserva.active_for_operations.includes(:cabana, :user).all
 
     # Filtros
     @reservas = @reservas.where(cabana_id: params[:cabana_id]) if params[:cabana_id].present?
@@ -161,19 +161,33 @@ class Admin::ReservasController < ApplicationController
   end
 
   def destroy
-    Fnrh::TransitionService.new(@reserva, source: 'manual').cancel if @reserva.fnrh_reservation_id.present?
+    cancel
+  end
 
-    # Sincroniza exclusão com Google Sheets
-    GoogleSheetsExportService.delete_reserva(@reserva.id)
-    
-    @reserva.destroy
-    redirect_to admin_reservas_summary_path, notice: 'Reserva excluída com sucesso.'
+  def cancel
+    fnrh_error = nil
+
+    begin
+      Fnrh::TransitionService.new(@reserva, source: 'manual').cancel if @reserva.fnrh_reservation_id.present?
+    rescue => e
+      fnrh_error = e.message
+    end
+
+    @reserva.cancel_for_operations!(by: current_user, reason: params[:cancellation_reason])
+    sync_all_reservas_to_sheets
+
+    if fnrh_error.present?
+      redirect_to admin_reservas_summary_path,
+                  alert: "Reserva cancelada no sistema, mas a FNRH retornou erro: #{fnrh_error}"
+    else
+      redirect_to admin_reservas_summary_path, notice: 'Reserva cancelada e movida para o histórico.'
+    end
   end
 
   def reservas_summary
     return unless current_user.admin?
 
-    @q = Reserva.ransack(summary_ransack_params)
+    @q = Reserva.active_for_operations.ransack(summary_ransack_params)
     filtered_reservas = apply_general_search(@q.result)
     @reservas = filtered_reservas.includes(:cabana, :user)
                  .order(Arel.sql(
@@ -191,7 +205,7 @@ class Admin::ReservasController < ApplicationController
     @reservas_por_status = @reservas.unscope(:order).group(:payment_status).count
     @reservas_por_cabana = @reservas.unscope(:order).joins(:cabana).group('cabanas.name').count
 
-    @reservas_calendar = Reserva.includes(:cabana).where(payment_status: 'paid')
+    @reservas_calendar = Reserva.includes(:cabana).integration_ready
 
     cabana_ids = @reservas_calendar.map(&:cabana_id).uniq
     @top_offset = {}
@@ -228,8 +242,20 @@ class Admin::ReservasController < ApplicationController
     @plataformas = plataformas_set.to_a.sort
   end
 
+  def canceladas
+    return unless current_user.admin?
+
+    @q = Reserva.canceled_for_history.ransack(summary_ransack_params)
+    filtered_reservas = apply_general_search(@q.result)
+    @reservas = filtered_reservas.includes(:cabana, :user, :canceled_by, reserva_services: :service)
+                                 .order(canceled_at: :desc, updated_at: :desc)
+
+    @total_reservas = @reservas.count
+    @total_receita = @reservas.sum(:total_price)
+  end
+
   def export_csv
-    @reservas = Reserva.ransack(summary_ransack_params)
+    @reservas = Reserva.active_for_operations.ransack(summary_ransack_params)
                         .result
                         .includes(:cabana, :user, reserva_services: :service)
     @reservas = apply_general_search(@reservas)
@@ -258,11 +284,11 @@ class Admin::ReservasController < ApplicationController
   end
 
   def export_sheets
-    @reservas = Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
+    @reservas = Reserva.active_for_operations.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
 
     # Aplica os mesmos filtros do Ransack se estiverem presentes
     if params[:q].present?
-      @q = Reserva.ransack(summary_ransack_params)
+      @q = Reserva.active_for_operations.ransack(summary_ransack_params)
       @reservas = @q.result.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
     end
     @reservas = apply_general_search(@reservas)
@@ -507,7 +533,7 @@ class Admin::ReservasController < ApplicationController
   end
 
   def check_reservations_on_new
-    @reservas = Reserva.where('end_date > ?', Date.today)
+    @reservas = Reserva.active_for_operations.where('end_date > ?', Date.today)
     @reservas.each do |reserva|
       if reserva.expired? && (reserva.waiting_payment? || reserva.pending?)
         reserva.update_column(:payment_status, 'canceled')

@@ -64,9 +64,14 @@
         <h1 class="h3 mb-1">Compras de Serviços</h1>
         <p class="mb-0 text-white-50">Serviços comprados pelos clientes via portal e carrinho.</p>
       </div>
-      <%= link_to admin_reservas_summary_path, class: "btn btn-outline-light align-self-start" do %>
-        <i class="bi bi-calendar-check me-1"></i> Reservas
-      <% end %>
+      <div class="d-flex gap-2 align-self-start">
+        <%= link_to closing_admin_service_purchases_path, class: "btn btn-light" do %>
+          <i class="bi bi-calculator me-1"></i> Fechamento
+        <% end %>
+        <%= link_to admin_reservas_summary_path, class: "btn btn-outline-light" do %>
+          <i class="bi bi-calendar-check me-1"></i> Reservas
+        <% end %>
+      </div>
     </div>
   </div>
 

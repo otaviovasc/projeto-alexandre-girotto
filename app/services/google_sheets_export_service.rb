@@ -118,13 +118,7 @@ class GoogleSheetsExportService
 
       # Prepara os dados
       export_service = ReservasExportService.new(reservas)
-      headers = [
-        'Tipo', 'ID Reserva', 'Cabana', 'Filial', 'Hóspede', 'Email', 'Telefone',
-        'Check-in', 'Check-out', 'Noites', 'Valor', 'Status Pagamento',
-        'Nome Serviço', 'Data Serviço', 'Quantidade', 'Status Serviço', 
-        'Valor Serviço', 'Observação', 'Data Criação', 'Observação de Serviços',
-        'Grupo Criado', 'Nome Real do Hóspede', 'Telefone Real do Hóspede', 'PDF Fotos'
-      ]
+      headers = reservas_headers
       rows = export_service.generate_array
 
       # Limpa a planilha e insere novos dados
@@ -141,11 +135,12 @@ class GoogleSheetsExportService
         value_range,
         value_input_option: 'USER_ENTERED'
       )
+      export_canceled_reservas_sheet(service)
 
       {
         success: true,
         rows_updated: result.updated_rows,
-        message: "#{result.updated_rows} linhas exportadas para Google Sheets"
+        message: "#{result.updated_rows} linhas exportadas para Google Sheets e canceladas atualizadas em aba separada"
       }
     rescue => e
       Rails.logger.error "Google Sheets Export Error: #{e.message}"
@@ -217,6 +212,50 @@ class GoogleSheetsExportService
 
   private
 
+  def reservas_headers
+    [
+      'Tipo', 'ID Reserva', 'Cabana', 'Filial', 'Hóspede', 'Email', 'Telefone',
+      'Check-in', 'Check-out', 'Noites', 'Valor', 'Status Pagamento',
+      'Nome Serviço', 'Data Serviço', 'Quantidade', 'Status Serviço',
+      'Valor Serviço', 'Observação', 'Data Criação', 'Observação de Serviços',
+      'Grupo Criado', 'Nome Real do Hóspede', 'Telefone Real do Hóspede', 'PDF Fotos'
+    ]
+  end
+
+  def canceled_reservas_headers
+    reservas_headers + ['Data Cancelamento', 'Cancelado Por', 'Motivo Cancelamento']
+  end
+
+  def export_canceled_reservas_sheet(service)
+    sheet_title = 'Reservas Canceladas'
+    ensure_sheet_exists!(service, sheet_title)
+
+    canceled_reservas = Reserva
+                        .canceled_for_history
+                        .includes(:cabana, :user, :canceled_by, reserva_services: :service)
+                        .order(canceled_at: :desc, updated_at: :desc)
+    rows = ReservasExportService.new(canceled_reservas).generate_array
+    cancel_metadata_by_id = canceled_reservas.index_by(&:id)
+
+    rows = rows.map do |row|
+      reserva = cancel_metadata_by_id[row[1].to_i]
+      row + [
+        format_datetime(reserva&.canceled_at),
+        reserva&.canceled_by&.name || reserva&.canceled_by&.email || '-',
+        reserva&.cancellation_reason.presence || '-'
+      ]
+    end
+
+    service.clear_values(@spreadsheet_id, quoted_range(sheet_title, 'A:AA'))
+    value_range = Google::Apis::SheetsV4::ValueRange.new(values: [canceled_reservas_headers] + rows)
+    service.update_spreadsheet_value(
+      @spreadsheet_id,
+      quoted_range(sheet_title, 'A1'),
+      value_range,
+      value_input_option: 'USER_ENTERED'
+    )
+  end
+
   def ensure_sheet_exists!(service, sheet_title)
     spreadsheet = service.get_spreadsheet(@spreadsheet_id)
     sheet_exists = spreadsheet.sheets.any? { |sheet| sheet.properties.title == sheet_title }
@@ -269,6 +308,12 @@ class GoogleSheetsExportService
 
   def format_currency(value)
     "R$ #{format('%.2f', value || 0).tr('.', ',')}"
+  end
+
+  def format_datetime(datetime)
+    return '-' unless datetime
+
+    datetime.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y %H:%M')
   end
 
   def quoted_range(sheet_title, range)

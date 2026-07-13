@@ -31,7 +31,21 @@ class Admin::ServicePurchasesController < ApplicationController
     @service_purchases = @service_purchases.order(Arel.sql('COALESCE(reserva_services.paid_at, reserva_services.updated_at) DESC'))
   end
 
+  def closing
+    @selected_month = parse_month(params[:month]) || Date.current.prev_month
+    @report = ServiceClosingReport.new(month: @selected_month)
+    @filial_reports = @report.filial_reports
+  end
+
   private
+
+  def parse_month(value)
+    return if value.blank?
+
+    Date.strptime(value, '%Y-%m')
+  rescue ArgumentError
+    nil
+  end
 
   def authorize_admin
     redirect_to root_path, alert: 'Voce nao tem permissao para fazer isso.' unless current_user.admin?

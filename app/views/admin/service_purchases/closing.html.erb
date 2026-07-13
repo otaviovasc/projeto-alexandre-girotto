@@ -1,0 +1,134 @@
+<div class="container-fluid py-4">
+  <style>
+    .closing-header {
+      background: #1f2937;
+      color: #fff;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .closing-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .provider-total {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #111827;
+      white-space: nowrap;
+    }
+
+    .detail-table th,
+    .detail-table td {
+      font-size: 0.88rem;
+      vertical-align: middle;
+    }
+  </style>
+
+  <div class="closing-header">
+    <div class="d-flex flex-column flex-md-row justify-content-between gap-3">
+      <div>
+        <h1 class="h3 mb-1">Fechamento de Serviços</h1>
+        <p class="mb-0 text-white-50">
+          Serviços já consumidos entre
+          <strong><%= @report.start_date.strftime("%d/%m/%Y") %></strong>
+          e
+          <strong><%= @report.end_date.strftime("%d/%m/%Y") %></strong>.
+        </p>
+      </div>
+      <div class="d-flex gap-2 align-self-start">
+        <%= link_to admin_service_purchases_path, class: "btn btn-outline-light" do %>
+          <i class="bi bi-basket me-1"></i> Compras
+        <% end %>
+        <%= link_to admin_reservas_summary_path, class: "btn btn-outline-light" do %>
+          <i class="bi bi-calendar-check me-1"></i> Reservas
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <%= form_with url: closing_admin_service_purchases_path, method: :get, local: true, class: "row g-3 align-items-end" do |f| %>
+        <div class="col-12 col-md-4">
+          <%= f.label :month, "Mês do fechamento", class: "form-label" %>
+          <%= f.month_field :month, value: @selected_month.strftime("%Y-%m"), class: "form-control" %>
+        </div>
+        <div class="col-12 col-md-3">
+          <%= f.submit "Ver fechamento", class: "btn btn-primary w-100" %>
+        </div>
+        <div class="col-12 col-md-5 text-md-end">
+          <span class="text-muted">Total geral</span>
+          <div class="fs-3 fw-bold"><%= number_to_currency(@report.total, unit: "R$") %></div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @filial_reports.any? %>
+    <% @filial_reports.each do |filial_report| %>
+      <div class="closing-card shadow-sm mb-4">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+          <h2 class="h5 mb-0"><%= filial_report[:filial] %></h2>
+          <strong><%= number_to_currency(filial_report[:total], unit: "R$") %></strong>
+        </div>
+
+        <div class="p-3">
+          <% filial_report[:providers].each do |provider_report| %>
+            <div class="border rounded mb-3 overflow-hidden">
+              <div class="d-flex justify-content-between align-items-center gap-3 p-3 bg-light">
+                <div>
+                  <h3 class="h6 mb-1"><%= provider_report[:provider] %></h3>
+                  <span class="text-muted"><%= provider_report[:rows].size %> lançamento(s)</span>
+                </div>
+                <div class="provider-total"><%= number_to_currency(provider_report[:total], unit: "R$") %></div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-sm table-striped detail-table mb-0">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Período</th>
+                      <th>Cabana</th>
+                      <th>Reserva</th>
+                      <th>Hóspede</th>
+                      <th>Serviço</th>
+                      <th>Qtd.</th>
+                      <th>Regra</th>
+                      <th class="text-end">Repasse</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% provider_report[:rows].each do |row| %>
+                      <tr>
+                        <td><%= row[:service_date]&.strftime("%d/%m/%Y") || "-" %></td>
+                        <td><%= row[:slot_label] %></td>
+                        <td><%= row[:cabana] %></td>
+                        <td><%= link_to "##{row[:reserva_id]}", admin_reserva_path(row[:reserva_id]) %></td>
+                        <td><%= row[:guest] %></td>
+                        <td><%= row[:service_name] %></td>
+                        <td><%= row[:quantity] %></td>
+                        <td><%= row[:note] %></td>
+                        <td class="text-end fw-bold"><%= number_to_currency(row[:total], unit: "R$") %></td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="card shadow-sm">
+      <div class="card-body text-center text-muted py-5">
+        Nenhum serviço consumido encontrado para este mês.
+      </div>
+    </div>
+  <% end %>
+</div>

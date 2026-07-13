@@ -1,0 +1,111 @@
+<div class="container-fluid py-4">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h1 class="h3 mb-1">Reservas Canceladas</h1>
+      <p class="text-muted mb-0">Histórico preservado das reservas que saíram da operação ativa.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <%= link_to export_sheets_admin_reservas_path, class: 'btn btn-warning', data: { turbo_method: :get } do %>
+        <i class="bi bi-cloud-upload me-1"></i> Atualizar Sheets
+      <% end %>
+      <%= link_to admin_reservas_summary_path, class: 'btn btn-outline-secondary' do %>
+        <i class="bi bi-arrow-left me-1"></i> Reservas Ativas
+      <% end %>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="text-muted text-uppercase fw-semibold small">Canceladas</div>
+          <div class="fs-3 fw-bold"><%= @total_reservas %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="text-muted text-uppercase fw-semibold small">Valor histórico</div>
+          <div class="fs-3 fw-bold"><%= number_to_currency(@total_receita || 0, unit: "R$") %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card p-3 mb-4 shadow-sm">
+    <%= search_form_for @q, url: canceladas_admin_reservas_path, method: :get, html: { class: "row g-3 align-items-end" } do |_f| %>
+      <div class="col-12 col-md-9">
+        <%= label_tag :search, "Busca", class: "form-label mb-1" %>
+        <%= text_field_tag :search,
+            params[:search],
+            class: "form-control",
+            placeholder: "ID, hóspede, telefone, e-mail, cabana ou observação" %>
+      </div>
+      <div class="col-12 col-md-3">
+        <%= submit_tag "Buscar", class: "btn btn-primary w-100" %>
+        <%= link_to "Limpar", canceladas_admin_reservas_path, class: "btn btn-outline-secondary w-100 mt-2" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
+      <h2 class="h5 mb-0">Histórico de cancelamentos</h2>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-striped align-middle mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Cancelada em</th>
+            <th>Período original</th>
+            <th>Cabana</th>
+            <th>Hóspede</th>
+            <th>Valor</th>
+            <th>Serviços</th>
+            <th>Cancelado por</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @reservas.any? %>
+            <% @reservas.each do |reserva| %>
+              <tr>
+                <td><%= reserva.id %></td>
+                <td><%= reserva.canceled_at&.in_time_zone("America/Sao_Paulo")&.strftime("%d/%m/%Y - %H:%M") || "—" %></td>
+                <td>
+                  <%= reserva.start_date&.strftime("%d/%m/%y") || "—" %>
+                  até
+                  <%= reserva.end_date&.strftime("%d/%m/%y") || "—" %>
+                </td>
+                <td><%= reserva.cabana&.name %></td>
+                <td>
+                  <strong><%= reserva.guest_name.presence || reserva.user&.name || "Sem nome" %></strong><br>
+                  <span class="text-muted"><%= reserva.guest_phone.presence || reserva.user&.telephone || reserva.user&.email %></span>
+                </td>
+                <td><%= number_to_currency(reserva.total_price || 0, unit: "R$") %></td>
+                <td>
+                  <% active_service_count = reserva.reserva_services.size %>
+                  <%= active_service_count %> serviço(s)
+                </td>
+                <td><%= reserva.canceled_by&.name || reserva.canceled_by&.email || "—" %></td>
+                <td>
+                  <%= link_to admin_reserva_path(reserva), class: 'btn btn-sm btn-outline-primary', title: 'Visualizar histórico' do %>
+                    <i class="bi bi-eye"></i>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="9" class="text-center text-muted py-5">
+                Nenhuma reserva cancelada encontrada.
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

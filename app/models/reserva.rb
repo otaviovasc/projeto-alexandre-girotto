@@ -9,6 +9,9 @@ class Reserva < ApplicationRecord
              class_name: 'User',
              optional: true,
              inverse_of: :created_partnership_reservas
+  belongs_to :canceled_by,
+             class_name: 'User',
+             optional: true
 
   has_many :reserva_services, dependent: :destroy
   has_many :services, through: :reserva_services
@@ -37,6 +40,8 @@ class Reserva < ApplicationRecord
   }
 
   scope :integration_ready, -> { where(reservas: { payment_status: 'paid', blocks_availability: true }) }
+  scope :active_for_operations, -> { where.not(payment_status: 'canceled').or(where(payment_status: nil)) }
+  scope :canceled_for_history, -> { where(payment_status: 'canceled') }
 
   before_create :set_default_fields
   before_create :set_default_payment_status
@@ -111,6 +116,28 @@ class Reserva < ApplicationRecord
 
   def integration_ready?
     paid? && blocks_availability?
+  end
+
+  def cancel_for_operations!(by:, reason: nil)
+    now = Time.current
+
+    transaction do
+      reserva_services.where.not(status: 'cancelled').update_all(
+        status: 'cancelled',
+        updated_at: now
+      )
+
+      update_columns(
+        payment_status: 'canceled',
+        blocks_availability: false,
+        canceled_at: now,
+        canceled_by_id: by&.id,
+        cancellation_reason: reason.presence,
+        ical_missing_since: nil,
+        ical_date_change_since: nil,
+        updated_at: now
+      )
+    end
   end
 
   def availability_start_date
@@ -230,7 +257,7 @@ class Reserva < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    ["blocks_availability", "breakfast_manual_override", "cabana_id", "created_at", "early_checkin", "end_date", "group_created", "guest_name", "guest_phone", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "late_checkout", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_max_installments", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
+    ["blocks_availability", "breakfast_manual_override", "cabana_id", "canceled_at", "canceled_by_id", "cancellation_reason", "created_at", "early_checkin", "end_date", "group_created", "guest_name", "guest_phone", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "late_checkout", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_max_installments", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
   end
 
   private

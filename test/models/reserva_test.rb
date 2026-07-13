@@ -157,6 +157,47 @@ class ReservaTest < ActiveSupport::TestCase
     assert_includes Reserva.integration_ready, confirmed
   end
 
+  test "canceling a reservation preserves history and releases operation" do
+    filial = Filial.create!(name: "Filial cancelamento")
+    cabana = Cabana.create!(name: "Cabana cancelamento", price: 100, filial: filial)
+    reserva = create_reserva(cabana, "cancel-history@example.com", Date.new(2028, 1, 10), Date.new(2028, 1, 12))
+    service = Service.create!(
+      name: "Jantar",
+      price: 109,
+      partner_price: 95,
+      filial: filial,
+      user: create_user("provider-cancel@example.com")
+    )
+    reserva_service = ReservaService.create!(
+      reserva: reserva,
+      service: service,
+      service_date: Date.new(2028, 1, 10),
+      quantity: 1
+    )
+    admin = create_user("admin-cancel@example.com")
+
+    reserva.cancel_for_operations!(by: admin, reason: "Teste")
+
+    assert reserva.reload.canceled?
+    assert_not reserva.blocks_availability?
+    assert_equal admin, reserva.canceled_by
+    assert_equal "Teste", reserva.cancellation_reason
+    assert reserva.canceled_at.present?
+    assert reserva_service.reload.cancelled?
+    assert_not_includes Reserva.integration_ready, reserva
+
+    candidate = Reserva.new(
+      cabana: cabana,
+      user: create_user("free-after-cancel@example.com"),
+      start_date: Date.new(2028, 1, 10),
+      end_date: Date.new(2028, 1, 12),
+      payment_status: "paid",
+      blocks_availability: true,
+      total_price: 0
+    )
+    assert candidate.valid?
+  end
+
   private
 
   def create_reserva(cabana, email, start_date, end_date)
