@@ -24,6 +24,22 @@ scheduler.every '5m', overlap: false do
   end
 end
 
+scheduler.every '30m', first_in: '3m', overlap: false do
+  next unless ServicePaymentProvider.cielo_checkout?
+
+  Rails.logger.info 'Iniciando conferência de pagamentos pendentes da Cielo...'
+  begin
+    result = CieloPendingPaymentSync.run
+    Rails.logger.info(
+      "Conferência Cielo concluída: #{result.checked} verificados, " \
+      "#{result.paid} pagos, #{result.refused} recusados, " \
+      "#{result.canceled} cancelados, #{result.errors} erros."
+    )
+  rescue => e
+    Rails.logger.error "Erro na conferência de pagamentos pendentes da Cielo: #{e.message}"
+  end
+end
+
 scheduler.every '1d', first_in: '15m', overlap: false do
   Rails.logger.info 'Limpando PDFs antigos de fotos impressas...'
   begin
