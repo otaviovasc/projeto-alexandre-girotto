@@ -222,8 +222,6 @@ class PortalReservaController < ApplicationController
     expire_stale_portal_cart_items(Reserva.find(session[:portal_reserva_id]))
 
     @purchased_services = purchase_items_for_order(order_code)
-    sync_cielo_checkout_status!(@purchased_services)
-    @purchased_services = purchase_items_for_order(order_code)
 
     if @purchased_services.empty?
       flash[:alert] = "Nao encontramos o resumo desta compra."

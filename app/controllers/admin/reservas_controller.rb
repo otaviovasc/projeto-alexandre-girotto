@@ -370,31 +370,13 @@ class Admin::ReservasController < ApplicationController
   def update_group_created
     group_created = ActiveModel::Type::Boolean.new.cast(params[:group_created])
     @reserva.update_column(:group_created, group_created)
-    Fnrh::ReservationSyncService.new(@reserva, source: 'admin').call if group_created
+    sync_group_created_side_effects_async(@reserva.id, group_created)
 
-    sheets_result = if GoogleSheetsExportService.configured?
-                      GoogleSheetsExportService.export_reservas(
-                        Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
-                      )
-                    else
-                      { success: true }
-    end
-
-    if sheets_result[:success]
-      render json: {
-        success: true,
-        group_created: @reserva.group_created?,
-        ical_date_changed: @reserva.ical_date_changed?
-      }
-    else
-      render json: {
-        success: true,
-        group_created: @reserva.group_created?,
-        ical_date_changed: @reserva.ical_date_changed?,
-        sheets_synced: false,
-        error: sheets_result[:error]
-      }, status: :accepted
-    end
+    render json: {
+      success: true,
+      group_created: @reserva.group_created?,
+      ical_date_changed: @reserva.ical_date_changed?
+    }
   rescue => e
     render json: { success: false, error: e.message }, status: :unprocessable_entity
   end
@@ -548,6 +530,27 @@ class Admin::ReservasController < ApplicationController
   end
 
   private
+
+  def sync_group_created_side_effects_async(reserva_id, group_created)
+    Thread.new do
+      Rails.application.executor.wrap do
+        reserva = Reserva.find_by(id: reserva_id)
+        next unless reserva
+
+        Fnrh::ReservationSyncService.new(reserva, source: 'admin').call if group_created
+
+        if GoogleSheetsExportService.configured?
+          GoogleSheetsExportService.export_reservas(
+            Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
+          )
+        end
+      rescue => e
+        Rails.logger.error "Erro ao sincronizar grupo criado em segundo plano: #{e.message}"
+      ensure
+        ActiveRecord::Base.connection_pool.release_connection
+      end
+    end
+  end
 
   def summary_priority_order
     Arel.sql(

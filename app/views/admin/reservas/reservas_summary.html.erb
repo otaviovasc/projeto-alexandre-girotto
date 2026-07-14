@@ -426,10 +426,6 @@ document.addEventListener('turbo:load', function() {
           }
 
           checkbox.checked = result.data.group_created;
-          if (result.data.sheets_synced === false) {
-            alert('Grupo salvo no sistema, mas o Google Sheets não sincronizou: ' + (result.data.error || 'erro desconhecido'));
-          }
-          window.location.reload();
         })
         .catch(function(error) {
           checkbox.checked = previousValue;

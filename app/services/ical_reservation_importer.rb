@@ -273,7 +273,8 @@ class IcalReservationImporter
   end
 
   def imported_reservas
-    Reserva.where(cabana_id: @cabana.id)
+    Reserva.active_for_operations
+           .where(cabana_id: @cabana.id)
            .where('LOWER(origem) = ?', @platform)
   end
 
