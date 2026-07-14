@@ -1,6 +1,7 @@
 require "base64"
 require "bigdecimal"
 require "httparty"
+require "uri"
 
 class CieloCheckoutService
   ORDERS_API_URL = "https://cieloecommerce.cielo.com.br/api/public/v1/orders".freeze
@@ -46,7 +47,7 @@ class CieloCheckoutService
     end
 
     {
-      "id" => @order_code,
+      "id" => checkout_order_number_from(parsed_response, checkout_url) || @order_code,
       "url" => checkout_url,
       "provider" => ServicePaymentProvider::CIELO_CHECKOUT,
       "raw" => parsed_response
@@ -131,6 +132,61 @@ class CieloCheckoutService
     end
   end
 
+  def self.payment_status_from(value)
+    normalized = I18n.transliterate(value.to_s).strip.downcase.gsub(/[^a-z0-9]/, "")
+
+    case normalized
+    when "2", "paid", "pago"
+      "paid"
+    when "1", "7", "pending", "pendente", "authorized", "autorizado"
+      "waiting_payment"
+    when "3", "6", "denied", "negado", "notfinalized", "naofinalizado", "unpaid", "refused", "failed"
+      "refused"
+    when "4", "5", "8", "expired", "expirado", "voided", "chargeback", "canceled", "cancelled", "cancelado"
+      "canceled"
+    end
+  end
+
+  def self.payment_status_from_transaction(transaction)
+    candidates = []
+    candidates.concat(extract_values(transaction, %w[payment status]))
+    candidates.concat(extract_values(transaction, %w[paymentStatus]))
+    candidates.concat(extract_values(transaction, %w[status]))
+
+    candidates.each do |value|
+      status = payment_status_from(value)
+      return status if status.present?
+    end
+
+    nil
+  end
+
+  def self.extract_values(value, key_path)
+    return [] if value.blank?
+
+    values = []
+    key = key_path.first
+
+    case value
+    when Hash
+      value.each do |current_key, nested_value|
+        if current_key.to_s.casecmp?(key)
+          if key_path.one?
+            values << nested_value
+          else
+            values.concat(extract_values(nested_value, key_path.drop(1)))
+          end
+        else
+          values.concat(extract_values(nested_value, key_path))
+        end
+      end
+    when Array
+      value.each { |nested_value| values.concat(extract_values(nested_value, key_path)) }
+    end
+
+    values
+  end
+
   private
 
   def create_order_headers
@@ -197,6 +253,43 @@ class CieloCheckoutService
       response.headers["Location"].presence ||
       response.headers["checkouturl"].presence ||
       response.headers["CheckoutUrl"].presence
+  end
+
+  def checkout_order_number_from(response_body, checkout_url)
+    from_response = find_checkout_order_number(response_body)
+    return from_response if from_response.present?
+
+    checkout_query_id(checkout_url)
+  end
+
+  def find_checkout_order_number(value)
+    case value
+    when Hash
+      value.each do |key, nested_value|
+        normalized_key = key.to_s.downcase.gsub(/[^a-z0-9]/, "")
+        if normalized_key.in?(%w[checkoutcieloordernumber checkoutordernumber id]) &&
+           nested_value.to_s.match?(/\A[0-9a-f-]{8,}\z/i)
+          return nested_value.to_s
+        end
+
+        found = find_checkout_order_number(nested_value)
+        return found if found.present?
+      end
+    when Array
+      value.each do |nested_value|
+        found = find_checkout_order_number(nested_value)
+        return found if found.present?
+      end
+    end
+  end
+
+  def checkout_query_id(url)
+    return if url.blank?
+
+    uri = URI.parse(url)
+    Rack::Utils.parse_nested_query(uri.query)["id"].presence
+  rescue URI::InvalidURIError
+    nil
   end
 
   def find_checkout_url(value)

@@ -44,7 +44,7 @@ class PagamentosController < ApplicationController
       return
     end
 
-    status = @verified_cielo_status || cielo_payment_status(notification[:payment_status])
+    status = @verified_cielo_status || CieloCheckoutService.payment_status_from(notification[:payment_status])
     if status.blank?
       Rails.logger.warn("Rejected Cielo Checkout notification with unknown status: #{notification[:payment_status]}.")
       head :bad_request
@@ -54,8 +54,7 @@ class PagamentosController < ApplicationController
     identifiers = [order_code, checkout_order_number].compact.uniq
     remember_cielo_checkout_order_number(order_code, checkout_order_number)
 
-    process_cart_items_payment(identifiers, status)
-    process_portal_services_payment(identifiers, status)
+    PaymentStatusProcessor.call(identifiers: identifiers, status: status)
 
     head :ok
   rescue => e
@@ -278,19 +277,19 @@ class PagamentosController < ApplicationController
 
   def valid_cielo_checkout_notification?(order_code, checkout_order_number)
     return true if valid_cielo_webhook_token?
-    return false if checkout_order_number.blank?
 
     filial = filial_for_payment_order(order_code)
     return false if filial.blank?
 
+    query_id = checkout_order_number.presence || order_code
     transaction = CieloCheckoutService::TransactionQuery.new(
       client_id: filial.cielo_checkout_client_id_for_payments,
       client_secret: filial.cielo_checkout_client_secret_for_payments
-    ).find_by_checkout_order_number(checkout_order_number)
+    ).find_by_checkout_order_number(query_id)
 
     return false unless cielo_transaction_matches_order?(transaction, order_code)
 
-    @verified_cielo_status = cielo_payment_status(transaction.dig("payment", "status"))
+    @verified_cielo_status = CieloCheckoutService.payment_status_from_transaction(transaction)
     @verified_cielo_status.present?
   rescue CieloCheckoutService::Error => e
     Rails.logger.warn("Unable to verify Cielo Checkout notification: #{e.message}")
@@ -326,16 +325,4 @@ class PagamentosController < ApplicationController
     returned_order.blank? || returned_order == order_code
   end
 
-  def cielo_payment_status(value)
-    case value.to_s.strip.downcase
-    when "2", "paid"
-      "paid"
-    when "1", "7", "pending", "authorized"
-      "waiting_payment"
-    when "3", "6", "denied", "notfinalized", "unpaid", "refused", "failed"
-      "refused"
-    when "4", "5", "8", "expired", "voided", "chargeback", "canceled", "cancelled"
-      "canceled"
-    end
-  end
 end

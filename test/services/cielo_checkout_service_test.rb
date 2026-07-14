@@ -28,7 +28,7 @@ class CieloCheckoutServiceTest < ActiveSupport::TestCase
         max_installments: 3
       ).call
 
-      assert_equal "PS6141720960000", result["id"]
+      assert_equal "123", result["id"]
       assert_equal "https://cieloecommerce.cielo.com.br/transacional/order/index?id=123", result["url"]
     end
 
@@ -82,5 +82,17 @@ class CieloCheckoutServiceTest < ActiveSupport::TestCase
 
     assert_equal "https://cieloecommerce.cielo.com.br/transacional/order/index?id=def",
                  service.send(:checkout_url_from, {}, response)
+  end
+
+  test "reads paid status from different Cielo response formats" do
+    assert_equal "paid", CieloCheckoutService.payment_status_from_transaction(
+      { "payment" => { "status" => 2 } }
+    )
+    assert_equal "paid", CieloCheckoutService.payment_status_from_transaction(
+      { "Payment" => { "Status" => "Pago" } }
+    )
+    assert_equal "paid", CieloCheckoutService.payment_status_from_transaction(
+      { "paymentStatus" => "paid" }
+    )
   end
 end
