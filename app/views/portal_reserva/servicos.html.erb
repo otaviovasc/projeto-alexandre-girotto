@@ -1,7 +1,7 @@
 <%# Portal da Reserva - Seleção de Serviços %>
 <% content_for :title, "Meus serviços - Villaggio Girotto" %>
 
-<div class="min-h-screen bg-[#f7f5f0]">
+<div class="min-h-screen bg-[#f7f5f0]" data-portal-services-page>
   <div class="bg-[#1a2e1a] text-white px-4 py-5 shadow-lg">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
       <div>
@@ -37,7 +37,7 @@
   <% end %>
 
   <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6">
-    <div class="flex-1">
+    <div class="flex-1 order-2 lg:order-1">
       <h2 class="text-lg font-bold text-[#1a2e1a] mb-4">Serviços disponíveis</h2>
 
       <% if @services.any? %>
@@ -91,7 +91,7 @@
                     </div>
 
                     <div class="border-t border-gray-100 bg-[#faf9f6] px-4 py-4">
-                      <%= form_with url: portal_reserva_adicionar_path, method: :post, local: true, multipart: true, class: "space-y-3" do |f| %>
+                      <%= form_with url: portal_reserva_adicionar_path, method: :post, local: true, multipart: true, class: "space-y-3", data: { portal_cart_form: true } do |f| %>
                         <%= f.hidden_field :service_id, value: service.id %>
                         <%= f.hidden_field :quantity, value: 1 %>
 
@@ -169,8 +169,8 @@
       <% end %>
     </div>
 
-    <div class="lg:w-80 shrink-0">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 sticky top-4 overflow-hidden">
+    <div class="lg:w-80 shrink-0 order-1 lg:order-2">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 lg:sticky lg:top-4 overflow-hidden">
         <div class="bg-[#1a2e1a] px-5 py-4 flex items-center justify-between">
           <h2 class="text-white font-bold text-sm">Serviços selecionados</h2>
           <span class="bg-[#c8a96e] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
@@ -205,9 +205,13 @@
                 </div>
                 <div class="flex flex-col items-end gap-1 shrink-0">
                   <span class="text-sm font-semibold text-[#1a2e1a]"><%= number_to_currency(subtotal) %></span>
-                  <%= button_to portal_reserva_remover_path(first_item), method: :delete, class: "text-gray-300 hover:text-red-400 transition", title: "Remover uma unidade" do %>
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  <%= button_to portal_reserva_remover_path(first_item),
+                      method: :delete,
+                      class: "text-gray-300 hover:text-red-400 transition",
+                      title: "Remover uma unidade",
+                      form: { data: { portal_cart_form: true } } do %>
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 3h6m-7 4h8m-9 0l.6 12.2A2 2 0 009.6 21h4.8a2 2 0 002-1.8L17 7M10 11v6m4-6v6M5 7h14" />
                     </svg>
                   <% end %>
                 </div>
@@ -223,7 +227,7 @@
 
             <div class="p-5 bg-white border-t border-gray-100">
               <%= button_to portal_reserva_pagar_path, method: :post, data: { turbo: false }, class: "w-full bg-[#c8a96e] hover:bg-[#b09258] text-white font-bold py-3 px-4 rounded-lg shadow-sm transition flex justify-center items-center gap-2", form_class: "w-full" do %>
-                Pagar agora
+                Finalizar compra
               <% end %>
             </div>
           <% else %>
@@ -244,6 +248,11 @@
 
 <script>
   (function() {
+    function setupPortalServicesPage() {
+      setupPhotoPrintInputs();
+      setupPortalCartForms();
+    }
+
     function setupPhotoPrintInputs() {
       document.querySelectorAll("[data-photo-print-input]").forEach(function(input) {
         if (input.dataset.photoPrintReady === "true") return;
@@ -253,6 +262,69 @@
           preparePhotoPrintFiles(input);
         });
       });
+    }
+
+    function setupPortalCartForms() {
+      document.querySelectorAll("form[data-portal-cart-form]").forEach(function(form) {
+        if (form.dataset.portalCartReady === "true") return;
+        form.dataset.portalCartReady = "true";
+
+        form.addEventListener("submit", submitPortalCartForm);
+      });
+    }
+
+    async function submitPortalCartForm(event) {
+      event.preventDefault();
+
+      var form = event.currentTarget;
+      if (form.dataset.portalCartSubmitting === "true") return;
+
+      var submitter = event.submitter || form.querySelector("button[type='submit'], input[type='submit']");
+      var originalButtonText = submitter ? submitter.textContent : null;
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+
+      form.dataset.portalCartSubmitting = "true";
+      if (submitter) {
+        submitter.disabled = true;
+        submitter.classList.add("opacity-60", "cursor-wait");
+        if (submitter.textContent.trim()) submitter.textContent = "Atualizando...";
+      }
+
+      try {
+        var response = await fetch(form.action, {
+          method: form.method || "POST",
+          body: new FormData(form),
+          credentials: "same-origin",
+          headers: {
+            "Accept": "text/html",
+            "X-Requested-With": "XMLHttpRequest"
+          }
+        });
+        var html = await response.text();
+        var parser = new DOMParser();
+        var nextDocument = parser.parseFromString(html, "text/html");
+        var nextPage = nextDocument.querySelector("[data-portal-services-page]");
+        var currentPage = document.querySelector("[data-portal-services-page]");
+
+        if (!response.ok || !nextPage || !currentPage) {
+          window.location.href = response.url || form.action;
+          return;
+        }
+
+        currentPage.replaceWith(nextPage);
+        if (nextDocument.title) document.title = nextDocument.title;
+
+        setupPortalServicesPage();
+        window.scrollTo({ top: scrollTop, left: 0, behavior: "auto" });
+      } catch (_error) {
+        if (submitter) {
+          submitter.disabled = false;
+          submitter.classList.remove("opacity-60", "cursor-wait");
+          if (originalButtonText !== null) submitter.textContent = originalButtonText;
+        }
+        form.dataset.portalCartSubmitting = "false";
+        form.submit();
+      }
     }
 
     async function preparePhotoPrintFiles(input) {
@@ -344,7 +416,8 @@
       });
     }
 
-    document.addEventListener("DOMContentLoaded", setupPhotoPrintInputs);
-    document.addEventListener("turbo:load", setupPhotoPrintInputs);
+    window.setupPortalServicesPage = setupPortalServicesPage;
+    document.addEventListener("DOMContentLoaded", setupPortalServicesPage);
+    document.addEventListener("turbo:load", setupPortalServicesPage);
   })();
 </script>

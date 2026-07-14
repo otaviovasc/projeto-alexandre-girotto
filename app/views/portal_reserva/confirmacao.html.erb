@@ -55,7 +55,7 @@
             </div>
 
             <% if @payment_open && @payment_link_url.present? %>
-              <%= link_to "Abrir checkout seguro", @payment_link_url,
+              <%= link_to "Finalizar compra", @payment_link_url,
                   target: "_blank",
                   rel: "noopener",
                   class: "inline-flex justify-center items-center bg-[#1a2e1a] hover:bg-[#2d4a2d] text-white text-sm font-bold px-5 py-3 rounded-lg transition" %>
