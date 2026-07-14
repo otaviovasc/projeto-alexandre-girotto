@@ -91,7 +91,7 @@
                 </td>
                 <td><%= reserva.canceled_by&.name || reserva.canceled_by&.email || "—" %></td>
                 <td>
-                  <%= link_to admin_reserva_path(reserva), class: 'btn btn-sm btn-outline-primary', title: 'Visualizar histórico' do %>
+                  <%= link_to admin_reserva_path(reserva), class: 'btn btn-sm btn-outline-primary', title: 'Visualizar histórico', data: { turbo: false } do %>
                     <i class="bi bi-eye"></i>
                   <% end %>
                 </td>
