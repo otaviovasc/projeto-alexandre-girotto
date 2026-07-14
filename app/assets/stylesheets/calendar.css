@@ -68,12 +68,16 @@
   left: 100%;
   transform: translateX(-50%);
   z-index: 6;
-  min-width: 40px;
+  width: 46px;
+  max-width: none;
   height: 14px;
   padding: 0 4px;
   border-radius: 7px;
   background: var(--reserva-color);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  overflow: visible;
+  text-align: center;
 }
 
 .reserva-line.operational-block,
