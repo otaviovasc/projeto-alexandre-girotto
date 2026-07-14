@@ -1,3 +1,4 @@
+require 'bigdecimal'
 require 'openssl'
 
 class PagamentosController < ApplicationController
@@ -44,14 +45,22 @@ class PagamentosController < ApplicationController
       return
     end
 
+    payment_status = cielo_notification_value(notification, :payment_status, :paymentStatus, :status)
+    notification_status = CieloCheckoutService.payment_status_from(payment_status)
+
     unless valid_cielo_checkout_notification?(order_code, checkout_order_number)
-      Rails.logger.warn("Rejected Cielo Checkout notification for order #{order_code}.")
-      head :unauthorized
-      return
+      amount = cielo_notification_value(notification, :amount)
+      unless valid_cielo_checkout_fallback?(order_code, checkout_order_number, notification_status, amount)
+        Rails.logger.warn("Rejected Cielo Checkout notification for order #{order_code}.")
+        head :unauthorized
+        return
+      end
+
+      @verified_cielo_status = notification_status
+      Rails.logger.warn("Accepted Cielo Checkout notification by local order/amount match for order #{order_code}.")
     end
 
-    payment_status = cielo_notification_value(notification, :payment_status, :paymentStatus, :status)
-    status = @verified_cielo_status || CieloCheckoutService.payment_status_from(payment_status)
+    status = @verified_cielo_status || notification_status
     if status.blank?
       Rails.logger.warn("Rejected Cielo Checkout notification with unknown status: #{payment_status}.")
       head :bad_request
@@ -292,11 +301,7 @@ class PagamentosController < ApplicationController
         client_id: filial.cielo_checkout_client_id_for_payments,
         client_secret: filial.cielo_checkout_client_secret_for_payments
       )
-      transaction = if checkout_order_number.present?
-                      query.find_by_checkout_order_number(checkout_order_number)
-                    else
-                      query.find_by_order_number(order_code)
-                    end
+      transaction = cielo_transaction_for_notification(query, order_code, checkout_order_number)
       break if cielo_transaction_matches_notification?(transaction, order_code, checkout_order_number)
 
       transaction = nil
@@ -313,6 +318,15 @@ class PagamentosController < ApplicationController
   rescue CieloCheckoutService::Error => e
     Rails.logger.warn("Unable to verify Cielo Checkout notification: #{e.message}")
     false
+  end
+
+  def valid_cielo_checkout_fallback?(order_code, checkout_order_number, status, amount)
+    return false if order_code.blank? || checkout_order_number.blank? || status.blank?
+
+    payment_records = payment_records_for_order(order_code)
+    return false if payment_records.empty?
+
+    cielo_amount_matches_order?(payment_records, amount)
   end
 
   def valid_cielo_webhook_token?
@@ -352,6 +366,14 @@ class PagamentosController < ApplicationController
     CartItem.where(payment_order_code: order_codes).update_all(payment_link_id: checkout_order_number, updated_at: now)
     ReservaService.where(payment_order_code: order_codes).update_all(payment_link_id: checkout_order_number, updated_at: now)
     ReservaPayment.where(payment_order_code: order_codes).update_all(payment_link_id: checkout_order_number, updated_at: now)
+  end
+
+  def cielo_transaction_for_notification(query, order_code, checkout_order_number)
+    query.find_by_order_number(order_code)
+  rescue CieloCheckoutService::Error => first_error
+    raise first_error if checkout_order_number.blank?
+
+    query.find_by_checkout_order_number(checkout_order_number)
   end
 
   def cielo_transaction_matches_notification?(transaction, order_code, checkout_order_number)
@@ -423,6 +445,46 @@ class PagamentosController < ApplicationController
     end
 
     nil
+  end
+
+  def payment_records_for_order(order_code)
+    cart_items = CartItem.includes(:service, :reserva)
+                         .where(payment_order_code: order_code)
+                         .or(CartItem.where(payment_link_id: order_code))
+                         .to_a
+    return cart_items if cart_items.any?
+
+    reserva_services = ReservaService.includes(:service, :reserva)
+                                     .where(payment_order_code: order_code)
+                                     .or(ReservaService.where(payment_link_id: order_code))
+                                     .to_a
+    return reserva_services if reserva_services.any?
+
+    ReservaPayment.where(payment_order_code: order_code)
+                  .or(ReservaPayment.where(payment_link_id: order_code))
+                  .to_a
+  end
+
+  def cielo_amount_matches_order?(payment_records, amount)
+    received_cents = amount.to_s.gsub(/\D/, "").to_i
+    expected_cents = payment_records.sum { |record| payment_record_total_cents(record) }
+
+    expected_cents.positive? && received_cents == expected_cents
+  end
+
+  def payment_record_total_cents(record)
+    total = if record.respond_to?(:amount)
+              record.amount
+            else
+              record.total_paid
+            end
+
+    if total.blank?
+      unit_price = record.unit_price_paid.presence || record.service&.price_for(record.reserva) || 0
+      total = BigDecimal(unit_price.to_s) * (record.quantity.presence || 1)
+    end
+
+    (BigDecimal(total.to_s) * 100).round.to_i
   end
 
 end
