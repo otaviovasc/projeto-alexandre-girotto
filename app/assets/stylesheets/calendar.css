@@ -1,14 +1,12 @@
 .table.calendar {
   table-layout: fixed;
   width: 100%;
-  overflow: visible;
 }
 
 .table.calendar td,
 .table.calendar th {
   vertical-align: top;
   padding: 0; /* so our .day-content can fill */
-  overflow: visible;
 }
 
 .day {
@@ -21,12 +19,7 @@
   position: relative;
   min-height: 120px;         /* ensure enough vertical space */
   border: 0.01px solid #ddd;   /* border around each cell */
-  overflow: visible;
   z-index: 1;               /* Ensure it is below reserva-line */
-}
-
-.day-content-boundary-code {
-  z-index: 10;
 }
 
 /* Day number in top-left corner */
@@ -60,31 +53,13 @@
 }
 
 .reserva-line-code {
-  display: inline-block;
-  max-width: 100%;
-  padding: 0 2px;
-}
-
-.reserva-line.code-on-boundary {
-  overflow: visible;
-}
-
-.reserva-line-code.boundary-code {
   position: absolute;
   top: 0;
-  left: 100%;
-  transform: translateX(-50%);
-  z-index: 6;
-  width: 46px;
-  max-width: none;
-  height: 14px;
-  padding: 0 4px;
-  border-radius: 7px;
-  background: var(--reserva-color);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
-  box-sizing: border-box;
-  overflow: visible;
-  text-align: center;
+  left: 4px;
+  max-width: calc(100% - 8px);
+  overflow: hidden;
+  text-align: left;
+  text-overflow: clip;
 }
 
 .reserva-line.operational-block,
