@@ -50,4 +50,11 @@ module ReservasHelper
 
     segments
   end
+
+  def calendar_reservation_code_date?(reserva, date)
+    return false if reserva.start_date.blank? || reserva.end_date.blank?
+
+    midpoint_offset = ((reserva.end_date - reserva.start_date).to_i / 2.0).floor
+    date == reserva.start_date + midpoint_offset.days
+  end
 end

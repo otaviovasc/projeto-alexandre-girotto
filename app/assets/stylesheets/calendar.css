@@ -37,6 +37,7 @@
   position: absolute;
   left: 0;
   right: 0;
+  z-index: 4;
   height: 14px; /* Ensure it is displayed on top of day-content */
   /* top is set inline based on index (stacking) */
   background-color: var(--reserva-color);
@@ -82,21 +83,21 @@
 
 /* MIDDLE day in the range: fill the entire cell horizontally */
 .reserva-line.middle {
-  left: 0;
-  right: 0;
+  left: -1px;
+  right: -1px;
 }
 
 /* START day: fill from 50% to the right edge */
 .reserva-line.start {
   left: 50%;
-  right: 0;
+  right: -1px;
   border-top-left-radius: 5px;
   border-bottom-left-radius: 5px;
 }
 
 /* END day: fill from left edge to 50% */
 .reserva-line.end {
-  left: 0;
+  left: -1px;
   right: 50%;
   border-top-right-radius: 5px;
   border-bottom-right-radius: 5px;
