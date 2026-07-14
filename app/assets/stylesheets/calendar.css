@@ -58,6 +58,23 @@
   padding: 0 2px;
 }
 
+.reserva-line.code-on-boundary {
+  overflow: visible;
+}
+
+.reserva-line-code.boundary-code {
+  position: absolute;
+  top: 0;
+  right: -20px;
+  z-index: 6;
+  min-width: 40px;
+  height: 14px;
+  padding: 0 4px;
+  border-radius: 7px;
+  background: var(--reserva-color);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
 .reserva-line.operational-block,
 .legend-color.operational-block {
   background: repeating-linear-gradient(

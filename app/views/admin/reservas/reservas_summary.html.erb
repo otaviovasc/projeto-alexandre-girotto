@@ -106,11 +106,12 @@
         <% reservas_for_date.each do |reserva| %>
           <% top_offset_value = @top_offset[reserva.cabana_id] || 0 %>
           <% calendar_reservation_segments(reserva, date).each do |segment| %>
-            <div class="reserva-line <%= segment[:css_class] %> <%= 'operational-block' if segment[:operational] %> <%= "#{segment[:operational_type]}-block" if segment[:operational_type] %> <%= 'joins-operational' if segment[:joins_operational] %>"
+            <% boundary_code = !segment[:operational] && calendar_reservation_boundary_code_date?(reserva, date) %>
+            <div class="reserva-line <%= segment[:css_class] %> <%= 'operational-block' if segment[:operational] %> <%= "#{segment[:operational_type]}-block" if segment[:operational_type] %> <%= 'joins-operational' if segment[:joins_operational] %> <%= 'code-on-boundary' if boundary_code %>"
                  style="--reserva-color: <%= reserva.cabana.color %>; top: <%= top_offset_value %>px;"
                  title="<%= segment[:operational_type] == 'early-checkin' ? "Early check-in ##{reserva.id}" : segment[:operational_type] == 'late-checkout' ? "Late checkout ##{reserva.id}" : "Reserva ##{reserva.id} - #{reserva.cabana.name}" %>">
               <% if !segment[:operational] && calendar_reservation_code_date?(reserva, date) %>
-                <span class="reserva-line-code">#<%= reserva.id %></span>
+                <span class="reserva-line-code <%= 'boundary-code' if boundary_code %>">#<%= reserva.id %></span>
               <% end %>
             </div>
           <% end %>
