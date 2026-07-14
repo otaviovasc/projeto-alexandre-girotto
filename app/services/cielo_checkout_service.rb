@@ -38,7 +38,7 @@ class CieloCheckoutService
       timeout: REQUEST_TIMEOUT_SECONDS
     )
     parsed_response = parse_response(response)
-    checkout_url = parsed_response.dig("Settings", "CheckoutUrl")
+    checkout_url = checkout_url_from(parsed_response)
 
     unless response.code.between?(200, 299) && checkout_url.present?
       error_message = parsed_response["message"] || parsed_response["Message"] || response.message
@@ -176,5 +176,36 @@ class CieloCheckoutService
     JSON.parse(response.body.presence || "{}")
   rescue JSON::ParserError
     {}
+  end
+
+  def checkout_url_from(response_body)
+    return unless response_body.is_a?(Hash)
+
+    response_body.dig("Settings", "CheckoutUrl").presence ||
+      response_body.dig("settings", "checkoutUrl").presence ||
+      response_body.dig("settings", "CheckoutUrl").presence ||
+      response_body.dig("Settings", "checkoutUrl").presence ||
+      find_checkout_url(response_body)
+  end
+
+  def find_checkout_url(value)
+    case value
+    when Hash
+      value.each do |key, nested_value|
+        if key.to_s.downcase.include?("checkout") && nested_value.to_s.match?(%r{\Ahttps?://})
+          return nested_value.to_s
+        end
+
+        found = find_checkout_url(nested_value)
+        return found if found.present?
+      end
+    when Array
+      value.each do |nested_value|
+        found = find_checkout_url(nested_value)
+        return found if found.present?
+      end
+    when String
+      return value if value.include?("cieloecommerce.cielo.com.br/transacional/order")
+    end
   end
 end
