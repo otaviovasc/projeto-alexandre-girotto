@@ -100,7 +100,8 @@
           title: ->(start_date){ start_date.strftime('%B %Y') }
         ) do |date, reservas_for_date| %>
 
-      <div class="day-content">
+      <% day_has_boundary_code = reservas_for_date.any? { |reserva| calendar_reservation_boundary_code_date?(reserva, date) } %>
+      <div class="day-content <%= 'day-content-boundary-code' if day_has_boundary_code %>">
         <span class="day-number"><%= date.day %></span>
 
         <% reservas_for_date.each do |reserva| %>

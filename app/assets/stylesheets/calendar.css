@@ -1,12 +1,14 @@
 .table.calendar {
   table-layout: fixed;
   width: 100%;
+  overflow: visible;
 }
 
 .table.calendar td,
 .table.calendar th {
   vertical-align: top;
   padding: 0; /* so our .day-content can fill */
+  overflow: visible;
 }
 
 .day {
@@ -19,7 +21,12 @@
   position: relative;
   min-height: 120px;         /* ensure enough vertical space */
   border: 0.01px solid #ddd;   /* border around each cell */
+  overflow: visible;
   z-index: 1;               /* Ensure it is below reserva-line */
+}
+
+.day-content-boundary-code {
+  z-index: 10;
 }
 
 /* Day number in top-left corner */
