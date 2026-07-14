@@ -1,8 +1,8 @@
 require 'openssl'
 
 class PagamentosController < ApplicationController
-  skip_before_action :verify_authenticity_token, only: [:webhook]
-  skip_before_action :authenticate_user!, only: [:webhook]
+  skip_before_action :verify_authenticity_token, only: [:webhook, :cielo_checkout]
+  skip_before_action :authenticate_user!, only: [:webhook, :cielo_checkout]
 
   def webhook
     raw_body = request.raw_post
@@ -24,6 +24,42 @@ class PagamentosController < ApplicationController
     head :ok
   rescue => e
     Rails.logger.error("Error processing webhook: #{e.message}")
+    head :bad_request
+  end
+
+  def cielo_checkout
+    notification = cielo_notification_params
+    order_code = notification[:order_number].presence || notification[:merchant_order_number].presence
+    checkout_order_number = notification[:checkout_cielo_order_number].presence
+
+    if order_code.blank?
+      Rails.logger.warn("Rejected Cielo Checkout notification without order_number.")
+      head :bad_request
+      return
+    end
+
+    unless valid_cielo_checkout_notification?(order_code, checkout_order_number)
+      Rails.logger.warn("Rejected Cielo Checkout notification for order #{order_code}.")
+      head :unauthorized
+      return
+    end
+
+    status = @verified_cielo_status || cielo_payment_status(notification[:payment_status])
+    if status.blank?
+      Rails.logger.warn("Rejected Cielo Checkout notification with unknown status: #{notification[:payment_status]}.")
+      head :bad_request
+      return
+    end
+
+    identifiers = [order_code, checkout_order_number].compact.uniq
+    remember_cielo_checkout_order_number(order_code, checkout_order_number)
+
+    process_cart_items_payment(identifiers, status)
+    process_portal_services_payment(identifiers, status)
+
+    head :ok
+  rescue => e
+    Rails.logger.error("Error processing Cielo Checkout notification: #{e.message}")
     head :bad_request
   end
 
@@ -234,5 +270,72 @@ class PagamentosController < ApplicationController
     end
 
     reserva_service.photo_print_pdf.attach(cart_item.photo_print_pdf.blob) if cart_item.photo_print_pdf.attached?
+  end
+
+  def cielo_notification_params
+    request.request_parameters.with_indifferent_access
+  end
+
+  def valid_cielo_checkout_notification?(order_code, checkout_order_number)
+    return true if valid_cielo_webhook_token?
+    return false if checkout_order_number.blank?
+
+    filial = filial_for_payment_order(order_code)
+    return false if filial.blank?
+
+    transaction = CieloCheckoutService::TransactionQuery.new(
+      client_id: filial.cielo_checkout_client_id_for_payments,
+      client_secret: filial.cielo_checkout_client_secret_for_payments
+    ).find_by_checkout_order_number(checkout_order_number)
+
+    return false unless cielo_transaction_matches_order?(transaction, order_code)
+
+    @verified_cielo_status = cielo_payment_status(transaction.dig("payment", "status"))
+    @verified_cielo_status.present?
+  rescue CieloCheckoutService::Error => e
+    Rails.logger.warn("Unable to verify Cielo Checkout notification: #{e.message}")
+    false
+  end
+
+  def valid_cielo_webhook_token?
+    expected = ENV["CIELO_CHECKOUT_WEBHOOK_TOKEN"].to_s
+    provided = params[:token].to_s
+    return false if expected.blank? || provided.blank? || expected.bytesize != provided.bytesize
+
+    ActiveSupport::SecurityUtils.secure_compare(expected, provided)
+  end
+
+  def filial_for_payment_order(order_code)
+    cart_item = CartItem.includes(reserva: { cabana: :filial }).find_by(payment_order_code: order_code)
+    return cart_item.reserva&.cabana&.filial if cart_item.present?
+
+    reserva_service = ReservaService.includes(reserva: { cabana: :filial }).find_by(payment_order_code: order_code)
+    reserva_service&.reserva&.cabana&.filial
+  end
+
+  def remember_cielo_checkout_order_number(order_code, checkout_order_number)
+    return if order_code.blank? || checkout_order_number.blank?
+
+    now = Time.current
+    CartItem.where(payment_order_code: order_code).update_all(payment_link_id: checkout_order_number, updated_at: now)
+    ReservaService.where(payment_order_code: order_code).update_all(payment_link_id: checkout_order_number, updated_at: now)
+  end
+
+  def cielo_transaction_matches_order?(transaction, order_code)
+    returned_order = transaction["orderNumber"].to_s
+    returned_order.blank? || returned_order == order_code
+  end
+
+  def cielo_payment_status(value)
+    case value.to_s.strip.downcase
+    when "2", "paid"
+      "paid"
+    when "1", "7", "pending", "authorized"
+      "waiting_payment"
+    when "3", "6", "denied", "notfinalized", "unpaid", "refused", "failed"
+      "refused"
+    when "4", "5", "8", "expired", "voided", "chargeback", "canceled", "cancelled"
+      "canceled"
+    end
   end
 end

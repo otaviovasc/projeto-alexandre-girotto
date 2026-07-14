@@ -132,6 +132,7 @@ Rails.application.routes.draw do
   end
 
   post 'pagamentos/webhook', to: 'pagamentos#webhook', as: 'pagamentos_webhook'
+  post 'pagamentos/cielo_checkout', to: 'pagamentos#cielo_checkout', as: 'cielo_checkout_webhook'
 
   # Cart
   post 'cart/add_item', to: 'carts#add_item', as: 'add_item'

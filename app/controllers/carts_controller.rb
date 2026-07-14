@@ -81,8 +81,8 @@ class CartsController < ApplicationController
     payment_link = create_cart_payment_link(@cart_items)
 
     redirect_to payment_link['url'], allow_other_host: true, status: :see_other
-  rescue PagarmePaymentLinkService::Error => e
-    Rails.logger.error("Pagar.me cart payment error: #{e.message}")
+  rescue PagarmePaymentLinkService::Error, CieloCheckoutService::Error => e
+    Rails.logger.error("Cart payment error: #{e.message}")
     redirect_to checkout_cart_path, alert: e.message
   rescue => e
     Rails.logger.error("Unexpected cart payment error: #{e.message}")
@@ -145,19 +145,31 @@ class CartsController < ApplicationController
   end
 
   def create_cart_payment_link(cart_items)
-    order_code = "cart-#{@cart.id}-#{Time.current.to_i}"
+    order_code = cart_payment_order_code(cart_items)
     expires_in = 10
-    payment_link = PagarmePaymentLinkService.new(
-      api_key: @reserva.cabana.filial.pagarme_api_key_for_payments,
-      name: "Carrinho Reserva #{@reserva.id}",
-      order_code: order_code,
-      items: pagarme_cart_items(cart_items),
-      success_url: payment_cart_url,
-      failure_url: checkout_cart_url,
-      expires_in: expires_in,
-      max_installments: service_only_cart?(cart_items) ? @reserva.service_max_installments : 1,
-      credit_card_interest_rate: service_credit_card_interest_rate(cart_items)
-    ).call
+    payment_link = if use_cielo_checkout_for_cart?(cart_items)
+                     CieloCheckoutService.new(
+                       merchant_id: @reserva.cabana.filial.cielo_checkout_merchant_id_for_payments,
+                       order_code: order_code,
+                       items: payment_cart_items(cart_items),
+                       return_url: payment_cart_url,
+                       customer: payment_customer,
+                       soft_descriptor: "VILLAGGIO",
+                       max_installments: @reserva.service_max_installments
+                     ).call
+                   else
+                     PagarmePaymentLinkService.new(
+                       api_key: @reserva.cabana.filial.pagarme_api_key_for_payments,
+                       name: "Carrinho Reserva #{@reserva.id}",
+                       order_code: order_code,
+                       items: payment_cart_items(cart_items),
+                       success_url: payment_cart_url,
+                       failure_url: checkout_cart_url,
+                       expires_in: expires_in,
+                       max_installments: service_only_cart?(cart_items) ? @reserva.service_max_installments : 1,
+                       credit_card_interest_rate: service_credit_card_interest_rate(cart_items)
+                     ).call
+                   end
 
     payment_expires_at = expires_in.minutes.from_now
     now = Time.current
@@ -181,7 +193,7 @@ class CartsController < ApplicationController
     payment_link
   end
 
-  def pagarme_cart_items(cart_items)
+  def payment_cart_items(cart_items)
     items = cart_items.map do |cart_item|
       product = cart_item.item || cart_item.service
 
@@ -211,6 +223,26 @@ class CartsController < ApplicationController
 
   def service_only_cart?(cart_items)
     cart_items.all? { |cart_item| cart_item.service_id.present? }
+  end
+
+  def use_cielo_checkout_for_cart?(cart_items)
+    ServicePaymentProvider.cielo_checkout? && service_only_cart?(cart_items)
+  end
+
+  def cart_payment_order_code(cart_items)
+    if use_cielo_checkout_for_cart?(cart_items)
+      "CT#{@cart.id.to_s.last(6)}#{Time.current.to_i}"
+    else
+      "cart-#{@cart.id}-#{Time.current.to_i}"
+    end
+  end
+
+  def payment_customer
+    {
+      name: current_user&.name,
+      email: current_user&.email,
+      phone: current_user&.telephone
+    }
   end
 
   def service_credit_card_interest_rate(cart_items)

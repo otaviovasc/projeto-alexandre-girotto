@@ -20,7 +20,29 @@ class Filial < ApplicationRecord
     ENV["PAGARME_ACCOUNT_ID_#{pagarme_env_suffix}"]
   end
 
+  def cielo_checkout_merchant_id_for_payments
+    ENV["CIELO_CHECKOUT_MERCHANT_ID_#{pagarme_env_suffix}"].presence ||
+      default_cielo_checkout_merchant_id
+  end
+
+  def cielo_checkout_client_id_for_payments
+    ENV["CIELO_CHECKOUT_CLIENT_ID_#{pagarme_env_suffix}"]
+  end
+
+  def cielo_checkout_client_secret_for_payments
+    ENV["CIELO_CHECKOUT_CLIENT_SECRET_#{pagarme_env_suffix}"]
+  end
+
   private
+
+  def default_cielo_checkout_merchant_id
+    case pagarme_env_suffix
+    when 'SERRA'
+      'da84afda-8edf-4d2b-9089-4ba1dd47a5ba'
+    when 'BRAUNA'
+      '48ec393d-e6cd-4734-8b68-1c307ed949ac'
+    end
+  end
 
   def pagarme_env_suffix
     normalized_name = I18n.transliterate(name.to_s).upcase

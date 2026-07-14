@@ -198,11 +198,11 @@ class PortalReservaController < ApplicationController
       redirect_to portal_reserva_servicos_path and return
     end
 
-    payment_link = create_portal_payment_link
+    create_portal_payment_link
 
     redirect_to portal_reserva_confirmacao_path(codigo: @portal_payment_order_code), status: :see_other
-  rescue PagarmePaymentLinkService::Error => e
-    Rails.logger.error("Pagar.me portal payment error: #{e.message}")
+  rescue PagarmePaymentLinkService::Error, CieloCheckoutService::Error => e
+    Rails.logger.error("Portal payment error: #{e.message}")
     flash[:alert] = e.message
     redirect_to portal_reserva_servicos_path
   rescue => e
@@ -324,21 +324,18 @@ class PortalReservaController < ApplicationController
   end
 
   def create_portal_payment_link
-    order_code = "portal-services-#{@reserva.id}-#{Time.current.to_i}"
+    order_code = portal_payment_order_code
     @portal_payment_order_code = order_code
     expires_in = 10
 
-    payment_link = PagarmePaymentLinkService.new(
-      api_key: @reserva.cabana.filial.pagarme_api_key_for_payments,
-      name: "Serviços Reserva #{@reserva.id}",
+    payment_link = create_service_payment_link(
       order_code: order_code,
-      items: pagarme_items,
+      items: payment_items,
       success_url: portal_reserva_confirmacao_url(codigo: order_code),
       failure_url: portal_reserva_servicos_url,
       expires_in: expires_in,
-      max_installments: @reserva.service_max_installments,
-      credit_card_interest_rate: service_credit_card_interest_rate
-    ).call
+      max_installments: @reserva.service_max_installments
+    )
 
     payment_expires_at = expires_in.minutes.from_now
     now = Time.current
@@ -360,6 +357,48 @@ class PortalReservaController < ApplicationController
     end
 
     payment_link
+  end
+
+  def create_service_payment_link(order_code:, items:, success_url:, failure_url:, expires_in:, max_installments:)
+    if ServicePaymentProvider.cielo_checkout?
+      CieloCheckoutService.new(
+        merchant_id: @reserva.cabana.filial.cielo_checkout_merchant_id_for_payments,
+        order_code: order_code,
+        items: items,
+        return_url: success_url,
+        customer: payment_customer,
+        soft_descriptor: "VILLAGGIO",
+        max_installments: max_installments
+      ).call
+    else
+      PagarmePaymentLinkService.new(
+        api_key: @reserva.cabana.filial.pagarme_api_key_for_payments,
+        name: "Serviços Reserva #{@reserva.id}",
+        order_code: order_code,
+        items: items,
+        success_url: success_url,
+        failure_url: failure_url,
+        expires_in: expires_in,
+        max_installments: max_installments,
+        credit_card_interest_rate: service_credit_card_interest_rate
+      ).call
+    end
+  end
+
+  def portal_payment_order_code
+    if ServicePaymentProvider.cielo_checkout?
+      "PS#{@reserva.id.to_s.last(6)}#{Time.current.to_i}"
+    else
+      "portal-services-#{@reserva.id}-#{Time.current.to_i}"
+    end
+  end
+
+  def payment_customer
+    {
+      name: @reserva.user&.name,
+      email: @reserva.user&.email,
+      phone: @reserva.guest_phone.presence || @reserva.user&.telephone
+    }
   end
 
   def portal_cart(reserva)
@@ -483,7 +522,7 @@ class PortalReservaController < ApplicationController
     lines.join("\n")
   end
 
-  def pagarme_items
+  def payment_items
     items = @portal_cart_items.map do |reserva_service|
       service_date = reserva_service.service_date&.strftime('%d/%m')
       name = [reserva_service.service.name, service_date].compact.join(' - ')
