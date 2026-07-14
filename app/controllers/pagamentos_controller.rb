@@ -29,8 +29,14 @@ class PagamentosController < ApplicationController
 
   def cielo_checkout
     notification = cielo_notification_params
-    order_code = notification[:order_number].presence || notification[:merchant_order_number].presence
-    checkout_order_number = notification[:checkout_cielo_order_number].presence
+    order_code = cielo_notification_value(notification, :merchant_order_number, :merchantOrderNumber).presence ||
+                 cielo_notification_value(notification, :order_number, :orderNumber).presence
+    checkout_order_number = cielo_notification_value(
+      notification,
+      :checkout_cielo_order_number,
+      :checkout_order_number,
+      :checkoutOrderNumber
+    ).presence
 
     if order_code.blank?
       Rails.logger.warn("Rejected Cielo Checkout notification without order_number.")
@@ -44,15 +50,16 @@ class PagamentosController < ApplicationController
       return
     end
 
-    status = @verified_cielo_status || CieloCheckoutService.payment_status_from(notification[:payment_status])
+    payment_status = cielo_notification_value(notification, :payment_status, :paymentStatus, :status)
+    status = @verified_cielo_status || CieloCheckoutService.payment_status_from(payment_status)
     if status.blank?
-      Rails.logger.warn("Rejected Cielo Checkout notification with unknown status: #{notification[:payment_status]}.")
+      Rails.logger.warn("Rejected Cielo Checkout notification with unknown status: #{payment_status}.")
       head :bad_request
       return
     end
 
-    identifiers = [order_code, checkout_order_number].compact.uniq
-    remember_cielo_checkout_order_number(order_code, checkout_order_number)
+    identifiers = [order_code, checkout_order_number, *@verified_cielo_identifiers].compact_blank.uniq
+    remember_cielo_checkout_order_number(identifiers, @verified_cielo_checkout_order_number || checkout_order_number)
 
     PaymentStatusProcessor.call(identifiers: identifiers, status: status)
 
@@ -278,22 +285,30 @@ class PagamentosController < ApplicationController
   def valid_cielo_checkout_notification?(order_code, checkout_order_number)
     return true if valid_cielo_webhook_token?
 
-    filial = filial_for_payment_order(order_code)
-    return false if filial.blank?
+    transaction = nil
 
-    query = CieloCheckoutService::TransactionQuery.new(
-      client_id: filial.cielo_checkout_client_id_for_payments,
-      client_secret: filial.cielo_checkout_client_secret_for_payments
-    )
-    transaction = if checkout_order_number.present?
-                    query.find_by_checkout_order_number(checkout_order_number)
-                  else
-                    query.find_by_order_number(order_code)
-                  end
+    filiais_for_payment_order(order_code, checkout_order_number).each do |filial|
+      query = CieloCheckoutService::TransactionQuery.new(
+        client_id: filial.cielo_checkout_client_id_for_payments,
+        client_secret: filial.cielo_checkout_client_secret_for_payments
+      )
+      transaction = if checkout_order_number.present?
+                      query.find_by_checkout_order_number(checkout_order_number)
+                    else
+                      query.find_by_order_number(order_code)
+                    end
+      break if cielo_transaction_matches_notification?(transaction, order_code, checkout_order_number)
 
-    return false unless cielo_transaction_matches_order?(transaction, order_code)
+      transaction = nil
+    rescue CieloCheckoutService::Error => e
+      Rails.logger.warn("Unable to verify Cielo Checkout notification for filial #{filial.id}: #{e.message}")
+    end
+
+    return false if transaction.blank?
 
     @verified_cielo_status = CieloCheckoutService.payment_status_from_transaction(transaction)
+    @verified_cielo_checkout_order_number = cielo_transaction_checkout_order_number(transaction)
+    @verified_cielo_identifiers = cielo_transaction_identifiers(transaction, order_code, checkout_order_number)
     @verified_cielo_status.present?
   rescue CieloCheckoutService::Error => e
     Rails.logger.warn("Unable to verify Cielo Checkout notification: #{e.message}")
@@ -310,23 +325,84 @@ class PagamentosController < ApplicationController
 
   def filial_for_payment_order(order_code)
     cart_item = CartItem.includes(reserva: { cabana: :filial }).find_by(payment_order_code: order_code)
+    cart_item ||= CartItem.includes(reserva: { cabana: :filial }).find_by(payment_link_id: order_code)
     return cart_item.reserva&.cabana&.filial if cart_item.present?
 
     reserva_service = ReservaService.includes(reserva: { cabana: :filial }).find_by(payment_order_code: order_code)
+    reserva_service ||= ReservaService.includes(reserva: { cabana: :filial }).find_by(payment_link_id: order_code)
     reserva_service&.reserva&.cabana&.filial
   end
 
-  def remember_cielo_checkout_order_number(order_code, checkout_order_number)
-    return if order_code.blank? || checkout_order_number.blank?
+  def filiais_for_payment_order(order_code, checkout_order_number)
+    filiais = [filial_for_payment_order(order_code), filial_for_payment_order(checkout_order_number)].compact.uniq
+    return filiais if filiais.present?
 
-    now = Time.current
-    CartItem.where(payment_order_code: order_code).update_all(payment_link_id: checkout_order_number, updated_at: now)
-    ReservaService.where(payment_order_code: order_code).update_all(payment_link_id: checkout_order_number, updated_at: now)
+    Filial.all.to_a
   end
 
-  def cielo_transaction_matches_order?(transaction, order_code)
-    returned_order = transaction["orderNumber"].to_s
-    returned_order.blank? || returned_order == order_code
+  def remember_cielo_checkout_order_number(order_codes, checkout_order_number)
+    order_codes = Array(order_codes).compact_blank.uniq
+    return if order_codes.blank? || checkout_order_number.blank?
+
+    now = Time.current
+    CartItem.where(payment_order_code: order_codes).update_all(payment_link_id: checkout_order_number, updated_at: now)
+    ReservaService.where(payment_order_code: order_codes).update_all(payment_link_id: checkout_order_number, updated_at: now)
+  end
+
+  def cielo_transaction_matches_notification?(transaction, order_code, checkout_order_number)
+    return false if transaction.blank?
+
+    returned_checkout = cielo_transaction_checkout_order_number(transaction)
+    return returned_checkout == checkout_order_number.to_s if checkout_order_number.present?
+
+    # A consulta por merchantOrderNumber ja valida o nosso codigo PS/CT.
+    order_code.present?
+  end
+
+  def cielo_transaction_checkout_order_number(transaction)
+    transaction["checkoutOrderNumber"].presence ||
+      transaction["checkout_order_number"].presence ||
+      transaction["orderNumber"].presence ||
+      transaction["order_number"].presence
+  end
+
+  def cielo_transaction_identifiers(transaction, order_code, checkout_order_number)
+    identifiers = [
+      order_code,
+      checkout_order_number,
+      transaction["merchantOrderNumber"],
+      transaction["merchant_order_number"],
+      transaction["checkoutOrderNumber"],
+      transaction["checkout_order_number"],
+      transaction["orderNumber"],
+      transaction["order_number"]
+    ]
+
+    cart_items = CartItem.where(id: cielo_transaction_cart_item_ids(transaction))
+    if cart_items.any?
+      identifiers.concat(cart_items.pluck(:payment_order_code, :payment_link_id).flatten)
+    end
+
+    identifiers.compact_blank.uniq
+  end
+
+  def cielo_transaction_cart_item_ids(transaction)
+    items = transaction.dig("cart", "items") || transaction.dig("Cart", "Items") || []
+    Array(items).filter_map do |item|
+      next unless item.respond_to?(:[])
+
+      Integer(item["sku"].presence || item["Sku"].presence, exception: false)
+    end
+  end
+
+  def cielo_notification_value(notification, *keys)
+    keys.each do |key|
+      value = notification[key]
+      value = notification[key.to_s] if value.blank?
+      return value if value.present?
+    end
+
+    nil
   end
 
 end
