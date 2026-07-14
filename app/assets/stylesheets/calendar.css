@@ -37,9 +37,24 @@
   position: absolute;
   left: 0;
   right: 0;
-  height: 10px; /* Ensure it is displayed on top of day-content */
+  height: 14px; /* Ensure it is displayed on top of day-content */
   /* top is set inline based on index (stacking) */
   background-color: var(--reserva-color);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  overflow: hidden;
+  text-align: center;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+  user-select: text;
+}
+
+.reserva-line-code {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0 2px;
 }
 
 .reserva-line.operational-block,
@@ -102,9 +117,9 @@
 /* Single-day reservation: basically a small circle in the center */
 .reserva-line.start-end {
   left: 50%;
-  width: 0;
-  height: 10px;
-  border-radius: 50%;
+  width: 34px;
+  height: 14px;
+  border-radius: 7px;
   transform: translateX(-50%);
 }
 

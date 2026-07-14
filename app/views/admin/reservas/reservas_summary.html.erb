@@ -108,8 +108,10 @@
           <% calendar_reservation_segments(reserva, date).each do |segment| %>
             <div class="reserva-line <%= segment[:css_class] %> <%= 'operational-block' if segment[:operational] %> <%= "#{segment[:operational_type]}-block" if segment[:operational_type] %> <%= 'joins-operational' if segment[:joins_operational] %>"
                  style="--reserva-color: <%= reserva.cabana.color %>; top: <%= top_offset_value %>px;"
-                 title="<%= segment[:operational_type] == 'early-checkin' ? 'Early check-in' : segment[:operational_type] == 'late-checkout' ? 'Late checkout' : reserva.cabana.name %>"
-                 data-reserva-id="<%= reserva.id %>">
+                 title="<%= segment[:operational_type] == 'early-checkin' ? "Early check-in ##{reserva.id}" : segment[:operational_type] == 'late-checkout' ? "Late checkout ##{reserva.id}" : "Reserva ##{reserva.id} - #{reserva.cabana.name}" %>">
+              <% unless segment[:operational] %>
+                <span class="reserva-line-code">#<%= reserva.id %></span>
+              <% end %>
             </div>
           <% end %>
         <% end %>
@@ -360,35 +362,6 @@
   </div>
 
 </div>
-
-<script>
-  document.addEventListener("turbo:load", function() {
-    // Listen for clicks on any calendar reserva line
-    document.querySelectorAll(".reserva-line").forEach(function(element) {
-      element.style.cursor = "pointer"; // Change cursor to pointer on hover
-      element.addEventListener("click", function() {
-        console.log("Clicked on reserva line");
-
-        // Get the reserva id from the data attribute
-        var reservaId = this.getAttribute("data-reserva-id");
-        if (reservaId) {
-          // Find the corresponding table row by ID
-          var targetRow = document.getElementById("reserva-" + reservaId);
-          if (targetRow) {
-            // Scroll the target row into view smoothly
-            targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
-            // Add a highlight class
-            targetRow.classList.add("highlight");
-            // Remove the highlight after 3 seconds
-            setTimeout(function() {
-              targetRow.classList.remove("highlight");
-            }, 3000);
-          }
-        }
-      });
-    });
-  });
-</script>
 
 <script>
 document.addEventListener('turbo:load', function() {
