@@ -68,4 +68,19 @@ class CieloCheckoutServiceTest < ActiveSupport::TestCase
     assert_equal "https://cieloecommerce.cielo.com.br/transacional/order/index?id=abc",
                  service.send(:checkout_url_from, response_body)
   end
+
+  test "accepts checkout url from response location header" do
+    service = CieloCheckoutService.new(
+      merchant_id: "da84afda-8edf-4d2b-9089-4ba1dd47a5ba",
+      order_code: "PS6141720960000",
+      items: [{ id: 1, name: "Almoco", unit_price: 65, quantity: 1 }],
+      return_url: "https://example.com/minha-reserva/confirmacao"
+    )
+    response = Struct.new(:headers).new(
+      { "location" => "https://cieloecommerce.cielo.com.br/transacional/order/index?id=def" }
+    )
+
+    assert_equal "https://cieloecommerce.cielo.com.br/transacional/order/index?id=def",
+                 service.send(:checkout_url_from, {}, response)
+  end
 end
