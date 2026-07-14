@@ -1,5 +1,7 @@
 class ImportadorDeReservasJob
   def self.run
+    totals = Hash.new(0)
+
     Cabana.find_each do |cabana|
       import_links = {}
 
@@ -12,11 +14,19 @@ class ImportadorDeReservasJob
 
       import_links.each do |platform, url|
         begin
-          IcalReservationImporter.new(cabana: cabana, platform: platform, url: url).call
+          result = IcalReservationImporter.new(cabana: cabana, platform: platform, url: url).call
+          totals[:created] += result.created
+          totals[:updated] += result.updated
+          totals[:missing] += result.missing
         rescue => e
           Rails.logger.error "Erro ao importar reservas para cabana #{cabana.id} (#{platform}): #{e.message}"
         end
       end
+    end
+
+    if totals.values.sum.zero?
+      Rails.logger.info "📊 Nenhuma alteração de reservas via iCal; Google Sheets não sincronizado."
+      return
     end
 
     # Sincroniza com Google Sheets após importação
@@ -29,6 +39,8 @@ class ImportadorDeReservasJob
       end
     rescue => e
       Rails.logger.error "Erro ao sincronizar com Google Sheets: #{e.message}"
+    ensure
+      GC.start
     end
   end
 

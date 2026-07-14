@@ -104,7 +104,7 @@ class IcalReservationImporter
   end
 
   def ics_content
-    @ics_content || URI.parse(@url).open.read
+    @ics_content || URI.parse(@url).open(open_timeout: 10, read_timeout: 25).read
   end
 
   def range_for(event)
@@ -353,6 +353,7 @@ class IcalReservationImporter
 
     missing_scope = missing_scope.where.not(id: imported_ids) if imported_ids.any?
 
+    date_change_ids = []
     current_platform_uids = event_ranges.map(&:platform_uid).compact_blank.uniq
     if current_platform_uids.any?
       date_change_scope = missing_scope.where(platform_uid: current_platform_uids)
@@ -369,8 +370,11 @@ class IcalReservationImporter
       end
     end
 
-    missing_scope.where(ical_missing_since: nil).update_all(ical_missing_since: Time.current)
-    missing_scope.count
+    newly_missing_scope = missing_scope.where(ical_missing_since: nil)
+    newly_missing_count = newly_missing_scope.count
+    newly_missing_scope.update_all(ical_missing_since: Time.current)
+
+    newly_missing_count + date_change_ids.size
   end
 
   def missing_import_scope

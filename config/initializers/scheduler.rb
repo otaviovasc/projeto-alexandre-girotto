@@ -4,7 +4,7 @@ return if defined?(Rails::Console) || File.split($PROGRAM_NAME).last == 'rake' |
 
 scheduler = Rufus::Scheduler.singleton
 
-scheduler.every '10m' do
+scheduler.every '10m', overlap: false do
   Rails.logger.info "⏱️ Iniciando importação automática de reservas..."
   begin
     ImportadorDeReservasJob.run
@@ -13,7 +13,7 @@ scheduler.every '10m' do
   end
 end
 
-scheduler.every '5m' do
+scheduler.every '5m', overlap: false do
   next unless Fnrh::Configuration.enabled?
 
   Rails.logger.info 'Iniciando automações da FNRH...'
@@ -24,7 +24,7 @@ scheduler.every '5m' do
   end
 end
 
-scheduler.every '1d', first_in: '15m' do
+scheduler.every '1d', first_in: '15m', overlap: false do
   Rails.logger.info 'Limpando PDFs antigos de fotos impressas...'
   begin
     PhotoPrintAttachmentCleanup.run
