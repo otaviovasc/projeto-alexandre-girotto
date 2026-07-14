@@ -281,11 +281,15 @@ class PagamentosController < ApplicationController
     filial = filial_for_payment_order(order_code)
     return false if filial.blank?
 
-    query_id = checkout_order_number.presence || order_code
-    transaction = CieloCheckoutService::TransactionQuery.new(
+    query = CieloCheckoutService::TransactionQuery.new(
       client_id: filial.cielo_checkout_client_id_for_payments,
       client_secret: filial.cielo_checkout_client_secret_for_payments
-    ).find_by_checkout_order_number(query_id)
+    )
+    transaction = if checkout_order_number.present?
+                    query.find_by_checkout_order_number(checkout_order_number)
+                  else
+                    query.find_by_order_number(order_code)
+                  end
 
     return false unless cielo_transaction_matches_order?(transaction, order_code)
 

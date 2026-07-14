@@ -47,7 +47,7 @@ class CieloCheckoutService
     end
 
     {
-      "id" => checkout_order_number_from(parsed_response, checkout_url) || @order_code,
+      "id" => @order_code,
       "url" => checkout_url,
       "provider" => ServicePaymentProvider::CIELO_CHECKOUT,
       "raw" => parsed_response
@@ -100,6 +100,31 @@ class CieloCheckoutService
       raise Error.new("Erro ao consultar pagamento Cielo: #{parsed_response['message'] || response.message}", response)
     end
 
+    def find_by_order_number(order_number)
+      return {} if order_number.blank?
+
+      response = HTTParty.get(
+        "#{TRANSACTIONS_API_URL}/merchantOrderNumber/#{URI.encode_www_form_component(order_number)}",
+        headers: {
+          "Authorization" => "Bearer #{access_token}",
+          "Accept" => "application/json"
+        },
+        timeout: REQUEST_TIMEOUT_SECONDS
+      )
+
+      parsed_response = parse_response(response)
+      unless response.code.between?(200, 299)
+        raise Error.new("Erro ao consultar pagamento Cielo: #{parsed_response['message'] || response.message}", response)
+      end
+
+      checkout_order_number = latest_checkout_order_number(parsed_response)
+      return parsed_response if checkout_order_number.blank?
+
+      transaction = find_by_checkout_order_number(checkout_order_number)
+      transaction["checkoutOrderNumber"] ||= checkout_order_number if transaction.is_a?(Hash)
+      transaction
+    end
+
     private
 
     def access_token
@@ -129,6 +154,13 @@ class CieloCheckoutService
       JSON.parse(response.body.presence || "{}")
     rescue JSON::ParserError
       {}
+    end
+
+    def latest_checkout_order_number(response_body)
+      Array(response_body)
+        .compact
+        .max_by { |transaction| transaction["createdDate"].to_s }
+        &.dig("checkoutOrderNumber")
     end
   end
 
@@ -253,43 +285,6 @@ class CieloCheckoutService
       response.headers["Location"].presence ||
       response.headers["checkouturl"].presence ||
       response.headers["CheckoutUrl"].presence
-  end
-
-  def checkout_order_number_from(response_body, checkout_url)
-    from_response = find_checkout_order_number(response_body)
-    return from_response if from_response.present?
-
-    checkout_query_id(checkout_url)
-  end
-
-  def find_checkout_order_number(value)
-    case value
-    when Hash
-      value.each do |key, nested_value|
-        normalized_key = key.to_s.downcase.gsub(/[^a-z0-9]/, "")
-        if normalized_key.in?(%w[checkoutcieloordernumber checkoutordernumber id]) &&
-           nested_value.to_s.match?(/\A[0-9a-f-]{8,}\z/i)
-          return nested_value.to_s
-        end
-
-        found = find_checkout_order_number(nested_value)
-        return found if found.present?
-      end
-    when Array
-      value.each do |nested_value|
-        found = find_checkout_order_number(nested_value)
-        return found if found.present?
-      end
-    end
-  end
-
-  def checkout_query_id(url)
-    return if url.blank?
-
-    uri = URI.parse(url)
-    Rack::Utils.parse_nested_query(uri.query)["id"].presence
-  rescue URI::InvalidURIError
-    nil
   end
 
   def find_checkout_url(value)

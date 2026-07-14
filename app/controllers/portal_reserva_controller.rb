@@ -450,17 +450,18 @@ class PortalReservaController < ApplicationController
     return if purchased_services.empty? || purchase_payment_status(purchased_services) == "paid"
 
     first_purchase = purchased_services.first
-    query_id = cielo_checkout_query_id(first_purchase)
-    return if query_id.blank?
+    order_code = first_purchase.payment_order_code.to_s
+    return if order_code.blank?
 
     transaction = CieloCheckoutService::TransactionQuery.new(
       client_id: first_purchase.reserva.cabana.filial.cielo_checkout_client_id_for_payments,
       client_secret: first_purchase.reserva.cabana.filial.cielo_checkout_client_secret_for_payments
-    ).find_by_checkout_order_number(query_id)
+    ).find_by_order_number(order_code)
 
     status = CieloCheckoutService.payment_status_from_transaction(transaction)
     return if status.blank?
 
+    query_id = transaction["checkoutOrderNumber"].presence || first_purchase.payment_link_id
     remember_cielo_checkout_order_number(first_purchase.payment_order_code, query_id)
 
     PaymentStatusProcessor.call(
@@ -469,22 +470,6 @@ class PortalReservaController < ApplicationController
     )
   rescue CieloCheckoutService::Error => e
     Rails.logger.warn("Unable to sync Cielo Checkout status from portal: #{e.message}")
-  end
-
-  def cielo_checkout_query_id(purchase)
-    link_id = purchase.payment_link_id.to_s
-    return link_id if link_id.present? && link_id != purchase.payment_order_code.to_s
-
-    checkout_id_from_url(purchase.payment_link_url).presence || purchase.payment_order_code
-  end
-
-  def checkout_id_from_url(url)
-    return if url.blank?
-
-    uri = URI.parse(url)
-    Rack::Utils.parse_nested_query(uri.query)["id"].presence
-  rescue URI::InvalidURIError
-    nil
   end
 
   def remember_cielo_checkout_order_number(order_code, checkout_order_number)

@@ -28,7 +28,7 @@ class CieloCheckoutServiceTest < ActiveSupport::TestCase
         max_installments: 3
       ).call
 
-      assert_equal "123", result["id"]
+      assert_equal "PS6141720960000", result["id"]
       assert_equal "https://cieloecommerce.cielo.com.br/transacional/order/index?id=123", result["url"]
     end
 
@@ -94,5 +94,50 @@ class CieloCheckoutServiceTest < ActiveSupport::TestCase
     assert_equal "paid", CieloCheckoutService.payment_status_from_transaction(
       { "paymentStatus" => "paid" }
     )
+  end
+
+  test "consults transaction by merchant order number" do
+    calls = []
+    token_response = Struct.new(:code, :body, :message).new(
+      200,
+      { access_token: "token-test" }.to_json,
+      "OK"
+    )
+    list_response = Struct.new(:code, :body, :message).new(
+      200,
+      [
+        {
+          checkoutOrderNumber: "abc123",
+          createdDate: "2026-07-14T16:00:00"
+        }
+      ].to_json,
+      "OK"
+    )
+    detail_response = Struct.new(:code, :body, :message).new(
+      200,
+      { payment: { status: 2 } }.to_json,
+      "OK"
+    )
+
+    post_stub = ->(*_args, **_kwargs) { token_response }
+    get_stub = lambda do |url, **_kwargs|
+      calls << url
+      url.include?("merchantOrderNumber") ? list_response : detail_response
+    end
+
+    HTTParty.stub(:post, post_stub) do
+      HTTParty.stub(:get, get_stub) do
+        transaction = CieloCheckoutService::TransactionQuery.new(
+          client_id: "client-id",
+          client_secret: "client-secret"
+        ).find_by_order_number("PS8931720970000")
+
+        assert_equal "paid", CieloCheckoutService.payment_status_from_transaction(transaction)
+        assert_equal "abc123", transaction["checkoutOrderNumber"]
+      end
+    end
+
+    assert_match %r{/merchantOrderNumber/PS8931720970000\z}, calls.first
+    assert_match %r{/orders/abc123\z}, calls.second
   end
 end
