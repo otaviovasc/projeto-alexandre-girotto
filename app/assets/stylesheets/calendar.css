@@ -112,6 +112,12 @@
   border-bottom-left-radius: 5px;
 }
 
+.reserva-line.start.code-on-boundary {
+  right: -50%;
+  border-top-right-radius: 7px;
+  border-bottom-right-radius: 7px;
+}
+
 /* END day: fill from left edge to 50% */
 .reserva-line.end {
   left: -1px;
