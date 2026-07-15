@@ -140,6 +140,10 @@ Rails.application.routes.draw do
 
   post 'pagamentos/webhook', to: 'pagamentos#webhook', as: 'pagamentos_webhook'
   post 'pagamentos/cielo_checkout', to: 'pagamentos#cielo_checkout', as: 'cielo_checkout_webhook'
+  get  'reserva-online-teste', to: 'public_bookings#new', as: :new_public_booking
+  post 'reserva-online-teste', to: 'public_bookings#create', as: :public_bookings
+  get  'reserva-online-teste/confirmacao/:token', to: 'public_bookings#confirmation', as: :public_booking_confirmation
+  get  'reserva-online-teste/confirmacao/:token/status', to: 'public_bookings#status', as: :public_booking_status
   get  'pagamento/:token', to: 'reserva_payments#show', as: :reserva_payment
   post 'pagamento/:token/aceitar-termos', to: 'reserva_payments#accept_terms', as: :accept_reserva_payment_terms
 

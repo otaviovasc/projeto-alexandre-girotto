@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reserva confirmada - Villaggio Girotto</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif; }
+    .wrapper { width: 100%; background-color: #f4f4f4; padding: 20px 0; }
+    .email-container { width: 600px; max-width: 100%; background-color: #ffffff; margin: auto; border-radius: 8px; overflow: hidden; }
+    .header { padding: 24px; background-color: #315b3a; color: #ffffff; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 28px; color: #263129; font-size: 16px; line-height: 1.5; }
+    .details-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .details-table td { padding: 10px; border: 1px solid #dddddd; vertical-align: top; }
+    .cta-button { text-align: center; margin: 24px 0; }
+    .cta-button a { display: inline-block; background-color: #315b3a; color: #ffffff; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; }
+    .footer { padding: 18px; background-color: #f4f4f4; text-align: center; font-size: 12px; color: #777777; }
+  </style>
+</head>
+<body>
+  <table class="wrapper" role="presentation" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center">
+        <table class="email-container" role="presentation" border="0" cellpadding="0" cellspacing="0">
+          <tr>
+            <td class="header">
+              <h1>Reserva confirmada</h1>
+            </td>
+          </tr>
+          <tr>
+            <td class="content">
+              <p>Olá <%= @reserva.guest_name.presence || @user.name %>,</p>
+              <p>Recebemos seu pagamento e sua reserva foi confirmada no Villaggio Girotto.</p>
+
+              <table class="details-table">
+                <tr>
+                  <td><strong>Código da reserva</strong></td>
+                  <td>#<%= @reserva.id %></td>
+                </tr>
+                <tr>
+                  <td><strong>Cabana</strong></td>
+                  <td><%= @reserva.cabana.name %></td>
+                </tr>
+                <tr>
+                  <td><strong>Entrada</strong></td>
+                  <td><%= @reserva.start_date.strftime("%d/%m/%Y") %></td>
+                </tr>
+                <tr>
+                  <td><strong>Saída</strong></td>
+                  <td><%= @reserva.end_date.strftime("%d/%m/%Y") %></td>
+                </tr>
+                <tr>
+                  <td><strong>Total pago</strong></td>
+                  <td><%= number_to_currency(@reserva_payment&.amount || @reserva.total_price, unit: 'R$ ', separator: ',', delimiter: '.') %></td>
+                </tr>
+                <tr>
+                  <td><strong>Serviços</strong></td>
+                  <td>
+                    <% if @services.any? %>
+                      <ul>
+                        <% @services.each do |reserva_service| %>
+                          <li>
+                            <%= reserva_service.service.name %>
+                            em <%= reserva_service.service_date.strftime("%d/%m/%Y") %>
+                            (<%= reserva_service.quantity %>x)
+                          </li>
+                        <% end %>
+                      </ul>
+                    <% else %>
+                      Nenhum serviço adicional comprado junto com a reserva.
+                    <% end %>
+                  </td>
+                </tr>
+              </table>
+
+              <p class="cta-button">
+                <a href="<%= @url %>">Ver resumo da reserva</a>
+              </p>
+
+              <p>Se ainda não falou com nossa equipe pelo WhatsApp, entre em contato informando o código da reserva.</p>
+              <p>Atenciosamente,<br>Equipe Villaggio Girotto</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="footer">
+              <p>&copy; <%= Date.current.year %> Villaggio Girotto. Todos os direitos reservados.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

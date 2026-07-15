@@ -1,0 +1,221 @@
+class PublicBookingsController < ApplicationController
+  layout 'portal_reserva'
+
+  skip_before_action :authenticate_user!
+  before_action :load_public_catalog, only: [:new, :create]
+  before_action :set_reserva_payment, only: [:confirmation, :status]
+
+  def new
+    @booking_values = {}
+  end
+
+  def create
+    checkout = PublicBookingCheckout.new(params: booking_params.to_h.with_indifferent_access, request: request)
+
+    if checkout.call
+      redirect_to public_booking_confirmation_path(token: checkout.reserva_payment.terms_token), status: :see_other
+    else
+      @booking_values = booking_params.to_h
+      @errors = checkout.errors.full_messages
+      render :new, status: :unprocessable_entity
+    end
+  end
+
+  def confirmation
+    refresh_payment_status!
+    assign_confirmation_details
+  end
+
+  def status
+    refresh_payment_status!
+
+    render json: {
+      paid: @reserva_payment.paid?,
+      open: payment_open?,
+      status: @reserva_payment.payment_status,
+      status_label: payment_status_label(@reserva_payment.payment_status)
+    }
+  end
+
+  private
+
+  def booking_params
+    params.require(:booking).permit(
+      :cabana_id,
+      :start_date,
+      :end_date,
+      :guest_name,
+      :guest_email,
+      :guest_phone,
+      :terms_accepted,
+      service_items: {}
+    )
+  end
+
+  def load_public_catalog
+    @cabanas = Cabana.includes(:filial).order(:name)
+    @services = Service.includes(:filial)
+                       .where(show_in_marketplace: [true, nil])
+                       .order(:name)
+                       .reject { |service| internal_public_service?(service) }
+  end
+
+  def internal_public_service?(service)
+    CleaningServicesAssigner.cleaning_service?(service) ||
+      ReservaService.free_date_service?(service)
+  end
+
+  def set_reserva_payment
+    @reserva_payment = ReservaPayment
+                         .includes(reserva: [:user, { cabana: :filial }, { reserva_services: :service }])
+                         .find_by!(terms_token: params[:token])
+    @reserva = @reserva_payment.reserva
+  end
+
+  def refresh_payment_status!
+    sync_cielo_checkout_status!
+    @reserva_payment.reload
+    @reserva = @reserva_payment.reserva
+    expire_payment_if_needed!
+    @reserva_payment.reload
+    @reserva = @reserva_payment.reserva
+  end
+
+  def sync_cielo_checkout_status!
+    return unless @reserva_payment.waiting_payment?
+    return if @reserva_payment.payment_order_code.blank?
+
+    filial = @reserva_payment.reserva.cabana.filial
+    transaction = CieloCheckoutService::TransactionQuery.new(
+      client_id: filial.cielo_checkout_client_id_for_payments,
+      client_secret: filial.cielo_checkout_client_secret_for_payments
+    ).find_by_order_number(@reserva_payment.payment_order_code)
+
+    status = CieloCheckoutService.payment_status_from_transaction(transaction)
+    return if status.blank?
+
+    checkout_order_number = transaction['checkoutOrderNumber'].presence || @reserva_payment.payment_link_id
+    remember_cielo_checkout_order_number(checkout_order_number)
+
+    PaymentStatusProcessor.call(
+      identifiers: [@reserva_payment.payment_order_code, @reserva_payment.payment_link_id, checkout_order_number],
+      status: status
+    )
+  rescue CieloCheckoutService::Error => e
+    Rails.logger.warn("Unable to sync public booking Cielo status: #{e.message}")
+  end
+
+  def remember_cielo_checkout_order_number(checkout_order_number)
+    return if checkout_order_number.blank?
+    return if @reserva_payment.payment_link_id == checkout_order_number
+
+    @reserva_payment.update_columns(
+      payment_link_id: checkout_order_number,
+      updated_at: Time.current
+    )
+  end
+
+  def expire_payment_if_needed!
+    return unless @reserva_payment.waiting_payment? && @reserva_payment.expired?
+
+    ReservaPaymentProcessor.call(
+      reserva_payment: @reserva_payment,
+      status: 'overdue',
+      source: 'public_booking'
+    )
+  end
+
+  def assign_confirmation_details
+    @payment_paid = @reserva_payment.paid?
+    @payment_open = payment_open?
+    @payment_status_label = payment_status_label(@reserva_payment.payment_status)
+    @payment_link_url = @reserva_payment.payment_link_url
+    @purchase_items = purchase_items
+    @summary_text = public_booking_summary_text
+    @whatsapp_url = public_booking_whatsapp_url
+  end
+
+  def payment_open?
+    @reserva_payment.waiting_payment? && !@reserva_payment.expired? && !@reserva.canceled?
+  end
+
+  def purchase_items
+    items = [{
+      name: 'Hospedagem',
+      detail: "#{@reserva.start_date.strftime('%d/%m/%Y')} a #{@reserva.end_date.strftime('%d/%m/%Y')}",
+      quantity: 1,
+      total: @reserva_payment.public_booking_daily_total
+    }]
+
+    @reserva_payment.public_booking_services.each do |service|
+      items << {
+        name: service['name'],
+        detail: Date.parse(service['service_date'].to_s).strftime('%d/%m/%Y'),
+        quantity: service['quantity'].to_i,
+        total: BigDecimal(service['total'].to_s)
+      }
+    rescue ArgumentError, TypeError
+      next
+    end
+
+    items
+  end
+
+  def payment_status_label(status)
+    {
+      'waiting_payment' => 'Aguardando pagamento',
+      'paid' => 'Pagamento confirmado',
+      'refused' => 'Pagamento recusado',
+      'canceled' => 'Pagamento cancelado',
+      'overdue' => 'Prazo vencido'
+    }.fetch(status.to_s, status.to_s.humanize)
+  end
+
+  def public_booking_summary_text
+    lines = [
+      "Olá! Acabei de confirmar minha reserva pelo site oficial.",
+      "",
+      "Reserva: ##{@reserva.id}",
+      "Nome: #{@reserva.guest_name.presence || @reserva.user.name}",
+      "Cabana: #{@reserva.cabana.name}",
+      "Entrada: #{@reserva.start_date.strftime('%d/%m/%Y')}",
+      "Saída: #{@reserva.end_date.strftime('%d/%m/%Y')}",
+      "Total: #{helpers.number_to_currency(@reserva_payment.amount, unit: 'R$ ', separator: ',', delimiter: '.')}"
+    ]
+
+    service_lines = @reserva_payment.public_booking_services.map do |service|
+      "- #{service['name']} em #{Date.parse(service['service_date'].to_s).strftime('%d/%m/%Y')} (#{service['quantity']}x)"
+    rescue ArgumentError, TypeError
+      nil
+    end.compact
+
+    if service_lines.any?
+      lines << ""
+      lines << "Serviços:"
+      lines.concat(service_lines)
+    end
+
+    lines.join("\n")
+  end
+
+  def public_booking_whatsapp_url
+    number = whatsapp_number_for(@reserva.cabana.filial)
+    encoded_text = ERB::Util.url_encode(@summary_text)
+
+    if number.present?
+      "https://wa.me/#{number}?text=#{encoded_text}"
+    else
+      "https://wa.me/?text=#{encoded_text}"
+    end
+  end
+
+  def whatsapp_number_for(filial)
+    suffix = if I18n.transliterate(filial.name.to_s).upcase.include?('BRAUNA')
+               'BRAUNA'
+             else
+               'SERRA'
+             end
+
+    ENV["PUBLIC_BOOKING_WHATSAPP_#{suffix}"].presence || ENV['PUBLIC_BOOKING_WHATSAPP_DEFAULT']
+  end
+end

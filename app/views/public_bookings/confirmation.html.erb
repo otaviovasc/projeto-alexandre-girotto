@@ -1,0 +1,153 @@
+<% content_for :title, "#{@payment_paid ? 'Reserva confirmada' : 'Pagamento da reserva'} - Villaggio Girotto" %>
+
+<main class="min-h-screen px-4 py-8 sm:py-12">
+  <div class="mx-auto max-w-4xl">
+    <header class="mb-8">
+      <p class="text-sm font-semibold text-[#5f755f]">Villaggio Girotto</p>
+      <h1 class="mt-1 text-3xl font-semibold sm:text-5xl">
+        <%= @payment_paid ? "Reserva confirmada" : "Pagamento da reserva" %>
+      </h1>
+      <p class="mt-3 max-w-2xl text-sm leading-6 text-[#637066]">
+        Reserva #<%= @reserva.id %> · <%= @reserva.cabana.name %> ·
+        <%= @reserva.start_date.strftime('%d/%m/%Y') %> a <%= @reserva.end_date.strftime('%d/%m/%Y') %>
+      </p>
+    </header>
+
+    <section class="border border-[#d9dfd7] bg-white p-6 shadow-sm sm:p-8">
+      <% if @payment_paid %>
+        <div class="border-l-4 border-green-600 bg-green-50 px-4 py-3 text-sm text-green-800">
+          <strong>Pagamento confirmado.</strong> Sua reserva foi registrada com sucesso.
+        </div>
+      <% elsif @payment_open %>
+        <div class="border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <strong>Aguardando pagamento.</strong> As datas ficam pré-reservadas até
+          <%= @reserva_payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %>.
+        </div>
+      <% else %>
+        <div class="border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <strong><%= @payment_status_label %>.</strong> Esta tentativa não pode mais confirmar a reserva.
+        </div>
+      <% end %>
+
+      <div class="mt-6 grid gap-4 sm:grid-cols-3">
+        <div>
+          <p class="text-xs uppercase tracking-wide text-[#7a857d]">Responsável</p>
+          <p class="mt-1 font-semibold text-[#1a2e1a]"><%= @reserva.guest_name.presence || @reserva.user.name %></p>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wide text-[#7a857d]">Status</p>
+          <p id="payment-status-label" class="mt-1 font-semibold text-[#1a2e1a]"><%= @payment_status_label %></p>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wide text-[#7a857d]">Total</p>
+          <p class="mt-1 font-semibold text-[#1a2e1a]"><%= number_to_currency(@reserva_payment.amount, unit: 'R$ ', separator: ',', delimiter: '.') %></p>
+        </div>
+      </div>
+
+      <div class="mt-8 divide-y divide-[#edf1ea] border-y border-[#edf1ea]">
+        <% @purchase_items.each do |item| %>
+          <div class="flex items-start justify-between gap-4 py-4">
+            <div>
+              <p class="font-semibold text-[#1a2e1a]"><%= item[:name] %></p>
+              <p class="mt-1 text-sm text-[#637066]">
+                <%= item[:detail] %>
+                <% if item[:quantity].to_i > 1 %>
+                  · <%= item[:quantity] %> unidades
+                <% end %>
+              </p>
+            </div>
+            <p class="shrink-0 font-semibold text-[#1a2e1a]"><%= number_to_currency(item[:total], unit: 'R$ ', separator: ',', delimiter: '.') %></p>
+          </div>
+        <% end %>
+      </div>
+
+      <% if @payment_paid %>
+        <div class="mt-8 rounded-lg border border-[#d9dfd7] bg-[#f7f9f6] p-5">
+          <h2 class="text-lg font-semibold text-[#1a2e1a]">Próximo passo</h2>
+          <p class="mt-2 text-sm leading-6 text-[#637066]">
+            Envie o resumo abaixo pelo WhatsApp para agilizar o contato. Se preferir não enviar agora, tudo bem: entraremos em contato com você.
+          </p>
+
+          <textarea id="public-booking-summary" readonly rows="9" class="mt-4 w-full border border-[#c9d1c7] bg-white p-4 text-sm leading-6 text-[#344138]"><%= @summary_text %></textarea>
+
+          <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+            <%= link_to "Enviar pelo WhatsApp",
+                @whatsapp_url,
+                target: "_blank",
+                rel: "noopener",
+                class: "w-full bg-[#1f7a4c] px-5 py-3 text-center text-sm font-semibold text-white hover:bg-[#17633d] sm:w-auto" %>
+            <button type="button" id="copy-summary-button" class="w-full bg-[#315b3a] px-5 py-3 text-sm font-semibold text-white hover:bg-[#264a2e] sm:w-auto">
+              Copiar resumo
+            </button>
+          </div>
+          <p id="copy-summary-feedback" class="mt-3 hidden text-sm font-medium text-green-700">Resumo copiado.</p>
+        </div>
+      <% elsif @payment_open %>
+        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+          <%= link_to "Finalizar pagamento na Cielo",
+              @payment_link_url,
+              class: "w-full bg-[#315b3a] px-5 py-3 text-center text-sm font-semibold text-white hover:bg-[#264a2e] sm:w-auto",
+              data: { turbo: false } %>
+          <button type="button" id="check-payment-button" class="w-full border border-[#315b3a] px-5 py-3 text-sm font-semibold text-[#315b3a] hover:bg-[#315b3a] hover:text-white sm:w-auto">
+            Verificar pagamento
+          </button>
+        </div>
+        <p class="mt-3 text-sm text-[#637066]">Esta página verifica automaticamente se o pagamento foi confirmado.</p>
+      <% else %>
+        <div class="mt-8">
+          <%= link_to "Iniciar nova reserva",
+              new_public_booking_path,
+              class: "inline-flex bg-[#315b3a] px-5 py-3 text-sm font-semibold text-white hover:bg-[#264a2e]" %>
+        </div>
+      <% end %>
+    </section>
+  </div>
+</main>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var statusLabel = document.getElementById("payment-status-label");
+    var checkButton = document.getElementById("check-payment-button");
+    var statusUrl = <%= raw public_booking_status_path(token: @reserva_payment.terms_token).to_json %>;
+
+    function checkPaymentStatus() {
+      if (!statusLabel) return;
+
+      fetch(statusUrl, { headers: { "Accept": "application/json" } })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+          if (data.status_label) statusLabel.textContent = data.status_label;
+          if (data.paid || !data.open) window.location.reload();
+        })
+        .catch(function() {});
+    }
+
+    if (checkButton) checkButton.addEventListener("click", checkPaymentStatus);
+    if (checkButton) window.setInterval(checkPaymentStatus, 5000);
+
+    var copyButton = document.getElementById("copy-summary-button");
+    var textarea = document.getElementById("public-booking-summary");
+    var feedback = document.getElementById("copy-summary-feedback");
+
+    if (copyButton && textarea && feedback) {
+      copyButton.addEventListener("click", function() {
+        function showFeedback() {
+          feedback.classList.remove("hidden");
+          copyButton.textContent = "Resumo copiado";
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(textarea.value).then(showFeedback).catch(function() {
+            textarea.select();
+            document.execCommand("copy");
+            showFeedback();
+          });
+        } else {
+          textarea.select();
+          document.execCommand("copy");
+          showFeedback();
+        }
+      });
+    }
+  });
+</script>

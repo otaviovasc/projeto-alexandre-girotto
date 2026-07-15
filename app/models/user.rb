@@ -1,4 +1,6 @@
 class User < ApplicationRecord
+  attr_accessor :skip_welcome_email
+
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
 
@@ -121,7 +123,9 @@ class User < ApplicationRecord
   end
 
   def send_welcome_email
+    return if skip_welcome_email
     return unless Rails.env.production? # só envia em produção
+
     UserMailer.with(user: self).welcome_email.deliver_later
   end
 end

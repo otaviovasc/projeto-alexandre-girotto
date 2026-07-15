@@ -1,9 +1,9 @@
 class UserMailer < ApplicationMailer
   default from: 'contato@villaggiogirotto.com.br'
 
-  def welcome_email(user, generated_password)
-    @user = user
-    @password = generated_password
+  def welcome_email(user = nil, generated_password = nil)
+    @user = user || params[:user]
+    @password = generated_password || params[:generated_password]
     @url  = 'https://www.villaggiogirotto.com.br/users/sign_in'
     mail(to: @user.email, subject: 'Sua hospedagem - Villaggio')
   end
@@ -29,5 +29,20 @@ class UserMailer < ApplicationMailer
     @reserva = reserva
     @url  = "https://www.villaggiogirotto.com.br/admin/reservas_summary"
     mail(to: 'contato@villaggiogirotto.com.br', subject: "Reserva: #{reserva.payment_status} - Villaggio")
+  end
+
+  def public_booking_confirmed(user, reserva)
+    @user = user
+    @reserva = reserva
+    @reserva_payment = reserva.reserva_payments.to_a.find(&:public_booking?) ||
+                       reserva.reserva_payments.order(paid_at: :desc).first
+    @services = reserva.reserva_services
+                       .includes(:service)
+                       .where(payment_order_code: @reserva_payment&.payment_order_code)
+                       .order(:service_date, :id)
+    host = ENV['APP_HOST'].presence || ENV['RENDER_EXTERNAL_HOSTNAME'].presence || 'villaggio-stock.onrender.com'
+    @url = "https://#{host.sub(%r{\Ahttps?://}, '')}/reserva-online-teste/confirmacao/#{@reserva_payment&.terms_token}"
+
+    mail(to: @user.email, subject: "Reserva confirmada ##{@reserva.id} - Villaggio Girotto")
   end
 end

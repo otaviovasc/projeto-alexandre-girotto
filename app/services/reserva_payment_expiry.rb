@@ -15,8 +15,10 @@ class ReservaPaymentExpiry
   def call
     ReservaPayment.open
                   .includes(:reserva)
-                  .where('due_at < ?', @grace_minutes.minutes.ago)
+                  .where('due_at < ?', Time.current)
                   .find_each do |reserva_payment|
+      next unless expired_for_background?(reserva_payment)
+
       expire_payment(reserva_payment)
     end
 
@@ -24,6 +26,12 @@ class ReservaPaymentExpiry
   end
 
   private
+
+  def expired_for_background?(reserva_payment)
+    return true if reserva_payment.public_booking?
+
+    reserva_payment.due_at < @grace_minutes.minutes.ago
+  end
 
   def expire_payment(reserva_payment)
     ReservaPaymentProcessor.call(

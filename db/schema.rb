@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_14_190000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_15_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -242,6 +242,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_14_190000) do
     t.datetime "canceled_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "public_booking_payload", default: {}, null: false
     t.index ["due_at"], name: "index_reserva_payments_on_due_at"
     t.index ["payment_link_id"], name: "index_reserva_payments_on_payment_link_id"
     t.index ["payment_order_code"], name: "index_reserva_payments_on_payment_order_code", unique: true

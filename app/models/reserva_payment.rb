@@ -48,6 +48,26 @@ class ReservaPayment < ApplicationRecord
     )
   end
 
+  def public_booking?
+    public_booking_payload.to_h['source'] == 'public_booking'
+  end
+
+  def public_booking_services
+    Array(public_booking_payload.to_h['services'])
+  end
+
+  def public_booking_daily_total
+    BigDecimal(public_booking_payload.to_h['daily_total'].to_s)
+  rescue ArgumentError, TypeError
+    0.to_d
+  end
+
+  def public_booking_services_total
+    BigDecimal(public_booking_payload.to_h['services_total'].to_s)
+  rescue ArgumentError, TypeError
+    0.to_d
+  end
+
   private
 
   def assign_default_payment_status

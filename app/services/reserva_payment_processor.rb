@@ -28,6 +28,12 @@ class ReservaPaymentProcessor
   private
 
   def mark_paid!
+    if @reserva_payment.public_booking? && @reserva_payment.expired?
+      Rails.logger.warn("Pagamento recebido depois do prazo para reserva publica #{@reserva_payment.id}; reserva nao foi confirmada.")
+      mark_overdue!
+      return
+    end
+
     if @reserva_payment.canceled? || @reserva_payment.overdue? || @reserva_payment.refused?
       Rails.logger.warn("Pagamento recebido para link inativo de reserva_payment ##{@reserva_payment.id}; reserva nao foi alterada.")
       return
@@ -71,8 +77,11 @@ class ReservaPaymentProcessor
   end
 
   def run_confirmed_side_effects
+    created_public_booking_services = PublicBookingServicesMaterializer.call(@reserva_payment)
     CleaningServicesAssigner.new(@reserva).call
     BreakfastServicesAssigner.new(@reserva, source: 'sistema').add_if_configured
+    export_service_purchases_to_sheets(created_public_booking_services)
+    send_public_booking_confirmation_email
     export_reservas_to_sheets
   end
 
@@ -118,6 +127,25 @@ class ReservaPaymentProcessor
     )
   rescue => e
     Rails.logger.error("Erro ao sincronizar reserva apos pagamento #{@source}: #{e.message}")
+  end
+
+  def export_service_purchases_to_sheets(reserva_services)
+    reserva_services = Array(reserva_services).compact
+    return if reserva_services.empty? || !GoogleSheetsExportService.configured?
+
+    result = GoogleSheetsExportService.export_service_purchases(reserva_services)
+    Rails.logger.warn("Google Sheets service purchases export failed: #{result[:error]}") unless result[:success]
+  rescue => e
+    Rails.logger.error("Google Sheets service purchases export error: #{e.message}")
+  end
+
+  def send_public_booking_confirmation_email
+    return unless @reserva_payment.public_booking?
+    return if @reserva.user.email.blank?
+
+    UserMailer.public_booking_confirmed(@reserva.user, @reserva).deliver_later
+  rescue => e
+    Rails.logger.error("Erro ao enviar email da reserva publica ##{@reserva.id}: #{e.message}")
   end
 
   def confirmation_payment_still_needed?
