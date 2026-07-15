@@ -34,7 +34,7 @@
     <%= form_with url: public_bookings_path, scope: :booking, method: :post, local: true, class: "vg-form", id: "public-booking-form" do |form| %>
       <section class="vg-card">
         <h2 class="vg-card-title">Dados da estadia</h2>
-        <p class="vg-card-copy">Na versão final, estes dados virão preenchidos a partir da escolha feita no site.</p>
+        <p class="vg-card-copy">Escolha a cabana, as datas da estadia e os serviços opcionais disponíveis para a sua reserva.</p>
         <div class="vg-field-grid three">
           <div class="sm:col-span-3">
             <%= form.label :cabana_id, "Cabana", class: "vg-label" %>
