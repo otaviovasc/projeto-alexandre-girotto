@@ -23,4 +23,20 @@ class GoogleSheetsExportServiceTest < ActiveSupport::TestCase
 
     assert_equal [confirmed], exported
   end
+
+  test "canceled history spreadsheet uses separate default id" do
+    assert_equal(
+      GoogleSheetsExportService::DEFAULT_CANCELED_HISTORY_SPREADSHEET_ID,
+      GoogleSheetsExportService.canceled_history_spreadsheet_id
+    )
+  end
+
+  test "canceled history spreadsheet id can be configured by env" do
+    previous_value = ENV['GOOGLE_SHEETS_CANCELED_SPREADSHEET_ID']
+    ENV['GOOGLE_SHEETS_CANCELED_SPREADSHEET_ID'] = 'custom-canceled-history-sheet'
+
+    assert_equal 'custom-canceled-history-sheet', GoogleSheetsExportService.canceled_history_spreadsheet_id
+  ensure
+    ENV['GOOGLE_SHEETS_CANCELED_SPREADSHEET_ID'] = previous_value
+  end
 end

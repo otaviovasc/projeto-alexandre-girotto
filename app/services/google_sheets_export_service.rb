@@ -10,6 +10,7 @@
 # 5. Criar uma planilha e compartilhar com o email da Service Account
 # 6. Adicionar as variáveis de ambiente:
 #    - GOOGLE_SHEETS_SPREADSHEET_ID: ID da planilha (da URL)
+#    - GOOGLE_SHEETS_CANCELED_SPREADSHEET_ID: ID da planilha separada de histórico de canceladas
 #    - GOOGLE_SHEETS_CREDENTIALS_PATH: caminho para o arquivo de credenciais
 #
 # Depois de configurado, descomente a gem no Gemfile:
@@ -19,6 +20,9 @@ require 'csv'
 
 class GoogleSheetsExportService
   SCOPES = ['https://www.googleapis.com/auth/spreadsheets'].freeze
+  DEFAULT_CANCELED_HISTORY_SPREADSHEET_ID = '1jTqpEW5hDKyH5zp9F2Q6kutvNx7P-VkdGUEpwrKWO04'
+  CANCELED_HISTORY_SHEET_TITLE = 'Canceladas'
+  LEGACY_CANCELED_SHEET_TITLE = 'Reservas Canceladas'
   
   class << self
     def export_reservas(reservas)
@@ -47,6 +51,10 @@ class GoogleSheetsExportService
       ENV['GOOGLE_SHEETS_SPREADSHEET_ID']
     end
 
+    def canceled_history_spreadsheet_id
+      ENV['GOOGLE_SHEETS_CANCELED_SPREADSHEET_ID'].presence || DEFAULT_CANCELED_HISTORY_SPREADSHEET_ID
+    end
+
     def credentials_json_content
       ENV['GOOGLE_SHEETS_CREDENTIALS_JSON']
     end
@@ -58,6 +66,7 @@ class GoogleSheetsExportService
 
   def initialize
     @spreadsheet_id = self.class.spreadsheet_id
+    @canceled_history_spreadsheet_id = self.class.canceled_history_spreadsheet_id
   end
 
   def export_service_purchases(reserva_services)
@@ -135,12 +144,16 @@ class GoogleSheetsExportService
         value_range,
         value_input_option: 'USER_ENTERED'
       )
-      export_canceled_reservas_sheet(service)
+      clear_legacy_canceled_reservas_sheet(service)
+      canceled_history_result = export_canceled_reservas_sheet(service)
+      unless canceled_history_result[:success]
+        Rails.logger.error "Google Sheets Canceled History Export Error: #{canceled_history_result[:error]}"
+      end
 
       {
         success: true,
         rows_updated: result.updated_rows,
-        message: "#{result.updated_rows} linhas exportadas para Google Sheets e canceladas atualizadas em aba separada"
+        message: "#{result.updated_rows} linhas exportadas para Google Sheets e histórico de canceladas sincronizado em planilha separada"
       }
     rescue => e
       Rails.logger.error "Google Sheets Export Error: #{e.message}"
@@ -222,44 +235,132 @@ class GoogleSheetsExportService
     ]
   end
 
-  def canceled_reservas_headers
-    reservas_headers + ['Data Cancelamento', 'Cancelado Por', 'Motivo Cancelamento']
-  end
-
   def export_canceled_reservas_sheet(service)
-    sheet_title = 'Reservas Canceladas'
-    ensure_sheet_exists!(service, sheet_title)
+    return { success: false, error: 'Planilha de histórico de canceladas não configurada' } if @canceled_history_spreadsheet_id.blank?
 
     canceled_reservas = Reserva
-                        .canceled_for_external_history
-                        .includes(:cabana, :user, :canceled_by, reserva_services: :service)
+                        .canceled_for_history
+                        .includes(:cabana, :user, :canceled_by, :reserva_payments, reserva_services: :service)
                         .order(canceled_at: :desc, updated_at: :desc)
-    rows = ReservasExportService.new(canceled_reservas).generate_array
-    cancel_metadata_by_id = canceled_reservas.index_by(&:id)
 
-    rows = rows.map do |row|
-      reserva = cancel_metadata_by_id[row[1].to_i]
-      row + [
-        format_datetime(reserva&.canceled_at),
-        reserva&.canceled_by&.name || reserva&.canceled_by&.email || '-',
-        reserva&.cancellation_reason.presence || '-'
-      ]
-    end
-
-    service.clear_values(@spreadsheet_id, quoted_range(sheet_title, 'A:AA'))
-    value_range = Google::Apis::SheetsV4::ValueRange.new(values: [canceled_reservas_headers] + rows)
-    service.update_spreadsheet_value(
-      @spreadsheet_id,
-      quoted_range(sheet_title, 'A1'),
+    ensure_sheet_exists!(service, CANCELED_HISTORY_SHEET_TITLE, spreadsheet_id: @canceled_history_spreadsheet_id)
+    service.clear_values(@canceled_history_spreadsheet_id, quoted_range(CANCELED_HISTORY_SHEET_TITLE, 'A:U'))
+    value_range = Google::Apis::SheetsV4::ValueRange.new(values: [canceled_history_headers] + canceled_history_rows(canceled_reservas))
+    result = service.update_spreadsheet_value(
+      @canceled_history_spreadsheet_id,
+      quoted_range(CANCELED_HISTORY_SHEET_TITLE, 'A1'),
       value_range,
       value_input_option: 'USER_ENTERED'
     )
+
+    { success: true, rows_updated: result.updated_rows }
+  rescue => e
+    { success: false, error: e.message }
   end
 
-  def ensure_sheet_exists!(service, sheet_title)
-    spreadsheet = service.get_spreadsheet(@spreadsheet_id)
-    sheet_exists = spreadsheet.sheets.any? { |sheet| sheet.properties.title == sheet_title }
-    return if sheet_exists
+  def clear_legacy_canceled_reservas_sheet(service)
+    return unless sheet_exists?(service, @spreadsheet_id, LEGACY_CANCELED_SHEET_TITLE)
+
+    service.clear_values(@spreadsheet_id, quoted_range(LEGACY_CANCELED_SHEET_TITLE, 'A:AA'))
+  rescue => e
+    Rails.logger.error "Google Sheets Legacy Canceled Sheet Clear Error: #{e.message}"
+  end
+
+  def canceled_history_headers
+    [
+      'ID Reserva',
+      'Data cancelamento',
+      'Hora cancelamento',
+      'Motivo',
+      'Tipo',
+      'Teve pagamento?',
+      'Status original',
+      'Origem',
+      'Cabana',
+      'Filial',
+      'Hospede',
+      'Telefone',
+      'Email',
+      'Entrada',
+      'Saida',
+      'Valor reserva',
+      'Valor pago',
+      'Parcelas pagas',
+      'Servicos',
+      'Codigo iCal / Pagamento',
+      'Observacoes'
+    ]
+  end
+
+  def canceled_history_rows(canceled_reservas)
+    canceled_reservas.map do |reserva|
+      paid_payments = reserva.reserva_payments.select(&:paid?)
+      paid_amount = paid_payments.sum { |payment| payment.amount.to_d }
+      service_count = reserva.reserva_services.size
+
+      [
+        reserva.id,
+        format_date(reserva.canceled_at),
+        format_time(reserva.canceled_at),
+        canceled_history_reason(reserva),
+        canceled_history_type(reserva),
+        paid_payments.any? ? 'Sim' : 'Não',
+        'Cancelado',
+        reserva.origem.presence || 'sistema',
+        reserva.cabana&.name,
+        reserva.cabana&.filial&.name,
+        reserva.guest_name.presence || reserva.user&.name || reserva.user&.email,
+        reserva.guest_phone.presence || reserva.user&.telephone,
+        reserva.user&.email,
+        format_date(reserva.start_date),
+        format_date(reserva.end_date),
+        format_currency(reserva.total_price),
+        format_currency(paid_amount),
+        paid_payments.size,
+        "#{service_count} serviço(s)",
+        canceled_history_codes(reserva),
+        canceled_history_observation(reserva)
+      ]
+    end
+  end
+
+  def canceled_history_reason(reserva)
+    reserva.cancellation_reason.presence || canceled_history_type(reserva)
+  end
+
+  def canceled_history_type(reserva)
+    payments = reserva.reserva_payments
+    return 'Pré-reserva sem pagamento' if payments.any? && payments.none?(&:paid?)
+    return 'Reserva com pagamento' if payments.any?(&:paid?)
+    return 'Reserva importada iCal' if reserva.origem.present? && reserva.origem != 'sistema'
+
+    'Reserva real'
+  end
+
+  def canceled_history_codes(reserva)
+    codes = [
+      reserva.platform_uid,
+      reserva.ical_uid,
+      reserva.payment_link_id,
+      reserva.payment_link_url,
+      *reserva.reserva_payments.map(&:payment_order_code)
+    ].compact_blank
+
+    codes.uniq.join(' | ')
+  end
+
+  def canceled_history_observation(reserva)
+    parts = [
+      reserva.observation,
+      ("Cancelado por #{reserva.canceled_by.name.presence || reserva.canceled_by.email}" if reserva.canceled_by),
+      ("Criada em #{format_datetime(reserva.created_at)}" if reserva.created_at)
+    ].compact_blank
+
+    parts.join(' | ').presence || '-'
+  end
+
+  def ensure_sheet_exists!(service, sheet_title, spreadsheet_id: @spreadsheet_id)
+    return if sheet_exists?(service, spreadsheet_id, sheet_title)
 
     request = Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest.new(
       requests: [
@@ -273,7 +374,13 @@ class GoogleSheetsExportService
       ]
     )
 
-    service.batch_update_spreadsheet(@spreadsheet_id, request)
+    service.batch_update_spreadsheet(spreadsheet_id, request)
+  end
+
+  def sheet_exists?(service, spreadsheet_id, sheet_title)
+    spreadsheet = service.get_spreadsheet(spreadsheet_id)
+    sheet_exists = spreadsheet.sheets.any? { |sheet| sheet.properties.title == sheet_title }
+    sheet_exists
   end
 
   def ensure_service_purchases_headers!(service, sheet_title)
@@ -314,6 +421,22 @@ class GoogleSheetsExportService
     return '-' unless datetime
 
     datetime.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y %H:%M')
+  end
+
+  def format_date(date_or_time)
+    return '-' unless date_or_time
+
+    if date_or_time.respond_to?(:in_time_zone)
+      date_or_time.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y')
+    else
+      date_or_time.strftime('%d/%m/%Y')
+    end
+  end
+
+  def format_time(datetime)
+    return '-' unless datetime
+
+    datetime.in_time_zone('America/Sao_Paulo').strftime('%H:%M')
   end
 
   def quoted_range(sheet_title, range)
