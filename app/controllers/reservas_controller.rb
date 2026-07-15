@@ -9,7 +9,7 @@ class ReservasController < ApplicationController
     @reservas = current_user.reservas.order(:start_date)
     @reservas.each do |reserva|
       if reserva.expired? && (reserva.waiting_payment? || reserva.pending?)
-        reserva.update_column(:payment_status, 'canceled')
+        reserva.cancel_for_operations!(by: nil, reason: 'Pagamento vencido sem confirmação.')
       end
     end
   end
@@ -18,7 +18,7 @@ class ReservasController < ApplicationController
     @reserva_services = @reserva.reserva_services.includes(:service)
     @reserva_items = @reserva.reserva_items.includes(:item)
     if @reserva.expired? && (@reserva.waiting_payment? || @reserva.pending?)
-      @reserva.update_column(:payment_status, 'canceled')
+      @reserva.cancel_for_operations!(by: nil, reason: 'Pagamento vencido sem confirmação.')
       flash[:alert] = "O prazo para pagamento expirou. Sua reserva foi cancelada."
       redirect_to reserva_path(@reserva)
     end
@@ -174,7 +174,7 @@ class ReservasController < ApplicationController
     when 'unpaid', 'refused'
       @reserva.update_column(:payment_status, 'refused')
     when 'canceled'
-      @reserva.update_column(:payment_status, 'canceled')
+      @reserva.cancel_for_operations!(by: nil, reason: 'Pagamento cancelado.')
     end
 
     head :ok
@@ -277,7 +277,7 @@ class ReservasController < ApplicationController
     @cabana = Cabana.find(params[:cabana_id] || session[:cabana_id])
     @cabana.reservas.each do |reserva|
       if reserva.expired? && (reserva.waiting_payment? || reserva.pending?)
-        reserva.update_column(:payment_status, 'canceled')
+        reserva.cancel_for_operations!(by: nil, reason: 'Pagamento vencido sem confirmação.')
       end
     end
   end

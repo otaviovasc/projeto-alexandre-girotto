@@ -7,7 +7,7 @@ class HomeController < ApplicationController
     @reservas = current_user.reservas
     @reservas.each do |reserva|
       if reserva.expired? && (reserva.waiting_payment? || reserva.pending?)
-        reserva.update_column(:payment_status, 'canceled')
+        reserva.cancel_for_operations!(by: nil, reason: 'Pagamento vencido sem confirmação.')
       end
     end
   end

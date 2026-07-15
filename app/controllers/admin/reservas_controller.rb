@@ -79,12 +79,17 @@ class Admin::ReservasController < ApplicationController
     @reserva.user = @user
     @reserva.observation = @user.partner? ? 'Parceria' : @reserva.observation.presence || 'Sistema'
 
-    if params[:reservation_state] == 'pending'
-      @reserva.payment_status = 'pending'
-      @reserva.blocks_availability = false
+    pending_reservation = params[:reservation_state] == 'pending'
+    pending_hold_hours = pending_payment_hold_hours
+
+    if pending_reservation
+      @reserva.payment_status = 'waiting_payment'
+      @reserva.blocks_availability = true
+      @reserva.payment_expires_at = pending_hold_hours.hours.from_now
     else
       @reserva.payment_status = 'paid'
       @reserva.blocks_availability = true
+      @reserva.payment_expires_at = nil
     end
 
     unless params[:reserva][:total_price].present?
@@ -97,11 +102,30 @@ class Admin::ReservasController < ApplicationController
         @reserva.save!
       end
 
-      if @reserva.blocks_availability?
+      if pending_reservation
+        begin
+          ReservaPendingPaymentSetup.call(
+            reserva: @reserva,
+            payments_attributes: params[:pending_payments] || {},
+            hold_hours: pending_hold_hours
+          )
+        rescue => payment_error
+          @reserva.cancel_for_operations!(by: current_user, reason: "Erro ao gerar pagamento pendente: #{payment_error.message}")
+          load_new_form_collections
+          flash.now[:alert] = "A reserva foi salva, mas não foi possível gerar os links de pagamento: #{payment_error.message}"
+          render :new, status: :unprocessable_entity
+          return
+        end
+      elsif @reserva.integration_ready?
         BreakfastServicesAssigner.new(@reserva, source: 'sistema').add_if_configured
       end
 
       sync_all_reservas_to_sheets if @reserva.integration_ready?
+
+      if pending_reservation
+        redirect_to admin_reserva_path(@reserva), notice: 'Reserva pendente criada. As datas estão pré-travadas até o prazo do primeiro pagamento.'
+        return
+      end
 
       message = if @reserva.blocks_availability?
                   'Reserva criada e datas bloqueadas com sucesso.'
@@ -200,7 +224,7 @@ class Admin::ReservasController < ApplicationController
 
     @summary_list_limited = summary_list_limited?
     @reservas = summary_list_scope(filtered_reservas)
-                .includes(:cabana, :user)
+                .includes(:cabana, :user, :reserva_payments)
                 .order(summary_priority_order)
                 .order(updated_at: :desc)
     @displayed_reservas_count = @reservas.size
@@ -522,11 +546,7 @@ class Admin::ReservasController < ApplicationController
   end
 
   def check_reservations_on_new
-    Reserva.active_for_operations
-           .where(payment_status: %w[pending waiting_payment])
-           .where.not(payment_expires_at: nil)
-           .where('payment_expires_at < ?', Time.current)
-           .update_all(payment_status: 'canceled', updated_at: Time.current)
+    ReservaPaymentExpiry.run
   end
 
   private
@@ -555,10 +575,12 @@ class Admin::ReservasController < ApplicationController
   def summary_priority_order
     Arel.sql(
       "CASE " \
-      "WHEN group_created = FALSE THEN 0 " \
-      "WHEN ical_date_change_since IS NOT NULL THEN 1 " \
-      "WHEN ical_missing_since IS NOT NULL THEN 2 " \
-      "ELSE 3 END ASC"
+      "WHEN payment_status IN ('pending', 'waiting_payment') THEN 0 " \
+      "WHEN EXISTS (SELECT 1 FROM reserva_payments WHERE reserva_payments.reserva_id = reservas.id AND reserva_payments.payment_status = 'overdue') THEN 1 " \
+      "WHEN group_created = FALSE THEN 2 " \
+      "WHEN ical_date_change_since IS NOT NULL THEN 3 " \
+      "WHEN ical_missing_since IS NOT NULL THEN 4 " \
+      "ELSE 5 END ASC"
     )
   end
 
@@ -570,7 +592,9 @@ class Admin::ReservasController < ApplicationController
     return scope unless summary_list_limited?
 
     priority_scope = scope.where(
-      'group_created = FALSE OR ical_date_change_since IS NOT NULL OR ical_missing_since IS NOT NULL'
+      "payment_status IN ('pending', 'waiting_payment') OR " \
+      "EXISTS (SELECT 1 FROM reserva_payments WHERE reserva_payments.reserva_id = reservas.id AND reserva_payments.payment_status = 'overdue') OR " \
+      "group_created = FALSE OR ical_date_change_since IS NOT NULL OR ical_missing_since IS NOT NULL"
     )
     priority_ids = priority_scope.pluck(:id)
     recent_ids = scope.where.not(id: priority_ids)
@@ -589,6 +613,14 @@ class Admin::ReservasController < ApplicationController
 
   def load_new_form_collections
     @services = Service.order(:name)
+  end
+
+  def pending_payment_hold_hours
+    value = params[:pending_payment_hold_hours].to_s.tr(',', '.')
+    hours = BigDecimal(value)
+    hours.positive? ? hours : ReservaPendingPaymentSetup::DEFAULT_HOLD_HOURS
+  rescue ArgumentError, TypeError
+    ReservaPendingPaymentSetup::DEFAULT_HOLD_HOURS
   end
 
   def sync_all_reservas_to_sheets

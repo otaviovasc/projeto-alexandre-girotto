@@ -291,6 +291,14 @@
                 <% unless reserva.blocks_availability? %>
                   <span class="badge bg-light text-dark border ms-1">Não bloqueia datas</span>
                 <% end %>
+                <% if reserva.waiting_payment? && reserva.payment_expires_at.present? %>
+                  <span class="badge bg-warning text-dark ms-1">
+                    Pré-travada até <%= reserva.payment_expires_at.in_time_zone("America/Sao_Paulo").strftime("%d/%m %H:%M") %>
+                  </span>
+                <% end %>
+                <% if reserva.reserva_payment_overdue? %>
+                  <span class="badge bg-danger ms-1">Pagamento atrasado</span>
+                <% end %>
                 <% if reserva.ical_missing? %>
                   <span class="badge bg-danger ms-1">Possível cancelamento iCal</span>
                 <% elsif reserva.ical_date_changed? %>

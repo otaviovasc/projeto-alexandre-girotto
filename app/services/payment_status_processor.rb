@@ -13,6 +13,7 @@ class PaymentStatusProcessor
 
     process_cart_items_payment
     process_portal_services_payment
+    process_reserva_payments
   end
 
   private
@@ -90,6 +91,16 @@ class PaymentStatusProcessor
       portal_services.where.not(payment_status: "paid").update_all(status: "pending_portal", payment_status: "refused", updated_at: Time.current)
     when "canceled", "cancelled"
       portal_services.where.not(payment_status: "paid").update_all(status: "cancelled", payment_status: "canceled", updated_at: Time.current)
+    end
+  end
+
+  def process_reserva_payments
+    reserva_payments = ReservaPayment.where(payment_link_id: @identifiers)
+                                     .or(ReservaPayment.where(payment_order_code: @identifiers))
+    return if reserva_payments.empty?
+
+    reserva_payments.includes(:reserva).find_each do |reserva_payment|
+      ReservaPaymentProcessor.call(reserva_payment: reserva_payment, status: @status)
     end
   end
 

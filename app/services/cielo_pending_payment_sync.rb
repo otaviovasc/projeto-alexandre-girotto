@@ -39,6 +39,10 @@ class CieloPendingPaymentSync
       orders << PendingOrder.new(order_code: reserva_service.payment_order_code, filial: reserva_service.reserva&.cabana&.filial)
     end
 
+    pending_reserva_payments.each do |reserva_payment|
+      orders << PendingOrder.new(order_code: reserva_payment.payment_order_code, filial: reserva_payment.reserva&.cabana&.filial)
+    end
+
     orders
       .select { |order| valid_order?(order) }
       .uniq { |order| order.order_code }
@@ -63,6 +67,16 @@ class CieloPendingPaymentSync
       .where.not(payment_order_code: nil)
       .where("reserva_services.created_at >= :cutoff OR reserva_services.updated_at >= :cutoff", cutoff: cutoff_time)
       .order(:updated_at)
+      .limit(scan_limit)
+      .to_a
+  end
+
+  def pending_reserva_payments
+    ReservaPayment
+      .includes(reserva: { cabana: :filial })
+      .where(payment_status: "waiting_payment")
+      .where.not(payment_order_code: nil)
+      .order(:due_at, :updated_at)
       .limit(scan_limit)
       .to_a
   end
@@ -105,6 +119,7 @@ class CieloPendingPaymentSync
     now = Time.current
     CartItem.where(payment_order_code: order_code).update_all(payment_link_id: checkout_order_number, updated_at: now)
     ReservaService.where(payment_order_code: order_code).update_all(payment_link_id: checkout_order_number, updated_at: now)
+    ReservaPayment.where(payment_order_code: order_code).update_all(payment_link_id: checkout_order_number, updated_at: now)
   end
 
   def increment_result(status)
@@ -119,7 +134,7 @@ class CieloPendingPaymentSync
   end
 
   def valid_order?(order)
-    order.order_code.to_s.match?(/\A(?:CT|PS)\d+\z/) && order.filial.present?
+    order.order_code.to_s.match?(/\A(?:CT|PS|RP)[A-Z0-9]+\z/) && order.filial.present?
   end
 
   def cutoff_time

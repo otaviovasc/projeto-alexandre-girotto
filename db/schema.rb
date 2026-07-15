@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_13_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_14_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -224,6 +224,32 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_13_120000) do
     t.index ["service_id"], name: "index_reserva_services_on_service_id"
   end
 
+  create_table "reserva_payments", force: :cascade do |t|
+    t.bigint "reserva_id", null: false
+    t.integer "installment_number", default: 1, null: false
+    t.decimal "amount", precision: 10, scale: 2, null: false
+    t.datetime "due_at", null: false
+    t.string "payment_status", default: "waiting_payment", null: false
+    t.string "payment_order_code"
+    t.string "payment_link_id"
+    t.text "payment_link_url"
+    t.string "terms_token", null: false
+    t.datetime "terms_accepted_at"
+    t.string "terms_acceptance_name"
+    t.string "terms_acceptance_ip"
+    t.text "terms_acceptance_user_agent"
+    t.datetime "paid_at"
+    t.datetime "canceled_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["due_at"], name: "index_reserva_payments_on_due_at"
+    t.index ["payment_link_id"], name: "index_reserva_payments_on_payment_link_id"
+    t.index ["payment_order_code"], name: "index_reserva_payments_on_payment_order_code", unique: true
+    t.index ["payment_status"], name: "index_reserva_payments_on_payment_status"
+    t.index ["reserva_id"], name: "index_reserva_payments_on_reserva_id"
+    t.index ["terms_token"], name: "index_reserva_payments_on_terms_token", unique: true
+  end
+
   create_table "reservas", force: :cascade do |t|
     t.date "start_date"
     t.date "end_date"
@@ -339,6 +365,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_13_120000) do
   add_foreign_key "promotions", "cabanas"
   add_foreign_key "reserva_items", "items"
   add_foreign_key "reserva_items", "reservas"
+  add_foreign_key "reserva_payments", "reservas"
   add_foreign_key "reserva_services", "reservas"
   add_foreign_key "reserva_services", "services"
   add_foreign_key "reservas", "cabanas"

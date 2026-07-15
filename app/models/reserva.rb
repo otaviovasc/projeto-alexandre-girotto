@@ -20,6 +20,7 @@ class Reserva < ApplicationRecord
 
   has_many :reserva_items, dependent: :destroy
   has_many :items, through: :reserva_items
+  has_many :reserva_payments, dependent: :destroy
   has_many :ical_reservation_changes, dependent: :destroy
   has_many :fnrh_events, dependent: :destroy
 
@@ -105,6 +106,7 @@ class Reserva < ApplicationRecord
     overlapping_reservas = Reserva.where(cabana_id: cabana.id)
                                   .where(blocks_availability: true)
                                   .where(payment_status: [:pending, :waiting_payment, :paid])
+                                  .where('payment_expires_at IS NULL OR payment_expires_at > ?', Time.current)
     overlapping_reservas = overlapping_reservas.where.not(id: id) if persisted?
 
     overlapping_reservas.each do |existing_reserva|
@@ -118,12 +120,25 @@ class Reserva < ApplicationRecord
     paid? && blocks_availability?
   end
 
+  def reserva_payment_overdue?
+    if association(:reserva_payments).loaded?
+      reserva_payments.any?(&:overdue?)
+    else
+      reserva_payments.overdue_installments.exists?
+    end
+  end
+
   def cancel_for_operations!(by:, reason: nil)
     now = Time.current
 
     transaction do
       reserva_services.where.not(status: 'cancelled').update_all(
         status: 'cancelled',
+        updated_at: now
+      )
+      reserva_payments.where.not(payment_status: 'paid').update_all(
+        payment_status: 'canceled',
+        canceled_at: now,
         updated_at: now
       )
 
@@ -182,7 +197,7 @@ class Reserva < ApplicationRecord
 
   def check_and_cancel_expired_reservations
     if expired? && waiting_payment?
-      update_column(:payment_status, 'canceled')
+      cancel_for_operations!(by: nil, reason: 'Pagamento vencido sem confirmação.')
     end
   end
 
@@ -195,6 +210,7 @@ class Reserva < ApplicationRecord
     overlapping_reservas = Reserva.where(cabana_id: cabana.id)
                                   .where(blocks_availability: true)
                                   .where(payment_status: [:pending, :waiting_payment, :paid])
+                                  .where('payment_expires_at IS NULL OR payment_expires_at > ?', Time.current)
     
     # Exclui a própria reserva quando está editando (não é novo registro)
     overlapping_reservas = overlapping_reservas.where.not(id: self.id) if self.persisted?
@@ -272,7 +288,7 @@ class Reserva < ApplicationRecord
   end
 
   def ensure_required_cleaning_services
-    return unless blocks_availability?
+    return unless integration_ready?
 
     CleaningServicesAssigner.new(self).call
   end
@@ -287,13 +303,15 @@ class Reserva < ApplicationRecord
   end
 
   def ensure_required_cleaning_services_after_schedule_change
-    return unless blocks_availability?
+    return unless integration_ready?
 
     force_dates = saved_change_to_start_date? || saved_change_to_end_date? || saved_change_to_cabana_id?
     CleaningServicesAssigner.new(self, force_dates: force_dates).call
   end
 
   def sync_automatic_breakfast_service_date
+    return unless integration_ready?
+
     BreakfastServicesAssigner.new(self).sync_automatic_service_dates
   end
 
@@ -317,6 +335,7 @@ class Reserva < ApplicationRecord
   def validate_imported_extension(attribute, extension_range)
     occupied = Reserva.where(cabana_id: cabana_id, payment_status: [:pending, :waiting_payment, :paid])
                        .where(blocks_availability: true)
+                       .where('payment_expires_at IS NULL OR payment_expires_at > ?', Time.current)
     occupied = occupied.where.not(id: id) if persisted?
     return unless occupied.any? do |reserva|
       existing_range = reserva.availability_range

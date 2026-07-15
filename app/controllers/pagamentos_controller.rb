@@ -221,7 +221,7 @@ class PagamentosController < ApplicationController
     when 'unpaid', 'refused', 'failed'
       reserva.update_column(:payment_status, 'refused') unless reserva.paid?
     when 'canceled', 'cancelled'
-      reserva.update_column(:payment_status, 'canceled') unless reserva.paid?
+      reserva.cancel_for_operations!(by: nil, reason: 'Pagamento cancelado.') unless reserva.paid?
     end
   end
 
@@ -330,7 +330,11 @@ class PagamentosController < ApplicationController
 
     reserva_service = ReservaService.includes(reserva: { cabana: :filial }).find_by(payment_order_code: order_code)
     reserva_service ||= ReservaService.includes(reserva: { cabana: :filial }).find_by(payment_link_id: order_code)
-    reserva_service&.reserva&.cabana&.filial
+    return reserva_service.reserva&.cabana&.filial if reserva_service.present?
+
+    reserva_payment = ReservaPayment.includes(reserva: { cabana: :filial }).find_by(payment_order_code: order_code)
+    reserva_payment ||= ReservaPayment.includes(reserva: { cabana: :filial }).find_by(payment_link_id: order_code)
+    reserva_payment&.reserva&.cabana&.filial
   end
 
   def filiais_for_payment_order(order_code, checkout_order_number)
@@ -347,6 +351,7 @@ class PagamentosController < ApplicationController
     now = Time.current
     CartItem.where(payment_order_code: order_codes).update_all(payment_link_id: checkout_order_number, updated_at: now)
     ReservaService.where(payment_order_code: order_codes).update_all(payment_link_id: checkout_order_number, updated_at: now)
+    ReservaPayment.where(payment_order_code: order_codes).update_all(payment_link_id: checkout_order_number, updated_at: now)
   end
 
   def cielo_transaction_matches_notification?(transaction, order_code, checkout_order_number)
@@ -383,6 +388,11 @@ class PagamentosController < ApplicationController
       identifiers.concat(cart_items.pluck(:payment_order_code, :payment_link_id).flatten)
     end
 
+    reserva_payments = ReservaPayment.where(id: cielo_transaction_reserva_payment_ids(transaction))
+    if reserva_payments.any?
+      identifiers.concat(reserva_payments.pluck(:payment_order_code, :payment_link_id).flatten)
+    end
+
     identifiers.compact_blank.uniq
   end
 
@@ -392,6 +402,16 @@ class PagamentosController < ApplicationController
       next unless item.respond_to?(:[])
 
       Integer(item["sku"].presence || item["Sku"].presence, exception: false)
+    end
+  end
+
+  def cielo_transaction_reserva_payment_ids(transaction)
+    items = transaction.dig("cart", "items") || transaction.dig("Cart", "Items") || []
+    Array(items).filter_map do |item|
+      next unless item.respond_to?(:[])
+
+      item["sku"].presence.to_s[/\ARP(\d+)\z/i, 1]&.to_i ||
+        item["Sku"].presence.to_s[/\ARP(\d+)\z/i, 1]&.to_i
     end
   end
 

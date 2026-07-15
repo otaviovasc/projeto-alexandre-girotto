@@ -98,6 +98,11 @@ Rails.application.routes.draw do
         get :photo_print_pdf
       end
     end
+    resources :reserva_payments, only: [] do
+      member do
+        patch :mark_paid
+      end
+    end
 
     resources :service_purchases, only: [:index] do
       collection do
@@ -133,6 +138,8 @@ Rails.application.routes.draw do
 
   post 'pagamentos/webhook', to: 'pagamentos#webhook', as: 'pagamentos_webhook'
   post 'pagamentos/cielo_checkout', to: 'pagamentos#cielo_checkout', as: 'cielo_checkout_webhook'
+  get  'pagamento/:token', to: 'reserva_payments#show', as: :reserva_payment
+  post 'pagamento/:token/aceitar-termos', to: 'reserva_payments#accept_terms', as: :accept_reserva_payment_terms
 
   # Cart
   post 'cart/add_item', to: 'carts#add_item', as: 'add_item'
