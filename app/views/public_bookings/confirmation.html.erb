@@ -1,52 +1,61 @@
 <% content_for :title, "#{@payment_paid ? 'Reserva confirmada' : 'Pagamento da reserva'} - Villaggio Girotto" %>
 
-<main class="min-h-screen px-4 py-8 sm:py-12">
-  <div class="mx-auto max-w-4xl">
-    <header class="mb-8">
-      <p class="text-sm font-semibold text-[#5f755f]">Villaggio Girotto</p>
-      <h1 class="mt-1 text-3xl font-semibold sm:text-5xl">
-        <%= @payment_paid ? "Reserva confirmada" : "Pagamento da reserva" %>
-      </h1>
-      <p class="mt-3 max-w-2xl text-sm leading-6 text-[#637066]">
-        Reserva #<%= @reserva.id %> · <%= @reserva.cabana.name %> ·
-        <%= @reserva.start_date.strftime('%d/%m/%Y') %> a <%= @reserva.end_date.strftime('%d/%m/%Y') %>
-      </p>
+<main class="vg-public-page">
+  <div class="vg-public-shell">
+    <div class="vg-topline">
+      <span class="vg-brand-name">Villaggio Girotto</span>
+      <span class="vg-page-status">Reserva #<%= @reserva.id %></span>
+    </div>
+
+    <header class="vg-hero">
+      <div>
+        <p class="vg-kicker"><%= @payment_paid ? "Pagamento confirmado" : "Checkout seguro" %></p>
+        <h1 class="vg-title">
+          <%= @payment_paid ? "Sua reserva está confirmada." : "Finalize o pagamento." %>
+        </h1>
+        <p class="vg-lead">
+          <%= @reserva.cabana.name %> · <%= @reserva.start_date.strftime('%d/%m/%Y') %> a <%= @reserva.end_date.strftime('%d/%m/%Y') %>
+        </p>
+      </div>
+      <div class="vg-note">
+        Esta página acompanha a confirmação da Cielo. Depois do pagamento, enviamos o resumo por e-mail e liberamos o contato pelo WhatsApp.
+      </div>
     </header>
 
-    <section class="border border-[#d9dfd7] bg-white p-6 shadow-sm sm:p-8">
+    <section class="vg-card">
       <% if @payment_paid %>
-        <div class="border-l-4 border-green-600 bg-green-50 px-4 py-3 text-sm text-green-800">
+        <div class="vg-alert success">
           <strong>Pagamento confirmado.</strong> Sua reserva foi registrada com sucesso.
         </div>
       <% elsif @payment_open %>
-        <div class="border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div class="vg-alert warning">
           <strong>Aguardando pagamento.</strong> As datas ficam pré-reservadas até
           <%= @reserva_payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %>.
         </div>
       <% else %>
-        <div class="border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div class="vg-alert error">
           <strong><%= @payment_status_label %>.</strong> Esta tentativa não pode mais confirmar a reserva.
         </div>
       <% end %>
 
-      <div class="mt-6 grid gap-4 sm:grid-cols-3">
+      <div class="vg-summary-grid">
         <div>
-          <p class="text-xs uppercase tracking-wide text-[#7a857d]">Responsável</p>
-          <p class="mt-1 font-semibold text-[#1a2e1a]"><%= @reserva.guest_name.presence || @reserva.user.name %></p>
+          <p class="vg-summary-label">Responsável</p>
+          <p class="vg-summary-value"><%= @reserva.guest_name.presence || @reserva.user.name %></p>
         </div>
         <div>
-          <p class="text-xs uppercase tracking-wide text-[#7a857d]">Status</p>
-          <p id="payment-status-label" class="mt-1 font-semibold text-[#1a2e1a]"><%= @payment_status_label %></p>
+          <p class="vg-summary-label">Status</p>
+          <p id="payment-status-label" class="vg-summary-value"><%= @payment_status_label %></p>
         </div>
         <div>
-          <p class="text-xs uppercase tracking-wide text-[#7a857d]">Total</p>
-          <p class="mt-1 font-semibold text-[#1a2e1a]"><%= number_to_currency(@reserva_payment.amount, unit: 'R$ ', separator: ',', delimiter: '.') %></p>
+          <p class="vg-summary-label">Total</p>
+          <p class="vg-summary-value"><%= number_to_currency(@reserva_payment.amount, unit: 'R$ ', separator: ',', delimiter: '.') %></p>
         </div>
       </div>
 
-      <div class="mt-8 divide-y divide-[#edf1ea] border-y border-[#edf1ea]">
+      <div class="vg-items">
         <% @purchase_items.each do |item| %>
-          <div class="flex items-start justify-between gap-4 py-4">
+          <div class="vg-item">
             <div>
               <p class="font-semibold text-[#1a2e1a]"><%= item[:name] %></p>
               <p class="mt-1 text-sm text-[#637066]">
@@ -62,21 +71,21 @@
       </div>
 
       <% if @payment_paid %>
-        <div class="mt-8 rounded-lg border border-[#d9dfd7] bg-[#f7f9f6] p-5">
-          <h2 class="text-lg font-semibold text-[#1a2e1a]">Próximo passo</h2>
-          <p class="mt-2 text-sm leading-6 text-[#637066]">
+        <div class="mt-8 border border-[#d8cdb8] bg-[#fbf7ee] p-5">
+          <h2 class="vg-card-title text-[24px]">Próximo passo</h2>
+          <p class="mt-2 text-sm leading-6 text-[#6c7066]">
             Envie o resumo abaixo pelo WhatsApp para agilizar o contato. Se preferir não enviar agora, tudo bem: entraremos em contato com você.
           </p>
 
-          <textarea id="public-booking-summary" readonly rows="9" class="mt-4 w-full border border-[#c9d1c7] bg-white p-4 text-sm leading-6 text-[#344138]"><%= @summary_text %></textarea>
+          <textarea id="public-booking-summary" readonly rows="9" class="vg-textarea"><%= @summary_text %></textarea>
 
           <div class="mt-4 flex flex-col gap-3 sm:flex-row">
             <%= link_to "Enviar pelo WhatsApp",
                 @whatsapp_url,
                 target: "_blank",
                 rel: "noopener",
-                class: "w-full bg-[#1f7a4c] px-5 py-3 text-center text-sm font-semibold text-white hover:bg-[#17633d] sm:w-auto" %>
-            <button type="button" id="copy-summary-button" class="w-full bg-[#315b3a] px-5 py-3 text-sm font-semibold text-white hover:bg-[#264a2e] sm:w-auto">
+                class: "vg-button w-full sm:w-auto" %>
+            <button type="button" id="copy-summary-button" class="vg-button secondary w-full sm:w-auto">
               Copiar resumo
             </button>
           </div>
@@ -86,9 +95,9 @@
         <div class="mt-8 flex flex-col gap-3 sm:flex-row">
           <%= link_to "Finalizar pagamento na Cielo",
               @payment_link_url,
-              class: "w-full bg-[#315b3a] px-5 py-3 text-center text-sm font-semibold text-white hover:bg-[#264a2e] sm:w-auto",
+              class: "vg-button w-full sm:w-auto",
               data: { turbo: false } %>
-          <button type="button" id="check-payment-button" class="w-full border border-[#315b3a] px-5 py-3 text-sm font-semibold text-[#315b3a] hover:bg-[#315b3a] hover:text-white sm:w-auto">
+          <button type="button" id="check-payment-button" class="vg-button secondary w-full sm:w-auto">
             Verificar pagamento
           </button>
         </div>
@@ -97,7 +106,7 @@
         <div class="mt-8">
           <%= link_to "Iniciar nova reserva",
               new_public_booking_path,
-              class: "inline-flex bg-[#315b3a] px-5 py-3 text-sm font-semibold text-white hover:bg-[#264a2e]" %>
+              class: "vg-button" %>
         </div>
       <% end %>
     </section>
