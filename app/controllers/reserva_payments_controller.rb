@@ -18,8 +18,8 @@ class ReservaPaymentsController < ApplicationController
     end
 
     name = params[:terms_acceptance_name].to_s.squish
-    if name.blank?
-      flash.now[:alert] = 'Informe o nome de quem aceitou os termos.'
+    if name.split(/\s+/).size < 2
+      flash.now[:alert] = 'Informe nome e sobrenome do responsável pela reserva.'
       render :show, status: :unprocessable_entity
       return
     end

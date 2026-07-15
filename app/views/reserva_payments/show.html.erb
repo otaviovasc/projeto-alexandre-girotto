@@ -62,13 +62,8 @@
             class: 'mt-6 block w-full bg-[#315b3a] px-4 py-3 text-center font-semibold text-white hover:bg-[#264a2e]',
             data: { turbo: false } %>
       <% else %>
-        <div class="mt-6 space-y-6 leading-7 text-[#58645d]">
-          <section>
-            <h2 class="text-xl font-semibold text-[#172019]">Termos para confirmar a reserva</h2>
-            <p class="mt-3">Ao prosseguir, o responsável declara que leu e concorda com os termos de hospedagem do Villaggio Girotto, incluindo regras de uso da cabana, política de cancelamento, responsabilidade por danos, regras para pets, visitas e preenchimento de dados obrigatórios quando aplicável.</p>
-            <p class="mt-3">A data fica pré-reservada apenas até o prazo informado acima. A reserva só é confirmada após a confirmação do pagamento da primeira parcela.</p>
-            <p class="mt-3">Se houver parcelas futuras e alguma delas vencer sem pagamento, a reserva poderá ser cancelada automaticamente.</p>
-          </section>
+        <div class="mt-6">
+          <%= render 'fnrh_portal/hosting_terms' %>
         </div>
 
         <%= form_with url: accept_reserva_payment_terms_path(token: @reserva_payment.terms_token), method: :post, local: true, class: 'mt-6 space-y-5' do |form| %>
@@ -78,10 +73,11 @@
           </label>
 
           <div>
-            <%= label_tag :terms_acceptance_name, 'Nome de quem aceitou os termos', class: 'block text-sm font-medium' %>
+            <%= label_tag :terms_acceptance_name, 'Nome e Sobrenome do Responsável Pela Reserva', class: 'block text-sm font-medium' %>
             <%= text_field_tag :terms_acceptance_name,
                 nil,
                 required: true,
+                autocomplete: 'name',
                 placeholder: 'Ex.: Maria Silva',
                 class: 'mt-2 w-full border border-[#c9d1c7] px-3 py-3 text-base focus:border-[#3f6747] focus:outline-none focus:ring-1 focus:ring-[#3f6747]' %>
           </div>
