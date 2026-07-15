@@ -502,8 +502,16 @@
 
       <% if message_payments.any? %>
         <div style="margin-top: 1rem;">
-          <label class="info-label" for="reservation-payment-message">Mensagem para enviar ao hóspede</label>
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+            <label class="info-label mb-0" for="reservation-payment-message">Mensagem para enviar ao hóspede</label>
+            <button type="button" id="copy-reservation-payment-message" class="btn btn-sm btn-primary">
+              Copiar mensagem
+            </button>
+          </div>
           <textarea id="reservation-payment-message" class="form-control" rows="10" readonly><%= message_lines.join("\n") %></textarea>
+          <p id="copy-reservation-payment-feedback" style="display: none; color: #166534; font-weight: 600; margin-top: 0.5rem;">
+            Mensagem copiada.
+          </p>
         </div>
       <% else %>
         <div class="empty-state">Nenhum link ativo para enviar ao hóspede.</div>
@@ -693,3 +701,40 @@
     <% end %>
   </div>
 </div>
+
+<script>
+  (function() {
+    function setupReservationPaymentCopy() {
+      var button = document.getElementById("copy-reservation-payment-message");
+      var textarea = document.getElementById("reservation-payment-message");
+      var feedback = document.getElementById("copy-reservation-payment-feedback");
+
+      if (!button || !textarea || button.dataset.copyReady === "true") return;
+      button.dataset.copyReady = "true";
+
+      button.addEventListener("click", function() {
+        var text = textarea.value;
+
+        function showFeedback() {
+          feedback.style.display = "block";
+          button.textContent = "Mensagem copiada";
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(showFeedback).catch(function() {
+            textarea.select();
+            document.execCommand("copy");
+            showFeedback();
+          });
+        } else {
+          textarea.select();
+          document.execCommand("copy");
+          showFeedback();
+        }
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", setupReservationPaymentCopy);
+    document.addEventListener("turbo:load", setupReservationPaymentCopy);
+  })();
+</script>
