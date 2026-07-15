@@ -1,5 +1,6 @@
 class ReservaPendingPaymentSetup
   DEFAULT_HOLD_HOURS = 3
+  DEFAULT_MAX_INSTALLMENTS = 6
 
   def self.call(reserva:, payments_attributes:, hold_hours:)
     new(reserva: reserva, payments_attributes: payments_attributes, hold_hours: hold_hours).call
@@ -180,7 +181,7 @@ class ReservaPendingPaymentSetup
         email: @reserva.user.email,
         phone: @reserva.guest_phone.presence || @reserva.user.telephone
       },
-      max_installments: 1
+      max_installments: DEFAULT_MAX_INSTALLMENTS
     ).call
 
     payment.update!(
