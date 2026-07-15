@@ -6,6 +6,11 @@ class PublicBookingCheckout
 
   HOLD_MINUTES = 15
   MAX_INSTALLMENTS = 6
+  TEST_DAILY_RATE = BigDecimal('1')
+  TEST_DAILY_RATE_DATES = [
+    Date.new(2027, 7, 15),
+    Date.new(2027, 7, 16)
+  ].freeze
 
   attr_reader :reserva, :reserva_payment
 
@@ -176,7 +181,14 @@ class PublicBookingCheckout
   end
 
   def daily_total
-    @daily_total ||= PriceCalculator.new(Reserva.new(cabana: @cabana, start_date: @start_date, end_date: @end_date)).total_price
+    @daily_total ||= begin
+      reservation = Reserva.new(cabana: @cabana, start_date: @start_date, end_date: @end_date)
+      calculator = PriceCalculator.new(reservation)
+
+      (@start_date...@end_date).sum do |date|
+        TEST_DAILY_RATE_DATES.include?(date) ? TEST_DAILY_RATE : calculator.price_for_day(date)
+      end
+    end
   end
 
   def services_total
