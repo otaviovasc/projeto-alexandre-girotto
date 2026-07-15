@@ -5,14 +5,17 @@ class ReservaPaymentsController < ApplicationController
   before_action :set_reserva_payment
 
   def show
-    @reserva = @reserva_payment.reserva
-    sync_cielo_checkout_status!
-    @reserva_payment.reload
-    @reserva = @reserva_payment.reserva
+    refresh_payment_status!
   end
 
   def accept_terms
-    @reserva = @reserva_payment.reserva
+    refresh_payment_status!
+
+    if payment_link_unavailable?
+      flash.now[:alert] = 'Este link não está mais disponível para pagamento.'
+      render :show, status: :unprocessable_entity
+      return
+    end
 
     unless ActiveModel::Type::Boolean.new.cast(params[:terms_accepted])
       flash.now[:alert] = 'Confirme o aceite dos termos para continuar.'
@@ -41,6 +44,16 @@ class ReservaPaymentsController < ApplicationController
 
   def set_reserva_payment
     @reserva_payment = ReservaPayment.includes(reserva: [:user, { cabana: :filial }]).find_by!(terms_token: params[:token])
+  end
+
+  def refresh_payment_status!
+    @reserva = @reserva_payment.reserva
+    sync_cielo_checkout_status!
+    @reserva_payment.reload
+    @reserva = @reserva_payment.reserva
+    expire_payment_if_needed!
+    @reserva_payment.reload
+    @reserva = @reserva_payment.reserva
   end
 
   def sync_cielo_checkout_status!
@@ -75,5 +88,22 @@ class ReservaPaymentsController < ApplicationController
       payment_link_id: checkout_order_number,
       updated_at: Time.current
     )
+  end
+
+  def expire_payment_if_needed!
+    return unless @reserva_payment.waiting_payment? && @reserva_payment.expired?
+
+    ReservaPaymentProcessor.call(
+      reserva_payment: @reserva_payment,
+      status: 'overdue',
+      source: 'public_payment_link'
+    )
+  end
+
+  def payment_link_unavailable?
+    @reserva.canceled? ||
+      @reserva_payment.canceled? ||
+      @reserva_payment.overdue? ||
+      @reserva_payment.expired?
   end
 end
