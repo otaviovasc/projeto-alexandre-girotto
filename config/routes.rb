@@ -101,6 +101,8 @@ Rails.application.routes.draw do
     resources :reserva_payments, only: [] do
       member do
         patch :mark_paid
+        patch :regenerate
+        patch :cancel
       end
     end
 

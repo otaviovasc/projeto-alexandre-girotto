@@ -28,6 +28,11 @@ class ReservaPaymentProcessor
   private
 
   def mark_paid!
+    if @reserva_payment.canceled? || @reserva_payment.overdue? || @reserva_payment.refused?
+      Rails.logger.warn("Pagamento recebido para link inativo de reserva_payment ##{@reserva_payment.id}; reserva nao foi alterada.")
+      return
+    end
+
     newly_paid = false
     reservation_confirmed = false
     reservation_was_canceled = false

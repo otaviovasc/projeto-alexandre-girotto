@@ -410,8 +410,40 @@
                     data: { turbo_confirm: 'Marcar esta parcela como paga manualmente?' } do %>
                   Marcar paga
                 <% end %>
+                <% unless payment.canceled? %>
+                  <%= button_to cancel_admin_reserva_payment_path(payment),
+                      method: :patch,
+                      class: 'btn btn-sm btn-outline-danger ms-2',
+                      form_class: 'd-inline',
+                      data: { turbo_confirm: 'Cancelar este link no sistema?' } do %>
+                    Cancelar link
+                  <% end %>
+                <% end %>
               <% end %>
             </div>
+            <% unless payment.paid? %>
+              <%= form_with url: regenerate_admin_reserva_payment_path(payment),
+                  method: :patch,
+                  local: true,
+                  class: 'mt-2 d-flex flex-wrap gap-2 align-items-end' do |form| %>
+                <div>
+                  <%= form.label :amount, 'Novo valor', class: 'form-label mb-1' %>
+                  <%= form.text_field :amount,
+                      value: number_with_precision(payment.amount, precision: 2, separator: ',', delimiter: ''),
+                      class: 'form-control form-control-sm',
+                      style: 'max-width: 120px;' %>
+                </div>
+                <div>
+                  <%= form.label :due_at, 'Novo prazo', class: 'form-label mb-1' %>
+                  <%= form.datetime_local_field :due_at,
+                      value: payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%Y-%m-%dT%H:%M'),
+                      class: 'form-control form-control-sm' %>
+                </div>
+                <%= form.submit 'Gerar novo link',
+                    class: 'btn btn-sm btn-outline-primary',
+                    data: { turbo_confirm: 'Cancelar o link antigo e gerar um novo?' } %>
+              <% end %>
+            <% end %>
           </div>
         <% end %>
       </div>

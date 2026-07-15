@@ -10,6 +10,29 @@ class Admin::ReservaPaymentsController < ApplicationController
     redirect_to admin_reserva_path(@reserva_payment.reserva), alert: "Não foi possível marcar como paga: #{e.message}"
   end
 
+  def regenerate
+    new_payment = ReservaPendingPaymentSetup.regenerate_payment!(
+      reserva_payment: @reserva_payment,
+      amount: params[:amount],
+      due_at: params[:due_at]
+    )
+    redirect_to admin_reserva_path(new_payment.reserva), notice: 'Link antigo cancelado e novo link gerado.'
+  rescue => e
+    redirect_to admin_reserva_path(@reserva_payment.reserva), alert: "Não foi possível gerar novo link: #{e.message}"
+  end
+
+  def cancel
+    if @reserva_payment.paid?
+      redirect_to admin_reserva_path(@reserva_payment.reserva), alert: 'Não é possível cancelar uma parcela já paga.'
+      return
+    end
+
+    @reserva_payment.update!(payment_status: 'canceled', canceled_at: Time.current)
+    redirect_to admin_reserva_path(@reserva_payment.reserva), notice: 'Link cancelado no sistema.'
+  rescue => e
+    redirect_to admin_reserva_path(@reserva_payment.reserva), alert: "Não foi possível cancelar o link: #{e.message}"
+  end
+
   private
 
   def set_reserva_payment

@@ -5,6 +5,11 @@ class ReservaPendingPaymentSetup
     new(reserva: reserva, payments_attributes: payments_attributes, hold_hours: hold_hours).call
   end
 
+  def self.regenerate_payment!(reserva_payment:, amount: nil, due_at: nil)
+    new(reserva: reserva_payment.reserva, payments_attributes: {}, hold_hours: DEFAULT_HOLD_HOURS)
+      .regenerate_payment!(reserva_payment: reserva_payment, amount: amount, due_at: due_at)
+  end
+
   def initialize(reserva:, payments_attributes:, hold_hours:)
     @reserva = reserva
     @payments_attributes = payments_attributes
@@ -18,6 +23,36 @@ class ReservaPendingPaymentSetup
     end
 
     @reserva.reserva_payments.reload
+  end
+
+  def regenerate_payment!(reserva_payment:, amount: nil, due_at: nil)
+    raise ActiveRecord::RecordInvalid.new(reserva_payment) if reserva_payment.paid?
+
+    previous_acceptance_name = reserva_payment.terms_acceptance_display_name
+    previous_acceptance = accepted_terms_source(reserva_payment)
+    new_payment = nil
+
+    ReservaPayment.transaction do
+      reserva_payment.update!(
+        payment_status: 'canceled',
+        canceled_at: Time.current
+      )
+
+      new_payment = @reserva.reserva_payments.create!(
+        installment_number: reserva_payment.installment_number,
+        amount: positive_decimal(amount, reserva_payment.amount),
+        due_at: parse_due_at(due_at, reserva_payment.due_at),
+        payment_order_code: next_order_code(reserva_payment.installment_number),
+        terms_accepted_at: previous_acceptance&.terms_accepted_at,
+        terms_acceptance_name: previous_acceptance_name,
+        terms_acceptance_ip: previous_acceptance&.terms_acceptance_ip,
+        terms_acceptance_user_agent: previous_acceptance&.terms_acceptance_user_agent
+      )
+    end
+
+    attach_cielo_link!(new_payment)
+    @reserva.reserva_payments.reload
+    new_payment
   end
 
   private
@@ -83,6 +118,15 @@ class ReservaPendingPaymentSetup
       due_at: row[:due_at],
       payment_order_code: next_order_code(row[:installment_number])
     )
+  end
+
+  def accepted_terms_source(reserva_payment)
+    return reserva_payment if reserva_payment.terms_accepted_at.present?
+
+    @reserva.reserva_payments
+            .where.not(terms_accepted_at: nil)
+            .order(:terms_accepted_at)
+            .first
   end
 
   def attach_cielo_link!(payment)
