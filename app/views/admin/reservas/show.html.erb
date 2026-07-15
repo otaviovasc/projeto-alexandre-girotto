@@ -381,18 +381,35 @@
     <% first_payment = message_payments.find(&:confirmation_installment?) || message_payments.first %>
     <% active_payment_count = reservation_payments.reject(&:canceled?).size %>
     <% next_extra_due_at = 1.day.from_now.in_time_zone('America/Sao_Paulo').strftime('%Y-%m-%dT%H:%M') %>
-    <% message_lines = ["Segue abaixo #{message_payments.one? ? 'o link para realizar a reserva' : 'os links para realizar a reserva e mantê-la em dia'}:", ""] %>
-    <% if first_payment&.waiting_payment? %>
-      <% message_lines << "A data e o link ficam pré-travados até #{first_payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M')}. Depois do pagamento da primeira parcela, as datas ficam confirmadas." %>
+    <% if message_payments.one? %>
+      <% payment = message_payments.first %>
+      <% due_at_text = payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y, às %Hh%M') %>
+      <% message_lines = ["Segue abaixo o link para realizar a reserva:", ""] %>
+      <% if payment.waiting_payment? %>
+        <% message_lines << "A data e o link ficarão pré-reservados até **#{due_at_text}**. Após a confirmação do pagamento, as datas serão confirmadas." %>
+        <% message_lines << "" %>
+      <% end %>
+      <% message_lines << "**Pagamento até #{due_at_text}:**" %>
       <% message_lines << "" %>
-    <% end %>
-    <% message_payments.each do |payment| %>
-      <% message_lines << "#{payment.installment_number}ª parcela até #{payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M')}:" %>
       <% message_lines << payment.public_payment_url %>
       <% message_lines << "" %>
+      <% message_lines << "⚠️ A data e o link ficam pré-reservados por até 3 horas. Após a confirmação do pagamento, as datas serão confirmadas." %>
+      <% message_lines << "" %>
+      <% message_lines << "⚠️ Caso o pagamento não seja realizado dentro do prazo, a reserva poderá ser cancelada automaticamente." %>
+    <% else %>
+      <% message_lines = ["Segue abaixo os links para realizar a reserva e mantê-la em dia:", ""] %>
+      <% if first_payment&.waiting_payment? %>
+        <% message_lines << "A data e o link ficam pré-travados até #{first_payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M')}. Depois do pagamento da primeira parcela, as datas ficam confirmadas." %>
+        <% message_lines << "" %>
+      <% end %>
+      <% message_payments.each do |payment| %>
+        <% message_lines << "#{payment.installment_number}ª parcela até #{payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M')}:" %>
+        <% message_lines << payment.public_payment_url %>
+        <% message_lines << "" %>
+      <% end %>
+      <% message_lines << "⚠️ A data e o link ficam pré-reservados por até 3h. Após o pagamento da primeira parcela, as datas ficam confirmadas." %>
+      <% message_lines << "⚠️ Se uma parcela for atrasada ou não paga, a reserva pode ser cancelada automaticamente." %>
     <% end %>
-    <% message_lines << "⚠️ A data e o link ficam pré-reservados por até 3h. Após o pagamento da primeira parcela, as datas ficam confirmadas." %>
-    <% message_lines << "⚠️ Se uma parcela for atrasada ou não paga, a reserva pode ser cancelada automaticamente." %>
 
     <div class="info-card">
       <h3 class="info-card-title">Pagamento da reserva</h3>
