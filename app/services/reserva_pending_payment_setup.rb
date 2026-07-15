@@ -10,6 +10,11 @@ class ReservaPendingPaymentSetup
       .regenerate_payment!(reserva_payment: reserva_payment, amount: amount, due_at: due_at)
   end
 
+  def self.create_extra_payment!(reserva:, amount:, due_at:)
+    new(reserva: reserva, payments_attributes: {}, hold_hours: DEFAULT_HOLD_HOURS)
+      .create_extra_payment!(amount: amount, due_at: due_at)
+  end
+
   def initialize(reserva:, payments_attributes:, hold_hours:)
     @reserva = reserva
     @payments_attributes = payments_attributes
@@ -53,6 +58,35 @@ class ReservaPendingPaymentSetup
     attach_cielo_link!(new_payment)
     @reserva.reserva_payments.reload
     new_payment
+  end
+
+  def create_extra_payment!(amount:, due_at:)
+    active_numbers = @reserva.reserva_payments.where.not(payment_status: 'canceled').pluck(:installment_number)
+    installment_number = (1..3).find { |number| active_numbers.exclude?(number) }
+
+    if installment_number.blank?
+      @reserva.errors.add(:base, 'A reserva já possui 3 parcelas ativas.')
+      raise ActiveRecord::RecordInvalid.new(@reserva)
+    end
+
+    amount_value = positive_decimal(amount, nil)
+    due_at_value = parse_due_at(due_at, nil)
+
+    if amount_value.blank? || due_at_value.blank?
+      @reserva.errors.add(:base, 'Informe valor e prazo para gerar mais uma parcela.')
+      raise ActiveRecord::RecordInvalid.new(@reserva)
+    end
+
+    payment = @reserva.reserva_payments.create!(
+      installment_number: installment_number,
+      amount: amount_value,
+      due_at: due_at_value,
+      payment_order_code: next_order_code(installment_number)
+    )
+
+    attach_cielo_link!(payment)
+    @reserva.reserva_payments.reload
+    payment
   end
 
   private

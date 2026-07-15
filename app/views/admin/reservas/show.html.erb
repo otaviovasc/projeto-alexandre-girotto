@@ -115,6 +115,17 @@
     border-color: #fecaca;
   }
 
+  .service-item.payment-canceled {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #991b1b;
+  }
+
+  .service-item.payment-canceled .service-date,
+  .service-item.payment-canceled .service-name {
+    color: #991b1b;
+  }
+
   .service-info {
     display: flex;
     align-items: center;
@@ -366,13 +377,16 @@
 
   <% if @reserva.reserva_payments.any? %>
     <% reservation_payments = @reserva.reserva_payments.order(:installment_number) %>
-    <% first_payment = reservation_payments.first %>
-    <% message_lines = ["Segue abaixo #{reservation_payments.one? ? 'o link para realizar a reserva' : 'os links para realizar a reserva e mantê-la em dia'}:", ""] %>
+    <% message_payments = reservation_payments.select { |payment| payment.paid? || payment.waiting_payment? } %>
+    <% first_payment = message_payments.find(&:confirmation_installment?) || message_payments.first %>
+    <% active_payment_count = reservation_payments.reject(&:canceled?).size %>
+    <% next_extra_due_at = 1.day.from_now.in_time_zone('America/Sao_Paulo').strftime('%Y-%m-%dT%H:%M') %>
+    <% message_lines = ["Segue abaixo #{message_payments.one? ? 'o link para realizar a reserva' : 'os links para realizar a reserva e mantê-la em dia'}:", ""] %>
     <% if first_payment&.waiting_payment? %>
       <% message_lines << "A data e o link ficam pré-travados até #{first_payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M')}. Depois do pagamento da primeira parcela, as datas ficam confirmadas." %>
       <% message_lines << "" %>
     <% end %>
-    <% reservation_payments.each do |payment| %>
+    <% message_payments.each do |payment| %>
       <% message_lines << "#{payment.installment_number}ª parcela até #{payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M')}:" %>
       <% message_lines << payment.public_payment_url %>
       <% message_lines << "" %>
@@ -386,72 +400,114 @@
 
       <div class="services-list" style="margin-top: 1rem;">
         <% reservation_payments.each do |payment| %>
-          <div class="service-item">
-            <div class="service-info">
-              <span class="service-name"><%= payment.installment_number %>ª parcela</span>
-              <span class="service-date"><%= payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %></span>
-              <span class="service-quantity"><%= payment.payment_status.humanize %></span>
-            </div>
-            <div>
-              <span style="margin-left: 0.5rem; color: #059669; font-weight: 600;">
+          <% if payment.canceled? %>
+            <div class="service-item payment-canceled">
+              <div class="service-info">
+                <span class="service-date"><%= payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %></span>
+                <span class="service-quantity"><%= payment.payment_status.humanize %></span>
+              </div>
+              <span style="margin-left: 0.5rem; color: #991b1b; font-weight: 600;">
                 <%= number_to_currency(payment.amount, unit: 'R$ ', separator: ',', delimiter: '.') %>
               </span>
-              <%= link_to 'Abrir link',
-                  payment.public_payment_url,
-                  class: 'btn btn-sm btn-outline-primary ms-2',
-                  target: '_blank',
-                  rel: 'noopener',
-                  data: { turbo: false } %>
-              <% unless payment.paid? %>
-                <%= button_to mark_paid_admin_reserva_payment_path(payment),
-                    method: :patch,
-                    class: 'btn btn-sm btn-success ms-2',
-                    form_class: 'd-inline',
-                    data: { turbo_confirm: 'Marcar esta parcela como paga manualmente?' } do %>
-                  Marcar paga
-                <% end %>
-                <% unless payment.canceled? %>
+            </div>
+          <% else %>
+            <div class="service-item">
+              <div class="service-info">
+                <span class="service-name"><%= payment.installment_number %>ª parcela</span>
+                <span class="service-date"><%= payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %></span>
+                <span class="service-quantity"><%= payment.payment_status.humanize %></span>
+              </div>
+              <div>
+                <span style="margin-left: 0.5rem; color: #059669; font-weight: 600;">
+                  <%= number_to_currency(payment.amount, unit: 'R$ ', separator: ',', delimiter: '.') %>
+                </span>
+                <%= link_to 'Abrir link',
+                    payment.public_payment_url,
+                    class: 'btn btn-sm btn-outline-primary ms-2',
+                    target: '_blank',
+                    rel: 'noopener',
+                    data: { turbo: false } %>
+                <% unless payment.paid? %>
+                  <%= button_to mark_paid_admin_reserva_payment_path(payment),
+                      method: :patch,
+                      class: 'btn btn-sm btn-success ms-2',
+                      form_class: 'd-inline',
+                      data: { turbo_confirm: 'Marcar esta parcela como paga manualmente?' } do %>
+                    Marcar paga
+                  <% end %>
                   <%= button_to cancel_admin_reserva_payment_path(payment),
                       method: :patch,
-                      class: 'btn btn-sm btn-outline-danger ms-2',
+                      class: 'btn btn-sm btn-danger ms-2',
                       form_class: 'd-inline',
                       data: { turbo_confirm: 'Cancelar este link no sistema?' } do %>
                     Cancelar link
                   <% end %>
                 <% end %>
+              </div>
+              <% unless payment.paid? %>
+                <%= form_with url: regenerate_admin_reserva_payment_path(payment),
+                    method: :patch,
+                    local: true,
+                    class: 'mt-2 d-flex flex-wrap gap-2 align-items-end' do |form| %>
+                  <div>
+                    <%= form.label :amount, 'Novo valor', class: 'form-label mb-1' %>
+                    <%= form.text_field :amount,
+                        value: number_with_precision(payment.amount, precision: 2, separator: ',', delimiter: ''),
+                        class: 'form-control form-control-sm',
+                        style: 'max-width: 120px;' %>
+                  </div>
+                  <div>
+                    <%= form.label :due_at, 'Novo prazo', class: 'form-label mb-1' %>
+                    <%= form.datetime_local_field :due_at,
+                        value: payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%Y-%m-%dT%H:%M'),
+                        class: 'form-control form-control-sm' %>
+                  </div>
+                  <%= form.submit 'Gerar novo link para esta parcela',
+                      class: 'btn btn-sm btn-outline-primary',
+                      data: { turbo_confirm: 'Cancelar o link antigo e gerar um novo?' } %>
+                <% end %>
               <% end %>
             </div>
-            <% unless payment.paid? %>
-              <%= form_with url: regenerate_admin_reserva_payment_path(payment),
-                  method: :patch,
-                  local: true,
-                  class: 'mt-2 d-flex flex-wrap gap-2 align-items-end' do |form| %>
-                <div>
-                  <%= form.label :amount, 'Novo valor', class: 'form-label mb-1' %>
-                  <%= form.text_field :amount,
-                      value: number_with_precision(payment.amount, precision: 2, separator: ',', delimiter: ''),
-                      class: 'form-control form-control-sm',
-                      style: 'max-width: 120px;' %>
-                </div>
-                <div>
-                  <%= form.label :due_at, 'Novo prazo', class: 'form-label mb-1' %>
-                  <%= form.datetime_local_field :due_at,
-                      value: payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%Y-%m-%dT%H:%M'),
-                      class: 'form-control form-control-sm' %>
-                </div>
-                <%= form.submit 'Gerar novo link',
-                    class: 'btn btn-sm btn-outline-primary',
-                    data: { turbo_confirm: 'Cancelar o link antigo e gerar um novo?' } %>
-              <% end %>
-            <% end %>
-          </div>
+          <% end %>
         <% end %>
       </div>
 
-      <div style="margin-top: 1rem;">
-        <label class="info-label" for="reservation-payment-message">Mensagem para enviar ao hóspede</label>
-        <textarea id="reservation-payment-message" class="form-control" rows="10" readonly><%= message_lines.join("\n") %></textarea>
-      </div>
+      <% if active_payment_count < 3 %>
+        <div class="info-item" style="margin-top: 1rem;">
+          <span class="info-label">Adicionar parcela</span>
+          <%= form_with url: admin_reserva_payments_path,
+              method: :post,
+              local: true,
+              class: 'mt-2 d-flex flex-wrap gap-2 align-items-end' do |form| %>
+            <%= hidden_field_tag :reserva_id, @reserva.id %>
+            <div>
+              <%= form.label :amount, 'Valor', class: 'form-label mb-1' %>
+              <%= form.text_field :amount,
+                  class: 'form-control form-control-sm',
+                  placeholder: 'Ex.: 500,00',
+                  style: 'max-width: 120px;' %>
+            </div>
+            <div>
+              <%= form.label :due_at, 'Prazo', class: 'form-label mb-1' %>
+              <%= form.datetime_local_field :due_at,
+                  value: next_extra_due_at,
+                  class: 'form-control form-control-sm' %>
+            </div>
+            <%= form.submit 'Gerar mais uma parcela',
+                class: 'btn btn-sm btn-primary',
+                data: { turbo_confirm: 'Gerar mais uma parcela para esta reserva?' } %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% if message_payments.any? %>
+        <div style="margin-top: 1rem;">
+          <label class="info-label" for="reservation-payment-message">Mensagem para enviar ao hóspede</label>
+          <textarea id="reservation-payment-message" class="form-control" rows="10" readonly><%= message_lines.join("\n") %></textarea>
+        </div>
+      <% else %>
+        <div class="empty-state">Nenhum link ativo para enviar ao hóspede.</div>
+      <% end %>
     </div>
   <% end %>
 

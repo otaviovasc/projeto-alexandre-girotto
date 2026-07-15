@@ -1,7 +1,7 @@
 class Admin::ReservaPaymentsController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin
-  before_action :set_reserva_payment
+  before_action :set_reserva_payment, only: [:mark_paid, :regenerate, :cancel]
 
   def mark_paid
     ReservaPaymentProcessor.call(reserva_payment: @reserva_payment, status: 'paid', source: 'manual')
@@ -31,6 +31,21 @@ class Admin::ReservaPaymentsController < ApplicationController
     redirect_to admin_reserva_path(@reserva_payment.reserva), notice: 'Link cancelado no sistema.'
   rescue => e
     redirect_to admin_reserva_path(@reserva_payment.reserva), alert: "Não foi possível cancelar o link: #{e.message}"
+  end
+
+  def create
+    reserva = Reserva.find(params[:reserva_id])
+    payment = ReservaPendingPaymentSetup.create_extra_payment!(
+      reserva: reserva,
+      amount: params[:amount],
+      due_at: params[:due_at]
+    )
+
+    redirect_to admin_reserva_path(reserva), notice: "#{payment.installment_number}ª parcela criada."
+  rescue => e
+    reserva ||= Reserva.find_by(id: params[:reserva_id])
+    redirect_to(reserva.present? ? admin_reserva_path(reserva) : admin_reservas_summary_path,
+                alert: "Não foi possível criar nova parcela: #{e.message}")
   end
 
   private

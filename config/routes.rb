@@ -98,7 +98,7 @@ Rails.application.routes.draw do
         get :photo_print_pdf
       end
     end
-    resources :reserva_payments, only: [] do
+    resources :reserva_payments, only: [:create] do
       member do
         patch :mark_paid
         patch :regenerate
