@@ -231,7 +231,7 @@ class GoogleSheetsExportService
     ensure_sheet_exists!(service, sheet_title)
 
     canceled_reservas = Reserva
-                        .canceled_for_history
+                        .canceled_for_external_history
                         .includes(:cabana, :user, :canceled_by, reserva_services: :service)
                         .order(canceled_at: :desc, updated_at: :desc)
     rows = ReservasExportService.new(canceled_reservas).generate_array

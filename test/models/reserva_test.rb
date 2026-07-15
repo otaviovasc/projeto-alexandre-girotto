@@ -198,6 +198,35 @@ class ReservaTest < ActiveSupport::TestCase
     assert candidate.valid?
   end
 
+  test "external canceled history ignores unpaid pre reservations" do
+    filial = Filial.create!(name: "Filial pre reserva")
+    cabana = Cabana.create!(name: "Cabana pre reserva", price: 100, filial: filial)
+    real_canceled = create_reserva(cabana, "real-canceled@example.com", Date.new(2028, 2, 10), Date.new(2028, 2, 12))
+    unpaid_pre_reservation = Reserva.create!(
+      cabana: cabana,
+      user: create_user("unpaid-pre-reservation@example.com"),
+      start_date: Date.new(2028, 3, 10),
+      end_date: Date.new(2028, 3, 12),
+      payment_status: "waiting_payment",
+      blocks_availability: true,
+      total_price: 100,
+      payment_expires_at: 1.hour.from_now
+    )
+    unpaid_pre_reservation.reserva_payments.create!(
+      installment_number: 1,
+      amount: 100,
+      due_at: 1.hour.from_now,
+      payment_order_code: "RP#{unpaid_pre_reservation.id}1TEST"
+    )
+
+    real_canceled.cancel_for_operations!(by: nil, reason: "Cancelamento real")
+    unpaid_pre_reservation.cancel_for_operations!(by: nil, reason: "Primeira parcela vencida sem pagamento.")
+
+    assert_includes Reserva.canceled_for_history, unpaid_pre_reservation
+    assert_includes Reserva.canceled_for_external_history, real_canceled
+    assert_not_includes Reserva.canceled_for_external_history, unpaid_pre_reservation
+  end
+
   private
 
   def create_reserva(cabana, email, start_date, end_date)

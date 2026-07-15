@@ -43,6 +43,15 @@ class Reserva < ApplicationRecord
   scope :integration_ready, -> { where(reservas: { payment_status: 'paid', blocks_availability: true }) }
   scope :active_for_operations, -> { where.not(payment_status: 'canceled').or(where(payment_status: nil)) }
   scope :canceled_for_history, -> { where(payment_status: 'canceled') }
+  scope :canceled_for_external_history, lambda {
+    unpaid_pre_reservation_ids = ReservaPayment
+      .select(:reserva_id)
+      .where.not(reserva_id: nil)
+      .group(:reserva_id)
+      .having("SUM(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) = 0")
+
+    canceled_for_history.where.not(id: unpaid_pre_reservation_ids)
+  }
 
   before_create :set_default_fields
   before_create :set_default_payment_status
