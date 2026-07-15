@@ -1,6 +1,7 @@
 class ReservaPendingPaymentSetup
   DEFAULT_HOLD_HOURS = 3
-  DEFAULT_MAX_INSTALLMENTS = 6
+  SINGLE_PAYMENT_MAX_INSTALLMENTS = 6
+  MULTIPLE_PAYMENTS_MAX_INSTALLMENTS = 1
 
   def self.call(reserva:, payments_attributes:, hold_hours:)
     new(reserva: reserva, payments_attributes: payments_attributes, hold_hours: hold_hours).call
@@ -23,9 +24,12 @@ class ReservaPendingPaymentSetup
   end
 
   def call
-    normalized_rows.each do |row|
+    rows = normalized_rows
+    max_installments = max_installments_for_payment_count(rows.size)
+
+    rows.each do |row|
       payment = create_payment!(row)
-      attach_cielo_link!(payment)
+      attach_cielo_link!(payment, max_installments: max_installments)
     end
 
     @reserva.reserva_payments.reload
@@ -56,7 +60,7 @@ class ReservaPendingPaymentSetup
       )
     end
 
-    attach_cielo_link!(new_payment)
+    attach_cielo_link!(new_payment, max_installments: max_installments_for_payment_count(active_payment_count))
     @reserva.reserva_payments.reload
     new_payment
   end
@@ -85,7 +89,7 @@ class ReservaPendingPaymentSetup
       payment_order_code: next_order_code(installment_number)
     )
 
-    attach_cielo_link!(payment)
+    attach_cielo_link!(payment, max_installments: max_installments_for_payment_count(active_payment_count))
     @reserva.reserva_payments.reload
     payment
   end
@@ -164,7 +168,7 @@ class ReservaPendingPaymentSetup
             .first
   end
 
-  def attach_cielo_link!(payment)
+  def attach_cielo_link!(payment, max_installments:)
     result = CieloCheckoutService.new(
       merchant_id: @reserva.cabana.filial.cielo_checkout_merchant_id_for_payments,
       order_code: payment.payment_order_code,
@@ -181,13 +185,21 @@ class ReservaPendingPaymentSetup
         email: @reserva.user.email,
         phone: @reserva.guest_phone.presence || @reserva.user.telephone
       },
-      max_installments: DEFAULT_MAX_INSTALLMENTS
+      max_installments: max_installments
     ).call
 
     payment.update!(
       payment_link_id: result['id'],
       payment_link_url: result['url']
     )
+  end
+
+  def active_payment_count
+    @reserva.reserva_payments.where.not(payment_status: 'canceled').count
+  end
+
+  def max_installments_for_payment_count(payment_count)
+    payment_count.to_i > 1 ? MULTIPLE_PAYMENTS_MAX_INSTALLMENTS : SINGLE_PAYMENT_MAX_INSTALLMENTS
   end
 
   def next_order_code(installment_number)
