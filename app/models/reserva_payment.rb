@@ -62,7 +62,10 @@ class ReservaPayment < ApplicationRecord
   end
 
   def public_host
-    host = ENV['APP_HOST'].presence || ENV['RENDER_EXTERNAL_HOSTNAME'].presence || 'villaggio-stock.onrender.com'
+    host = ENV['PAYMENT_PUBLIC_HOST'].presence ||
+           ENV['APP_HOST'].presence ||
+           ENV['RENDER_EXTERNAL_HOSTNAME'].presence ||
+           'villaggio-stock.onrender.com'
     host.sub(%r{\Ahttps?://}, '')
   end
 end
