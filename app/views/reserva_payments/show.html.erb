@@ -45,7 +45,7 @@
 
       <% if @reserva_payment.paid? %>
         <div class="mt-6 border-l-4 border-green-600 bg-green-50 px-4 py-3 text-sm text-green-800">
-          Pagamento confirmado. A reserva está registrada no sistema.
+          <strong>Pagamento confirmado.</strong> Sua reserva está registrada no sistema.
         </div>
       <% elsif @reserva.canceled? || @reserva_payment.canceled? || @reserva_payment.overdue? || @reserva_payment.expired? %>
         <div class="mt-6 border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -54,10 +54,10 @@
       <% elsif @reserva_payment.terms_accepted? %>
         <div class="mt-6 border border-[#d9dfd7] bg-[#f7f9f6] p-4 text-sm leading-6 text-[#3f4b43]">
           Termos aceitos por <strong><%= @reserva_payment.terms_acceptance_display_name %></strong>.
-          Continue para a Cielo para concluir o pagamento.
+          Se você acabou de pagar, a confirmação pode levar alguns instantes. Atualize esta página em alguns segundos. Se ainda não pagou, continue para a Cielo.
         </div>
 
-        <%= link_to 'Pagar com segurança pela Cielo',
+        <%= link_to 'Abrir pagamento pela Cielo',
             @reserva_payment.payment_link_url,
             class: 'mt-6 block w-full bg-[#315b3a] px-4 py-3 text-center font-semibold text-white hover:bg-[#264a2e]',
             data: { turbo: false } %>
