@@ -59,6 +59,8 @@ class CartsController < ApplicationController
   # Payment page action
   def payment
     @pending_payment = active_pending_payment
+    sync_cielo_checkout_status!(@pending_payment) if @pending_payment.present?
+    @pending_payment = active_pending_payment
     @cart_items = @cart.cart_items.includes(:item, :service)
   end
 
@@ -247,5 +249,19 @@ class CartsController < ApplicationController
 
   def service_credit_card_interest_rate(cart_items)
     service_only_cart?(cart_items) && @reserva.partnership_reservation? ? 3 : 0
+  end
+
+  def sync_cielo_checkout_status!(cart_item)
+    return unless ServicePaymentProvider.cielo_checkout?
+    return if cart_item.payment_order_code.blank?
+
+    CieloPendingPaymentSync.sync_order_code(
+      order_code: cart_item.payment_order_code,
+      filial: @reserva.cabana.filial
+    )
+  rescue CieloCheckoutService::Error => e
+    Rails.logger.warn("Unable to sync Cielo Checkout cart status: #{e.message}")
+  rescue => e
+    Rails.logger.error("Unexpected Cielo Checkout cart sync error: #{e.message}")
   end
 end

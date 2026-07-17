@@ -97,11 +97,12 @@
 
       <section class="mt-5 border border-[#d8cdb8] bg-[#f7f1e4] p-6 shadow-[0_18px_48px_rgba(42,43,36,0.08)] sm:p-9">
         <h2 class="text-2xl font-medium" style="font-family: Georgia, 'Times New Roman', serif;">Termos de hospedagem</h2>
-        <p class="mt-2 text-sm leading-6 text-[#6c7066]">Abra e leia os termos antes de confirmar o aceite.</p>
+        <p class="mt-2 text-sm leading-6 text-[#6c7066]">Leia os termos antes de confirmar o aceite e acessar os serviços e material do hóspede.</p>
 
-        <details class="mt-6 border border-[#d8cdb8] bg-[#fbf7ee]">
-          <summary class="cursor-pointer list-none px-5 py-4 text-sm font-extrabold uppercase tracking-[0.08em] text-[#3f4a2f]">
-            Ler termos e condições
+        <details class="mt-6 border border-[#d8cdb8] bg-[#fbf7ee]" open>
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-extrabold uppercase tracking-[0.08em] text-[#3f4a2f]">
+            <span>Ler termos e condições</span>
+            <span class="text-2xl leading-none">+</span>
           </summary>
           <div class="max-h-[70vh] overflow-auto border-t border-[#d8cdb8] p-5">
             <%= render 'hosting_terms' %>
@@ -121,7 +122,7 @@
           </label>
 
           <button type="submit" class="inline-flex min-h-[56px] w-full items-center justify-center border border-[#55613a] bg-[#55613a] px-5 py-4 text-center font-extrabold text-white transition hover:border-[#3f4a2f] hover:bg-[#3f4a2f]">
-            Concordar e abrir opções da reserva
+            Concordar e Ver Material
           </button>
         <% end %>
       </section>
@@ -160,7 +161,7 @@
           </div>
 
           <button type="submit" class="inline-flex min-h-[56px] w-full items-center justify-center border border-[#55613a] bg-[#55613a] px-5 py-4 text-center font-extrabold text-white transition hover:border-[#3f4a2f] hover:bg-[#3f4a2f]">
-            Acessar hospedagem
+            Acessar Serviços e Material do Hospede
           </button>
         <% end %>
       </section>

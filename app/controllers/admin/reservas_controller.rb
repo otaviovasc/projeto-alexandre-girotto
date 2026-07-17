@@ -7,7 +7,7 @@ class Admin::ReservasController < ApplicationController
     :edit, :update, :destroy, :cancel, :show, :update_observation, :update_group_created,
     :acknowledge_ical_date_change, :update_service_purchase_access, :update_service_installments, :sync_fnrh,
     :fnrh_check_in, :fnrh_no_show, :fnrh_checkout, :fnrh_cancel, :fnrh_bypass_precheckin,
-    :confirm_reservation
+    :confirm_reservation, :sync_service_payment
   ]
   before_action :check_reservations_on_new, only: [:reservas_summary]
 
@@ -34,6 +34,10 @@ class Admin::ReservasController < ApplicationController
     else
       @reservas = @reservas.order(created_at: :desc) # Ordenação padrão
     end
+  end
+
+  def show
+    @pending_service_payments = pending_service_payment_items.to_a
   end
 
   def new
@@ -208,6 +212,27 @@ class Admin::ReservasController < ApplicationController
     else
       redirect_to admin_reservas_summary_path, notice: 'Reserva cancelada e movida para o histórico.'
     end
+  end
+
+  def sync_service_payment
+    order_code = params[:order_code].to_s.strip
+    cart_item = CartItem.includes(reserva: { cabana: :filial })
+                        .where(reserva_id: @reserva.id, payment_status: 'waiting_payment')
+                        .find_by(payment_order_code: order_code)
+
+    unless cart_item
+      redirect_to admin_reserva_path(@reserva), alert: 'Pedido de serviço pendente não encontrado nesta reserva.'
+      return
+    end
+
+    result = CieloPendingPaymentSync.sync_order_code(
+      order_code: cart_item.payment_order_code,
+      filial: cart_item.reserva.cabana.filial
+    )
+
+    redirect_to admin_reserva_path(@reserva), service_payment_sync_flash_for(result)
+  rescue => e
+    redirect_to admin_reserva_path(@reserva), alert: "Não foi possível conferir na Cielo: #{e.message}"
   end
 
   def reservas_summary
@@ -699,6 +724,27 @@ class Admin::ReservasController < ApplicationController
 
   def set_reserva
     @reserva = Reserva.find(params[:id])
+  end
+
+  def pending_service_payment_items
+    CartItem.includes(:service)
+            .where(reserva_id: @reserva.id, payment_status: 'waiting_payment')
+            .where.not(payment_order_code: nil)
+            .order(:payment_order_code, :service_date, :id)
+  end
+
+  def service_payment_sync_flash_for(result)
+    if result.paid.positive?
+      { notice: 'Pagamento de serviço confirmado na Cielo e lançado na reserva.' }
+    elsif result.refused.positive?
+      { alert: 'A Cielo informou pagamento recusado.' }
+    elsif result.canceled.positive?
+      { alert: 'A Cielo informou pagamento cancelado.' }
+    elsif result.errors.positive?
+      { alert: 'A Cielo ainda não retornou esse pagamento. Tente novamente em alguns minutos.' }
+    else
+      { notice: 'A Cielo ainda mostra este pagamento como aguardando.' }
+    end
   end
 
  

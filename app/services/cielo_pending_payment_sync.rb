@@ -8,6 +8,10 @@ class CieloPendingPaymentSync
     new(limit: limit, lookback_hours: lookback_hours).call
   end
 
+  def self.sync_order_code(order_code:, filial:)
+    new(limit: 1).sync_order_code(order_code: order_code, filial: filial)
+  end
+
   def initialize(limit: nil, lookback_hours: nil)
     @limit = positive_integer(limit || ENV["CIELO_PENDING_PAYMENT_SYNC_LIMIT"], DEFAULT_LIMIT)
     @lookback_hours = positive_integer(
@@ -21,6 +25,16 @@ class CieloPendingPaymentSync
     return @result unless ServicePaymentProvider.cielo_checkout?
 
     pending_orders.each { |order| sync_order(order) }
+    @result
+  end
+
+  def sync_order_code(order_code:, filial:)
+    return @result unless ServicePaymentProvider.cielo_checkout?
+
+    order = PendingOrder.new(order_code: order_code, filial: filial)
+    return @result unless valid_order?(order)
+
+    sync_order(order)
     @result
   end
 

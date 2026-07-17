@@ -36,6 +36,12 @@ class FnrhPortalController < ApplicationController
       return
     end
 
+    unless params.key?(:terms_accepted)
+      session[:pending_terms_reserva_id] = reserva.id
+      redirect_to fnrh_terms_path
+      return
+    end
+
     unless ActiveModel::Type::Boolean.new.cast(params[:terms_accepted])
       session[:pending_terms_reserva_id] = reserva.id
       redirect_to fnrh_terms_path, alert: 'Leia e confirme os termos para liberar o acesso da reserva.'

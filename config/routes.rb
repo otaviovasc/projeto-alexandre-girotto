@@ -63,6 +63,7 @@ Rails.application.routes.draw do
         patch 'acknowledge_ical_date_change'
         patch 'update_service_purchase_access'
         patch 'update_service_installments'
+        patch 'sync_service_payment'
         patch 'confirm_reservation'
         patch 'cancel'
         post 'sync_fnrh'
@@ -102,6 +103,7 @@ Rails.application.routes.draw do
     resources :reserva_payments, only: [:create] do
       member do
         patch :mark_paid
+        patch :sync
         patch :regenerate
         patch :cancel
       end
@@ -214,6 +216,7 @@ Rails.application.routes.draw do
   delete 'minha-reserva/sair',   to: 'portal_reserva#sair',    as: :portal_reserva_sair
 
   # Portal público de termos e pré-check-in FNRH
+  get    'area-do-hospede',          to: redirect('/termos-hospedagem')
   get    'termos-hospedagem',         to: 'fnrh_portal#terms', as: :fnrh_terms
   post   'termos-hospedagem/acessar', to: 'fnrh_portal#terms_access', as: :fnrh_terms_access
   get    'pre-checkin',         to: 'fnrh_portal#index',  as: :fnrh_portal

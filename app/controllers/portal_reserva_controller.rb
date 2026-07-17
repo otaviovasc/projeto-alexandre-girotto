@@ -225,6 +225,8 @@ class PortalReservaController < ApplicationController
     end
 
     @reserva = @purchased_services.first.reserva
+    sync_cielo_checkout_status!(@purchased_services)
+    @purchased_services = purchase_items_for_order(order_code)
     @payment_link_url = @purchased_services.first.payment_link_url
     @payment_status = purchase_payment_status(@purchased_services)
     @payment_status_label = payment_status_label(@payment_status)

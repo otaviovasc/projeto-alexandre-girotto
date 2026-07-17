@@ -1,7 +1,7 @@
 class Admin::ReservaPaymentsController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin
-  before_action :set_reserva_payment, only: [:mark_paid, :regenerate, :cancel]
+  before_action :set_reserva_payment, only: [:mark_paid, :regenerate, :cancel, :sync]
 
   def mark_paid
     ReservaPaymentProcessor.call(reserva_payment: @reserva_payment, status: 'paid', source: 'manual')
@@ -33,6 +33,17 @@ class Admin::ReservaPaymentsController < ApplicationController
     redirect_to admin_reserva_path(@reserva_payment.reserva), alert: "Não foi possível cancelar o link: #{e.message}"
   end
 
+  def sync
+    result = CieloPendingPaymentSync.sync_order_code(
+      order_code: @reserva_payment.payment_order_code,
+      filial: @reserva_payment.reserva.cabana.filial
+    )
+
+    redirect_to admin_reserva_path(@reserva_payment.reserva), sync_flash_for(result)
+  rescue => e
+    redirect_to admin_reserva_path(@reserva_payment.reserva), alert: "Não foi possível conferir na Cielo: #{e.message}"
+  end
+
   def create
     reserva = Reserva.find(params[:reserva_id])
     payment = ReservaPendingPaymentSetup.create_extra_payment!(
@@ -56,5 +67,19 @@ class Admin::ReservaPaymentsController < ApplicationController
 
   def authorize_admin
     redirect_to root_path, alert: 'Você não tem permissão para fazer isso.' unless current_user.admin?
+  end
+
+  def sync_flash_for(result)
+    if result.paid.positive?
+      { notice: 'Pagamento confirmado na Cielo e aplicado no sistema.' }
+    elsif result.refused.positive?
+      { alert: 'A Cielo informou pagamento recusado.' }
+    elsif result.canceled.positive?
+      { alert: 'A Cielo informou pagamento cancelado.' }
+    elsif result.errors.positive?
+      { alert: 'A Cielo ainda não retornou esse pagamento. Tente novamente em alguns minutos.' }
+    else
+      { notice: 'A Cielo ainda mostra este pagamento como aguardando.' }
+    end
   end
 end

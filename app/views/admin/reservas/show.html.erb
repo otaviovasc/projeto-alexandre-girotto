@@ -444,6 +444,15 @@
                     target: '_blank',
                     rel: 'noopener',
                     data: { turbo: false } %>
+                <% if payment.waiting_payment? %>
+                  <%= button_to sync_admin_reserva_payment_path(payment),
+                      method: :patch,
+                      class: 'btn btn-sm btn-outline-secondary ms-2',
+                      form_class: 'd-inline',
+                      data: { turbo_confirm: 'Conferir agora se a Cielo já confirmou este pagamento?' } do %>
+                    Conferir pagamento
+                  <% end %>
+                <% end %>
                 <% unless payment.paid? %>
                   <%= button_to mark_paid_admin_reserva_payment_path(payment),
                       method: :patch,
@@ -691,6 +700,53 @@
       </div>
     <% end %>
   </div>
+
+  <% if @pending_service_payments.present? %>
+    <div class="info-card">
+      <h3 class="info-card-title">Pagamentos de serviços aguardando confirmação</h3>
+      <p class="purchase-access-copy">Use para consultar a Cielo agora quando o hóspede já pagou e o serviço ainda não apareceu na reserva.</p>
+
+      <div class="services-list" style="margin-top: 1rem;">
+        <% @pending_service_payments.group_by(&:payment_order_code).each do |order_code, items| %>
+          <% first_item = items.first %>
+          <% order_total = items.sum do |item|
+               unit_price = item.unit_price_paid || item.service&.price_for(@reserva) || 0
+               item.total_paid || (unit_price * (item.quantity || 1))
+             end %>
+          <% item_names = items.map { |item| "#{item.service&.name || 'Serviço'} em #{item.service_date&.strftime('%d/%m/%Y') || '-'}" }.join(', ') %>
+
+          <div class="service-item">
+            <div class="service-info">
+              <span class="service-name">Pedido <%= order_code %></span>
+              <span class="service-date"><%= first_item.updated_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %></span>
+              <span class="service-quantity"><%= items.size %> item(ns)</span>
+              <span class="text-muted"><%= item_names %></span>
+            </div>
+            <div>
+              <span style="margin-left: 0.5rem; color: #059669; font-weight: 600;">
+                <%= number_to_currency(order_total, unit: 'R$ ', separator: ',', delimiter: '.') %>
+              </span>
+              <% if first_item.payment_link_url.present? %>
+                <%= link_to 'Abrir link',
+                    first_item.payment_link_url,
+                    class: 'btn btn-sm btn-outline-primary ms-2',
+                    target: '_blank',
+                    rel: 'noopener',
+                    data: { turbo: false } %>
+              <% end %>
+              <%= button_to sync_service_payment_admin_reserva_path(@reserva, order_code: order_code),
+                  method: :patch,
+                  class: 'btn btn-sm btn-outline-secondary ms-2',
+                  form_class: 'd-inline',
+                  data: { turbo_confirm: 'Conferir agora se a Cielo já confirmou este pedido de serviços?' } do %>
+                Conferir pagamento
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 
   <!-- Serviços -->
   <div class="info-card">
