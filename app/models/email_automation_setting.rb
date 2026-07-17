@@ -14,6 +14,13 @@ class EmailAutomationSetting < ApplicationRecord
   end
 
   def resume!
-    update!(enabled: true, paused_at: nil, paused_by: nil)
+    now = Time.current
+    update!(enabled: true, activated_at: now, paused_at: nil, paused_by: nil)
+
+    ReservationEmailDelivery.pending.where('scheduled_at < ?', now).update_all(
+      status: 'skipped',
+      error_message: 'E-mail anterior à ativação do envio automático',
+      updated_at: now
+    )
   end
 end

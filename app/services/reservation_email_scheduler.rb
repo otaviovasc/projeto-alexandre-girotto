@@ -20,11 +20,14 @@ class ReservationEmailScheduler
     return cancel_pending('Reserva cancelada') if @reserva.canceled?
     return unless schedulable_reserva?
 
+    setting = EmailAutomationSetting.current
     ReservationEmailTemplate.active.find_each do |template|
       next unless template.matches_reserva?(@reserva)
+      next if template.trigger_anchor == 'reservation_confirmed' && !newly_confirmed_reservation?
 
-      scheduled_at = template.scheduled_at_for(@reserva)
+      scheduled_at = scheduled_at_for(template)
       next if scheduled_at.blank?
+      next if before_current_activation?(scheduled_at, setting)
 
       delivery = @reserva.reservation_email_deliveries.find_or_initialize_by(
         reservation_email_template: template
@@ -48,6 +51,24 @@ class ReservationEmailScheduler
 
   def schedulable_reserva?
     @reserva.integration_ready? && @reserva.user&.email.present?
+  end
+
+  def scheduled_at_for(template)
+    return Time.current if template.trigger_anchor == 'reservation_confirmed'
+
+    template.scheduled_at_for(@reserva)
+  end
+
+  def newly_confirmed_reservation?
+    payment_status_change = @reserva.previous_changes['payment_status']
+    availability_change = @reserva.previous_changes['blocks_availability']
+
+    (payment_status_change.present? && payment_status_change.last == 'paid') ||
+      (availability_change.present? && availability_change.last == true && @reserva.paid?)
+  end
+
+  def before_current_activation?(scheduled_at, setting)
+    setting.activated_at.present? && scheduled_at < setting.activated_at
   end
 
   def cancel_pending(reason)

@@ -20,7 +20,12 @@
         <div class="text-muted text-uppercase fw-semibold small">Status geral</div>
         <% if @setting.enabled? %>
           <div class="fs-4 fw-bold text-success">Envio automático ativo</div>
-          <p class="mb-0 text-muted">Os e-mails agendados podem ser enviados pelo disparador automático.</p>
+          <p class="mb-0 text-muted">
+            Os e-mails agendados podem ser enviados pelo disparador automático.
+            <% if @setting.activated_at.present? %>
+              E-mails com horário anterior a <%= l(@setting.activated_at.in_time_zone, format: :short) %> serão ignorados.
+            <% end %>
+          </p>
         <% else %>
           <div class="fs-4 fw-bold text-danger">Envio automático pausado</div>
           <p class="mb-0 text-muted">Os e-mails ficam registrados/agendados, mas não são enviados.</p>

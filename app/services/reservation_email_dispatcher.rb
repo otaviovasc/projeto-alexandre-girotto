@@ -11,11 +11,12 @@ class ReservationEmailDispatcher
   end
 
   def run
-    return @result unless EmailAutomationSetting.enabled?
+    setting = EmailAutomationSetting.current
+    return @result unless setting.enabled?
 
     ReservationEmailDelivery.due.limit(@limit).includes(:reserva, :reservation_email_template).find_each do |delivery|
       @result.checked += 1
-      process_delivery(delivery)
+      process_delivery(delivery, setting)
     end
 
     @result
@@ -23,7 +24,13 @@ class ReservationEmailDispatcher
 
   private
 
-  def process_delivery(delivery)
+  def process_delivery(delivery, setting)
+    if before_current_activation?(delivery, setting)
+      delivery.update!(status: 'skipped', error_message: 'E-mail anterior à ativação do envio automático')
+      @result.skipped += 1
+      return
+    end
+
     if delivery.reservation_email_template.blank?
       delivery.update!(status: 'skipped', error_message: 'Modelo de e-mail removido')
       @result.skipped += 1
@@ -48,5 +55,9 @@ class ReservationEmailDispatcher
   rescue => e
     delivery.mark_failed!(e.message)
     @result.failed += 1
+  end
+
+  def before_current_activation?(delivery, setting)
+    setting.activated_at.present? && delivery.scheduled_at < setting.activated_at
   end
 end
