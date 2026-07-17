@@ -1,0 +1,79 @@
+<% if template.errors.any? %>
+  <div class="alert alert-danger">
+    <strong>Não foi possível salvar:</strong>
+    <ul class="mb-0">
+      <% template.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <%= form_with model: [:admin, template], local: true do |form| %>
+      <div class="form-check form-switch mb-3">
+        <%= form.check_box :active, class: 'form-check-input' %>
+        <%= form.label :active, 'Modelo ativo', class: 'form-check-label' %>
+        <div class="form-text">Desmarque para pausar apenas esta mensagem.</div>
+      </div>
+
+      <div class="mb-3">
+        <%= form.label :name, 'Nome interno', class: 'form-label' %>
+        <%= form.text_field :name, class: 'form-control' %>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-12 col-md-4">
+          <%= form.label :filial_scope, 'Filial', class: 'form-label' %>
+          <%= form.select :filial_scope,
+              ReservationEmailTemplate::FILIAL_SCOPES.map { |key, label| [label, key] },
+              {},
+              class: 'form-select' %>
+        </div>
+        <div class="col-12 col-md-4">
+          <%= form.label :trigger_anchor, 'Referência de envio', class: 'form-label' %>
+          <%= form.select :trigger_anchor,
+              ReservationEmailTemplate::TRIGGER_ANCHORS.map { |key, label| [label, key] },
+              {},
+              class: 'form-select' %>
+        </div>
+        <div class="col-6 col-md-2">
+          <%= form.label :offset_days, 'Dias', class: 'form-label' %>
+          <%= form.number_field :offset_days, class: 'form-control', min: -15, max: 15 %>
+        </div>
+        <div class="col-6 col-md-2">
+          <%= form.label :send_time, 'Horário', class: 'form-label' %>
+          <%= form.time_field :send_time, class: 'form-control' %>
+        </div>
+      </div>
+
+      <hr>
+
+      <div class="mb-3">
+        <%= form.label :subject, 'Assunto', class: 'form-label' %>
+        <%= form.text_field :subject, class: 'form-control' %>
+      </div>
+
+      <div class="mb-3">
+        <%= form.label :body, 'Mensagem', class: 'form-label' %>
+        <%= form.text_area :body, rows: 12, class: 'form-control' %>
+      </div>
+
+      <div class="alert alert-light border">
+        <strong>Campos automáticos:</strong>
+        <code>{{codigo}}</code>,
+        <code>{{hospede}}</code>,
+        <code>{{cabana}}</code>,
+        <code>{{filial}}</code>,
+        <code>{{entrada}}</code>,
+        <code>{{saida}}</code>,
+        <code>{{material_url}}</code>,
+        <code>{{maps_url}}</code>,
+        <code>{{whatsapp}}</code>
+      </div>
+
+      <%= form.submit 'Salvar modelo', class: 'btn btn-primary' %>
+    <% end %>
+  </div>
+</div>

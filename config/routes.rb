@@ -76,6 +76,7 @@ Rails.application.routes.draw do
         get :import_airbnb_calendar
         get :reservas_summary
         get :canceladas
+        get :nao_finalizadas
         get :export_csv
         get :export_sheets
 
@@ -103,6 +104,11 @@ Rails.application.routes.draw do
         patch :mark_paid
         patch :regenerate
         patch :cancel
+      end
+    end
+    resources :reservation_email_templates, except: [:show] do
+      collection do
+        post :toggle
       end
     end
 
@@ -142,10 +148,12 @@ Rails.application.routes.draw do
   post 'pagamentos/cielo_checkout', to: 'pagamentos#cielo_checkout', as: 'cielo_checkout_webhook'
   get  'reserva-online', to: 'public_bookings#new', as: :new_public_booking
   post 'reserva-online', to: 'public_bookings#create', as: :public_bookings
+  get  'reserva-online/cotacao', to: 'public_bookings#quote', as: :public_booking_quote
   get  'reserva-online/confirmacao/:token', to: 'public_bookings#confirmation', as: :public_booking_confirmation
   get  'reserva-online/confirmacao/:token/status', to: 'public_bookings#status', as: :public_booking_status
   get  'reserva-online-teste', to: 'public_bookings#new'
   post 'reserva-online-teste', to: 'public_bookings#create'
+  get  'reserva-online-teste/cotacao', to: 'public_bookings#quote'
   get  'reserva-online-teste/confirmacao/:token', to: 'public_bookings#confirmation'
   get  'reserva-online-teste/confirmacao/:token/status', to: 'public_bookings#status'
   get  'pagamento/:token', to: 'reserva_payments#show', as: :reserva_payment

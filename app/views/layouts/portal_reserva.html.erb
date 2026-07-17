@@ -296,6 +296,68 @@
         border-top: 1px solid rgba(216, 205, 184, .75);
       }
 
+      .vg-empty-summary {
+        padding: 18px 0;
+        color: var(--vg-muted);
+        font-size: 14px;
+      }
+
+      .vg-summary-total {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        margin-top: 18px;
+        border-top: 1px solid var(--vg-line);
+        padding-top: 18px;
+        color: var(--vg-ink);
+        font-weight: 800;
+      }
+
+      .vg-terms-box {
+        margin-top: 22px;
+        border: 1px solid var(--vg-line);
+        background: var(--vg-paper-strong);
+      }
+
+      .vg-terms-box summary {
+        cursor: pointer;
+        list-style: none;
+        padding: 18px;
+        color: var(--vg-brand-dark);
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+      }
+
+      .vg-terms-box summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .vg-terms-box summary::after {
+        content: "+";
+        float: right;
+        font-size: 18px;
+        line-height: 1;
+      }
+
+      .vg-terms-box[open] summary::after {
+        content: "-";
+      }
+
+      .vg-terms-content {
+        border-top: 1px solid var(--vg-line);
+        max-height: min(70vh, 680px);
+        overflow: auto;
+        padding: 18px;
+      }
+
+      .vg-terms-content > section {
+        border: 0;
+        box-shadow: none;
+        padding: 0;
+      }
+
       .vg-textarea {
         width: 100%;
         margin-top: 16px;

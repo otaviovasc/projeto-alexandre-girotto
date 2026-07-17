@@ -135,6 +135,12 @@
     <%= link_to canceladas_admin_reservas_path, class: 'btn btn-outline-danger d-flex align-items-center' do %>
       <i class="bi bi-archive me-1"></i> Reservas Canceladas
     <% end %>
+    <%= link_to nao_finalizadas_admin_reservas_path, class: 'btn btn-outline-warning d-flex align-items-center' do %>
+      <i class="bi bi-hourglass-split me-1"></i> Não Finalizadas
+    <% end %>
+    <%= link_to admin_reservation_email_templates_path, class: 'btn btn-outline-dark d-flex align-items-center' do %>
+      <i class="bi bi-envelope-gear me-1"></i> E-mails
+    <% end %>
   </div>
 
   <div class="card p-3 mb-4 shadow-sm">

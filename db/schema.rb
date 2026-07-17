@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_15_140000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_16_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -89,6 +89,16 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_15_140000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_carts_on_user_id"
+  end
+
+  create_table "email_automation_settings", force: :cascade do |t|
+    t.boolean "enabled", default: false, null: false
+    t.datetime "paused_at"
+    t.bigint "paused_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["enabled"], name: "index_email_automation_settings_on_enabled"
+    t.index ["paused_by_id"], name: "index_email_automation_settings_on_paused_by_id"
   end
 
   create_table "filials", force: :cascade do |t|
@@ -251,6 +261,45 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_15_140000) do
     t.index ["terms_token"], name: "index_reserva_payments_on_terms_token", unique: true
   end
 
+  create_table "reservation_email_deliveries", force: :cascade do |t|
+    t.bigint "reserva_id", null: false
+    t.bigint "reservation_email_template_id"
+    t.string "trigger_key", null: false
+    t.string "recipient_email", null: false
+    t.string "subject", null: false
+    t.text "body", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "scheduled_at", null: false
+    t.datetime "sent_at"
+    t.text "error_message"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reserva_id", "reservation_email_template_id"], name: "idx_reservation_email_deliveries_unique_template", unique: true
+    t.index ["reserva_id"], name: "index_reservation_email_deliveries_on_reserva_id"
+    t.index ["reservation_email_template_id"], name: "idx_reservation_email_deliveries_on_template_id"
+    t.index ["scheduled_at"], name: "index_reservation_email_deliveries_on_scheduled_at"
+    t.index ["status"], name: "index_reservation_email_deliveries_on_status"
+  end
+
+  create_table "reservation_email_templates", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "trigger_key", null: false
+    t.string "trigger_anchor", null: false
+    t.integer "offset_days", default: 0, null: false
+    t.time "send_time"
+    t.string "filial_scope", default: "all", null: false
+    t.string "subject", null: false
+    t.text "body", null: false
+    t.boolean "active", default: true, null: false
+    t.boolean "system_template", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_reservation_email_templates_on_active"
+    t.index ["filial_scope"], name: "index_reservation_email_templates_on_filial_scope"
+    t.index ["trigger_key"], name: "index_reservation_email_templates_on_trigger_key", unique: true
+  end
+
   create_table "reservas", force: :cascade do |t|
     t.date "start_date"
     t.date "end_date"
@@ -358,6 +407,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_15_140000) do
   add_foreign_key "cart_items", "reservas", on_delete: :cascade
   add_foreign_key "cart_items", "services"
   add_foreign_key "carts", "users"
+  add_foreign_key "email_automation_settings", "users", column: "paused_by_id"
   add_foreign_key "fnrh_events", "reservas"
   add_foreign_key "ical_reservation_changes", "reservas"
   add_foreign_key "info_da_cabanas", "cabanas"
@@ -369,6 +419,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_15_140000) do
   add_foreign_key "reserva_payments", "reservas"
   add_foreign_key "reserva_services", "reservas"
   add_foreign_key "reserva_services", "services"
+  add_foreign_key "reservation_email_deliveries", "reservas"
+  add_foreign_key "reservation_email_deliveries", "reservation_email_templates"
   add_foreign_key "reservas", "cabanas"
   add_foreign_key "reservas", "users"
   add_foreign_key "reservas", "users", column: "canceled_by_id"

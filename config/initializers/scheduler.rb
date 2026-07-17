@@ -42,6 +42,21 @@ scheduler.every '30m', first_in: '3m', overlap: false do
   end
 end
 
+scheduler.every '30m', first_in: '8m', overlap: false do
+  next unless EmailAutomationSetting.enabled?
+
+  Rails.logger.info 'Iniciando disparos de e-mails de reservas...'
+  begin
+    result = ReservationEmailDispatcher.run
+    Rails.logger.info(
+      "Disparos de e-mails concluídos: #{result.checked} verificados, " \
+      "#{result.sent} enviados, #{result.skipped} ignorados, #{result.failed} falhas."
+    )
+  rescue => e
+    Rails.logger.error "Erro nos disparos de e-mails de reservas: #{e.message}"
+  end
+end
+
 scheduler.every '1d', first_in: '15m', overlap: false do
   Rails.logger.info 'Limpando PDFs antigos de fotos impressas...'
   begin

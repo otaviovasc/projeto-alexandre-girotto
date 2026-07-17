@@ -32,6 +32,8 @@ class UserMailer < ApplicationMailer
   end
 
   def public_booking_confirmed(user, reserva)
+    return if EmailAutomationSetting.enabled?
+
     @user = user
     @reserva = reserva
     @reserva_payment = reserva.reserva_payments.to_a.find(&:public_booking?) ||
@@ -44,5 +46,13 @@ class UserMailer < ApplicationMailer
     @url = "https://#{host.sub(%r{\Ahttps?://}, '')}/reserva-online-teste/confirmacao/#{@reserva_payment&.terms_token}"
 
     mail(to: @user.email, subject: "Reserva confirmada ##{@reserva.id} - Villaggio Girotto")
+  end
+
+  def reservation_automation(delivery)
+    @delivery = delivery
+    @reserva = delivery.reserva
+    @body = delivery.body
+
+    mail(to: delivery.recipient_email, subject: delivery.subject)
   end
 end

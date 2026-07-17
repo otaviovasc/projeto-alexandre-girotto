@@ -37,6 +37,11 @@ class PublicBookingCheckout
     errors.add(:base, e.message)
     cancel_created_reserva('Erro ao criar checkout na Cielo.')
     false
+  rescue OfficialSitePricing::Error => e
+    Rails.logger.warn("Erro ao validar preços oficiais no checkout publico: #{e.message}")
+    errors.add(:base, 'Não foi possível validar os preços oficiais. Tente novamente.')
+    cancel_created_reserva('Erro ao validar preços oficiais.') if @reserva&.persisted?
+    false
   rescue => e
     Rails.logger.error("Erro inesperado no checkout publico: #{e.message}")
     errors.add(:base, 'Nao foi possivel iniciar a compra. Tente novamente.')
@@ -67,6 +72,9 @@ class PublicBookingCheckout
     errors.add(:base, 'Informe um WhatsApp válido.') unless @guest_phone.length.between?(8, 15)
     errors.add(:base, 'Confirme o aceite dos termos para continuar.') unless @terms_accepted
     errors.add(:base, 'Serviços só podem ser comprados com mais de 10 dias de antecedência.') if @selected_services.any? && !services_available?
+    if @cabana.present? && @start_date.present? && @end_date.present? && @end_date > @start_date && !official_quote[:meets_minimum]
+      errors.add(:base, official_quote[:minimum_message])
+    end
     validate_selected_services
   end
 
@@ -79,6 +87,7 @@ class PublicBookingCheckout
       errors.add(:base, "#{service.name} não pertence à filial da cabana.") if service.present? && service.filial_id != @cabana.filial_id
       errors.add(:base, "#{service.name} não está disponível para compra online.") if service.present? && service.show_in_marketplace == false
       errors.add(:base, "#{service.name} não está disponível para compra online.") if service.present? && internal_public_service?(service)
+      errors.add(:base, "Não foi possível validar o preço oficial de #{service.name}.") if service.present? && item[:unit_price].blank?
       errors.add(:base, "Informe a data de #{service.name}.") if service.present? && item[:service_date].blank?
       next if service.blank? || item[:service_date].blank? || @start_date.blank? || @end_date.blank?
 
@@ -176,7 +185,7 @@ class PublicBookingCheckout
   end
 
   def daily_total
-    @daily_total ||= PriceCalculator.new(Reserva.new(cabana: @cabana, start_date: @start_date, end_date: @end_date)).total_price
+    @daily_total ||= official_quote[:stay_total]
   end
 
   def services_total
@@ -193,7 +202,7 @@ class PublicBookingCheckout
 
       service = Service.find_by(id: service_id)
       quantity = positive_integer(attrs[:quantity].presence || attrs['quantity'], 1)
-      unit_price = service&.price || 0
+      unit_price = official_service_price(service)
 
       {
         service_id: service_id,
@@ -209,6 +218,20 @@ class PublicBookingCheckout
   def internal_public_service?(service)
     CleaningServicesAssigner.cleaning_service?(service) ||
       ReservaService.free_date_service?(service)
+  end
+
+  def official_quote
+    @official_quote ||= official_pricing.quote(cabana: @cabana, start_date: @start_date, end_date: @end_date)
+  end
+
+  def official_service_price(service)
+    return if service.blank? || @cabana.blank?
+
+    official_pricing.service_price(service: service, filial: @cabana.filial)
+  end
+
+  def official_pricing
+    @official_pricing ||= OfficialSitePricing.new
   end
 
   def public_booking_payload

@@ -276,13 +276,33 @@ class Admin::ReservasController < ApplicationController
   def canceladas
     return unless current_user.admin?
 
-    @q = Reserva.canceled_for_history.ransack(summary_ransack_params)
-    filtered_reservas = apply_general_search(@q.result)
-    @reservas = filtered_reservas.includes(:cabana, :user, :canceled_by, reserva_services: :service)
-                                 .order(canceled_at: :desc, updated_at: :desc)
+    load_history_reservas(
+      Reserva.canceled_for_external_history,
+      title: 'Reservas Canceladas',
+      description: 'Histórico preservado das reservas reais que saíram da operação ativa.',
+      count_label: 'Canceladas',
+      table_title: 'Histórico de cancelamentos',
+      date_label: 'Cancelada em',
+      empty_message: 'Nenhuma reserva cancelada encontrada.',
+      search_path: canceladas_admin_reservas_path
+    )
+  end
 
-    @total_reservas = @reservas.count
-    @total_receita = @reservas.sum(:total_price)
+  def nao_finalizadas
+    return unless current_user.admin?
+
+    load_history_reservas(
+      Reserva.unfinished_pre_reservations,
+      title: 'Pré-reservas não finalizadas',
+      description: 'Pré-reservas que tiveram link de pagamento criado, mas nunca tiveram pagamento confirmado.',
+      count_label: 'Não finalizadas',
+      table_title: 'Histórico de pré-reservas não finalizadas',
+      date_label: 'Não finalizada em',
+      empty_message: 'Nenhuma pré-reserva não finalizada encontrada.',
+      search_path: nao_finalizadas_admin_reservas_path
+    )
+
+    render :canceladas
   end
 
   def export_csv
@@ -550,6 +570,24 @@ class Admin::ReservasController < ApplicationController
   end
 
   private
+
+  def load_history_reservas(scope, title:, description:, count_label:, table_title:, date_label:, empty_message:, search_path:)
+    @history_title = title
+    @history_description = description
+    @history_count_label = count_label
+    @history_table_title = table_title
+    @history_date_label = date_label
+    @history_empty_message = empty_message
+    @history_search_path = search_path
+
+    @q = scope.ransack(summary_ransack_params)
+    filtered_reservas = apply_general_search(@q.result)
+    @reservas = filtered_reservas.includes(:cabana, :user, :canceled_by, reserva_services: :service)
+                                 .order(canceled_at: :desc, updated_at: :desc)
+
+    @total_reservas = @reservas.count
+    @total_receita = @reservas.sum(:total_price)
+  end
 
   def sync_group_created_side_effects_async(reserva_id, group_created)
     Thread.new do

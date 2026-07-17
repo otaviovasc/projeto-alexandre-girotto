@@ -1,0 +1,107 @@
+<div class="container-fluid py-4">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h1 class="h3 mb-1">E-mails automáticos</h1>
+      <p class="text-muted mb-0">Configure os disparos por reserva. O envio nasce desligado e só dispara quando estiver ativo.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <%= link_to new_admin_reservation_email_template_path, class: 'btn btn-success' do %>
+        <i class="bi bi-plus-lg me-1"></i> Novo e-mail
+      <% end %>
+      <%= link_to admin_reservas_summary_path, class: 'btn btn-outline-secondary' do %>
+        <i class="bi bi-arrow-left me-1"></i> Voltar
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div>
+        <div class="text-muted text-uppercase fw-semibold small">Status geral</div>
+        <% if @setting.enabled? %>
+          <div class="fs-4 fw-bold text-success">Envio automático ativo</div>
+          <p class="mb-0 text-muted">Os e-mails agendados podem ser enviados pelo disparador automático.</p>
+        <% else %>
+          <div class="fs-4 fw-bold text-danger">Envio automático pausado</div>
+          <p class="mb-0 text-muted">Os e-mails ficam registrados/agendados, mas não são enviados.</p>
+        <% end %>
+      </div>
+      <%= button_to toggle_admin_reservation_email_templates_path,
+          method: :post,
+          class: "btn #{@setting.enabled? ? 'btn-danger' : 'btn-success'} btn-lg",
+          form: { data: { turbo_confirm: @setting.enabled? ? 'Pausar todos os disparos automáticos?' : 'Retomar os disparos automáticos?' } } do %>
+        <%= @setting.enabled? ? 'Parar envio de e-mails' : 'Retomar envio de e-mails' %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h2 class="h5">Como funciona</h2>
+      <p class="mb-2">Cada modelo pode ser ligado/desligado, ter nome, assunto, mensagem, filial e regra de data.</p>
+      <p class="mb-0 text-muted">
+        Use dias negativos para antes da data de referência e positivos para depois. A faixa aceita agora é de -15 a +15 dias.
+      </p>
+    </div>
+  </div>
+
+  <div class="table-responsive card shadow-sm">
+    <table class="table table-striped align-middle mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Ativo</th>
+          <th>Nome</th>
+          <th>Quando</th>
+          <th>Filial</th>
+          <th>Assunto</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @templates.each do |template| %>
+          <tr>
+            <td>
+              <% if template.active? %>
+                <span class="badge bg-success">Ativo</span>
+              <% else %>
+                <span class="badge bg-secondary">Pausado</span>
+              <% end %>
+            </td>
+            <td>
+              <strong><%= template.name %></strong><br>
+              <span class="text-muted small">
+                <%= template.system_template? ? 'Modelo padrão' : 'Modelo criado no ADM' %>
+              </span>
+            </td>
+            <td>
+              <%= ReservationEmailTemplate::TRIGGER_ANCHORS[template.trigger_anchor] %><br>
+              <span class="text-muted">
+                <%= template.offset_days.to_i.zero? ? 'no dia' : "#{template.offset_days} dia(s)" %>,
+                às <%= template.send_time&.strftime('%H:%M') || '09:00' %>
+              </span>
+            </td>
+            <td><%= ReservationEmailTemplate::FILIAL_SCOPES[template.filial_scope] %></td>
+            <td><%= template.subject %></td>
+            <td class="d-flex flex-wrap gap-2">
+              <%= link_to 'Editar', edit_admin_reservation_email_template_path(template), class: 'btn btn-sm btn-primary' %>
+
+              <%= button_to template.active? ? 'Pausar' : 'Ativar',
+                  admin_reservation_email_template_path(template),
+                  method: :patch,
+                  params: { reservation_email_template: { active: !template.active? } },
+                  class: "btn btn-sm #{template.active? ? 'btn-outline-warning' : 'btn-outline-success'}" %>
+
+              <% if template.removable? %>
+                <%= button_to 'Excluir',
+                    admin_reservation_email_template_path(template),
+                    method: :delete,
+                    class: 'btn btn-sm btn-outline-danger',
+                    form: { data: { turbo_confirm: "Excluir o modelo '#{template.name}'? E-mails pendentes desse modelo serão cancelados." } } %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

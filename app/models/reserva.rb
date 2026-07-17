@@ -23,6 +23,7 @@ class Reserva < ApplicationRecord
   has_many :reserva_payments, dependent: :destroy
   has_many :ical_reservation_changes, dependent: :destroy
   has_many :fnrh_events, dependent: :destroy
+  has_many :reservation_email_deliveries, dependent: :destroy
 
   validate :start_date_cannot_be_in_the_past
   validate :end_date_after_start_date
@@ -44,13 +45,10 @@ class Reserva < ApplicationRecord
   scope :active_for_operations, -> { where.not(payment_status: 'canceled').or(where(payment_status: nil)) }
   scope :canceled_for_history, -> { where(payment_status: 'canceled') }
   scope :canceled_for_external_history, lambda {
-    unpaid_pre_reservation_ids = ReservaPayment
-      .select(:reserva_id)
-      .where.not(reserva_id: nil)
-      .group(:reserva_id)
-      .having("SUM(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) = 0")
-
     canceled_for_history.where.not(id: unpaid_pre_reservation_ids)
+  }
+  scope :unfinished_pre_reservations, lambda {
+    canceled_for_history.where(id: unpaid_pre_reservation_ids)
   }
 
   before_create :set_default_fields
@@ -61,6 +59,7 @@ class Reserva < ApplicationRecord
   after_update :ensure_required_cleaning_services_after_schedule_change, if: :cleaning_schedule_changed?
   after_update :sync_automatic_breakfast_service_date, if: :breakfast_schedule_changed?
   after_commit :sync_fnrh_after_relevant_change, on: [:create, :update]
+  after_commit :sync_reservation_email_automations_after_relevant_change, on: [:create, :update]
 
   FNRH_STATUS_LABELS = {
     'not_eligible' => 'Aguardando liberação',
@@ -129,6 +128,10 @@ class Reserva < ApplicationRecord
     paid? && blocks_availability?
   end
 
+  def unfinished_pre_reservation?
+    canceled? && reserva_payments.any? && reserva_payments.none?(&:paid?)
+  end
+
   def reserva_payment_overdue?
     if association(:reserva_payments).loaded?
       reserva_payments.any?(&:overdue?)
@@ -162,6 +165,14 @@ class Reserva < ApplicationRecord
         updated_at: now
       )
     end
+  end
+
+  def self.unpaid_pre_reservation_ids
+    ReservaPayment
+      .select(:reserva_id)
+      .where.not(reserva_id: nil)
+      .group(:reserva_id)
+      .having("SUM(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) = 0")
   end
 
   def availability_start_date
@@ -361,6 +372,15 @@ class Reserva < ApplicationRecord
     return unless Fnrh::Configuration.enabled?
 
     Fnrh::ReservationSyncService.new(self).call
+  end
+
+  def sync_reservation_email_automations_after_relevant_change
+    relevant_fields = %w[payment_status blocks_availability start_date end_date canceled_at]
+    return if (previous_changes.keys & relevant_fields).empty?
+
+    ReservationEmailScheduler.schedule_for_reserva(self)
+  rescue => e
+    Rails.logger.error("Erro ao planejar e-mails da reserva ##{id}: #{e.message}")
   end
 
   def set_default_fields

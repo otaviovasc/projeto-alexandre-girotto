@@ -1,5 +1,5 @@
 class FnrhPortalController < ApplicationController
-  TERMS_VERSION = '2026-06-29'.freeze
+  TERMS_VERSION = '2026-07-16'.freeze
 
   layout 'fnrh_portal'
   skip_before_action :authenticate_user!

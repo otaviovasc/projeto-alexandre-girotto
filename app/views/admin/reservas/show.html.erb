@@ -641,6 +641,57 @@
     </div>
   </div>
 
+  <div class="info-card">
+    <h3 class="info-card-title">E-mails da reserva</h3>
+    <% email_setting = EmailAutomationSetting.current %>
+    <div class="purchase-access-row">
+      <div>
+        <% if email_setting.enabled? %>
+          <span class="purchase-access-status open">Envio automático ativo</span>
+        <% else %>
+          <span class="purchase-access-status closed">Envio automático pausado</span>
+        <% end %>
+        <p class="purchase-access-copy">Os disparos ficam registrados aqui para acompanhamento.</p>
+      </div>
+      <%= link_to 'Configurar e-mails', admin_reservation_email_templates_path, class: 'btn btn-outline-primary' %>
+    </div>
+
+    <% deliveries = @reserva.reservation_email_deliveries.includes(:reservation_email_template).order(:scheduled_at, :id) %>
+    <% if deliveries.any? %>
+      <div class="services-list" style="margin-top: 1rem;">
+        <% deliveries.each do |delivery| %>
+          <div class="service-item">
+            <div class="service-info">
+              <span class="service-name"><%= delivery.reservation_email_template&.name || delivery.trigger_key %></span>
+              <span class="service-date"><%= delivery.scheduled_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %></span>
+              <span class="service-quantity"><%= delivery.status.humanize %></span>
+            </div>
+            <div>
+              <% badge_color = case delivery.status
+                               when 'sent' then '#dcfce7; color: #166534'
+                               when 'failed' then '#fee2e2; color: #991b1b'
+                               when 'canceled' then '#e2e8f0; color: #475569'
+                               else '#fef3c7; color: #92400e'
+                               end %>
+              <span class="service-status-badge" style="background: <%= badge_color %>;">
+                <%= delivery.status.humanize %>
+              </span>
+            </div>
+          </div>
+          <% if delivery.error_message.present? %>
+            <div style="font-size: 0.85rem; color: #991b1b; padding: 0.25rem 0.5rem 0.5rem; border-left: 3px solid #fecaca; margin-left: 0.25rem;">
+              <%= delivery.error_message %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty-state">
+        <p>Nenhum e-mail agendado para esta reserva.</p>
+      </div>
+    <% end %>
+  </div>
+
   <!-- Serviços -->
   <div class="info-card">
     <h3 class="info-card-title">🛎️ Serviços</h3>

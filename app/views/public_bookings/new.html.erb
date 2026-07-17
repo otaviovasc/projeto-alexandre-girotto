@@ -114,33 +114,86 @@
 
         <div class="vg-service-list">
           <% @services.each do |service| %>
+            <% service_values = (@booking_values["service_items"] || {})[service.id.to_s] || {} %>
+            <% service_selected = ActiveModel::Type::Boolean.new.cast(service_values["selected"]) %>
+            <% public_service_price = @service_prices.fetch(service.id, service.price) %>
             <div class="service-row vg-service-row"
-                 data-filial-id="<%= service.filial_id %>">
+                 data-filial-id="<%= service.filial_id %>"
+                 data-service-name="<%= service.name %>"
+                 data-service-price="<%= public_service_price.to_f %>">
               <label class="flex items-start gap-3">
-                <%= check_box_tag "booking[service_items][#{service.id}][selected]", "1", false, class: "service-checkbox vg-checkbox mt-1" %>
+                <%= check_box_tag "booking[service_items][#{service.id}][selected]", "1", service_selected, class: "service-checkbox vg-checkbox mt-1" %>
                 <span>
                   <span class="block font-semibold text-[#1a2e1a]"><%= service.name %></span>
-                  <span class="block text-sm text-[#637066]"><%= number_to_currency(service.price, unit: 'R$ ', separator: ',', delimiter: '.') %></span>
+                  <span class="block text-sm text-[#637066]"><%= number_to_currency(public_service_price, unit: 'R$ ', separator: ',', delimiter: '.') %></span>
                 </span>
               </label>
 
               <div>
                 <label class="vg-label">Data</label>
                 <%= date_field_tag "booking[service_items][#{service.id}][service_date]",
-                    nil,
+                    service_values["service_date"],
                     class: "service-date vg-input py-2 text-sm" %>
               </div>
 
               <div>
                 <label class="vg-label">Qtd</label>
                 <%= number_field_tag "booking[service_items][#{service.id}][quantity]",
-                    1,
+                    service_values["quantity"].presence || 1,
                     min: 1,
+                    data: { default_quantity: 1 },
                     class: "vg-input py-2 text-sm" %>
               </div>
             </div>
           <% end %>
         </div>
+      </section>
+
+      <section class="vg-card" id="booking-summary-card">
+        <h2 class="vg-card-title">Resumo da pré-reserva</h2>
+        <p class="vg-card-copy">Confira a cabana, o período, os serviços e o total estimado antes de seguir para o pagamento.</p>
+
+        <div class="vg-summary-grid">
+          <div>
+            <p class="vg-summary-label">Cabana</p>
+            <p class="vg-summary-value" id="summary-cabana">Selecione a cabana</p>
+          </div>
+          <div>
+            <p class="vg-summary-label">Período</p>
+            <p class="vg-summary-value" id="summary-period">Informe entrada e saída</p>
+          </div>
+          <div>
+            <p class="vg-summary-label">Noites</p>
+            <p class="vg-summary-value" id="summary-nights">-</p>
+          </div>
+        </div>
+
+        <div class="vg-items" id="booking-purchase-summary">
+          <div class="vg-empty-summary">
+            Selecione a cabana e as datas para ver o resumo.
+          </div>
+        </div>
+
+        <div class="vg-summary-total" id="booking-summary-total-row">
+          <span>Total estimado</span>
+          <strong id="booking-summary-total">A calcular</strong>
+        </div>
+      </section>
+
+      <section class="vg-card">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="vg-card-title">Termos de hospedagem</h2>
+            <p class="vg-card-copy">Leia os termos antes de confirmar o aceite e seguir para o pagamento.</p>
+          </div>
+        </div>
+
+        <details class="vg-terms-box">
+          <summary>Ler termos e condições</summary>
+          <div class="vg-terms-content">
+            <%= render 'fnrh_portal/hosting_terms' %>
+          </div>
+        </details>
       </section>
 
       <section class="vg-action-card">
@@ -164,12 +217,53 @@
     var endInput = document.getElementById("booking-end-date");
     var warning = document.getElementById("services-window-warning");
     var serviceRows = Array.prototype.slice.call(document.querySelectorAll(".service-row"));
+    var purchaseSummary = document.getElementById("booking-purchase-summary");
+    var summaryCabana = document.getElementById("summary-cabana");
+    var summaryPeriod = document.getElementById("summary-period");
+    var summaryNights = document.getElementById("summary-nights");
+    var summaryTotal = document.getElementById("booking-summary-total");
+    var quoteUrl = <%= raw public_booking_quote_path.to_json %>;
+    var quoteRequestId = 0;
+    var bookingQuote = { loading: false, error: null, dailyTotal: null, nights: null };
     var today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    function formatCurrency(value) {
+      return value.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+      });
+    }
 
     function selectedFilialId() {
       var option = cabanaSelect.options[cabanaSelect.selectedIndex];
       return option ? option.dataset.filialId : "";
+    }
+
+    function selectedCabanaName() {
+      var option = cabanaSelect.options[cabanaSelect.selectedIndex];
+      return option && option.value ? option.textContent : "";
+    }
+
+    function formatDateLabel(value) {
+      if (!value) return "";
+      return value.split("-").reverse().join("/");
+    }
+
+    function nightsBetween() {
+      if (!startInput.value || !endInput.value) return null;
+
+      var start = new Date(startInput.value + "T00:00:00");
+      var end = new Date(endInput.value + "T00:00:00");
+      var nights = Math.round((end - start) / 86400000);
+      return nights > 0 ? nights : null;
+    }
+
+    function selectedServiceRows() {
+      return serviceRows.filter(function(row) {
+        var checkbox = row.querySelector(".service-checkbox");
+        return checkbox && checkbox.checked && !checkbox.disabled;
+      });
     }
 
     function servicesAllowed() {
@@ -209,12 +303,171 @@
           if (checkbox) checkbox.checked = false;
         }
       });
+
+      renderBookingSummary();
+    }
+
+    function addSummaryItem(name, detail, amountText) {
+      var item = document.createElement("div");
+      item.className = "vg-item";
+
+      var left = document.createElement("div");
+      var title = document.createElement("p");
+      title.className = "font-semibold text-[#1a2e1a]";
+      title.textContent = name;
+
+      var detailElement = document.createElement("p");
+      detailElement.className = "mt-1 text-sm text-[#637066]";
+      detailElement.textContent = detail;
+
+      var right = document.createElement("p");
+      right.className = "shrink-0 font-semibold text-[#1a2e1a]";
+      right.textContent = amountText;
+
+      left.appendChild(title);
+      left.appendChild(detailElement);
+      item.appendChild(left);
+      item.appendChild(right);
+      purchaseSummary.appendChild(item);
+    }
+
+    function renderBookingSummary() {
+      if (!purchaseSummary) return;
+
+      var cabanaName = selectedCabanaName();
+      var nights = bookingQuote.nights || nightsBetween();
+      var selectedRows = selectedServiceRows();
+      var periodText = startInput.value && endInput.value
+        ? formatDateLabel(startInput.value) + " a " + formatDateLabel(endInput.value)
+        : "";
+      var servicesValue = 0;
+
+      if (summaryCabana) summaryCabana.textContent = cabanaName || "Selecione a cabana";
+      if (summaryPeriod) summaryPeriod.textContent = periodText || "Informe entrada e saída";
+      if (summaryNights) {
+        summaryNights.textContent = nights ? nights + (nights === 1 ? " noite" : " noites") : "-";
+      }
+
+      purchaseSummary.innerHTML = "";
+
+      if (cabanaName && periodText) {
+        var lodgingText = "A calcular";
+
+        if (bookingQuote.loading) {
+          lodgingText = "Calculando...";
+        } else if (bookingQuote.dailyTotal !== null && !bookingQuote.error) {
+          lodgingText = formatCurrency(bookingQuote.dailyTotal);
+        } else if (bookingQuote.error) {
+          lodgingText = "Indisponível";
+        }
+
+        addSummaryItem(
+          "Hospedagem",
+          bookingQuote.error || (periodText + (nights ? " · " + nights + (nights === 1 ? " noite" : " noites") : "")),
+          lodgingText
+        );
+      }
+
+      selectedRows.forEach(function(row) {
+        var name = row.dataset.serviceName || "Serviço";
+        var price = parseFloat(row.dataset.servicePrice || "0");
+        var quantityInput = row.querySelector('input[type="number"]');
+        var dateInput = row.querySelector(".service-date");
+        var quantity = Math.max(parseInt(quantityInput && quantityInput.value || "1", 10), 1);
+        var lineTotal = price * quantity;
+        servicesValue += lineTotal;
+
+        addSummaryItem(
+          name,
+          (dateInput && dateInput.value ? formatDateLabel(dateInput.value) : "Data a definir") + " · " + quantity + "x",
+          formatCurrency(lineTotal)
+        );
+      });
+
+      if (!cabanaName && !periodText && selectedRows.length === 0) {
+        purchaseSummary.innerHTML = '<div class="vg-empty-summary">Selecione a cabana e as datas para ver o resumo.</div>';
+      } else if (selectedRows.length === 0) {
+        addSummaryItem("Serviços opcionais", "Nenhum serviço opcional selecionado", formatCurrency(0));
+      }
+
+      if (summaryTotal) {
+        if (bookingQuote.dailyTotal !== null && !bookingQuote.error) {
+          summaryTotal.textContent = formatCurrency(bookingQuote.dailyTotal + servicesValue);
+        } else {
+          summaryTotal.textContent = "A calcular";
+        }
+      }
+    }
+
+    function fetchBookingQuote() {
+      var cabanaId = cabanaSelect.value;
+
+      if (!cabanaId || !startInput.value || !endInput.value || !nightsBetween()) {
+        bookingQuote = { loading: false, error: null, dailyTotal: null, nights: null };
+        renderBookingSummary();
+        return;
+      }
+
+      var requestId = ++quoteRequestId;
+      var params = new URLSearchParams({
+        cabana_id: cabanaId,
+        start_date: startInput.value,
+        end_date: endInput.value
+      });
+
+      bookingQuote = { loading: true, error: null, dailyTotal: null, nights: nightsBetween() };
+      renderBookingSummary();
+
+      fetch(quoteUrl + "?" + params.toString(), {
+        headers: { "Accept": "application/json" }
+      })
+        .then(function(response) {
+          return response.json().then(function(data) {
+            if (!response.ok) throw data;
+            return data;
+          });
+        })
+        .then(function(data) {
+          if (requestId !== quoteRequestId) return;
+
+          bookingQuote = {
+            loading: false,
+            error: null,
+            dailyTotal: parseFloat(data.daily_total || "0"),
+            nights: parseInt(data.nights || nightsBetween() || "0", 10)
+          };
+          renderBookingSummary();
+        })
+        .catch(function(error) {
+          if (requestId !== quoteRequestId) return;
+
+          bookingQuote = {
+            loading: false,
+            error: error && error.error ? error.error : "Não foi possível calcular a hospedagem.",
+            dailyTotal: null,
+            nights: nightsBetween()
+          };
+          renderBookingSummary();
+        });
     }
 
     [cabanaSelect, startInput, endInput].forEach(function(element) {
-      if (element) element.addEventListener("change", syncServiceRows);
+      if (element) {
+        element.addEventListener("change", function() {
+          syncServiceRows();
+          fetchBookingQuote();
+        });
+      }
+    });
+
+    serviceRows.forEach(function(row) {
+      row.querySelectorAll("input").forEach(function(input) {
+        input.addEventListener("change", renderBookingSummary);
+        input.addEventListener("input", renderBookingSummary);
+      });
     });
 
     syncServiceRows();
+    fetchBookingQuote();
   });
 </script>

@@ -1,0 +1,11 @@
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-1">Novo e-mail automático</h1>
+      <p class="text-muted mb-0">Crie uma mensagem personalizada para reservas.</p>
+    </div>
+    <%= link_to 'Voltar', admin_reservation_email_templates_path, class: 'btn btn-outline-secondary' %>
+  </div>
+
+  <%= render 'form', template: @template %>
+</div>

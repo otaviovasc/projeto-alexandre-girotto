@@ -6,7 +6,7 @@ class PublicBookingsController < ApplicationController
   before_action :set_reserva_payment, only: [:confirmation, :status]
 
   def new
-    @booking_values = {}
+    @booking_values = prefilled_booking_values
   end
 
   def create
@@ -19,6 +19,40 @@ class PublicBookingsController < ApplicationController
       @errors = checkout.errors.full_messages
       render :new, status: :unprocessable_entity
     end
+  end
+
+  def quote
+    cabana = Cabana.find_by(id: params[:cabana_id])
+    start_date = parse_date_param(params[:start_date])
+    end_date = parse_date_param(params[:end_date])
+
+    if cabana.blank?
+      render json: { ok: false, error: 'Selecione uma cabana.' }, status: :unprocessable_entity
+      return
+    end
+
+    if start_date.blank? || end_date.blank? || end_date <= start_date
+      render json: { ok: false, error: 'Informe entrada e saída válidas.' }, status: :unprocessable_entity
+      return
+    end
+
+    quote = OfficialSitePricing.new.quote(cabana: cabana, start_date: start_date, end_date: end_date)
+
+    unless quote[:meets_minimum]
+      render json: { ok: false, error: quote[:minimum_message] }, status: :unprocessable_entity
+      return
+    end
+
+    render json: {
+      ok: true,
+      cabana_name: cabana.name,
+      start_date: start_date.to_s,
+      end_date: end_date.to_s,
+      nights: quote[:nights_count],
+      daily_total: quote[:stay_total].to_f
+    }
+  rescue OfficialSitePricing::Error => e
+    render json: { ok: false, error: e.message }, status: :unprocessable_entity
   end
 
   def confirmation
@@ -58,6 +92,7 @@ class PublicBookingsController < ApplicationController
                        .where(show_in_marketplace: [true, nil])
                        .order(:name)
                        .reject { |service| internal_public_service?(service) }
+    @service_prices = public_service_prices(@services)
   end
 
   def internal_public_service?(service)
@@ -217,5 +252,100 @@ class PublicBookingsController < ApplicationController
              end
 
     ENV["PUBLIC_BOOKING_WHATSAPP_#{suffix}"].presence || ENV['PUBLIC_BOOKING_WHATSAPP_DEFAULT']
+  end
+
+  def parse_date_param(value)
+    Date.parse(value.to_s)
+  rescue ArgumentError, TypeError
+    nil
+  end
+
+  def prefilled_booking_values
+    cabana = public_prefill_cabana
+    start_date = parse_date_param(params[:start_date])
+    end_date = parse_date_param(params[:end_date])
+    values = {}
+
+    values['cabana_id'] = cabana.id.to_s if cabana.present?
+    values['start_date'] = start_date.to_s if start_date.present?
+    values['end_date'] = end_date.to_s if end_date.present?
+
+    service_items = public_prefill_service_items(cabana, start_date)
+    values['service_items'] = service_items if service_items.present?
+
+    values
+  end
+
+  def public_prefill_cabana
+    return Cabana.find_by(id: params[:cabana_id]) if params[:cabana_id].present?
+    return if params[:cabana].blank?
+
+    target_cabana = normalize_public_booking_cabana(params[:cabana])
+    target_filial = normalize_public_booking_text(params[:filial])
+
+    Cabana.includes(:filial).find do |cabana|
+      normalized_name = normalize_public_booking_cabana(cabana.name)
+      normalized_filial = normalize_public_booking_text(cabana.filial&.name)
+      name_matches = normalized_name.start_with?(target_cabana) || normalized_name.include?(target_cabana)
+      filial_matches = target_filial.blank? || normalized_filial.include?(target_filial) || target_filial.include?(normalized_filial)
+
+      name_matches && filial_matches
+    end
+  end
+
+  def public_prefill_service_items(cabana, start_date)
+    return {} if cabana.blank? || params[:services].blank?
+
+    parsed_services = JSON.parse(params[:services].to_s)
+    return {} unless parsed_services.is_a?(Array)
+
+    parsed_services.each_with_object({}) do |service_payload, result|
+      service_name = service_payload['name'].to_s
+      quantity = service_payload['quantity'].presence || service_payload['qty'].presence || 1
+      service = public_prefill_service(cabana, service_name)
+      next if service.blank?
+
+      result[service.id.to_s] = {
+        'selected' => '1',
+        'service_date' => start_date&.to_s,
+        'quantity' => quantity.to_i.positive? ? quantity.to_i : 1
+      }
+    end
+  rescue JSON::ParserError, TypeError
+    {}
+  end
+
+  def public_prefill_service(cabana, service_name)
+    target_service = normalize_public_booking_text(service_name)
+    return if target_service.blank?
+
+    @services.find do |service|
+      next false unless service.filial_id == cabana.filial_id
+
+      normalized_name = normalize_public_booking_text(service.name)
+      normalized_name == target_service || normalized_name.include?(target_service) || target_service.include?(normalized_name)
+    end
+  end
+
+  def normalize_public_booking_text(value)
+    I18n.transliterate(value.to_s)
+        .downcase
+        .gsub(/[^a-z0-9]+/, ' ')
+        .squish
+  end
+
+  def normalize_public_booking_cabana(value)
+    normalize_public_booking_text(value).sub(/\Avilla vita\b/, 'vita')
+  end
+
+  def public_service_prices(services)
+    pricing = OfficialSitePricing.new
+
+    services.each_with_object({}) do |service, prices|
+      prices[service.id] = pricing.service_price(service: service, filial: service.filial) || service.price
+    end
+  rescue OfficialSitePricing::Error => e
+    Rails.logger.warn("Unable to load official service prices for public booking: #{e.message}")
+    services.each_with_object({}) { |service, prices| prices[service.id] = service.price }
   end
 end

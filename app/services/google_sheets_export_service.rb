@@ -22,6 +22,7 @@ class GoogleSheetsExportService
   SCOPES = ['https://www.googleapis.com/auth/spreadsheets'].freeze
   DEFAULT_CANCELED_HISTORY_SPREADSHEET_ID = '1jTqpEW5hDKyH5zp9F2Q6kutvNx7P-VkdGUEpwrKWO04'
   CANCELED_HISTORY_SHEET_TITLE = 'Canceladas'
+  UNFINISHED_PRE_RESERVATIONS_SHEET_TITLE = 'Nao Finalizadas'
   LEGACY_CANCELED_SHEET_TITLE = 'Reservas Canceladas'
   
   class << self
@@ -238,24 +239,35 @@ class GoogleSheetsExportService
   def export_canceled_reservas_sheet(service)
     return { success: false, error: 'Planilha de histórico de canceladas não configurada' } if @canceled_history_spreadsheet_id.blank?
 
-    canceled_reservas = Reserva
-                        .canceled_for_history
-                        .includes(:cabana, :user, :canceled_by, :reserva_payments, reserva_services: :service)
-                        .order(canceled_at: :desc, updated_at: :desc)
+    canceled_reservas = canceled_history_relation(Reserva.canceled_for_external_history)
+    unfinished_pre_reservations = canceled_history_relation(Reserva.unfinished_pre_reservations)
 
-    ensure_sheet_exists!(service, CANCELED_HISTORY_SHEET_TITLE, spreadsheet_id: @canceled_history_spreadsheet_id)
-    service.clear_values(@canceled_history_spreadsheet_id, quoted_range(CANCELED_HISTORY_SHEET_TITLE, 'A:U'))
-    value_range = Google::Apis::SheetsV4::ValueRange.new(values: [canceled_history_headers] + canceled_history_rows(canceled_reservas))
+    canceled_result = write_canceled_history_sheet(service, CANCELED_HISTORY_SHEET_TITLE, canceled_reservas)
+    unfinished_result = write_canceled_history_sheet(service, UNFINISHED_PRE_RESERVATIONS_SHEET_TITLE, unfinished_pre_reservations)
+
+    { success: true, rows_updated: canceled_result.to_i + unfinished_result.to_i }
+  rescue => e
+    { success: false, error: e.message }
+  end
+
+  def canceled_history_relation(scope)
+    scope
+      .includes(:cabana, :user, :canceled_by, :reserva_payments, reserva_services: :service)
+      .order(canceled_at: :desc, updated_at: :desc)
+  end
+
+  def write_canceled_history_sheet(service, sheet_title, reservas)
+    ensure_sheet_exists!(service, sheet_title, spreadsheet_id: @canceled_history_spreadsheet_id)
+    service.clear_values(@canceled_history_spreadsheet_id, quoted_range(sheet_title, 'A:U'))
+    value_range = Google::Apis::SheetsV4::ValueRange.new(values: [canceled_history_headers] + canceled_history_rows(reservas))
     result = service.update_spreadsheet_value(
       @canceled_history_spreadsheet_id,
-      quoted_range(CANCELED_HISTORY_SHEET_TITLE, 'A1'),
+      quoted_range(sheet_title, 'A1'),
       value_range,
       value_input_option: 'USER_ENTERED'
     )
 
-    { success: true, rows_updated: result.updated_rows }
-  rescue => e
-    { success: false, error: e.message }
+    result.updated_rows
   end
 
   def clear_legacy_canceled_reservas_sheet(service)
@@ -329,8 +341,8 @@ class GoogleSheetsExportService
   end
 
   def canceled_history_type(reserva)
+    return 'Pré-reserva não finalizada' if reserva.unfinished_pre_reservation?
     payments = reserva.reserva_payments
-    return 'Pré-reserva sem pagamento' if payments.any? && payments.none?(&:paid?)
     return 'Reserva com pagamento' if payments.any?(&:paid?)
     return 'Reserva importada iCal' if reserva.origem.present? && reserva.origem != 'sistema'
 

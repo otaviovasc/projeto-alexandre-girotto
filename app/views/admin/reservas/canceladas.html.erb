@@ -1,10 +1,16 @@
 <div class="container-fluid py-4">
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-      <h1 class="h3 mb-1">Reservas Canceladas</h1>
-      <p class="text-muted mb-0">Histórico preservado das reservas que saíram da operação ativa.</p>
+      <h1 class="h3 mb-1"><%= @history_title || 'Reservas Canceladas' %></h1>
+      <p class="text-muted mb-0"><%= @history_description || 'Histórico preservado das reservas que saíram da operação ativa.' %></p>
     </div>
     <div class="d-flex gap-2">
+      <%= link_to canceladas_admin_reservas_path, class: 'btn btn-outline-danger' do %>
+        <i class="bi bi-archive me-1"></i> Canceladas
+      <% end %>
+      <%= link_to nao_finalizadas_admin_reservas_path, class: 'btn btn-outline-warning' do %>
+        <i class="bi bi-hourglass-split me-1"></i> Não finalizadas
+      <% end %>
       <%= link_to export_sheets_admin_reservas_path, class: 'btn btn-warning', data: { turbo_method: :get } do %>
         <i class="bi bi-cloud-upload me-1"></i> Atualizar Sheets
       <% end %>
@@ -18,7 +24,7 @@
     <div class="col-12 col-md-6">
       <div class="card shadow-sm">
         <div class="card-body">
-          <div class="text-muted text-uppercase fw-semibold small">Canceladas</div>
+          <div class="text-muted text-uppercase fw-semibold small"><%= @history_count_label || 'Canceladas' %></div>
           <div class="fs-3 fw-bold"><%= @total_reservas %></div>
         </div>
       </div>
@@ -34,7 +40,7 @@
   </div>
 
   <div class="card p-3 mb-4 shadow-sm">
-    <%= search_form_for @q, url: canceladas_admin_reservas_path, method: :get, html: { class: "row g-3 align-items-end" } do |_f| %>
+    <%= search_form_for @q, url: @history_search_path || canceladas_admin_reservas_path, method: :get, html: { class: "row g-3 align-items-end" } do |_f| %>
       <div class="col-12 col-md-9">
         <%= label_tag :search, "Busca", class: "form-label mb-1" %>
         <%= text_field_tag :search,
@@ -44,21 +50,21 @@
       </div>
       <div class="col-12 col-md-3">
         <%= submit_tag "Buscar", class: "btn btn-primary w-100" %>
-        <%= link_to "Limpar", canceladas_admin_reservas_path, class: "btn btn-outline-secondary w-100 mt-2" %>
+        <%= link_to "Limpar", @history_search_path || canceladas_admin_reservas_path, class: "btn btn-outline-secondary w-100 mt-2" %>
       </div>
     <% end %>
   </div>
 
   <div class="card shadow-sm">
     <div class="card-header bg-dark text-white">
-      <h2 class="h5 mb-0">Histórico de cancelamentos</h2>
+      <h2 class="h5 mb-0"><%= @history_table_title || 'Histórico de cancelamentos' %></h2>
     </div>
     <div class="table-responsive">
       <table class="table table-striped align-middle mb-0">
         <thead class="table-dark">
           <tr>
             <th>ID</th>
-            <th>Cancelada em</th>
+            <th><%= @history_date_label || 'Cancelada em' %></th>
             <th>Período original</th>
             <th>Cabana</th>
             <th>Hóspede</th>
@@ -100,7 +106,7 @@
           <% else %>
             <tr>
               <td colspan="9" class="text-center text-muted py-5">
-                Nenhuma reserva cancelada encontrada.
+                <%= @history_empty_message || 'Nenhuma reserva cancelada encontrada.' %>
               </td>
             </tr>
           <% end %>

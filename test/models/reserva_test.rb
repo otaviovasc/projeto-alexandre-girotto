@@ -225,6 +225,8 @@ class ReservaTest < ActiveSupport::TestCase
     assert_includes Reserva.canceled_for_history, unpaid_pre_reservation
     assert_includes Reserva.canceled_for_external_history, real_canceled
     assert_not_includes Reserva.canceled_for_external_history, unpaid_pre_reservation
+    assert_includes Reserva.unfinished_pre_reservations, unpaid_pre_reservation
+    assert_not_includes Reserva.unfinished_pre_reservations, real_canceled
   end
 
   private
