@@ -11,10 +11,6 @@ class PortalReservaController < ApplicationController
 
   # GET /minha-reserva
   def index
-    # Se já tem reserva na sessão, redireciona para as opções do portal
-    if session[:portal_reserva_id].present?
-      redirect_to portal_reserva_inicio_path
-    end
   end
 
   # POST /minha-reserva/acessar
@@ -265,7 +261,10 @@ class PortalReservaController < ApplicationController
   # DELETE /minha-reserva/sair
   def sair
     session.delete(:portal_reserva_id)
-    redirect_to portal_reserva_path, notice: "Você saiu do portal da reserva."
+    session.delete(:fnrh_portal_reserva_id)
+    session.delete(:pending_terms_reserva_id)
+    session.delete(:fnrh_terms_guest_name)
+    redirect_to fnrh_terms_path, notice: "Você saiu do acesso da reserva."
   end
 
   private

@@ -8,6 +8,13 @@ class FnrhPortalController < ApplicationController
   end
 
   def terms
+    @reserva = terms_portal_reserva
+
+    if @reserva
+      remember_terms_reservation(@reserva)
+      @terms_accepted = terms_already_accepted?(@reserva)
+      @guest_name = session[:fnrh_terms_guest_name].presence || guest_identifier_for(@reserva)
+    end
   end
 
   def access
@@ -18,15 +25,26 @@ class FnrhPortalController < ApplicationController
   end
 
   def terms_access
-    unless ActiveModel::Type::Boolean.new.cast(params[:terms_accepted])
-      redirect_to fnrh_terms_path, alert: 'Confirme que leu e concorda com os termos para continuar.'
+    reserva = find_reservation_for_terms_access
+    return unless reserva
+
+    remember_terms_reservation(reserva)
+
+    if terms_already_accepted?(reserva)
+      session.delete(:pending_terms_reserva_id)
+      redirect_to fnrh_terms_path
       return
     end
 
-    process_reservation_access(
-      failure_path: fnrh_terms_path,
-      record_terms: true
-    )
+    unless ActiveModel::Type::Boolean.new.cast(params[:terms_accepted])
+      session[:pending_terms_reserva_id] = reserva.id
+      redirect_to fnrh_terms_path, alert: 'Leia e confirme os termos para liberar o acesso da reserva.'
+      return
+    end
+
+    record_terms_accepted(reserva)
+    session.delete(:pending_terms_reserva_id)
+    redirect_to fnrh_terms_path, notice: 'Termos aceitos. Acesso liberado.'
   end
 
   def orientation
@@ -90,10 +108,60 @@ class FnrhPortalController < ApplicationController
 
   def logout
     session.delete(:fnrh_portal_reserva_id)
-    redirect_to fnrh_portal_path
+    session.delete(:portal_reserva_id)
+    session.delete(:pending_terms_reserva_id)
+    session.delete(:fnrh_terms_guest_name)
+    redirect_to fnrh_terms_path
   end
 
   private
+
+  def find_reservation_for_terms_access
+    if params[:guest_name].to_s.match?(/\s/)
+      redirect_to fnrh_terms_path, alert: 'Digite somente o primeiro nome, sem espaços.'
+      return
+    end
+
+    reserva = Reserva.includes(:user, :fnrh_events, cabana: :filial).find_by(id: params[:reservation_code].to_i)
+
+    unless reservation_matches?(reserva, params[:guest_name])
+      redirect_to fnrh_terms_path, alert: 'Reserva não encontrada. Confira o primeiro nome e o código informados.'
+      return
+    end
+
+    if reserva.canceled? || reserva.fnrh_status == 'cancelled'
+      redirect_to fnrh_terms_path, alert: 'Esta reserva está cancelada.'
+      return
+    end
+
+    reserva
+  end
+
+  def terms_portal_reserva
+    reserva_id = session[:pending_terms_reserva_id].presence ||
+                 session[:fnrh_portal_reserva_id].presence ||
+                 session[:portal_reserva_id].presence
+
+    return if reserva_id.blank?
+
+    Reserva.includes(:user, :fnrh_events, cabana: :filial).find_by(id: reserva_id)
+  end
+
+  def remember_terms_reservation(reserva)
+    session[:fnrh_portal_reserva_id] = reserva.id
+    session[:portal_reserva_id] = reserva.id
+    session[:fnrh_terms_guest_name] = params[:guest_name].presence || session[:fnrh_terms_guest_name].presence || guest_identifier_for(reserva)
+  end
+
+  def terms_already_accepted?(reserva)
+    reserva.fnrh_events.where(event_type: 'terms_accepted').exists?
+  end
+
+  def guest_identifier_for(reserva)
+    reserva.guest_name.to_s.squish.split.first.presence ||
+      reserva.user&.name.to_s.squish.split.first.presence ||
+      reserva.user&.email.to_s
+  end
 
   def process_reservation_access(failure_path:, record_terms:)
     if params[:guest_name].to_s.match?(/\s/)

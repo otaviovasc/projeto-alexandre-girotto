@@ -1,95 +1,164 @@
 <% content_for :title, "Pagamento da reserva ##{@reserva.id} - Villaggio Girotto" %>
 
-<main class="min-h-screen px-4 py-8 sm:py-12">
-  <div class="mx-auto max-w-3xl">
-    <header class="mb-8">
-      <p class="text-sm font-semibold text-[#5f755f]">Villaggio Girotto</p>
-      <h1 class="mt-1 text-3xl font-semibold sm:text-4xl">Pagamento da reserva</h1>
-      <p class="mt-3 text-sm leading-6 text-[#637066]">
-        Reserva #<%= @reserva.id %> · <%= @reserva.cabana.name %> ·
-        <%= @reserva.start_date.strftime('%d/%m/%Y') %> a <%= @reserva.end_date.strftime('%d/%m/%Y') %>
-      </p>
+<main class="vg-public-page">
+  <div class="vg-public-shell">
+    <div class="vg-topline">
+      <span class="vg-brand-name">Villaggio Girotto</span>
+      <span class="vg-page-status">Checkout seguro</span>
+    </div>
+
+    <header class="vg-hero">
+      <div>
+        <p class="vg-kicker"><%= @payment_paid ? 'Reserva confirmada' : 'Pré-reserva' %></p>
+        <h1 class="vg-title"><%= @payment_paid ? 'Sua estadia está confirmada.' : 'Finalize sua estadia.' %></h1>
+        <p class="vg-lead">
+          Confira o resumo da reserva, aceite os termos e siga para o pagamento pela Cielo.
+        </p>
+      </div>
+
+      <div class="vg-note">
+        <% if @payment_paid %>
+          Pagamento confirmado. A reserva já está registrada no sistema do Villaggio Girotto.
+        <% elsif @payment_unavailable %>
+          Este link não está mais disponível para pagamento.
+        <% else %>
+          As datas ficam pré-reservadas até <strong><%= l(@payment_due_at, format: '%d/%m/%Y às %H:%M') %></strong>.
+          Após a confirmação do pagamento, as datas ficam confirmadas.
+        <% end %>
+      </div>
     </header>
 
     <% if flash[:notice].present? %>
-      <div class="mb-6 border-l-4 border-green-600 bg-green-50 px-4 py-3 text-sm text-green-800">
+      <div class="vg-alert success mb-5">
         <%= flash[:notice] %>
       </div>
     <% end %>
 
     <% if flash[:alert].present? %>
-      <div class="mb-6 border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <div class="vg-alert error mb-5">
         <%= flash[:alert] %>
       </div>
     <% end %>
 
-    <section class="border border-[#d9dfd7] bg-white p-6 shadow-sm sm:p-8">
-      <div class="grid gap-4 sm:grid-cols-2">
+    <section class="vg-card">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p class="text-xs uppercase tracking-wide text-[#7a857d]">Parcela</p>
-          <p class="mt-1 text-xl font-semibold"><%= @reserva_payment.installment_number %>ª parcela</p>
+          <p class="vg-kicker">Resumo</p>
+          <h2 class="vg-card-title">Reserva #<%= @reserva.id %></h2>
+          <p class="vg-card-copy"><%= @reserva.cabana.name %></p>
         </div>
-        <div>
-          <p class="text-xs uppercase tracking-wide text-[#7a857d]">Valor</p>
-          <p class="mt-1 text-xl font-semibold"><%= number_to_currency(@reserva_payment.amount, unit: 'R$ ', separator: ',', delimiter: '.') %></p>
-        </div>
-        <div>
-          <p class="text-xs uppercase tracking-wide text-[#7a857d]">Prazo</p>
-          <p class="mt-1 font-semibold"><%= @reserva_payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %></p>
-        </div>
-        <div>
-          <p class="text-xs uppercase tracking-wide text-[#7a857d]">Status</p>
-          <p class="mt-1 font-semibold"><%= @reserva_payment.payment_status.humanize %></p>
+
+        <div class="rounded-full bg-[#e7ece5] px-4 py-2 text-sm font-semibold text-[#3f4b43]">
+          <%= @payment_status_label %>
         </div>
       </div>
 
-      <% if @reserva_payment.paid? %>
-        <div class="mt-6 border-l-4 border-green-600 bg-green-50 px-4 py-3 text-sm text-green-800">
-          <strong>Pagamento confirmado.</strong> Sua reserva está registrada no sistema.
+      <div class="vg-summary-grid mt-8">
+        <div>
+          <p class="vg-summary-label">Entrada</p>
+          <p class="vg-summary-value"><%= @reserva.start_date.strftime('%d/%m/%Y') %></p>
         </div>
-      <% elsif @reserva.canceled? || @reserva_payment.canceled? || @reserva_payment.overdue? || @reserva_payment.expired? %>
-        <div class="mt-6 border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div>
+          <p class="vg-summary-label">Saída</p>
+          <p class="vg-summary-value"><%= @reserva.end_date.strftime('%d/%m/%Y') %></p>
+        </div>
+        <div>
+          <p class="vg-summary-label">Noites</p>
+          <p class="vg-summary-value"><%= @nights_count %></p>
+        </div>
+      </div>
+
+      <div class="vg-items">
+        <% @purchase_items.each do |item| %>
+          <div class="vg-item">
+            <div>
+              <p class="font-semibold text-[#1a2e1a]"><%= item[:name] %></p>
+              <p class="mt-1 text-sm text-[#637066]">
+                <%= item[:detail] %>
+                <% if item[:quantity].to_i > 1 %>
+                  · <%= item[:quantity] %>x
+                <% end %>
+              </p>
+            </div>
+            <p class="shrink-0 font-semibold text-[#1a2e1a]">
+              <%= number_to_currency(item[:total], unit: 'R$ ', separator: ',', delimiter: '.') %>
+            </p>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="vg-summary-total">
+        <span>Total da reserva</span>
+        <strong><%= number_to_currency(@reservation_total, unit: 'R$ ', separator: ',', delimiter: '.') %></strong>
+      </div>
+
+      <% if @reserva.reserva_payments.where.not(payment_status: 'canceled').count > 1 %>
+        <div class="mt-5 border border-[#d9dfd7] bg-[#f7f9f6] p-4 text-sm leading-6 text-[#3f4b43]">
+          Este link é referente à <strong><%= @reserva_payment.installment_number %>ª parcela</strong>,
+          no valor de <strong><%= number_to_currency(@reserva_payment.amount, unit: 'R$ ', separator: ',', delimiter: '.') %></strong>.
+        </div>
+      <% end %>
+    </section>
+
+    <section class="vg-card">
+      <h2 class="vg-card-title">Termos de hospedagem</h2>
+      <p class="vg-card-copy">Leia os termos antes de confirmar o aceite e seguir para o pagamento.</p>
+
+      <details class="vg-terms-box">
+        <summary>Ler termos e condições</summary>
+        <div class="vg-terms-content">
+          <%= render 'fnrh_portal/hosting_terms' %>
+        </div>
+      </details>
+    </section>
+
+    <section class="vg-action-card">
+      <% if @payment_paid %>
+        <div class="vg-alert success">
+          <p class="font-semibold">Pagamento confirmado.</p>
+          <p class="mt-1">Sua reserva foi registrada. Se ainda não falou com o Villaggio, envie o código da reserva no grupo ou pelo WhatsApp.</p>
+        </div>
+      <% elsif @payment_unavailable %>
+        <div class="vg-alert error">
           <% if @reserva_payment.canceled? %>
-            <strong>Link cancelado.</strong> Este link não pode mais ser usado. Use o novo link enviado pelo Villaggio.
+            <p class="font-semibold">Link cancelado.</p>
+            <p class="mt-1">Use o novo link enviado pelo Villaggio Girotto.</p>
           <% elsif @reserva.canceled? %>
-            <strong>Pré-reserva cancelada.</strong> O prazo para confirmação passou ou a reserva foi cancelada. Entre em contato com o Villaggio para verificar a disponibilidade da data.
+            <p class="font-semibold">Pré-reserva cancelada.</p>
+            <p class="mt-1">O prazo para confirmação passou ou a reserva foi cancelada. Entre em contato para verificar a disponibilidade.</p>
           <% else %>
-            <strong>Prazo de pagamento vencido.</strong> Este link não pode mais ser usado. Entre em contato com o Villaggio para verificar a disponibilidade da data.
+            <p class="font-semibold">Prazo de pagamento vencido.</p>
+            <p class="mt-1">Este link não pode mais ser usado. Entre em contato para verificar a disponibilidade da data.</p>
           <% end %>
         </div>
       <% elsif @reserva_payment.terms_accepted? %>
-        <div class="mt-6 border border-[#d9dfd7] bg-[#f7f9f6] p-4 text-sm leading-6 text-[#3f4b43]">
+        <div class="vg-alert success">
           Termos aceitos por <strong><%= @reserva_payment.terms_acceptance_display_name %></strong>.
-          Se você acabou de pagar, a confirmação pode levar alguns instantes. Atualize esta página em alguns segundos. Se ainda não pagou, continue para a Cielo.
         </div>
 
-        <%= link_to 'Abrir pagamento pela Cielo',
-            @reserva_payment.payment_link_url,
-            class: 'mt-6 block w-full bg-[#315b3a] px-4 py-3 text-center font-semibold text-white hover:bg-[#264a2e]',
+        <%= link_to 'Pagar com segurança pela Cielo',
+            @payment_link_url,
+            class: 'vg-button w-full',
             data: { turbo: false } %>
       <% else %>
-        <div class="mt-6">
-          <%= render 'fnrh_portal/hosting_terms' %>
-        </div>
-
-        <%= form_with url: accept_reserva_payment_terms_path(token: @reserva_payment.terms_token), method: :post, local: true, class: 'mt-6 space-y-5' do |form| %>
-          <label class="flex items-start gap-3 border border-[#d9dfd7] bg-[#f7f9f6] p-4 text-sm leading-6 text-[#3f4b43]">
-            <%= check_box_tag :terms_accepted, '1', false, required: true, class: 'mt-1 h-5 w-5 shrink-0 accent-[#315b3a]' %>
-            <span>Declaro que li, compreendi e concordo com os termos para confirmação desta reserva.</span>
-          </label>
-
+        <%= form_with url: accept_reserva_payment_terms_path(token: @reserva_payment.terms_token), method: :post, local: true, class: 'space-y-5' do %>
           <div>
-            <%= label_tag :terms_acceptance_name, 'Nome e Sobrenome do Responsável Pela Reserva', class: 'block text-sm font-medium' %>
+            <%= label_tag :terms_acceptance_name, 'Nome e Sobrenome do Responsável Pela Reserva', class: 'vg-label' %>
             <%= text_field_tag :terms_acceptance_name,
                 nil,
                 required: true,
                 autocomplete: 'name',
                 placeholder: 'Ex.: Maria Silva',
-                class: 'mt-2 w-full border border-[#c9d1c7] px-3 py-3 text-base focus:border-[#3f6747] focus:outline-none focus:ring-1 focus:ring-[#3f6747]' %>
+                class: 'vg-input' %>
           </div>
 
-          <button type="submit" class="w-full bg-[#315b3a] px-4 py-3 font-semibold text-white hover:bg-[#264a2e]">
-            Aceitar termos e continuar
+          <label class="flex items-start gap-3 text-sm leading-6 text-[#3f4b43]">
+            <%= check_box_tag :terms_accepted, '1', false, required: true, class: 'vg-checkbox mt-1 shrink-0' %>
+            <span>Declaro que li, compreendi e concordo com os termos de hospedagem do Villaggio Girotto.</span>
+          </label>
+
+          <button type="submit" class="vg-button w-full">
+            Aceitar termos e seguir para pagamento
           </button>
         <% end %>
       <% end %>

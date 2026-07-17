@@ -1,15 +1,20 @@
-<% content_for :title, 'Termos de hospedagem - Villaggio Girotto' %>
+<% content_for :title, 'Acesso da hospedagem - Villaggio Girotto' %>
 
 <main class="min-h-screen px-4 py-8 sm:py-12">
   <div class="mx-auto max-w-3xl">
     <header class="mb-8">
       <p class="text-sm font-semibold text-[#5f755f]">Villaggio Girotto</p>
-      <h1 class="mt-1 text-3xl font-semibold sm:text-4xl">Termos de hospedagem</h1>
+      <h1 class="mt-1 text-3xl font-semibold sm:text-4xl">Acesso da hospedagem</h1>
       <p class="mt-3 text-sm leading-6 text-[#637066]">
-        Leia atentamente as condições aplicáveis à sua estadia. Ao final, confirme a leitura e informe os dados da reserva para seguir ao pré-check-in ou acessar o material do hóspede.
+        Informe o primeiro nome e o código da reserva para acessar os serviços, serviços comprados e material do hóspede.
       </p>
-      <p class="mt-2 text-xs text-[#7a857d]">Versão de 16/07/2026</p>
     </header>
+
+    <% if flash[:notice].present? %>
+      <div class="mb-6 border-l-4 border-green-600 bg-green-50 px-4 py-3 text-sm text-green-800">
+        <%= flash[:notice] %>
+      </div>
+    <% end %>
 
     <% if flash[:alert].present? %>
       <div class="mb-6 border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -17,53 +22,125 @@
       </div>
     <% end %>
 
-    <%= render 'hosting_terms' %>
-
-    <section class="mt-8 border border-[#d9dfd7] bg-white p-6 shadow-sm sm:p-8">
-      <h2 class="text-2xl font-semibold">Confirmar leitura e continuar</h2>
-      <p class="mt-3 text-sm leading-6 text-[#637066]">
-        Confirme a leitura, informe os dados da reserva e continue para o pré-check-in ou para o material do hóspede.
-      </p>
-
-      <%= form_with url: fnrh_terms_access_path, method: :post, local: true, data: { fnrh_loading: true }, class: 'mt-6 space-y-5' do |form| %>
-        <label class="flex items-start gap-3 border border-[#d9dfd7] bg-[#f7f9f6] p-4 text-sm leading-6 text-[#3f4b43]">
-          <%= form.check_box :terms_accepted,
-              { required: true, class: 'mt-1 h-5 w-5 shrink-0 accent-[#315b3a]' },
-              '1',
-              '0' %>
-          <span>Declaro que li, compreendi e concordo com os Termos e Condições de Hospedagem acima.</span>
-        </label>
-
-        <div>
-          <%= form.label :guest_name, 'Primeiro nome ou aplicativo da reserva', class: 'block text-sm font-medium' %>
-          <%= form.text_field :guest_name,
-              required: true,
-              autocomplete: 'given-name',
-              pattern: '\\S+',
-              title: 'Digite somente o primeiro nome, sem espaços',
-              data: { first_name_only: true },
-              placeholder: 'Ex.: Maria, Airbnb, Booking ou Holmy',
-              class: 'mt-2 w-full border border-[#c9d1c7] px-3 py-3 text-base focus:border-[#3f6747] focus:outline-none focus:ring-1 focus:ring-[#3f6747]' %>
-          <p class="mt-2 text-sm text-[#637066]">Digite somente o primeiro nome, sem sobrenome e sem espaços.</p>
+    <% if @reserva.present? && @terms_accepted %>
+      <section class="border border-[#d9dfd7] bg-white p-6 shadow-sm sm:p-8">
+        <div class="flex flex-col gap-4 border-b border-[#e4e8e2] pb-6 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-[#728077]">Reserva #<%= @reserva.id %></p>
+            <h2 class="mt-2 text-2xl font-semibold"><%= @reserva.cabana.name %></h2>
+            <p class="mt-2 text-sm text-[#637066]">
+              <%= @reserva.start_date.strftime('%d/%m/%Y') %> a <%= @reserva.end_date.strftime('%d/%m/%Y') %>
+            </p>
+          </div>
+          <span class="inline-flex w-fit items-center bg-[#eef4ed] px-3 py-2 text-sm font-semibold text-[#315b3a]">
+            Termos aceitos
+          </span>
         </div>
 
-        <div>
-          <%= form.label :reservation_code, 'Código da reserva', class: 'block text-sm font-medium' %>
-          <%= form.number_field :reservation_code,
-              required: true,
-              min: 1,
-              inputmode: 'numeric',
-              placeholder: 'Ex.: 843',
-              class: 'mt-2 w-full border border-[#c9d1c7] px-3 py-3 text-base focus:border-[#3f6747] focus:outline-none focus:ring-1 focus:ring-[#3f6747]' %>
-          <p class="mt-2 text-sm text-[#637066]">
-            Código da reserva: números que ficam entre parênteses no final do nome do seu grupo do WhatsApp.
-          </p>
+        <div class="mt-7 grid gap-3">
+          <%= link_to 'Comprar serviços',
+              portal_reserva_servicos_path,
+              class: 'block bg-[#315b3a] px-5 py-4 text-center font-semibold text-white hover:bg-[#264a2e]' %>
+
+          <%= link_to 'Ver serviços comprados',
+              portal_reserva_comprados_path,
+              class: 'block border border-[#315b3a] bg-white px-5 py-4 text-center font-semibold text-[#315b3a] hover:bg-[#f3f5f1]' %>
+
+          <% if @reserva.fnrh_information_released? %>
+            <%= link_to 'Material do hóspede',
+                fnrh_portal_information_path,
+                class: 'block border border-[#d9dfd7] bg-[#f7f9f6] px-5 py-4 text-center font-semibold text-[#172019] hover:bg-[#eef4ed]' %>
+          <% else %>
+            <%= button_to 'Material do hóspede',
+                fnrh_portal_access_path,
+                method: :post,
+                params: {
+                  guest_name: @guest_name,
+                  reservation_code: @reserva.id
+                },
+                form: { data: { fnrh_loading: true } },
+                class: 'w-full border border-[#d9dfd7] bg-[#f7f9f6] px-5 py-4 text-center font-semibold text-[#172019] hover:bg-[#eef4ed]' %>
+          <% end %>
         </div>
 
-        <button type="submit" class="w-full bg-[#315b3a] px-4 py-3 font-semibold text-white hover:bg-[#264a2e]">
-          Concordar e continuar
-        </button>
-      <% end %>
-    </section>
+        <%= button_to 'Sair',
+            fnrh_portal_logout_path,
+            method: :delete,
+            class: 'mt-6 text-sm font-medium text-[#315b3a] underline' %>
+      </section>
+    <% elsif @reserva.present? %>
+      <section class="mb-8 border border-[#d9dfd7] bg-white p-6 shadow-sm sm:p-8">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-[#728077]">Reserva #<%= @reserva.id %></p>
+        <h2 class="mt-2 text-2xl font-semibold"><%= @reserva.cabana.name %></h2>
+        <p class="mt-2 text-sm text-[#637066]">
+          Para liberar o acesso desta reserva, leia e confirme os termos abaixo uma única vez.
+        </p>
+      </section>
+
+      <%= render 'hosting_terms' %>
+
+      <section class="mt-8 border border-[#d9dfd7] bg-white p-6 shadow-sm sm:p-8">
+        <h2 class="text-2xl font-semibold">Confirmar termos</h2>
+        <p class="mt-3 text-sm leading-6 text-[#637066]">
+          Depois dessa confirmação, este acesso abrirá direto os botões da reserva.
+        </p>
+
+        <%= form_with url: fnrh_terms_access_path, method: :post, local: true, data: { fnrh_loading: true }, class: 'mt-6 space-y-5' do |form| %>
+          <%= form.hidden_field :guest_name, value: @guest_name %>
+          <%= form.hidden_field :reservation_code, value: @reserva.id %>
+
+          <label class="flex items-start gap-3 border border-[#d9dfd7] bg-[#f7f9f6] p-4 text-sm leading-6 text-[#3f4b43]">
+            <%= form.check_box :terms_accepted,
+                { required: true, class: 'mt-1 h-5 w-5 shrink-0 accent-[#315b3a]' },
+                '1',
+                '0' %>
+            <span>Declaro que li, compreendi e concordo com os Termos e Condições de Hospedagem acima.</span>
+          </label>
+
+          <button type="submit" class="w-full bg-[#315b3a] px-4 py-3 font-semibold text-white hover:bg-[#264a2e]">
+            Concordar e abrir opções da reserva
+          </button>
+        <% end %>
+      </section>
+    <% else %>
+      <section class="border border-[#d9dfd7] bg-white p-6 shadow-sm sm:p-8">
+        <h2 class="text-2xl font-semibold">Entrar na reserva</h2>
+        <p class="mt-3 text-sm leading-6 text-[#637066]">
+          Use o primeiro nome do responsável e o código que aparece entre parênteses no nome do grupo de WhatsApp.
+        </p>
+
+        <%= form_with url: fnrh_terms_access_path, method: :post, local: true, class: 'mt-6 space-y-5' do |form| %>
+          <div>
+            <%= form.label :guest_name, 'Primeiro nome', class: 'block text-sm font-medium' %>
+            <%= form.text_field :guest_name,
+                required: true,
+                autocomplete: 'given-name',
+                pattern: '\\S+',
+                title: 'Digite somente o primeiro nome, sem espaços',
+                data: { first_name_only: true },
+                placeholder: 'Ex.: Maria',
+                class: 'mt-2 w-full border border-[#c9d1c7] px-3 py-3 text-base focus:border-[#3f6747] focus:outline-none focus:ring-1 focus:ring-[#3f6747]' %>
+            <p class="mt-2 text-sm text-[#637066]">Digite somente o primeiro nome, sem sobrenome e sem espaços.</p>
+          </div>
+
+          <div>
+            <%= form.label :reservation_code, 'Código da reserva', class: 'block text-sm font-medium' %>
+            <%= form.number_field :reservation_code,
+                required: true,
+                min: 1,
+                inputmode: 'numeric',
+                placeholder: 'Ex.: 843',
+                class: 'mt-2 w-full border border-[#c9d1c7] px-3 py-3 text-base focus:border-[#3f6747] focus:outline-none focus:ring-1 focus:ring-[#3f6747]' %>
+            <p class="mt-2 text-sm text-[#637066]">
+              Código da reserva: números que ficam entre parênteses no final do nome do seu grupo do WhatsApp.
+            </p>
+          </div>
+
+          <button type="submit" class="w-full bg-[#315b3a] px-4 py-3 font-semibold text-white hover:bg-[#264a2e]">
+            Acessar hospedagem
+          </button>
+        <% end %>
+      </section>
+    <% end %>
   </div>
 </main>

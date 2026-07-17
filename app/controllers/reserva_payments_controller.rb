@@ -1,15 +1,17 @@
 class ReservaPaymentsController < ApplicationController
-  layout 'fnrh_portal'
+  layout 'portal_reserva'
 
   skip_before_action :authenticate_user!
   before_action :set_reserva_payment
 
   def show
     refresh_payment_status!
+    assign_payment_page_details
   end
 
   def accept_terms
     refresh_payment_status!
+    assign_payment_page_details
 
     if payment_link_unavailable?
       flash.now[:alert] = 'Este link não está mais disponível para pagamento.'
@@ -43,7 +45,7 @@ class ReservaPaymentsController < ApplicationController
   private
 
   def set_reserva_payment
-    @reserva_payment = ReservaPayment.includes(reserva: [:user, { cabana: :filial }]).find_by!(terms_token: params[:token])
+    @reserva_payment = ReservaPayment.includes(reserva: [:user, :reserva_payments, { cabana: :filial }]).find_by!(terms_token: params[:token])
   end
 
   def refresh_payment_status!
@@ -105,5 +107,131 @@ class ReservaPaymentsController < ApplicationController
       @reserva_payment.canceled? ||
       @reserva_payment.overdue? ||
       @reserva_payment.expired?
+  end
+
+  def assign_payment_page_details
+    @payment_paid = @reserva_payment.paid?
+    @payment_open = payment_open?
+    @payment_unavailable = payment_link_unavailable?
+    @payment_status_label = payment_status_label(@reserva_payment.payment_status)
+    @payment_link_url = @reserva_payment.payment_link_url
+    @purchase_items = purchase_items
+    @reservation_total = reservation_total
+    @payment_due_at = @reserva_payment.due_at&.in_time_zone('America/Sao_Paulo')
+    @nights_count = nights_count
+  end
+
+  def payment_open?
+    @reserva_payment.waiting_payment? && !@reserva_payment.expired? && !@reserva.canceled?
+  end
+
+  def payment_status_label(status)
+    {
+      'waiting_payment' => 'Aguardando pagamento',
+      'paid' => 'Pagamento confirmado',
+      'refused' => 'Pagamento recusado',
+      'canceled' => 'Link cancelado',
+      'overdue' => 'Prazo vencido'
+    }.fetch(status.to_s, status.to_s.humanize)
+  end
+
+  def purchase_items
+    return public_booking_purchase_items if @reserva_payment.public_booking?
+
+    admin_purchase_items
+  end
+
+  def public_booking_purchase_items
+    items = [{
+      name: 'Hospedagem',
+      detail: stay_detail,
+      quantity: 1,
+      total: @reserva_payment.public_booking_daily_total
+    }]
+
+    @reserva_payment.public_booking_services.each do |service|
+      items << {
+        name: service['name'],
+        detail: Date.parse(service['service_date'].to_s).strftime('%d/%m/%Y'),
+        quantity: service['quantity'].to_i,
+        total: decimal_value(service['total'])
+      }
+    rescue ArgumentError, TypeError
+      next
+    end
+
+    items
+  end
+
+  def admin_purchase_items
+    services = displayable_reserva_services
+    services_total = services.sum { |reserva_service| reserva_service_total(reserva_service) }
+    lodging_total = [reservation_total - services_total, 0.to_d].max
+
+    items = [{
+      name: 'Hospedagem',
+      detail: stay_detail,
+      quantity: 1,
+      total: lodging_total
+    }]
+
+    services.each do |reserva_service|
+      items << {
+        name: reserva_service.service.name,
+        detail: service_detail(reserva_service),
+        quantity: reserva_service.quantity.to_i,
+        total: reserva_service_total(reserva_service)
+      }
+    end
+
+    items
+  end
+
+  def displayable_reserva_services
+    @displayable_reserva_services ||= @reserva.reserva_services.includes(:service).select do |reserva_service|
+      next false unless reserva_service.active?
+      next false if CleaningServicesAssigner.cleaning_service?(reserva_service.service)
+      next false if BreakfastServicesAssigner.included_breakfast_service?(reserva_service)
+      next false if ReservaService.free_date_service?(reserva_service.service)
+
+      true
+    end
+  end
+
+  def reserva_service_total(reserva_service)
+    return decimal_value(reserva_service.total_paid) if reserva_service.total_paid.present?
+
+    unit_price = reserva_service.unit_price_paid.presence ||
+                 reserva_service.service&.price_for(@reserva) ||
+                 0
+    decimal_value(unit_price) * reserva_service.quantity.to_i
+  end
+
+  def reservation_total
+    @reservation_total ||= begin
+      reserva_total = decimal_value(@reserva.total_price)
+      payment_total = decimal_value(
+        @reserva.reserva_payments.where.not(payment_status: 'canceled').sum(:amount)
+      )
+      [reserva_total, payment_total, decimal_value(@reserva_payment.amount)].max
+    end
+  end
+
+  def stay_detail
+    "#{@reserva.start_date.strftime('%d/%m/%Y')} a #{@reserva.end_date.strftime('%d/%m/%Y')} · #{nights_count} #{'noite'.pluralize(nights_count)}"
+  end
+
+  def service_detail(reserva_service)
+    reserva_service.service_date.strftime('%d/%m/%Y')
+  end
+
+  def nights_count
+    @nights_count ||= [(@reserva.end_date - @reserva.start_date).to_i, 0].max
+  end
+
+  def decimal_value(value)
+    BigDecimal(value.to_s.presence || '0')
+  rescue ArgumentError, TypeError
+    0.to_d
   end
 end
