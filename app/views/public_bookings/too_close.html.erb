@@ -1,0 +1,60 @@
+<% content_for :title, "Reserva de última hora - Villaggio Girotto" %>
+
+<main class="vg-public-page">
+  <div class="vg-public-shell">
+    <div class="vg-topline">
+      <span class="vg-brand-name">Villaggio Girotto</span>
+      <span class="vg-page-status">Atendimento pelo WhatsApp</span>
+    </div>
+
+    <header class="vg-hero">
+      <div>
+        <p class="vg-kicker">Reserva online</p>
+        <h1 class="vg-title">Fale com o Villaggio.</h1>
+        <p class="vg-lead">
+          Para reservas com menos de 2 dias de antecedência, nossa equipe precisa confirmar disponibilidade e preparo da hospedagem antes do pagamento.
+        </p>
+      </div>
+      <div class="vg-note">
+        Nenhuma pré-reserva foi criada e nenhuma data foi travada. Clique no botão abaixo para falar com o atendimento da filial correta.
+      </div>
+    </header>
+
+    <section class="vg-card">
+      <div class="vg-alert warning">
+        <strong>Reserva muito próxima.</strong> Para evitar qualquer problema de chegada, atendimento e preparação da cabana, finalize essa solicitação pelo WhatsApp.
+      </div>
+
+      <div class="vg-summary-grid">
+        <div>
+          <p class="vg-summary-label">Cabana</p>
+          <p class="vg-summary-value"><%= @cabana&.name || "Não informada" %></p>
+        </div>
+        <div>
+          <p class="vg-summary-label">Entrada</p>
+          <p class="vg-summary-value"><%= @start_date&.strftime('%d/%m/%Y') || "Não informada" %></p>
+        </div>
+        <div>
+          <p class="vg-summary-label">Saída</p>
+          <p class="vg-summary-value"><%= @end_date&.strftime('%d/%m/%Y') || "Não informada" %></p>
+        </div>
+      </div>
+
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+        <%= link_to "Falar pelo WhatsApp",
+            @whatsapp_url,
+            target: "_blank",
+            rel: "noopener",
+            class: "vg-button w-full sm:w-auto" %>
+
+        <%= link_to "Escolher outra data",
+            new_public_booking_path(
+              cabana_id: @cabana&.id,
+              start_date: @start_date,
+              end_date: @end_date
+            ),
+            class: "vg-button secondary w-full sm:w-auto" %>
+      </div>
+    </section>
+  </div>
+</main>

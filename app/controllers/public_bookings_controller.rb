@@ -1,4 +1,6 @@
 class PublicBookingsController < ApplicationController
+  ONLINE_BOOKING_MIN_LEAD_DAYS = 2
+
   layout 'portal_reserva'
 
   skip_before_action :authenticate_user!
@@ -10,6 +12,12 @@ class PublicBookingsController < ApplicationController
   end
 
   def create
+    if too_close_for_online_booking?
+      assign_too_close_booking_details
+      render :too_close, status: :ok
+      return
+    end
+
     checkout = PublicBookingCheckout.new(params: booking_params.to_h.with_indifferent_access, request: request)
 
     if checkout.call
@@ -245,7 +253,7 @@ class PublicBookingsController < ApplicationController
   end
 
   def whatsapp_number_for(filial)
-    suffix = if I18n.transliterate(filial.name.to_s).upcase.include?('BRAUNA')
+    suffix = if I18n.transliterate(filial&.name.to_s).upcase.include?('BRAUNA')
                'BRAUNA'
              else
                'SERRA'
@@ -258,6 +266,45 @@ class PublicBookingsController < ApplicationController
     Date.parse(value.to_s)
   rescue ArgumentError, TypeError
     nil
+  end
+
+  def too_close_for_online_booking?
+    cabana = Cabana.includes(:filial).find_by(id: booking_params[:cabana_id])
+    start_date = parse_date_param(booking_params[:start_date])
+
+    cabana.present? && start_date.present? && start_date < ONLINE_BOOKING_MIN_LEAD_DAYS.days.from_now.to_date
+  end
+
+  def assign_too_close_booking_details
+    @cabana = Cabana.includes(:filial).find_by(id: booking_params[:cabana_id])
+    @start_date = parse_date_param(booking_params[:start_date])
+    @end_date = parse_date_param(booking_params[:end_date])
+    @guest_name = booking_params[:guest_name].to_s.squish
+    @whatsapp_url = too_close_whatsapp_url
+  end
+
+  def too_close_whatsapp_url
+    number = whatsapp_number_for(@cabana&.filial)
+    encoded_text = ERB::Util.url_encode(too_close_whatsapp_message)
+
+    if number.present?
+      "https://wa.me/#{number}?text=#{encoded_text}"
+    else
+      "https://wa.me/?text=#{encoded_text}"
+    end
+  end
+
+  def too_close_whatsapp_message
+    lines = [
+      "Olá! Quero verificar uma reserva de última hora pelo site oficial.",
+      "",
+      ("Nome: #{@guest_name}" if @guest_name.present?),
+      ("Cabana: #{@cabana.name}" if @cabana.present?),
+      ("Entrada: #{@start_date.strftime('%d/%m/%Y')}" if @start_date.present?),
+      ("Saída: #{@end_date.strftime('%d/%m/%Y')}" if @end_date.present?)
+    ]
+
+    lines.compact.join("\n")
   end
 
   def prefilled_booking_values
