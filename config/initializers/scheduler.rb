@@ -47,13 +47,28 @@ scheduler.every '30m', first_in: '8m', overlap: false do
 
   Rails.logger.info 'Iniciando disparos de e-mails de reservas...'
   begin
-    result = ReservationEmailDispatcher.run
+    result = ReservationEmailDispatcher.run(exclude_trigger_key: 'reservation_confirmed')
     Rails.logger.info(
       "Disparos de e-mails concluídos: #{result.checked} verificados, " \
       "#{result.sent} enviados, #{result.skipped} ignorados, #{result.failed} falhas."
     )
   rescue => e
     Rails.logger.error "Erro nos disparos de e-mails de reservas: #{e.message}"
+  end
+end
+
+scheduler.every '3m', first_in: '1m', overlap: false do
+  next unless EmailAutomationSetting.enabled?
+
+  Rails.logger.info 'Iniciando disparos rápidos de confirmação de reserva...'
+  begin
+    result = ReservationEmailDispatcher.run(limit: 20, trigger_key: 'reservation_confirmed')
+    Rails.logger.info(
+      "Confirmações de reserva concluídas: #{result.checked} verificados, " \
+      "#{result.sent} enviados, #{result.skipped} ignorados, #{result.failed} falhas."
+    )
+  rescue => e
+    Rails.logger.error "Erro nos disparos rápidos de confirmação de reserva: #{e.message}"
   end
 end
 

@@ -23,11 +23,15 @@ class ReservationEmailScheduler
     setting = EmailAutomationSetting.current
     ReservationEmailTemplate.active.find_each do |template|
       next unless template.matches_reserva?(@reserva)
-      next if template.trigger_anchor == 'reservation_confirmed' && !newly_confirmed_reservation?
+      if template.trigger_anchor == 'reservation_confirmed'
+        next unless newly_confirmed_reservation?
+        next unless @reserva.reservation_confirmation_email_allowed?
+      end
 
       scheduled_at = scheduled_at_for(template)
       next if scheduled_at.blank?
       next if before_current_activation?(scheduled_at, setting)
+      next if past_non_confirmation_email?(template, scheduled_at)
 
       delivery = @reserva.reservation_email_deliveries.find_or_initialize_by(
         reservation_email_template: template
@@ -36,7 +40,7 @@ class ReservationEmailScheduler
 
       delivery.assign_attributes(
         trigger_key: template.trigger_key,
-        recipient_email: @reserva.user.email,
+        recipient_email: recipient_email,
         subject: template.render_subject(@reserva),
         body: template.render_body(@reserva),
         scheduled_at: scheduled_at,
@@ -50,13 +54,21 @@ class ReservationEmailScheduler
   private
 
   def schedulable_reserva?
-    @reserva.integration_ready? && @reserva.user&.email.present?
+    @reserva.integration_ready? && recipient_email.present?
+  end
+
+  def recipient_email
+    @recipient_email ||= @reserva.reservation_email_recipient_email
   end
 
   def scheduled_at_for(template)
     return Time.current if template.trigger_anchor == 'reservation_confirmed'
 
     template.scheduled_at_for(@reserva)
+  end
+
+  def past_non_confirmation_email?(template, scheduled_at)
+    template.trigger_anchor != 'reservation_confirmed' && scheduled_at < Time.current
   end
 
   def newly_confirmed_reservation?

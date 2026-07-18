@@ -1,3 +1,5 @@
+require 'uri'
+
 class Reserva < ApplicationRecord
   SERVICE_PURCHASE_BLOCK_DAYS_BEFORE_CHECKIN = 10
 
@@ -31,6 +33,10 @@ class Reserva < ApplicationRecord
   validate :imported_operational_extensions_available
   validates :guest_name, length: { maximum: 120 }, allow_blank: true
   validates :guest_phone, length: { in: 8..15 }, allow_blank: true
+  validates :guest_email,
+            length: { maximum: 255 },
+            format: { with: URI::MailTo::EMAIL_REGEXP },
+            allow_blank: true
   validates :service_max_installments, inclusion: { in: 1..12 }
 
   enum payment_status: {
@@ -280,6 +286,22 @@ class Reserva < ApplicationRecord
     partnership_reservation? || fnrh_status.in?(%w[precheckin_completed precheckin_bypassed checked_in checked_out])
   end
 
+  def reservation_email_recipient_email
+    email = guest_email.presence || user&.email
+    normalized_email = email.to_s.squish.downcase
+    return if normalized_email.blank? || imported_placeholder_email?(normalized_email)
+
+    normalized_email
+  end
+
+  def reservation_confirmation_email_allowed?
+    !imported?
+  end
+
+  def imported_placeholder_email?(email)
+    email.to_s.downcase.end_with?('@importado.com')
+  end
+
   def matches_reservation_identifier?(identifier)
     normalized_identifier = normalize_reservation_identifier(identifier)
     return false if normalized_identifier.blank?
@@ -293,7 +315,7 @@ class Reserva < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    ["blocks_availability", "breakfast_manual_override", "cabana_id", "canceled_at", "canceled_by_id", "cancellation_reason", "created_at", "early_checkin", "end_date", "group_created", "guest_name", "guest_phone", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "late_checkout", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_max_installments", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
+    ["blocks_availability", "breakfast_manual_override", "cabana_id", "canceled_at", "canceled_by_id", "cancellation_reason", "created_at", "early_checkin", "end_date", "group_created", "guest_email", "guest_name", "guest_phone", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "late_checkout", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_max_installments", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
   end
 
   private
@@ -301,6 +323,7 @@ class Reserva < ApplicationRecord
   def normalize_guest_details
     self.guest_name = guest_name.to_s.squish.presence
     self.guest_phone = guest_phone.to_s.gsub(/\D/, '').presence
+    self.guest_email = guest_email.to_s.squish.downcase.presence
   end
 
   def normalize_reservation_identifier(value)
@@ -375,7 +398,7 @@ class Reserva < ApplicationRecord
   end
 
   def sync_reservation_email_automations_after_relevant_change
-    relevant_fields = %w[payment_status blocks_availability start_date end_date canceled_at]
+    relevant_fields = %w[payment_status blocks_availability start_date end_date canceled_at guest_name guest_email]
     return if (previous_changes.keys & relevant_fields).empty?
 
     ReservationEmailScheduler.schedule_for_reserva(self)

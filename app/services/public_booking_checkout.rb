@@ -137,6 +137,7 @@ class PublicBookingCheckout
       origem: 'sistema',
       guest_name: @guest_name,
       guest_phone: @guest_phone,
+      guest_email: @guest_email,
       service_max_installments: MAX_INSTALLMENTS
     )
 

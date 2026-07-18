@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_17_133000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_18_133000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -345,6 +345,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_17_133000) do
     t.text "fnrh_last_error"
     t.string "guest_name"
     t.string "guest_phone"
+    t.string "guest_email"
     t.boolean "blocks_availability", default: true, null: false
     t.datetime "canceled_at"
     t.text "cancellation_reason"

@@ -716,7 +716,8 @@ class Admin::ReservasController < ApplicationController
              LOWER(COALESCE(reservas.observation, '')) LIKE :term OR
              LOWER(COALESCE(reservas.origem, '')) LIKE :term OR
              LOWER(COALESCE(reservas.guest_name, '')) LIKE :term OR
-             LOWER(COALESCE(reservas.guest_phone, '')) LIKE :term
+             LOWER(COALESCE(reservas.guest_phone, '')) LIKE :term OR
+             LOWER(COALESCE(reservas.guest_email, '')) LIKE :term
            SQL
            term: term
          )
@@ -761,6 +762,7 @@ class Admin::ReservasController < ApplicationController
       :group_created,
       :guest_name,
       :guest_phone,
+      :guest_email,
       user_attributes: [:id, :partner],
       reserva_services_attributes: [:id, :service_id, :quantity, :service_date, :status, :observation, :_destroy]
     )

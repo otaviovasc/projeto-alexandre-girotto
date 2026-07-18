@@ -132,7 +132,7 @@ class GoogleSheetsExportService
       rows = export_service.generate_array
 
       # Limpa a planilha e insere novos dados
-      clear_range = 'A:X'
+      clear_range = 'A:Y'
       service.clear_values(@spreadsheet_id, clear_range)
 
       # Insere headers + dados
@@ -232,7 +232,8 @@ class GoogleSheetsExportService
       'Check-in', 'Check-out', 'Noites', 'Valor', 'Status Pagamento',
       'Nome Serviço', 'Data Serviço', 'Quantidade', 'Status Serviço',
       'Valor Serviço', 'Observação', 'Data Criação', 'Observação de Serviços',
-      'Grupo Criado', 'Nome Real do Hóspede', 'Telefone Real do Hóspede', 'PDF Fotos'
+      'Grupo Criado', 'Nome Real do Hóspede', 'Telefone Real do Hóspede', 'PDF Fotos',
+      'E-mail Real do Hóspede'
     ]
   end
 
@@ -258,7 +259,7 @@ class GoogleSheetsExportService
 
   def write_canceled_history_sheet(service, sheet_title, reservas)
     ensure_sheet_exists!(service, sheet_title, spreadsheet_id: @canceled_history_spreadsheet_id)
-    service.clear_values(@canceled_history_spreadsheet_id, quoted_range(sheet_title, 'A:U'))
+    service.clear_values(@canceled_history_spreadsheet_id, quoted_range(sheet_title, 'A:V'))
     value_range = Google::Apis::SheetsV4::ValueRange.new(values: [canceled_history_headers] + canceled_history_rows(reservas))
     result = service.update_spreadsheet_value(
       @canceled_history_spreadsheet_id,
@@ -300,7 +301,8 @@ class GoogleSheetsExportService
       'Parcelas pagas',
       'Servicos',
       'Codigo iCal / Pagamento',
-      'Observacoes'
+      'Observacoes',
+      'E-mail Real do Hóspede'
     ]
   end
 
@@ -331,7 +333,8 @@ class GoogleSheetsExportService
         paid_payments.size,
         "#{service_count} serviço(s)",
         canceled_history_codes(reserva),
-        canceled_history_observation(reserva)
+        canceled_history_observation(reserva),
+        reserva.guest_email
       ]
     end
   end

@@ -182,7 +182,7 @@ class ReservaPendingPaymentSetup
       return_url: payment.public_payment_url,
       customer: {
         name: @reserva.guest_name.presence || @reserva.user.name,
-        email: @reserva.user.email,
+        email: @reserva.guest_email.presence || @reserva.user.email,
         phone: @reserva.guest_phone.presence || @reserva.user.telephone
       },
       max_installments: max_installments
