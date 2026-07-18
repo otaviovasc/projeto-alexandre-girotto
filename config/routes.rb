@@ -208,6 +208,7 @@ Rails.application.routes.draw do
   get  'minha-reserva/inicio',   to: 'portal_reserva#inicio',   as: :portal_reserva_inicio
   get  'minha-reserva/comprados', to: 'portal_reserva#comprados', as: :portal_reserva_comprados
   get  'minha-reserva/servicos', to: 'portal_reserva#servicos', as: :portal_reserva_servicos
+  get  'minha-reserva/revisar-servicos', to: 'portal_reserva#revisar_servicos', as: :portal_reserva_revisar_servicos
   get  'minha-reserva/confirmacao', to: 'portal_reserva#confirmacao', as: :portal_reserva_confirmacao
   get  'minha-reserva/confirmacao/status', to: 'portal_reserva#confirmacao_status', as: :portal_reserva_confirmacao_status
   post 'minha-reserva/adicionar',to: 'portal_reserva#adicionar',as: :portal_reserva_adicionar

@@ -226,7 +226,7 @@
             </div>
 
             <div class="p-5 bg-white border-t border-gray-100">
-              <%= button_to portal_reserva_pagar_path, method: :post, data: { turbo: false }, class: "w-full bg-[#c8a96e] hover:bg-[#b09258] text-white font-bold py-3 px-4 rounded-lg shadow-sm transition flex justify-center items-center gap-2", form_class: "w-full" do %>
+              <%= link_to portal_reserva_revisar_servicos_path, class: "w-full bg-[#c8a96e] hover:bg-[#b09258] text-white font-bold py-3 px-4 rounded-lg shadow-sm transition flex justify-center items-center gap-2" do %>
                 Finalizar compra
               <% end %>
             </div>

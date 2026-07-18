@@ -53,6 +53,13 @@
           </span>
         </div>
 
+        <% feedback_form_url =
+             if I18n.transliterate(@reserva.cabana.filial&.name.to_s).downcase.include?('brauna')
+               'https://forms.gle/U3YG8yKJhrj7JvP86'
+             else
+               'https://forms.gle/xgMCZgDRjdW3rjgo8'
+             end %>
+
         <div class="mt-8 grid gap-3">
           <%= link_to 'Comprar serviços',
               portal_reserva_servicos_path,
@@ -77,6 +84,12 @@
                 form: { data: { fnrh_loading: true } },
                 class: 'inline-flex min-h-[56px] w-full items-center justify-center border border-[#d8cdb8] bg-[#fbf7ee] px-5 py-4 text-center font-extrabold text-[#20241f] transition hover:border-[#55613a]' %>
           <% end %>
+
+          <%= link_to 'Conte como nos conheceu',
+              feedback_form_url,
+              target: '_blank',
+              rel: 'noopener',
+              class: 'inline-flex min-h-[56px] w-full items-center justify-center border border-[#d8cdb8] bg-transparent px-5 py-4 text-center font-extrabold text-[#3f4a2f] transition hover:border-[#55613a] hover:bg-[#fbf7ee]' %>
         </div>
 
         <%= button_to 'Sair',

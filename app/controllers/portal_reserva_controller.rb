@@ -1,7 +1,7 @@
 class PortalReservaController < ApplicationController
   layout "portal_reserva"
   skip_before_action :authenticate_user!
-  before_action :ensure_service_purchase_window_open!, only: [:servicos, :adicionar, :remover, :pagar]
+  before_action :ensure_service_purchase_window_open!, only: [:servicos, :adicionar, :remover, :revisar_servicos, :pagar]
   helper_method :food_service_for_observation?, :decoration_service_for_observation?,
                 :fondue_service?, :photo_print_service?, :service_price_for
 
@@ -179,6 +179,27 @@ class PortalReservaController < ApplicationController
     redirect_to portal_reserva_servicos_path
   end
 
+  # GET /minha-reserva/revisar-servicos
+  def revisar_servicos
+    unless session[:portal_reserva_id].present?
+      redirect_to portal_reserva_path, alert: "Sessão expirada." and return
+    end
+
+    @reserva = Reserva.includes(:user, cabana: :filial).find(session[:portal_reserva_id])
+    expire_stale_portal_cart_items(@reserva)
+
+    if (pending_payment = active_pending_portal_payment(@reserva))
+      redirect_to portal_reserva_confirmacao_path(codigo: pending_payment.payment_order_code) and return
+    end
+
+    @portal_cart_items = portal_cart_items(@reserva).includes(:service).order(:service_date, :id)
+
+    if @portal_cart_items.empty?
+      flash[:alert] = "Seu carrinho está vazio."
+      redirect_to portal_reserva_servicos_path
+    end
+  end
+
   # POST /minha-reserva/pagar
   def pagar
     unless session[:portal_reserva_id].present?
@@ -192,6 +213,11 @@ class PortalReservaController < ApplicationController
     if @portal_cart_items.empty?
       flash[:alert] = "Seu carrinho está vazio."
       redirect_to portal_reserva_servicos_path and return
+    end
+
+    unless ActiveModel::Type::Boolean.new.cast(params[:service_terms_accepted])
+      flash[:alert] = "Confirme as regras dos serviços adicionais para continuar."
+      redirect_to portal_reserva_revisar_servicos_path and return
     end
 
     create_portal_payment_link
