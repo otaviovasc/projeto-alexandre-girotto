@@ -26,18 +26,25 @@ class ReservationEmailTemplate < ApplicationRecord
       offset_days: 0,
       send_time: '09:00',
       filial_scope: 'all',
-      subject: 'Reserva confirmada #{{codigo}} - Villaggio Girotto',
+      subject: 'Reserva confirmada - {{cabana}} | Villaggio Girotto',
       body: <<~BODY
         Olá, {{hospede}}.
 
         Sua reserva no Villaggio Girotto foi confirmada.
 
-        Reserva: {{codigo}}
+        Código da reserva: {{codigo}}
         Cabana: {{cabana}}
         Entrada: {{entrada}}
         Saída: {{saida}}
 
-        Em breve você receberá as informações da hospedagem no grupo de estadia.
+        Em breve você receberá as informações da hospedagem no grupo de estadia no WhatsApp.
+
+        Caso não receba nenhuma mensagem em até 48h, fale conosco pelo WhatsApp: {{whatsapp}}.
+
+        Atenciosamente,
+
+        Maisa
+        Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
     {
@@ -47,13 +54,22 @@ class ReservationEmailTemplate < ApplicationRecord
       offset_days: -7,
       send_time: '09:00',
       filial_scope: 'all',
-      subject: 'Faltam 7 dias para sua estadia no Villaggio',
+      subject: 'Faltam 7 dias para sua estadia na {{cabana}} | Villaggio Girotto',
       body: <<~BODY
         Olá, {{hospede}}.
 
         Faltam 7 dias para sua estadia na {{cabana}}.
 
-        Lembre-se de preencher o pré-check-in/FNRH e acessar o material do hóspede pelo link do grupo de estadia.
+        Lembre-se de preencher o pré-check-in/FNRH e acessar o material do hóspede, que fica na primeira mensagem do grupo de estadia no WhatsApp.
+
+        Código da reserva: {{codigo}}
+
+        Qualquer dúvida, fale conosco pelo WhatsApp: {{whatsapp}}.
+
+        Atenciosamente,
+
+        Maisa
+        Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
     {
@@ -63,13 +79,24 @@ class ReservationEmailTemplate < ApplicationRecord
       offset_days: -4,
       send_time: '09:00',
       filial_scope: 'all',
-      subject: 'Informações importantes para sua chegada',
+      subject: 'Informações importantes para sua chegada na {{cabana}}',
       body: <<~BODY
         Olá, {{hospede}}.
 
-        Sua estadia está chegando. Confira o material do hóspede, o horário de chegada e o mapa da hospedagem.
+        Sua estadia está chegando. Confira o material do hóspede, o horário de chegada e as instruções de acesso.
 
-        Google Maps: {{maps_url}}
+        Essas informações estão no grupo de estadia no WhatsApp, principalmente na primeira mensagem.
+
+        Para chegar, use o Google Maps e siga as instruções do material do hóspede.
+
+        Código da reserva: {{codigo}}
+
+        Qualquer dúvida, fale conosco pelo WhatsApp: {{whatsapp}}.
+
+        Atenciosamente,
+
+        Maisa
+        Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
     {
@@ -79,13 +106,22 @@ class ReservationEmailTemplate < ApplicationRecord
       offset_days: -2,
       send_time: '09:00',
       filial_scope: 'all',
-      subject: 'Está chegando sua estadia no Villaggio',
+      subject: 'Está chegando sua estadia na {{cabana}}',
       body: <<~BODY
         Olá, {{hospede}}.
 
         Sua estadia está chegando. Separe suas malas, itens pessoais, condimentos que desejar utilizar e cobertor extra caso costume sentir frio.
 
-        Confira também o material do hóspede antes da viagem.
+        Confira também o material do hóspede antes da viagem. Ele fica na primeira mensagem do grupo de estadia no WhatsApp.
+
+        Código da reserva: {{codigo}}
+
+        Qualquer dúvida, fale conosco pelo WhatsApp: {{whatsapp}}.
+
+        Atenciosamente,
+
+        Maisa
+        Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
     {
@@ -95,13 +131,26 @@ class ReservationEmailTemplate < ApplicationRecord
       offset_days: 0,
       send_time: '07:00',
       filial_scope: 'all',
-      subject: 'Hoje é o dia da sua chegada',
+      subject: 'Hoje é o dia da sua chegada na {{cabana}}',
       body: <<~BODY
         Olá, {{hospede}}.
 
-        Hoje é o dia da sua chegada ao Villaggio. Confira o horário combinado no grupo de estadia, baixe o material do hóspede e carregue a rota pelo Google Maps.
+        Hoje é o dia da sua chegada ao Villaggio.
+
+        Confira o horário combinado no grupo de estadia e baixe o material do hóspede.
+
+        Carregue a rota APENAS pelo Google Maps e siga as instruções do material do hóspede.
 
         Não temos portaria fixa e não há equipe no local após o horário de chegada. Se não se sentir confortável com a última parte do trajeto, pare no estacionamento da entrada.
+
+        Código da reserva: {{codigo}}
+
+        Qualquer dúvida, fale conosco pelo WhatsApp: {{whatsapp}}.
+
+        Atenciosamente,
+
+        Maisa
+        Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
     {
@@ -111,11 +160,20 @@ class ReservationEmailTemplate < ApplicationRecord
       offset_days: 0,
       send_time: '10:00',
       filial_scope: 'all',
-      subject: 'Como está sua estadia?',
+      subject: 'Como está sua estadia na {{cabana}}?',
       body: <<~BODY
         Olá, {{hospede}}.
 
-        Passando para saber se está tudo certo com sua estadia. Se precisar de qualquer coisa, fale com a equipe pelo grupo de estadia.
+        Passando para saber se está tudo certo com sua estadia.
+
+        Se precisar de qualquer coisa, fale com a equipe pelo grupo de estadia no WhatsApp ou pelo número: {{whatsapp}}.
+
+        Código da reserva: {{codigo}}
+
+        Atenciosamente,
+
+        Maisa
+        Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
     {
@@ -125,11 +183,20 @@ class ReservationEmailTemplate < ApplicationRecord
       offset_days: 0,
       send_time: '18:00',
       filial_scope: 'all',
-      subject: 'Como foi sua estadia?',
+      subject: 'Como foi sua estadia na {{cabana}}?',
       body: <<~BODY
         Olá, {{hospede}}.
 
-        Esperamos que tenha dado tudo certo na sua estadia. Se tiver qualquer ponto a destacar, fale conosco pelo grupo de estadia ou pelo WhatsApp: {{whatsapp}}.
+        Esperamos que tenha dado tudo certo na sua estadia.
+
+        Se tiver qualquer ponto a destacar, fale conosco pelo grupo de estadia ou pelo WhatsApp: {{whatsapp}}.
+
+        Código da reserva: {{codigo}}
+
+        Atenciosamente,
+
+        Maisa
+        Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
     {
@@ -139,11 +206,22 @@ class ReservationEmailTemplate < ApplicationRecord
       offset_days: -15,
       send_time: '09:00',
       filial_scope: 'all',
-      subject: 'Ainda dá tempo de adicionar serviços à sua estadia',
+      subject: 'Ainda dá tempo de adicionar serviços à sua estadia na {{cabana}}',
       body: <<~BODY
         Olá, {{hospede}}.
 
-        Ainda dá tempo de adicionar serviços à sua estadia, como refeições, experiências e itens especiais. Acesse o material do hóspede pelo grupo para conferir as opções.
+        Ainda dá tempo de adicionar serviços à sua estadia, como refeições, experiências e itens especiais.
+
+        Acesse o material do hóspede, que fica na primeira mensagem do grupo de estadia, para conferir as opções disponíveis.
+
+        Código da reserva: {{codigo}}
+
+        Qualquer dúvida, fale conosco pelo WhatsApp: {{whatsapp}}.
+
+        Atenciosamente,
+
+        Maisa
+        Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
     {
@@ -153,11 +231,22 @@ class ReservationEmailTemplate < ApplicationRecord
       offset_days: -12,
       send_time: '09:00',
       filial_scope: 'all',
-      subject: 'Últimos dias para adicionar serviços',
+      subject: 'Últimos dias para adicionar serviços à sua estadia na {{cabana}}',
       body: <<~BODY
         Olá, {{hospede}}.
 
-        Estamos nos aproximando do prazo final para adicionar serviços à sua estadia. Confira as opções no material do hóspede.
+        Estamos nos aproximando do prazo final para adicionar serviços à sua estadia.
+
+        Confira as opções no material do hóspede, que fica na primeira mensagem do grupo de estadia no WhatsApp.
+
+        Código da reserva: {{codigo}}
+
+        Qualquer dúvida, fale conosco pelo WhatsApp: {{whatsapp}}.
+
+        Atenciosamente,
+
+        Maisa
+        Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
     {
@@ -167,11 +256,22 @@ class ReservationEmailTemplate < ApplicationRecord
       offset_days: 0,
       send_time: '09:00',
       filial_scope: 'all',
-      subject: 'Último dia para comprar serviços',
+      subject: 'Último dia para comprar serviços para sua estadia na {{cabana}}',
       body: <<~BODY
         Olá, {{hospede}}.
 
-        Hoje é o último dia para adicionar serviços à sua estadia pelo sistema. Depois desse prazo, entre em contato pelo grupo para verificar disponibilidade.
+        Hoje é o último dia para adicionar serviços à sua estadia pelo sistema.
+
+        Depois do prazo, não garantimos a possibilidade de compra de serviços. Não deixe para a última hora e garanta ainda hoje os serviços que deseja incluir na sua experiência.
+
+        Código da reserva: {{codigo}}
+
+        Qualquer dúvida, fale conosco pelo WhatsApp: {{whatsapp}}.
+
+        Atenciosamente,
+
+        Maisa
+        Responsável pela curadoria do Villaggio Girotto.
       BODY
     }
   ].freeze
