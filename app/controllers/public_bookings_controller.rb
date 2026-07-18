@@ -220,7 +220,7 @@ class PublicBookingsController < ApplicationController
       "",
       "Reserva: ##{@reserva.id}",
       "Nome: #{@reserva.guest_name.presence || @reserva.user.name}",
-      "Cabana: #{@reserva.cabana.name}",
+      "Cabana: #{@reserva.cabana.guest_display_name}",
       "Entrada: #{@reserva.start_date.strftime('%d/%m/%Y')}",
       "Saída: #{@reserva.end_date.strftime('%d/%m/%Y')}",
       "Total: #{helpers.number_to_currency(@reserva_payment.amount, unit: 'R$ ', separator: ',', delimiter: '.')}"

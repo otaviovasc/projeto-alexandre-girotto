@@ -36,6 +36,15 @@ class Cabana < ApplicationRecord
     column.present? && public_send(column)
   end
 
+  def guest_display_name
+    base_name = name.to_s.split(' - ').first.to_s.squish
+    normalized_name = I18n.transliterate(base_name).downcase
+
+    return 'Casa de Campo Villa Vita' if normalized_name.include?('vita')
+
+    "Cabana #{base_name}"
+  end
+
   def self.normalize_breakfast_source(source)
     normalized = I18n.transliterate(source.to_s).downcase.squish
 

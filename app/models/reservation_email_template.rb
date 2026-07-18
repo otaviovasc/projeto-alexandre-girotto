@@ -43,7 +43,7 @@ class ReservationEmailTemplate < ApplicationRecord
 
         Atenciosamente,
 
-        Maisa
+        Maisa,
         Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
@@ -68,7 +68,7 @@ class ReservationEmailTemplate < ApplicationRecord
 
         Atenciosamente,
 
-        Maisa
+        Maisa,
         Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
@@ -95,7 +95,7 @@ class ReservationEmailTemplate < ApplicationRecord
 
         Atenciosamente,
 
-        Maisa
+        Maisa,
         Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
@@ -120,7 +120,7 @@ class ReservationEmailTemplate < ApplicationRecord
 
         Atenciosamente,
 
-        Maisa
+        Maisa,
         Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
@@ -149,7 +149,7 @@ class ReservationEmailTemplate < ApplicationRecord
 
         Atenciosamente,
 
-        Maisa
+        Maisa,
         Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
@@ -172,7 +172,7 @@ class ReservationEmailTemplate < ApplicationRecord
 
         Atenciosamente,
 
-        Maisa
+        Maisa,
         Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
@@ -195,7 +195,7 @@ class ReservationEmailTemplate < ApplicationRecord
 
         Atenciosamente,
 
-        Maisa
+        Maisa,
         Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
@@ -220,7 +220,7 @@ class ReservationEmailTemplate < ApplicationRecord
 
         Atenciosamente,
 
-        Maisa
+        Maisa,
         Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
@@ -245,7 +245,7 @@ class ReservationEmailTemplate < ApplicationRecord
 
         Atenciosamente,
 
-        Maisa
+        Maisa,
         Responsável pela curadoria do Villaggio Girotto.
       BODY
     },
@@ -270,7 +270,7 @@ class ReservationEmailTemplate < ApplicationRecord
 
         Atenciosamente,
 
-        Maisa
+        Maisa,
         Responsável pela curadoria do Villaggio Girotto.
       BODY
     }
@@ -343,7 +343,7 @@ class ReservationEmailTemplate < ApplicationRecord
     tokens = {
       'codigo' => reserva.id.to_s,
       'hospede' => reserva.guest_name.presence || reserva.user&.name.to_s,
-      'cabana' => reserva.cabana&.name.to_s,
+      'cabana' => reserva.cabana&.guest_display_name.to_s,
       'filial' => reserva.cabana&.filial&.name.to_s,
       'entrada' => reserva.start_date&.strftime('%d/%m/%Y').to_s,
       'saida' => reserva.end_date&.strftime('%d/%m/%Y').to_s,

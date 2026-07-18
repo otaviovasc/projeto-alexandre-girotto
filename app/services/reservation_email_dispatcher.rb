@@ -16,7 +16,7 @@ class ReservationEmailDispatcher
     setting = EmailAutomationSetting.current
     return @result unless setting.enabled?
 
-    due_deliveries.limit(@limit).includes(:reservation_email_template, reserva: :user).find_each do |delivery|
+    due_deliveries.limit(@limit).includes(:reservation_email_template, reserva: [:user, { cabana: :filial }]).find_each do |delivery|
       @result.checked += 1
       process_delivery(delivery, setting)
     end
@@ -64,7 +64,7 @@ class ReservationEmailDispatcher
       return
     end
 
-    delivery.update!(recipient_email: recipient_email) if delivery.recipient_email != recipient_email
+    refresh_delivery_content(delivery, recipient_email)
     UserMailer.reservation_automation(delivery).deliver_now
     delivery.mark_sent!
     @result.sent += 1
@@ -82,5 +82,15 @@ class ReservationEmailDispatcher
     scope = scope.where(trigger_key: @trigger_key) if @trigger_key.present?
     scope = scope.where.not(trigger_key: @exclude_trigger_key) if @exclude_trigger_key.present?
     scope
+  end
+
+  def refresh_delivery_content(delivery, recipient_email)
+    template = delivery.reservation_email_template
+    delivery.assign_attributes(
+      recipient_email: recipient_email,
+      subject: template.render_subject(delivery.reserva),
+      body: template.render_body(delivery.reserva)
+    )
+    delivery.save! if delivery.changed?
   end
 end

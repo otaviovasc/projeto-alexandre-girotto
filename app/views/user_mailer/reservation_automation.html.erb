@@ -1,8 +1,1 @@
 <%= simple_format(@body) %>
-
-<p>
-  <strong>Reserva:</strong> #<%= @reserva.id %><br>
-  <strong>Cabana:</strong> <%= @reserva.cabana&.name %><br>
-  <strong>Entrada:</strong> <%= @reserva.start_date&.strftime('%d/%m/%Y') %><br>
-  <strong>Saída:</strong> <%= @reserva.end_date&.strftime('%d/%m/%Y') %>
-</p>
