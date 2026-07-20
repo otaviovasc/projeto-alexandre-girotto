@@ -58,6 +58,47 @@ class PortalReservaController < ApplicationController
     @reserva = Reserva.includes(:user, cabana: :filial).find(session[:portal_reserva_id])
     @purchased_services = reservation_services_for_portal(@reserva)
     @operational_services = operational_services_for_portal(@reserva)
+    @available_service_dates = available_service_dates(@reserva)
+  end
+
+  # PATCH /minha-reserva/comprados/:id
+  def atualizar_servico_comprado
+    unless session[:portal_reserva_id].present?
+      redirect_to portal_reserva_path, alert: "Por favor, acesse sua reserva primeiro." and return
+    end
+
+    @reserva = Reserva.includes(:user, cabana: :filial).find(session[:portal_reserva_id])
+    requested_ids = Array(params[:service_item_ids]).map(&:to_i).select(&:positive?)
+    requested_ids = [params[:id].to_i] if requested_ids.blank?
+    reserva_services = @reserva.reserva_services.includes(:service).where(id: requested_ids).to_a
+    reserva_service = reserva_services.first
+
+    if reserva_service.blank? || reserva_services.any? { |item| internal_service_for_portal?(item.service) }
+      redirect_to portal_reserva_comprados_path, alert: "Serviço não encontrado." and return
+    end
+
+    blocked_service = reserva_services.detect { |item| !item.guest_change_allowed? }
+    if blocked_service
+      redirect_to portal_reserva_comprados_path, alert: blocked_service.guest_change_block_reason and return
+    end
+
+    new_date = parse_service_date(params[:service_date])
+    unless new_date.present? && new_date.between?(@reserva.start_date, @reserva.end_date)
+      redirect_to portal_reserva_comprados_path, alert: "Escolha uma data dentro do período da reserva." and return
+    end
+
+    ReservaService.transaction do
+      reserva_services.each do |item|
+        item.update!(
+          service_date: new_date,
+          observation: params[:observation].to_s.strip.presence
+        )
+      end
+    end
+
+    sync_all_reservas_to_sheets
+
+    redirect_to portal_reserva_comprados_path, notice: "Serviço atualizado."
   end
 
   # GET /minha-reserva/servicos
@@ -381,6 +422,7 @@ class PortalReservaController < ApplicationController
         payment_expires_at: payment_expires_at,
         unit_price_paid: unit_price,
         total_paid: unit_price * quantity,
+        purchased_after_service_deadline: @reserva.service_purchase_override_used?,
         updated_at: now
       )
     end
@@ -527,6 +569,28 @@ class PortalReservaController < ApplicationController
     services << { name: "Early check-in", date: reserva.start_date } if reserva.early_checkin?
     services << { name: "Late checkout", date: reserva.end_date } if reserva.late_checkout?
     services
+  end
+
+  def available_service_dates(reserva)
+    return [] if reserva.start_date.blank? || reserva.end_date.blank?
+
+    (reserva.start_date..reserva.end_date).to_a
+  end
+
+  def parse_service_date(value)
+    Date.parse(value.to_s)
+  rescue ArgumentError, TypeError
+    nil
+  end
+
+  def sync_all_reservas_to_sheets
+    return unless GoogleSheetsExportService.configured?
+
+    GoogleSheetsExportService.export_reservas(
+      Reserva.includes(:cabana, :user, reserva_services: :service).order(created_at: :desc)
+    )
+  rescue => e
+    Rails.logger.error("Erro ao sincronizar Sheets apos alteracao de servico pelo hospede: #{e.message}")
   end
 
   def purchase_payment_status(purchased_services)

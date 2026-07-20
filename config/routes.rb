@@ -207,6 +207,7 @@ Rails.application.routes.draw do
   post 'minha-reserva/acessar',  to: 'portal_reserva#acessar',  as: :portal_reserva_acessar
   get  'minha-reserva/inicio',   to: 'portal_reserva#inicio',   as: :portal_reserva_inicio
   get  'minha-reserva/comprados', to: 'portal_reserva#comprados', as: :portal_reserva_comprados
+  patch 'minha-reserva/comprados/:id', to: 'portal_reserva#atualizar_servico_comprado', as: :portal_reserva_atualizar_servico_comprado
   get  'minha-reserva/servicos', to: 'portal_reserva#servicos', as: :portal_reserva_servicos
   get  'minha-reserva/revisar-servicos', to: 'portal_reserva#revisar_servicos', as: :portal_reserva_revisar_servicos
   get  'minha-reserva/confirmacao', to: 'portal_reserva#confirmacao', as: :portal_reserva_confirmacao

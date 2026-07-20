@@ -39,6 +39,22 @@ class ReservaService < ApplicationRecord
     normalized_name.split.any? { |word| word.start_with?('cobr') }
   end
 
+  def guest_change_allowed?(date = Date.current)
+    active? &&
+      !purchased_after_service_deadline? &&
+      !automatic_included_breakfast? &&
+      reserva&.service_purchase_regular_window_open?(date)
+  end
+
+  def guest_change_block_reason(date = Date.current)
+    return 'Serviço cancelado.' if cancelled?
+    return 'Este serviço foi incluído automaticamente e não pode ser alterado pelo hóspede.' if automatic_included_breakfast?
+    return 'Este serviço foi comprado com liberação especial fora do prazo normal. Alterações devem ser feitas pelo atendimento.' if purchased_after_service_deadline?
+    return 'O prazo para alterar serviços pelo sistema já encerrou.' unless reserva&.service_purchase_regular_window_open?(date)
+
+    nil
+  end
+
   def photo_print_pdf_download_url
     return unless photo_print_pdf.attached?
 
@@ -59,6 +75,10 @@ class ReservaService < ApplicationRecord
   end
 
   def included_breakfast_service?
+    BreakfastServicesAssigner.included_breakfast_service?(self)
+  end
+
+  def automatic_included_breakfast?
     BreakfastServicesAssigner.included_breakfast_service?(self)
   end
 

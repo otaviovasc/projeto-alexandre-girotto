@@ -97,11 +97,21 @@ class Reserva < ApplicationRecord
   def service_purchase_window_open?(date = Date.current)
     return false if service_purchase_block_date.blank?
 
-    date < service_purchase_block_date || service_purchase_override_open?(date)
+    service_purchase_regular_window_open?(date) || service_purchase_override_open?(date)
+  end
+
+  def service_purchase_regular_window_open?(date = Date.current)
+    return false if service_purchase_block_date.blank?
+
+    date < service_purchase_block_date
   end
 
   def service_purchase_override_open?(date = Date.current)
     service_purchase_override? && start_date.present? && date <= start_date
+  end
+
+  def service_purchase_override_used?(date = Date.current)
+    !service_purchase_regular_window_open?(date) && service_purchase_override_open?(date)
   end
 
   def service_purchase_closed_message

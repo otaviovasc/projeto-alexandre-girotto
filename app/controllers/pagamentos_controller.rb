@@ -158,7 +158,8 @@ class PagamentosController < ApplicationController
             unit_price_paid: cart_item.unit_price_paid,
             total_paid: cart_item.total_paid,
             paid_at: Time.current,
-            observation: cart_item.observation.presence
+            observation: cart_item.observation.presence,
+            purchased_after_service_deadline: cart_item.purchased_after_service_deadline?
           )
           copy_photo_print_attachments(cart_item, reserva_service)
           created_reserva_services << reserva_service

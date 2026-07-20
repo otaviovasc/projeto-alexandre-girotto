@@ -35,7 +35,8 @@ class PublicBookingServicesMaterializer
           unit_price_paid: unit_price,
           total_paid: unit_price * quantity,
           paid_at: @reserva_payment.paid_at || Time.current,
-          observation: item['observation'].presence
+          observation: item['observation'].presence,
+          purchased_after_service_deadline: false
         )
       end
     end

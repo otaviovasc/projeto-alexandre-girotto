@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_18_143000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_20_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -76,6 +76,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_18_143000) do
     t.datetime "paid_at"
     t.date "service_date"
     t.text "observation"
+    t.boolean "purchased_after_service_deadline", default: false, null: false
     t.index ["cart_id"], name: "index_cart_items_on_cart_id"
     t.index ["item_id"], name: "index_cart_items_on_item_id"
     t.index ["payment_link_id"], name: "index_cart_items_on_payment_link_id"
@@ -229,6 +230,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_18_143000) do
     t.decimal "total_paid", precision: 10, scale: 2
     t.datetime "paid_at"
     t.boolean "manual_date_override", default: false, null: false
+    t.boolean "purchased_after_service_deadline", default: false, null: false
     t.index ["payment_link_id"], name: "index_reserva_services_on_payment_link_id"
     t.index ["payment_order_code"], name: "index_reserva_services_on_payment_order_code"
     t.index ["reserva_id"], name: "index_reserva_services_on_reserva_id"

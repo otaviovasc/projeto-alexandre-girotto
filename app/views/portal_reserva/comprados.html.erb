@@ -29,6 +29,42 @@
               <% if first_item.observation.present? %>
                 <p class="text-sm text-gray-600 mt-2">Observação: <%= first_item.observation %></p>
               <% end %>
+
+              <% if first_item.guest_change_allowed? %>
+                <div class="mt-4 rounded-lg border border-[#d7c8aa] bg-[#fbfaf6] p-4">
+                  <p class="text-sm font-semibold text-[#1a2e1a] mb-3">Alterar serviço</p>
+                  <%= form_with url: portal_reserva_atualizar_servico_comprado_path(first_item),
+                                method: :patch,
+                                local: true,
+                                class: "space-y-3" do |form| %>
+                    <% items.each do |item| %>
+                      <%= hidden_field_tag "service_item_ids[]", item.id %>
+                    <% end %>
+
+                    <div>
+                      <%= form.label :service_date, "Nova data", class: "block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1" %>
+                      <%= form.select :service_date,
+                            options_for_select(@available_service_dates.map { |date| [date.strftime("%d/%m/%Y"), date.to_s] }, first_item.service_date&.to_s),
+                            {},
+                            class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm" %>
+                    </div>
+
+                    <div>
+                      <%= form.label :observation, "Observação", class: "block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1" %>
+                      <%= form.text_area :observation,
+                            value: first_item.observation,
+                            rows: 2,
+                            class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm",
+                            placeholder: "Ex.: sem lactose, horário combinado, detalhe do serviço..." %>
+                    </div>
+
+                    <%= form.submit "Salvar alteração",
+                          class: "w-full bg-[#1a2e1a] hover:bg-[#2d4a2d] text-white font-semibold rounded-md px-4 py-2 transition" %>
+                  <% end %>
+                </div>
+              <% elsif (reason = first_item.guest_change_block_reason).present? && !first_item.cancelled? %>
+                <p class="text-xs text-gray-500 mt-3"><%= reason %></p>
+              <% end %>
             </div>
             <div class="text-right shrink-0">
               <% if first_item.cancelled? %>

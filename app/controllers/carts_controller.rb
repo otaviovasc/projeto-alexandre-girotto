@@ -188,6 +188,7 @@ class CartsController < ApplicationController
         payment_expires_at: payment_expires_at,
         unit_price_paid: unit_price,
         total_paid: unit_price * quantity,
+        purchased_after_service_deadline: cart_item.service.present? && @reserva.service_purchase_override_used?,
         updated_at: now
       )
     end
