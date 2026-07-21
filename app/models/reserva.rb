@@ -84,6 +84,31 @@ class Reserva < ApplicationRecord
     self.total_price = PriceCalculator.new(self).total_price
   end
 
+  def pending_payment_reservation_total
+    (total_price || 0).to_d
+  end
+
+  def pending_payment_service_items
+    reserva_services.includes(:service).select do |reserva_service|
+      pending_payment_chargeable_service?(reserva_service)
+    end
+  end
+
+  def pending_payment_services_total
+    pending_payment_service_items.sum { |reserva_service| pending_payment_service_total(reserva_service) }
+  end
+
+  def pending_payment_checkout_total
+    pending_payment_reservation_total + pending_payment_services_total
+  end
+
+  def pending_payment_service_total(reserva_service)
+    unit_price = reserva_service.unit_price_paid || reserva_service.service&.price_for(self) || 0
+    quantity = reserva_service.quantity.to_i.positive? ? reserva_service.quantity.to_i : 1
+
+    unit_price.to_d * quantity
+  end
+
   def expired?
     payment_expires_at.present? && Time.current > payment_expires_at
   end
@@ -235,6 +260,15 @@ class Reserva < ApplicationRecord
     if expired? && waiting_payment?
       cancel_for_operations!(by: nil, reason: 'Pagamento vencido sem confirmação.')
     end
+  end
+
+  def pending_payment_chargeable_service?(reserva_service)
+    return false if reserva_service.blank? || reserva_service.cancelled?
+    return false if CleaningServicesAssigner.cleaning_service?(reserva_service.service)
+    return false if BreakfastServicesAssigner.included_breakfast_service?(reserva_service)
+    return false if ReservaService.free_date_service?(reserva_service.service)
+
+    true
   end
 
   def dates_available

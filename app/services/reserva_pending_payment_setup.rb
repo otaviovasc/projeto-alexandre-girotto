@@ -99,7 +99,7 @@ class ReservaPendingPaymentSetup
   def normalized_rows
     rows = raw_payment_rows
     first_due_at = @hold_hours.hours.from_now
-    first_amount = positive_decimal(rows.dig(1, :amount), @reserva.total_price)
+    first_amount = positive_decimal(rows.dig(1, :amount), @reserva.pending_payment_checkout_total)
 
     result = [{
       installment_number: 1,

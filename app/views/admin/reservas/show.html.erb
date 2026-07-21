@@ -385,15 +385,29 @@
     <% first_payment = message_payments.find(&:confirmation_installment?) || message_payments.first %>
     <% active_payment_count = reservation_payments.reject(&:canceled?).size %>
     <% next_extra_due_at = 1.day.from_now.in_time_zone('America/Sao_Paulo').strftime('%Y-%m-%dT%H:%M') %>
+    <% currency = ->(amount) { number_to_currency(amount, unit: 'R$ ', separator: ',', delimiter: '.') } %>
+    <% payment_service_items = @reserva.pending_payment_service_items %>
+    <% purchase_summary_lines = ["Resumo da compra:", "Hospedagem: #{currency.call(@reserva.pending_payment_reservation_total)}"] %>
+    <% if payment_service_items.any? %>
+      <% purchase_summary_lines << "Serviços:" %>
+      <% payment_service_items.each do |reserva_service| %>
+        <% service_date_text = reserva_service.service_date.present? ? " em #{reserva_service.service_date.strftime('%d/%m/%Y')}" : "" %>
+        <% purchase_summary_lines << "- #{reserva_service.service&.name || 'Serviço'}#{service_date_text} (#{reserva_service.quantity}x): #{currency.call(@reserva.pending_payment_service_total(reserva_service))}" %>
+      <% end %>
+      <% purchase_summary_lines << "Total de serviços: #{currency.call(@reserva.pending_payment_services_total)}" %>
+    <% end %>
+    <% purchase_summary_lines << "Total: #{currency.call(@reserva.pending_payment_checkout_total)}" %>
+    <% purchase_summary_lines << "" %>
     <% if message_payments.one? %>
       <% payment = message_payments.first %>
       <% due_at_text = payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y, às %Hh%M') %>
       <% message_lines = ["Segue abaixo o link para realizar a reserva:", ""] %>
+      <% message_lines.concat(purchase_summary_lines) %>
       <% if payment.waiting_payment? %>
         <% message_lines << "A data e o link ficarão pré-reservados até **#{due_at_text}**. Após a confirmação do pagamento, as datas serão confirmadas." %>
         <% message_lines << "" %>
       <% end %>
-      <% message_lines << "**Pagamento até #{due_at_text}:**" %>
+      <% message_lines << "**Pagamento de #{currency.call(payment.amount)} até #{due_at_text}:**" %>
       <% message_lines << "" %>
       <% message_lines << payment.public_payment_url %>
       <% message_lines << "" %>
@@ -402,12 +416,13 @@
       <% message_lines << "⚠️ Caso o pagamento não seja realizado dentro do prazo, a reserva poderá ser cancelada automaticamente." %>
     <% else %>
       <% message_lines = ["Segue abaixo os links para realizar a reserva e mantê-la em dia:", ""] %>
+      <% message_lines.concat(purchase_summary_lines) %>
       <% if first_payment&.waiting_payment? %>
         <% message_lines << "A data e o link ficam pré-travados até #{first_payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M')}. Depois do pagamento da primeira parcela, as datas ficam confirmadas." %>
         <% message_lines << "" %>
       <% end %>
       <% message_payments.each do |payment| %>
-        <% message_lines << "#{payment.installment_number}ª parcela até #{payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M')}:" %>
+        <% message_lines << "#{payment.installment_number}ª parcela de #{currency.call(payment.amount)} até #{payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M')}:" %>
         <% message_lines << payment.public_payment_url %>
         <% message_lines << "" %>
       <% end %>

@@ -209,11 +209,11 @@ class ReservaPaymentsController < ApplicationController
 
   def reservation_total
     @reservation_total ||= begin
-      reserva_total = decimal_value(@reserva.total_price)
-      payment_total = decimal_value(
-        @reserva.reserva_payments.where.not(payment_status: 'canceled').sum(:amount)
-      )
-      [reserva_total, payment_total, decimal_value(@reserva_payment.amount)].max
+      if @reserva_payment.public_booking?
+        @reserva_payment.public_booking_daily_total + @reserva_payment.public_booking_services_total
+      else
+        @reserva.pending_payment_checkout_total
+      end
     end
   end
 
