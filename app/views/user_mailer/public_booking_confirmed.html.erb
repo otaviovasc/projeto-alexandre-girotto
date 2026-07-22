@@ -51,26 +51,35 @@
                   <td><%= @reserva.end_date.strftime("%d/%m/%Y") %></td>
                 </tr>
                 <tr>
-                  <td><strong>Total pago</strong></td>
-                  <td><%= number_to_currency(@reserva_payment&.amount || @reserva.total_price, unit: 'R$ ', separator: ',', delimiter: '.') %></td>
+                  <td><strong>Diárias</strong></td>
+                  <td><%= number_to_currency(@daily_total, unit: 'R$ ', separator: ',', delimiter: '.') %></td>
                 </tr>
                 <tr>
-                  <td><strong>Serviços</strong></td>
+                  <td><strong>Serviços contratados</strong></td>
                   <td>
-                    <% if @services.any? %>
+                    <% if @service_email_items.any? %>
                       <ul>
-                        <% @services.each do |reserva_service| %>
+                        <% @service_email_items.each do |service_item| %>
                           <li>
-                            <%= reserva_service.service.name %>
-                            em <%= reserva_service.service_date.strftime("%d/%m/%Y") %>
-                            (<%= reserva_service.quantity %>x)
+                            <%= service_item[:name] %>
+                            em <%= service_item[:service_date]&.strftime("%d/%m/%Y") || "data a definir" %>
+                            (<%= service_item[:quantity] %>x) -
+                            <%= number_to_currency(service_item[:total], unit: 'R$ ', separator: ',', delimiter: '.') %>
                           </li>
                         <% end %>
                       </ul>
                     <% else %>
-                      Nenhum serviço adicional comprado junto com a reserva.
+                      Nenhum serviço adicional contratado nesta reserva.
                     <% end %>
                   </td>
+                </tr>
+                <tr>
+                  <td><strong>Total de serviços</strong></td>
+                  <td><%= number_to_currency(@services_total, unit: 'R$ ', separator: ',', delimiter: '.') %></td>
+                </tr>
+                <tr>
+                  <td><strong>Total pago</strong></td>
+                  <td><%= number_to_currency(@total_paid, unit: 'R$ ', separator: ',', delimiter: '.') %></td>
                 </tr>
               </table>
 

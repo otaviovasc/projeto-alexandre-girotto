@@ -71,7 +71,9 @@ class PublicBookingCheckout
     errors.add(:base, 'Informe um e-mail válido.') unless @guest_email.match?(URI::MailTo::EMAIL_REGEXP)
     errors.add(:base, 'Informe um WhatsApp válido.') unless @guest_phone.length.between?(8, 15)
     errors.add(:base, 'Confirme o aceite dos termos para continuar.') unless @terms_accepted
-    errors.add(:base, 'Serviços só podem ser comprados com mais de 10 dias de antecedência.') if @selected_services.any? && !services_available?
+    if @selected_services.any? && !services_available?
+      errors.add(:base, 'Os serviços adicionais exigem preparo, compra de insumos e confirmação de agenda com prestadores parceiros. Como sua estadia está próxima, a compra online de serviços não está disponível para este período.')
+    end
     if @cabana.present? && @start_date.present? && @end_date.present? && @end_date > @start_date && !official_quote[:meets_minimum]
       errors.add(:base, official_quote[:minimum_message])
     end

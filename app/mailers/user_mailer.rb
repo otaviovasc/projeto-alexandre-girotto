@@ -42,6 +42,10 @@ class UserMailer < ApplicationMailer
                        .includes(:service)
                        .where(payment_order_code: @reserva_payment&.payment_order_code)
                        .order(:service_date, :id)
+    @service_email_items = public_booking_service_email_items
+    @daily_total = public_booking_daily_total
+    @services_total = @service_email_items.sum { |item| item[:total] }
+    @total_paid = @reserva_payment&.amount || (@daily_total + @services_total)
     host = ENV['APP_HOST'].presence || ENV['RENDER_EXTERNAL_HOSTNAME'].presence || 'villaggio-stock.onrender.com'
     @url = "https://#{host.sub(%r{\Ahttps?://}, '')}/reserva-online-teste/confirmacao/#{@reserva_payment&.terms_token}"
 
@@ -54,5 +58,54 @@ class UserMailer < ApplicationMailer
     @body = delivery.body
 
     mail(to: delivery.recipient_email, subject: delivery.subject)
+  end
+
+  private
+
+  def public_booking_daily_total
+    daily_total = @reserva_payment&.public_booking_daily_total || 0.to_d
+    if daily_total.zero? && @service_email_items.blank? && @reserva.total_price.present?
+      @reserva.total_price
+    else
+      daily_total
+    end
+  end
+
+  def public_booking_service_email_items
+    public_booking_services = @reserva_payment&.public_booking_services || []
+
+    if public_booking_services.any?
+      public_booking_services.filter_map do |service_payload|
+        {
+          name: service_payload['name'],
+          service_date: parse_mailer_date(service_payload['service_date']),
+          quantity: service_payload['quantity'].to_i,
+          total: decimal_value(service_payload['total'])
+        }
+      end
+    else
+      @services.map do |reserva_service|
+        quantity = reserva_service.quantity.to_i
+        unit_price = reserva_service.unit_price_paid.presence || reserva_service.service.price || 0
+        {
+          name: reserva_service.service.name,
+          service_date: reserva_service.service_date,
+          quantity: quantity,
+          total: reserva_service.total_paid.presence || (unit_price * quantity)
+        }
+      end
+    end
+  end
+
+  def parse_mailer_date(value)
+    Date.parse(value.to_s)
+  rescue ArgumentError, TypeError
+    nil
+  end
+
+  def decimal_value(value)
+    BigDecimal(value.to_s)
+  rescue ArgumentError, TypeError
+    0.to_d
   end
 end

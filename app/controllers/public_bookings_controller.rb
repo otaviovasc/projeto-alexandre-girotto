@@ -1,5 +1,5 @@
 class PublicBookingsController < ApplicationController
-  ONLINE_BOOKING_MIN_LEAD_DAYS = 2
+  ONLINE_BOOKING_MIN_LEAD_HOURS = 48
 
   layout 'portal_reserva'
 
@@ -101,6 +101,9 @@ class PublicBookingsController < ApplicationController
                        .order(:name)
                        .reject { |service| internal_public_service?(service) }
     @service_prices = public_service_prices(@services)
+    @public_booking_whatsapp_by_cabana = @cabanas.each_with_object({}) do |cabana, numbers|
+      numbers[cabana.id.to_s] = whatsapp_number_for(cabana.filial)
+    end
   end
 
   def internal_public_service?(service)
@@ -272,7 +275,7 @@ class PublicBookingsController < ApplicationController
     cabana = Cabana.includes(:filial).find_by(id: booking_params[:cabana_id])
     start_date = parse_date_param(booking_params[:start_date])
 
-    cabana.present? && start_date.present? && start_date < ONLINE_BOOKING_MIN_LEAD_DAYS.days.from_now.to_date
+    cabana.present? && start_date.present? && start_date.beginning_of_day < ONLINE_BOOKING_MIN_LEAD_HOURS.hours.from_now
   end
 
   def assign_too_close_booking_details
@@ -280,6 +283,7 @@ class PublicBookingsController < ApplicationController
     @start_date = parse_date_param(booking_params[:start_date])
     @end_date = parse_date_param(booking_params[:end_date])
     @guest_name = booking_params[:guest_name].to_s.squish
+    @selected_service_lines = selected_booking_service_lines
     @whatsapp_url = too_close_whatsapp_url
   end
 
@@ -304,7 +308,34 @@ class PublicBookingsController < ApplicationController
       ("Saída: #{@end_date.strftime('%d/%m/%Y')}" if @end_date.present?)
     ]
 
+    if @selected_service_lines.present?
+      lines << ""
+      lines << "Serviços desejados:"
+      lines.concat(@selected_service_lines)
+    end
+
     lines.compact.join("\n")
+  end
+
+  def selected_booking_service_lines
+    raw_items = booking_params[:service_items]
+    return [] if raw_items.blank?
+
+    services_by_id = @services.index_by { |service| service.id.to_s }
+
+    raw_items.to_h.filter_map do |service_id, attrs|
+      attrs = attrs.respond_to?(:to_unsafe_h) ? attrs.to_unsafe_h : attrs.to_h
+      next unless ActiveModel::Type::Boolean.new.cast(attrs[:selected].presence || attrs['selected'])
+
+      service = services_by_id[service_id.to_s] || Service.find_by(id: service_id)
+      next if service.blank?
+
+      service_date = parse_date_param(attrs[:service_date].presence || attrs['service_date'])
+      quantity = attrs[:quantity].presence || attrs['quantity'].presence || 1
+      date_text = service_date.present? ? " em #{service_date.strftime('%d/%m/%Y')}" : ""
+
+      "- #{service.name}#{date_text} (#{quantity.to_i.positive? ? quantity.to_i : 1}x)"
+    end
   end
 
   def prefilled_booking_values

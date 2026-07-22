@@ -108,7 +108,7 @@
             <p class="vg-card-copy">A compra de serviços fica disponível apenas com mais de 10 dias de antecedência.</p>
           </div>
           <p id="services-window-warning" class="vg-alert warning hidden">
-            Para datas próximas, compre apenas a hospedagem e fale pelo WhatsApp sobre os serviços.
+            Para datas próximas, os serviços serão validados antes do pagamento.
           </p>
         </div>
 
@@ -207,15 +207,38 @@
         </button>
       </section>
     <% end %>
+
+    <div id="service-deadline-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+      <div class="w-full max-w-2xl border border-[#d7d0c1] bg-[#f5efe0] p-6 shadow-xl">
+        <p class="vg-kicker">Serviços adicionais</p>
+        <h2 class="vg-card-title mt-2">Compra online indisponível para este período.</h2>
+        <p class="vg-card-copy mt-3">
+          Os serviços adicionais exigem preparo, compra de insumos e confirmação de agenda com prestadores parceiros.
+          Como sua estadia está próxima, a compra online de serviços não está disponível para este período.
+        </p>
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+          <button type="button" id="service-deadline-whatsapp" class="vg-button w-full sm:w-auto">
+            Falar com atendente
+          </button>
+          <button type="button" id="service-deadline-continue" class="vg-button secondary w-full sm:w-auto">
+            Comprar apenas diárias
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </main>
 
 <script>
   document.addEventListener("DOMContentLoaded", function() {
+    var form = document.getElementById("public-booking-form");
     var cabanaSelect = document.getElementById("booking-cabana");
     var startInput = document.getElementById("booking-start-date");
     var endInput = document.getElementById("booking-end-date");
     var warning = document.getElementById("services-window-warning");
+    var serviceDeadlineModal = document.getElementById("service-deadline-modal");
+    var serviceDeadlineWhatsapp = document.getElementById("service-deadline-whatsapp");
+    var serviceDeadlineContinue = document.getElementById("service-deadline-continue");
     var serviceRows = Array.prototype.slice.call(document.querySelectorAll(".service-row"));
     var purchaseSummary = document.getElementById("booking-purchase-summary");
     var summaryCabana = document.getElementById("summary-cabana");
@@ -223,7 +246,9 @@
     var summaryNights = document.getElementById("summary-nights");
     var summaryTotal = document.getElementById("booking-summary-total");
     var quoteUrl = <%= raw public_booking_quote_path.to_json %>;
+    var whatsappByCabana = <%= raw (@public_booking_whatsapp_by_cabana || {}).to_json %>;
     var quoteRequestId = 0;
+    var continueWithoutServices = false;
     var bookingQuote = { loading: false, error: null, dailyTotal: null, nights: null };
     var today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -266,6 +291,59 @@
       });
     }
 
+    function serviceSummaryLines() {
+      return selectedServiceRows().map(function(row) {
+        var name = row.dataset.serviceName || "Serviço";
+        var quantityInput = row.querySelector('input[type="number"]');
+        var dateInput = row.querySelector(".service-date");
+        var quantity = Math.max(parseInt(quantityInput && quantityInput.value || "1", 10), 1);
+        var dateText = dateInput && dateInput.value ? " em " + formatDateLabel(dateInput.value) : "";
+
+        return "- " + name + dateText + " (" + quantity + "x)";
+      });
+    }
+
+    function serviceDeadlineWhatsappUrl() {
+      var number = whatsappByCabana[cabanaSelect.value] || "";
+      var guestNameInput = document.querySelector('[name="booking[guest_name]"]');
+      var guestName = guestNameInput && guestNameInput.value ? guestNameInput.value.trim() : "";
+      var lines = [
+        "Olá! Quero verificar a disponibilidade de serviços para uma reserva próxima pelo site oficial.",
+        "",
+        guestName ? "Nome: " + guestName : null,
+        "Cabana: " + (selectedCabanaName() || "Não informada"),
+        "Entrada: " + (startInput.value ? formatDateLabel(startInput.value) : "Não informada"),
+        "Saída: " + (endInput.value ? formatDateLabel(endInput.value) : "Não informada")
+      ];
+      var services = serviceSummaryLines();
+
+      if (services.length > 0) {
+        lines.push("");
+        lines.push("Serviços desejados:");
+        services.forEach(function(line) { lines.push(line); });
+      }
+
+      var text = encodeURIComponent(lines.filter(function(line) {
+        return line !== null;
+      }).join("\n"));
+
+      return number ? "https://wa.me/" + number + "?text=" + text : "https://wa.me/?text=" + text;
+    }
+
+    function openServiceDeadlineModal() {
+      if (!serviceDeadlineModal) return;
+
+      serviceDeadlineModal.classList.remove("hidden");
+      serviceDeadlineModal.classList.add("flex");
+    }
+
+    function closeServiceDeadlineModal() {
+      if (!serviceDeadlineModal) return;
+
+      serviceDeadlineModal.classList.add("hidden");
+      serviceDeadlineModal.classList.remove("flex");
+    }
+
     function servicesAllowed() {
       if (!startInput.value) return true;
 
@@ -278,13 +356,12 @@
       var filialId = selectedFilialId();
       var startDate = startInput.value;
       var endDate = endInput.value;
-      var allowed = servicesAllowed();
 
-      if (warning) warning.classList.toggle("hidden", allowed);
+      if (warning) warning.classList.add("hidden");
 
       serviceRows.forEach(function(row) {
         var sameFilial = !!filialId && row.dataset.filialId === filialId;
-        var visible = sameFilial && allowed;
+        var visible = sameFilial;
         row.classList.toggle("hidden", !visible);
 
         row.querySelectorAll("input").forEach(function(input) {
@@ -466,6 +543,48 @@
         input.addEventListener("input", renderBookingSummary);
       });
     });
+
+    if (form) {
+      form.addEventListener("submit", function(event) {
+        if (continueWithoutServices) return;
+
+        if (!servicesAllowed() && selectedServiceRows().length > 0) {
+          event.preventDefault();
+          openServiceDeadlineModal();
+        }
+      });
+    }
+
+    if (serviceDeadlineWhatsapp) {
+      serviceDeadlineWhatsapp.addEventListener("click", function() {
+        window.open(serviceDeadlineWhatsappUrl(), "_blank", "noopener");
+      });
+    }
+
+    if (serviceDeadlineContinue) {
+      serviceDeadlineContinue.addEventListener("click", function() {
+        selectedServiceRows().forEach(function(row) {
+          var checkbox = row.querySelector(".service-checkbox");
+          if (checkbox) checkbox.checked = false;
+        });
+
+        continueWithoutServices = true;
+        closeServiceDeadlineModal();
+        renderBookingSummary();
+
+        if (form.requestSubmit) {
+          form.requestSubmit();
+        } else {
+          form.submit();
+        }
+      });
+    }
+
+    if (serviceDeadlineModal) {
+      serviceDeadlineModal.addEventListener("click", function(event) {
+        if (event.target === serviceDeadlineModal) closeServiceDeadlineModal();
+      });
+    }
 
     syncServiceRows();
     fetchBookingQuote();
