@@ -3,6 +3,7 @@ require "test_helper"
 class PortalReservaControllerTest < ActionDispatch::IntegrationTest
   test "allows access to the portal menu after the service purchase deadline" do
     reserva = reservas(:one)
+    reserva.update_columns(fnrh_status: "precheckin_bypassed")
 
     post portal_reserva_acessar_path, params: {
       reserva_id: reserva.id,
@@ -15,6 +16,23 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to portal_reserva_inicio_path
     assert_match "10 dias antes do check-in", flash[:alert]
+  end
+
+  test "blocks guest services before FNRH information is released" do
+    reserva = reservas(:one)
+    reserva.update_columns(fnrh_status: "awaiting_precheckin")
+
+    post portal_reserva_acessar_path, params: {
+      reserva_id: reserva.id,
+      identificador: reserva.user.name.split.first
+    }
+
+    assert_redirected_to portal_reserva_inicio_path
+
+    get portal_reserva_inicio_path
+
+    assert_redirected_to fnrh_terms_path
+    assert_equal "Conclua o pré-check-in para acessar os serviços e o material do hóspede.", flash[:alert]
   end
 
   test "accepts observations for decorations and surprises" do

@@ -1,6 +1,10 @@
 class PortalReservaController < ApplicationController
   layout "portal_reserva"
   skip_before_action :authenticate_user!
+  before_action :require_fnrh_information_release!, only: [
+    :inicio, :comprados, :atualizar_servico_comprado, :servicos, :adicionar,
+    :remover, :revisar_servicos, :pagar, :confirmacao, :confirmacao_status
+  ]
   before_action :ensure_service_purchase_window_open!, only: [:servicos, :adicionar, :remover, :revisar_servicos, :pagar]
   helper_method :food_service_for_observation?, :decoration_service_for_observation?,
                 :fondue_service?, :photo_print_service?, :service_price_for
@@ -380,6 +384,24 @@ class PortalReservaController < ApplicationController
 
   def service_price_for(service, reserva = @reserva)
     service.price_for(reserva)
+  end
+
+  def require_fnrh_information_release!
+    return unless session[:portal_reserva_id].present?
+
+    reserva = Reserva.find_by(id: session[:portal_reserva_id])
+    return if reserva.blank? || reserva.fnrh_information_released?
+
+    session[:fnrh_portal_reserva_id] = reserva.id
+
+    respond_to do |format|
+      format.html do
+        redirect_to fnrh_terms_path, alert: "Conclua o pré-check-in para acessar os serviços e o material do hóspede."
+      end
+      format.json do
+        render json: { found: false, paid: false, status: "fnrh_pending" }, status: :forbidden
+      end
+    end
   end
 
   def ensure_service_purchase_window_open!

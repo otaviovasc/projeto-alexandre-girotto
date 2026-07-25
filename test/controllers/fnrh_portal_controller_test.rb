@@ -33,11 +33,11 @@ class FnrhPortalControllerTest < ActionDispatch::IntegrationTest
     assert_select 'form button', 'Entrar pelo gov.br'
   end
 
-  test 'terms page records acceptance and continues to precheckin flow' do
+  test 'terms page records acceptance and keeps guest area locked before precheckin release' do
     get fnrh_terms_path
 
     assert_response :success
-    assert_select 'h1', 'Termos de hospedagem'
+    assert_select 'h1', 'Acesso da hospedagem.'
 
     assert_difference -> { @reserva.fnrh_events.where(event_type: 'terms_accepted').count }, 1 do
       post fnrh_terms_access_path, params: {
@@ -47,7 +47,10 @@ class FnrhPortalControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
-    assert_redirected_to fnrh_portal_orientation_path
+    assert_redirected_to fnrh_terms_path
+    follow_redirect!
+    assert_select 'h3', 'Finalize o pré-check-in para liberar o acesso.'
+    assert_select 'a,button', text: 'Comprar serviços', count: 0
   end
 
   test 'terms page requires explicit acceptance' do
@@ -59,7 +62,7 @@ class FnrhPortalControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to fnrh_terms_path
-    assert_equal 'Confirme que leu e concorda com os termos para continuar.', flash[:alert]
+    assert_equal 'Leia e confirme os termos para liberar o acesso da reserva.', flash[:alert]
   end
 
   test 'opens stored precheckin link after orientation' do
@@ -171,6 +174,7 @@ class FnrhPortalControllerTest < ActionDispatch::IntegrationTest
       guest_name: 'Maria',
       reservation_code: @reserva.id
     }
+    post fnrh_portal_start_precheckin_path
 
     post fnrh_portal_access_path, params: {
       guest_name: 'Maria',
@@ -180,6 +184,30 @@ class FnrhPortalControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to fnrh_portal_waiting_path
     follow_redirect!
     assert_select 'h1', 'Pré-check-in em análise'
+  end
+
+  test 'automatically bypasses stale guest precheckin after three minutes pending' do
+    @reserva.fnrh_events.create!(
+      event_type: 'terms_accepted',
+      source: 'terms_portal',
+      status: 'success',
+      message: 'Hóspede confirmou leitura dos termos e condições',
+      occurred_at: Time.current
+    )
+
+    post fnrh_portal_access_path, params: {
+      guest_name: 'Maria',
+      reservation_code: @reserva.id
+    }
+    post fnrh_portal_start_precheckin_path
+
+    @reserva.fnrh_events.where(event_type: 'precheckin_link_opened').update_all(occurred_at: 4.minutes.ago)
+
+    get fnrh_terms_path
+
+    assert_response :success
+    assert_equal 'precheckin_bypassed', @reserva.reload.fnrh_status
+    assert_select 'a,button', text: 'Comprar serviços'
   end
 
   test 'does not release a reservation that is not ready' do

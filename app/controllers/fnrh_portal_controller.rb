@@ -1,5 +1,6 @@
 class FnrhPortalController < ApplicationController
   TERMS_VERSION = '2026-07-16'.freeze
+  AUTO_BYPASS_PRECHECKIN_AFTER = 3.minutes
 
   layout 'fnrh_portal'
   skip_before_action :authenticate_user!
@@ -14,6 +15,9 @@ class FnrhPortalController < ApplicationController
       remember_terms_reservation(@reserva)
       @terms_accepted = terms_already_accepted?(@reserva)
       @guest_name = session[:fnrh_terms_guest_name].presence || guest_identifier_for(@reserva)
+      refresh_fnrh_release_status(@reserva) if @terms_accepted
+      @reserva.reload
+      @precheckin_link_opened = precheckin_link_already_opened?(@reserva)
     end
   end
 
@@ -57,7 +61,7 @@ class FnrhPortalController < ApplicationController
     @reserva = portal_reserva
     redirect_to fnrh_portal_path, alert: 'Informe os dados da sua reserva para iniciar o pré-check-in.' and return unless @reserva
 
-    Fnrh::PrecheckinStatusSyncService.new(@reserva, source: 'guest_portal').call
+    refresh_fnrh_release_status(@reserva)
     @reserva.reload
 
     redirect_to fnrh_portal_information_path if @reserva.fnrh_information_released?
@@ -67,7 +71,7 @@ class FnrhPortalController < ApplicationController
     @reserva = portal_reserva
     redirect_to fnrh_portal_path, alert: 'Informe os dados da sua reserva para iniciar o pré-check-in.' and return unless @reserva
 
-    Fnrh::PrecheckinStatusSyncService.new(@reserva, source: 'guest_portal').call
+    refresh_fnrh_release_status(@reserva)
     @reserva.reload
 
     if @reserva.fnrh_information_released?
@@ -84,7 +88,7 @@ class FnrhPortalController < ApplicationController
     @reserva = portal_reserva
     redirect_to fnrh_portal_path, alert: 'Informe os dados da sua reserva para acompanhar o pré-check-in.' and return unless @reserva
 
-    Fnrh::PrecheckinStatusSyncService.new(@reserva, source: 'guest_portal').call
+    refresh_fnrh_release_status(@reserva)
     @reserva.reload
 
     redirect_to fnrh_portal_information_path if @reserva.fnrh_information_released?
@@ -94,7 +98,7 @@ class FnrhPortalController < ApplicationController
     @reserva = portal_reserva
     redirect_to fnrh_portal_path, alert: 'Informe os dados da sua reserva para verificar o pré-check-in.' and return unless @reserva
 
-    Fnrh::PrecheckinStatusSyncService.new(@reserva, source: 'guest_portal').call
+    refresh_fnrh_release_status(@reserva)
     @reserva.reload
 
     if @reserva.fnrh_information_released?
@@ -106,6 +110,8 @@ class FnrhPortalController < ApplicationController
 
   def information
     @reserva = portal_reserva
+    refresh_fnrh_release_status(@reserva) if @reserva
+    @reserva&.reload
     return if @reserva&.fnrh_information_released?
 
     session.delete(:fnrh_portal_reserva_id)
@@ -211,7 +217,7 @@ class FnrhPortalController < ApplicationController
     end
 
     session[:fnrh_portal_reserva_id] = reserva.id
-    Fnrh::PrecheckinStatusSyncService.new(reserva, source: 'guest_portal').call
+    refresh_fnrh_release_status(reserva)
     reserva.reload
 
     if reserva.fnrh_information_released?
@@ -239,6 +245,43 @@ class FnrhPortalController < ApplicationController
       message: 'Hóspede enviado ao link oficial de pré-check-in',
       occurred_at: Time.current
     )
+  end
+
+  def refresh_fnrh_release_status(reserva)
+    return true if reserva.fnrh_information_released?
+    return false unless reserva.fnrh_reservation_id.present?
+
+    Fnrh::PrecheckinStatusSyncService.new(reserva, source: 'guest_portal').call
+    reserva.reload
+    return true if reserva.fnrh_information_released?
+
+    auto_bypass_stale_precheckin(reserva)
+  end
+
+  def auto_bypass_stale_precheckin(reserva)
+    return false unless reserva.fnrh_status == 'awaiting_precheckin'
+
+    opened_at = precheckin_link_opened_at(reserva)
+    return false if opened_at.blank? || opened_at > AUTO_BYPASS_PRECHECKIN_AFTER.ago
+
+    Fnrh::TransitionService.new(reserva, source: 'automatic_guest_portal').bypass_precheckin(
+      message: 'FNRH pulada automaticamente após pré-check-in ficar pendente por mais de 3 minutos',
+      metadata: {
+        internal_release: true,
+        automatic_after_pending_precheckin: true,
+        precheckin_link_opened_at: opened_at
+      }
+    )
+  rescue => e
+    Rails.logger.warn("Erro ao pular FNRH automaticamente para reserva ##{reserva.id}: #{e.message}")
+    false
+  end
+
+  def precheckin_link_opened_at(reserva)
+    reserva.fnrh_events
+           .where(event_type: 'precheckin_link_opened')
+           .order(:occurred_at)
+           .pick(:occurred_at)
   end
 
   def record_terms_accepted(reserva)

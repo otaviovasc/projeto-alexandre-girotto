@@ -20,7 +20,7 @@ module Fnrh
       )
     end
 
-    def bypass_precheckin(at: Time.current)
+    def bypass_precheckin(at: Time.current, message: 'FNRH pulada manualmente', metadata: { internal_release: true })
       raise 'Reserva cancelada ou marcada como no-show' if @reserva.fnrh_status.in?(%w[cancelled no_show])
       return true if @reserva.fnrh_information_released?
 
@@ -35,8 +35,8 @@ module Fnrh
         event_type: 'precheckin_bypassed',
         source: @source,
         status: 'success',
-        message: 'FNRH pulada manualmente',
-        metadata: { internal_release: true },
+        message: message,
+        metadata: metadata,
         occurred_at: at
       )
       true
