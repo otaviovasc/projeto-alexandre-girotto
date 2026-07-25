@@ -82,6 +82,22 @@ class CieloCheckoutService
       @client_secret = client_secret.to_s.strip
     end
 
+    def find_by_best_identifier(order_number:, checkout_order_number: nil)
+      checkout_order_number = CieloCheckoutService.checkout_order_number_from(checkout_order_number, order_number)
+
+      if checkout_order_number.present?
+        begin
+          transaction = find_by_checkout_order_number(checkout_order_number)
+          transaction["checkoutOrderNumber"] ||= checkout_order_number if transaction.is_a?(Hash)
+          return [transaction, "checkout_order_number"]
+        rescue CieloCheckoutService::Error
+          raise if order_number.blank?
+        end
+      end
+
+      [find_by_order_number(order_number), "order_number"]
+    end
+
     def find_by_checkout_order_number(checkout_order_number)
       return {} if checkout_order_number.blank?
 
@@ -177,6 +193,16 @@ class CieloCheckoutService
     when "4", "5", "8", "expired", "expirado", "voided", "chargeback", "canceled", "cancelled", "cancelado"
       "canceled"
     end
+  end
+
+  def self.checkout_order_number_from(value, order_number = nil)
+    normalized = value.to_s.strip
+    normalized_order_number = order_number.to_s.strip
+    return nil if normalized.blank?
+    return nil if normalized_order_number.present? && normalized == normalized_order_number
+    return nil if normalized_order_number.blank? && normalized.match?(/\A(?:CT|PS|RP)\d/i)
+
+    normalized
   end
 
   def self.payment_status_from_transaction(transaction)

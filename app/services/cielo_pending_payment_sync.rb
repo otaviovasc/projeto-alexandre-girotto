@@ -31,7 +31,11 @@ class CieloPendingPaymentSync
   def sync_order_code(order_code:, filial:)
     return @result unless ServicePaymentProvider.cielo_checkout?
 
-    order = PendingOrder.new(order_code: order_code, filial: filial)
+    order = PendingOrder.new(
+      order_code: order_code,
+      checkout_order_number: stored_checkout_order_number(order_code),
+      filial: filial
+    )
     return @result unless valid_order?(order)
 
     sync_order(order)
@@ -40,25 +44,38 @@ class CieloPendingPaymentSync
 
   private
 
-  PendingOrder = Struct.new(:order_code, :filial, keyword_init: true)
+  PendingOrder = Struct.new(:order_code, :checkout_order_number, :filial, keyword_init: true)
 
   def pending_orders
     orders = []
 
     pending_cart_items.each do |cart_item|
-      orders << PendingOrder.new(order_code: cart_item.payment_order_code, filial: cart_item.reserva&.cabana&.filial)
+      orders << PendingOrder.new(
+        order_code: cart_item.payment_order_code,
+        checkout_order_number: checkout_order_number_for(cart_item),
+        filial: cart_item.reserva&.cabana&.filial
+      )
     end
 
     pending_reserva_services.each do |reserva_service|
-      orders << PendingOrder.new(order_code: reserva_service.payment_order_code, filial: reserva_service.reserva&.cabana&.filial)
+      orders << PendingOrder.new(
+        order_code: reserva_service.payment_order_code,
+        checkout_order_number: checkout_order_number_for(reserva_service),
+        filial: reserva_service.reserva&.cabana&.filial
+      )
     end
 
     pending_reserva_payments.each do |reserva_payment|
-      orders << PendingOrder.new(order_code: reserva_payment.payment_order_code, filial: reserva_payment.reserva&.cabana&.filial)
+      orders << PendingOrder.new(
+        order_code: reserva_payment.payment_order_code,
+        checkout_order_number: checkout_order_number_for(reserva_payment),
+        filial: reserva_payment.reserva&.cabana&.filial
+      )
     end
 
     orders
       .select { |order| valid_order?(order) }
+      .sort_by { |order| order.checkout_order_number.present? ? 0 : 1 }
       .uniq { |order| order.order_code }
       .first(@limit)
   end
@@ -98,26 +115,42 @@ class CieloPendingPaymentSync
   def sync_order(order)
     @result.checked += 1
 
-    transaction = transaction_query(order.filial).find_by_order_number(order.order_code)
+    transaction, lookup_source = transaction_query(order.filial).find_by_best_identifier(
+      order_number: order.order_code,
+      checkout_order_number: order.checkout_order_number
+    )
     status = CieloCheckoutService.payment_status_from_transaction(transaction)
+    checkout_order_number = transaction["checkoutOrderNumber"].presence ||
+                            transaction["checkout_order_number"].presence ||
+                            order.checkout_order_number
+
+    Rails.logger.info(
+      "Conferencia Cielo #{order.order_code}: consulta=#{lookup_source}, " \
+      "checkout=#{checkout_order_number.presence || '-'}, status=#{status.presence || 'sem_status'}"
+    )
 
     return if status.blank? || status == "waiting_payment"
 
-    checkout_order_number = transaction["checkoutOrderNumber"].presence || transaction["checkout_order_number"].presence
     remember_checkout_order_number(order.order_code, checkout_order_number)
 
     PaymentStatusProcessor.call(
-      identifiers: [order.order_code, checkout_order_number].compact_blank,
+      identifiers: [order.order_code, order.checkout_order_number, checkout_order_number].compact_blank,
       status: status
     )
 
     increment_result(status)
   rescue CieloCheckoutService::Error => e
     @result.errors += 1
-    Rails.logger.warn("Erro ao sincronizar pagamento Cielo #{order.order_code}: #{e.message}")
+    Rails.logger.warn(
+      "Erro ao sincronizar pagamento Cielo #{order.order_code} " \
+      "checkout=#{order.checkout_order_number.presence || '-'}: #{e.message}"
+    )
   rescue => e
     @result.errors += 1
-    Rails.logger.error("Erro inesperado ao sincronizar pagamento Cielo #{order.order_code}: #{e.message}")
+    Rails.logger.error(
+      "Erro inesperado ao sincronizar pagamento Cielo #{order.order_code} " \
+      "checkout=#{order.checkout_order_number.presence || '-'}: #{e.message}"
+    )
   end
 
   def transaction_query(filial)
@@ -134,6 +167,18 @@ class CieloPendingPaymentSync
     CartItem.where(payment_order_code: order_code).update_all(payment_link_id: checkout_order_number, updated_at: now)
     ReservaService.where(payment_order_code: order_code).update_all(payment_link_id: checkout_order_number, updated_at: now)
     ReservaPayment.where(payment_order_code: order_code).update_all(payment_link_id: checkout_order_number, updated_at: now)
+  end
+
+  def stored_checkout_order_number(order_code)
+    record = CartItem.find_by(payment_order_code: order_code) ||
+             ReservaService.find_by(payment_order_code: order_code) ||
+             ReservaPayment.find_by(payment_order_code: order_code)
+
+    checkout_order_number_for(record)
+  end
+
+  def checkout_order_number_for(record)
+    CieloCheckoutService.checkout_order_number_from(record&.payment_link_id, record&.payment_order_code)
   end
 
   def increment_result(status)

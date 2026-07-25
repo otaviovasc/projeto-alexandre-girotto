@@ -132,15 +132,20 @@ class PublicBookingsController < ApplicationController
     return if @reserva_payment.payment_order_code.blank?
 
     filial = @reserva_payment.reserva.cabana.filial
-    transaction = CieloCheckoutService::TransactionQuery.new(
+    transaction, _lookup_source = CieloCheckoutService::TransactionQuery.new(
       client_id: filial.cielo_checkout_client_id_for_payments,
       client_secret: filial.cielo_checkout_client_secret_for_payments
-    ).find_by_order_number(@reserva_payment.payment_order_code)
+    ).find_by_best_identifier(
+      order_number: @reserva_payment.payment_order_code,
+      checkout_order_number: @reserva_payment.payment_link_id
+    )
 
     status = CieloCheckoutService.payment_status_from_transaction(transaction)
     return if status.blank?
 
-    checkout_order_number = transaction['checkoutOrderNumber'].presence || @reserva_payment.payment_link_id
+    checkout_order_number = transaction['checkoutOrderNumber'].presence ||
+                            transaction['checkout_order_number'].presence ||
+                            @reserva_payment.payment_link_id
     remember_cielo_checkout_order_number(checkout_order_number)
 
     PaymentStatusProcessor.call(
