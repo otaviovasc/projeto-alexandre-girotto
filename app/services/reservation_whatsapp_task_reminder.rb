@@ -63,12 +63,14 @@ class ReservationWhatsappTaskReminder
         url: ENV['WHATSAPP_TASKS_URL']
       )
 
-      if response.sent
-        result[:sent] += 1
+      if response.sent.to_i.positive?
+        result[:sent] += response.sent.to_i
       else
         result[:failed] += 1
-        Rails.logger.warn("Push WhatsApp não enviado: #{response.status} #{response.message}")
+        Rails.logger.warn("Push WhatsApp não enviado: #{response.message}")
       end
+
+      result[:failed] += response.failed.to_i
     end
   end
 end

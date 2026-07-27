@@ -14,6 +14,7 @@ class User < ApplicationRecord
 
   # Cart association
   has_one :cart, dependent: :destroy
+  has_many :web_push_subscriptions, dependent: :destroy
 
   # UserMailer association
   after_create :send_welcome_email

@@ -1,10 +1,9 @@
-require 'httparty'
+require 'web_push'
 
 class WhatsappTaskPushNotifier
-  DEFAULT_ENDPOINT = 'https://organizacao-villaggio.web.app/api/send-external-push'.freeze
   DEFAULT_TARGET_URL = 'https://villaggio-stock.onrender.com/admin/mensagens_whatsapp'.freeze
 
-  Result = Struct.new(:sent, :status, :message, keyword_init: true)
+  Result = Struct.new(:sent, :failed, :message, keyword_init: true)
 
   def self.deliver(title:, body:, tag:, url: nil)
     new(title: title, body: body, tag: tag, url: url).deliver
@@ -18,36 +17,52 @@ class WhatsappTaskPushNotifier
   end
 
   def deliver
-    return Result.new(sent: false, message: 'Endpoint de push não configurado') if endpoint.blank?
-    return Result.new(sent: false, message: 'Token de push não configurado') if token.blank?
+    return Result.new(sent: 0, failed: 0, message: 'Web Push não configurado') unless configured?
 
-    response = HTTParty.post(
-      endpoint,
-      headers: {
-        'Content-Type' => 'application/json',
-        'X-Villaggio-Push-Token' => token
-      },
-      body: payload.to_json,
-      timeout: 8
-    )
+    sent = 0
+    failed = 0
 
-    if response.success?
-      Result.new(sent: true, status: response.code, message: response.body)
-    else
-      Result.new(sent: false, status: response.code, message: response.body)
+    target_subscriptions.find_each do |subscription|
+      send_subscription(subscription)
+      sent += 1
+    rescue WebPush::ExpiredSubscription, WebPush::InvalidSubscription => e
+      subscription.update_columns(active: false, updated_at: Time.current)
+      failed += 1
+      Rails.logger.warn("Push WhatsApp desativado para subscription #{subscription.id}: #{e.message}")
+    rescue => e
+      failed += 1
+      Rails.logger.warn("Push WhatsApp não enviado para subscription #{subscription.id}: #{e.message}")
     end
-  rescue => e
-    Result.new(sent: false, message: e.message)
+
+    Result.new(sent: sent, failed: failed, message: "#{sent} enviado(s), #{failed} falha(s)")
   end
 
   private
 
-  def endpoint
-    ENV.fetch('WHATSAPP_PUSH_ENDPOINT', DEFAULT_ENDPOINT)
+  def configured?
+    ENV['WEB_PUSH_PUBLIC_KEY'].present? && ENV['WEB_PUSH_PRIVATE_KEY'].present?
   end
 
-  def token
-    ENV['WHATSAPP_PUSH_TOKEN'].presence
+  def target_subscriptions
+    WebPushSubscription
+      .active
+      .joins(:user)
+      .merge(User.operations_viewers)
+  end
+
+  def send_subscription(subscription)
+    WebPush.payload_send(
+      message: payload.to_json,
+      endpoint: subscription.endpoint,
+      p256dh: subscription.p256dh,
+      auth: subscription.auth,
+      vapid: {
+        subject: ENV.fetch('WEB_PUSH_SUBJECT', 'mailto:contato@villaggiogirotto.com.br'),
+        public_key: ENV['WEB_PUSH_PUBLIC_KEY'],
+        private_key: ENV['WEB_PUSH_PRIVATE_KEY']
+      },
+      ttl: 86_400
+    )
   end
 
   def payload

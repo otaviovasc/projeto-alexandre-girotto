@@ -114,6 +114,7 @@ Rails.application.routes.draw do
       end
     end
     resources :reservation_whatsapp_tasks, only: [:index, :update], path: 'mensagens_whatsapp'
+    resource :web_push_subscription, only: [:create]
 
     resources :service_purchases, only: [:index] do
       collection do

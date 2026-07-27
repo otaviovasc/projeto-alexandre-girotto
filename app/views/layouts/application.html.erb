@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <% if current_user&.operations_viewer? && ENV['WEB_PUSH_PUBLIC_KEY'].present? %>
+      <meta name="villaggio-web-push-public-key" content="<%= ENV['WEB_PUSH_PUBLIC_KEY'] %>">
+      <meta name="villaggio-web-push-register-path" content="<%= admin_web_push_subscription_path %>">
+    <% end %>
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>

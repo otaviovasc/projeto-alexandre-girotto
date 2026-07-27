@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_27_190000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_27_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -325,6 +325,21 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_27_190000) do
     t.index ["trigger_key"], name: "index_reservation_whatsapp_tasks_on_trigger_key"
   end
 
+  create_table "web_push_subscriptions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.text "endpoint", null: false
+    t.text "p256dh", null: false
+    t.text "auth", null: false
+    t.text "user_agent"
+    t.boolean "active", default: true, null: false
+    t.datetime "last_seen_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["endpoint"], name: "index_web_push_subscriptions_on_endpoint", unique: true
+    t.index ["user_id", "active"], name: "index_web_push_subscriptions_on_user_id_and_active"
+    t.index ["user_id"], name: "index_web_push_subscriptions_on_user_id"
+  end
+
   create_table "reservas", force: :cascade do |t|
     t.date "start_date"
     t.date "end_date"
@@ -456,4 +471,5 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_27_190000) do
   add_foreign_key "services", "filials"
   add_foreign_key "services", "users"
   add_foreign_key "users", "filials"
+  add_foreign_key "web_push_subscriptions", "users"
 end

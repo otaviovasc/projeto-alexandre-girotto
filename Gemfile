@@ -35,6 +35,7 @@ gem 'devise-i18n'
 
 gem 'pagarme', '2.4.0'
 gem 'httparty', '0.22.0'
+gem 'web-push', '~> 3.1', require: 'web_push'
 gem 'multi_json', '1.15.0'
 gem 'csv', '3.3.0'
 gem 'multi_xml', '0.7.1'
