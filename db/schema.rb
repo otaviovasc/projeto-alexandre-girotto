@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_20_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_25_165000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -246,6 +246,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_20_120000) do
     t.string "payment_order_code"
     t.string "payment_link_id"
     t.text "payment_link_url"
+    t.integer "max_credit_card_installments", default: 6, null: false
     t.string "terms_token", null: false
     t.datetime "terms_accepted_at"
     t.string "terms_acceptance_name"

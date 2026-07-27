@@ -1,35 +1,46 @@
 class ReservaPendingPaymentSetup
   DEFAULT_HOLD_HOURS = 3
-  SINGLE_PAYMENT_MAX_INSTALLMENTS = 6
-  MULTIPLE_PAYMENTS_MAX_INSTALLMENTS = 1
+  DEFAULT_MAX_CREDIT_CARD_INSTALLMENTS = ReservaPayment::DEFAULT_MAX_CREDIT_CARD_INSTALLMENTS
 
-  def self.call(reserva:, payments_attributes:, hold_hours:)
-    new(reserva: reserva, payments_attributes: payments_attributes, hold_hours: hold_hours).call
+  def self.call(reserva:, payments_attributes:, hold_hours:, max_credit_card_installments: nil)
+    new(
+      reserva: reserva,
+      payments_attributes: payments_attributes,
+      hold_hours: hold_hours,
+      max_credit_card_installments: max_credit_card_installments
+    ).call
   end
 
-  def self.regenerate_payment!(reserva_payment:, amount: nil, due_at: nil)
-    new(reserva: reserva_payment.reserva, payments_attributes: {}, hold_hours: DEFAULT_HOLD_HOURS)
-      .regenerate_payment!(reserva_payment: reserva_payment, amount: amount, due_at: due_at)
+  def self.regenerate_payment!(reserva_payment:, amount: nil, due_at: nil, max_credit_card_installments: nil)
+    new(
+      reserva: reserva_payment.reserva,
+      payments_attributes: {},
+      hold_hours: DEFAULT_HOLD_HOURS,
+      max_credit_card_installments: max_credit_card_installments.presence || reserva_payment.max_credit_card_installments
+    ).regenerate_payment!(reserva_payment: reserva_payment, amount: amount, due_at: due_at)
   end
 
-  def self.create_extra_payment!(reserva:, amount:, due_at:)
-    new(reserva: reserva, payments_attributes: {}, hold_hours: DEFAULT_HOLD_HOURS)
+  def self.create_extra_payment!(reserva:, amount:, due_at:, max_credit_card_installments: nil)
+    default_installments = max_credit_card_installments.presence ||
+                           reserva.reserva_payments.where.not(payment_status: 'canceled').order(:installment_number).first&.max_credit_card_installments ||
+                           DEFAULT_MAX_CREDIT_CARD_INSTALLMENTS
+    new(reserva: reserva, payments_attributes: {}, hold_hours: DEFAULT_HOLD_HOURS, max_credit_card_installments: default_installments)
       .create_extra_payment!(amount: amount, due_at: due_at)
   end
 
-  def initialize(reserva:, payments_attributes:, hold_hours:)
+  def initialize(reserva:, payments_attributes:, hold_hours:, max_credit_card_installments: nil)
     @reserva = reserva
     @payments_attributes = payments_attributes
     @hold_hours = positive_decimal(hold_hours, DEFAULT_HOLD_HOURS)
+    @max_credit_card_installments = normalized_max_credit_card_installments(max_credit_card_installments)
   end
 
   def call
     rows = normalized_rows
-    max_installments = max_installments_for_payment_count(rows.size)
 
     rows.each do |row|
       payment = create_payment!(row)
-      attach_cielo_link!(payment, max_installments: max_installments)
+      attach_cielo_link!(payment)
     end
 
     @reserva.reserva_payments.reload
@@ -56,11 +67,12 @@ class ReservaPendingPaymentSetup
         terms_accepted_at: previous_acceptance&.terms_accepted_at,
         terms_acceptance_name: previous_acceptance_name,
         terms_acceptance_ip: previous_acceptance&.terms_acceptance_ip,
-        terms_acceptance_user_agent: previous_acceptance&.terms_acceptance_user_agent
+        terms_acceptance_user_agent: previous_acceptance&.terms_acceptance_user_agent,
+        max_credit_card_installments: @max_credit_card_installments
       )
     end
 
-    attach_cielo_link!(new_payment, max_installments: max_installments_for_payment_count(active_payment_count))
+    attach_cielo_link!(new_payment)
     @reserva.reserva_payments.reload
     new_payment
   end
@@ -86,10 +98,11 @@ class ReservaPendingPaymentSetup
       installment_number: installment_number,
       amount: amount_value,
       due_at: due_at_value,
-      payment_order_code: next_order_code(installment_number)
+      payment_order_code: next_order_code(installment_number),
+      max_credit_card_installments: @max_credit_card_installments
     )
 
-    attach_cielo_link!(payment, max_installments: max_installments_for_payment_count(active_payment_count))
+    attach_cielo_link!(payment)
     @reserva.reserva_payments.reload
     payment
   end
@@ -155,7 +168,8 @@ class ReservaPendingPaymentSetup
       installment_number: row[:installment_number],
       amount: row[:amount],
       due_at: row[:due_at],
-      payment_order_code: next_order_code(row[:installment_number])
+      payment_order_code: next_order_code(row[:installment_number]),
+      max_credit_card_installments: @max_credit_card_installments
     )
   end
 
@@ -168,7 +182,7 @@ class ReservaPendingPaymentSetup
             .first
   end
 
-  def attach_cielo_link!(payment, max_installments:)
+  def attach_cielo_link!(payment)
     result = CieloCheckoutService.new(
       merchant_id: @reserva.cabana.filial.cielo_checkout_merchant_id_for_payments,
       order_code: payment.payment_order_code,
@@ -180,12 +194,8 @@ class ReservaPendingPaymentSetup
         quantity: 1
       }],
       return_url: payment.public_payment_url,
-      customer: {
-        name: @reserva.guest_name.presence || @reserva.user.name,
-        email: @reserva.guest_email.presence || @reserva.user.email,
-        phone: @reserva.guest_phone.presence || @reserva.user.telephone
-      },
-      max_installments: max_installments
+      customer: payment_customer,
+      max_installments: payment.max_credit_card_installments
     ).call
 
     payment.update!(
@@ -194,12 +204,12 @@ class ReservaPendingPaymentSetup
     )
   end
 
-  def active_payment_count
-    @reserva.reserva_payments.where.not(payment_status: 'canceled').count
-  end
-
-  def max_installments_for_payment_count(payment_count)
-    payment_count.to_i > 1 ? MULTIPLE_PAYMENTS_MAX_INSTALLMENTS : SINGLE_PAYMENT_MAX_INSTALLMENTS
+  def payment_customer
+    {
+      name: @reserva.guest_name.presence || @reserva.user.name,
+      email: @reserva.guest_email.presence || @reserva.user.email,
+      phone: @reserva.guest_phone.presence || @reserva.user.telephone
+    }
   end
 
   def next_order_code(installment_number)
@@ -225,5 +235,12 @@ class ReservaPendingPaymentSetup
     decimal.positive? ? decimal : default
   rescue ArgumentError, TypeError
     default
+  end
+
+  def normalized_max_credit_card_installments(value)
+    installments = value.to_i
+    return installments if ReservaPayment::MAX_CREDIT_CARD_INSTALLMENTS_RANGE.cover?(installments)
+
+    DEFAULT_MAX_CREDIT_CARD_INSTALLMENTS
   end
 end

@@ -111,7 +111,8 @@ class Admin::ReservasController < ApplicationController
           ReservaPendingPaymentSetup.call(
             reserva: @reserva,
             payments_attributes: params[:pending_payments] || {},
-            hold_hours: pending_hold_hours
+            hold_hours: pending_hold_hours,
+            max_credit_card_installments: params[:pending_payment_max_credit_card_installments]
           )
         rescue => payment_error
           @reserva.cancel_for_operations!(by: current_user, reason: "Erro ao gerar pagamento pendente: #{payment_error.message}")

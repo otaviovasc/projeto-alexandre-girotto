@@ -200,6 +200,16 @@
               <span class="input-group-text">h</span>
             </div>
           </div>
+          <div class="col-md-4">
+            <%= label_tag :pending_payment_max_credit_card_installments, 'Parcelamento no cartão', class: 'form-label' %>
+            <%= select_tag :pending_payment_max_credit_card_installments,
+                options_for_select(
+                  [['Padrão: até 6x sem juros', '']] + (1..12).map { |number| ["Até #{number}x", number] },
+                  params[:pending_payment_max_credit_card_installments].presence
+                ),
+                class: 'form-select' %>
+            <small class="text-muted">Pix continua disponível no Checkout Cielo. Em branco usa até 6x.</small>
+          </div>
         </div>
 
         <% (1..3).each do |installment_number| %>

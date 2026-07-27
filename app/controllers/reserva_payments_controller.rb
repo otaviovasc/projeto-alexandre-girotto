@@ -122,7 +122,7 @@ class ReservaPaymentsController < ApplicationController
     @payment_link_url = @reserva_payment.payment_link_url
     @purchase_items = purchase_items
     @reservation_total = reservation_total
-    @payment_due_at = @reserva_payment.due_at&.in_time_zone('America/Sao_Paulo')
+    @payment_due_at = @reserva_payment.guest_visible_due_at&.in_time_zone('America/Sao_Paulo')
     @nights_count = nights_count
   end
 

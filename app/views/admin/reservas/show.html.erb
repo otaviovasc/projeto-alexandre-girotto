@@ -386,11 +386,9 @@
     <% active_payment_count = reservation_payments.reject(&:canceled?).size %>
     <% next_extra_due_at = 1.day.from_now.in_time_zone('America/Sao_Paulo').strftime('%Y-%m-%dT%H:%M') %>
     <% currency = ->(amount) { number_to_currency(amount, unit: 'R$ ', separator: ',', delimiter: '.') } %>
-    <% display_due_at_for = lambda do |payment| %>
-      <% due_at = payment.due_at.in_time_zone('America/Sao_Paulo') %>
-      <% created_at = (payment.created_at || Time.current).in_time_zone('America/Sao_Paulo') %>
-      <% payment.waiting_payment? && due_at <= created_at + 4.hours ? [due_at - 1.hour, created_at].max : due_at %>
-    <% end %>
+    <% display_due_at_for = ->(payment) { payment.guest_visible_due_at.in_time_zone('America/Sao_Paulo') } %>
+    <% display_hold_label_for = ->(payment) { payment.guest_visible_hold_label.presence || 'o prazo informado' } %>
+    <% installment_options = [['Padrão: até 6x', '']] + (1..12).map { |number| ["Até #{number}x", number] } %>
     <% payment_service_items = @reserva.pending_payment_service_items %>
     <% purchase_summary_lines = ["Resumo da compra:", "Hospedagem: #{currency.call(@reserva.pending_payment_reservation_total)}"] %>
     <% if payment_service_items.any? %>
@@ -416,7 +414,7 @@
       <% message_lines << "" %>
       <% message_lines << payment.public_payment_url %>
       <% message_lines << "" %>
-      <% message_lines << "⚠️ A data e o link ficam pré-reservados por até 2 horas. Após a confirmação do pagamento, as datas serão confirmadas." %>
+      <% message_lines << "⚠️ A data e o link ficam pré-reservados por até #{display_hold_label_for.call(payment)}. Após a confirmação do pagamento, as datas serão confirmadas." %>
       <% message_lines << "" %>
       <% message_lines << "⚠️ Caso o pagamento não seja realizado dentro do prazo, a reserva poderá ser cancelada automaticamente." %>
     <% else %>
@@ -427,12 +425,12 @@
         <% message_lines << "" %>
       <% end %>
       <% message_payments.each do |payment| %>
-        <% payment_due_at = payment == first_payment ? display_due_at_for.call(payment) : payment.due_at.in_time_zone('America/Sao_Paulo') %>
+        <% payment_due_at = display_due_at_for.call(payment) %>
         <% message_lines << "#{payment.installment_number}ª parcela de #{currency.call(payment.amount)} até #{payment_due_at.strftime('%d/%m/%Y às %H:%M')}:" %>
         <% message_lines << payment.public_payment_url %>
         <% message_lines << "" %>
       <% end %>
-      <% message_lines << "⚠️ A data e o link ficam pré-reservados por até 2 horas. Após o pagamento da primeira parcela, as datas ficam confirmadas." %>
+      <% message_lines << "⚠️ A data e o link ficam pré-reservados por até #{display_hold_label_for.call(first_payment)}. Após o pagamento da primeira parcela, as datas ficam confirmadas." %>
       <% message_lines << "⚠️ Se uma parcela for atrasada ou não paga, a reserva pode ser cancelada automaticamente." %>
     <% end %>
 
@@ -458,6 +456,7 @@
                 <span class="service-name"><%= payment.installment_number %>ª parcela</span>
                 <span class="service-date"><%= payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %></span>
                 <span class="service-quantity"><%= payment.payment_status.humanize %></span>
+                <span class="service-quantity">Cartão até <%= payment.max_credit_card_installments %>x</span>
               </div>
               <div>
                 <span style="margin-left: 0.5rem; color: #059669; font-weight: 600;">
@@ -513,6 +512,13 @@
                         value: payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%Y-%m-%dT%H:%M'),
                         class: 'form-control form-control-sm' %>
                   </div>
+                  <div>
+                    <%= form.label :max_credit_card_installments, 'Parcelas no cartão', class: 'form-label mb-1' %>
+                    <%= form.select :max_credit_card_installments,
+                        options_for_select(installment_options, payment.max_credit_card_installments),
+                        {},
+                        class: 'form-select form-select-sm' %>
+                  </div>
                   <%= form.submit 'Gerar novo link para esta parcela',
                       class: 'btn btn-sm btn-outline-primary',
                       data: { turbo_confirm: 'Cancelar o link antigo e gerar um novo?' } %>
@@ -543,6 +549,13 @@
               <%= form.datetime_local_field :due_at,
                   value: next_extra_due_at,
                   class: 'form-control form-control-sm' %>
+            </div>
+            <div>
+              <%= form.label :max_credit_card_installments, 'Parcelas no cartão', class: 'form-label mb-1' %>
+              <%= form.select :max_credit_card_installments,
+                  options_for_select(installment_options, first_payment&.max_credit_card_installments || ReservaPayment::DEFAULT_MAX_CREDIT_CARD_INSTALLMENTS),
+                  {},
+                  class: 'form-select form-select-sm' %>
             </div>
             <%= form.submit 'Gerar mais uma parcela',
                 class: 'btn btn-sm btn-primary',

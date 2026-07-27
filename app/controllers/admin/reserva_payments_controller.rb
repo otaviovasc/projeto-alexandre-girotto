@@ -14,7 +14,8 @@ class Admin::ReservaPaymentsController < ApplicationController
     new_payment = ReservaPendingPaymentSetup.regenerate_payment!(
       reserva_payment: @reserva_payment,
       amount: params[:amount],
-      due_at: params[:due_at]
+      due_at: params[:due_at],
+      max_credit_card_installments: params[:max_credit_card_installments]
     )
     redirect_to admin_reserva_path(new_payment.reserva), notice: 'Link antigo cancelado e novo link gerado.'
   rescue => e
@@ -49,7 +50,8 @@ class Admin::ReservaPaymentsController < ApplicationController
     payment = ReservaPendingPaymentSetup.create_extra_payment!(
       reserva: reserva,
       amount: params[:amount],
-      due_at: params[:due_at]
+      due_at: params[:due_at],
+      max_credit_card_installments: params[:max_credit_card_installments]
     )
 
     redirect_to admin_reserva_path(reserva), notice: "#{payment.installment_number}ª parcela criada."
