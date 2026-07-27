@@ -94,6 +94,10 @@ scheduler.cron '0 7 * * * America/Sao_Paulo', overlap: false do
   begin
     result = ReservationWhatsappTaskReminder.run(slot: :morning)
     result.messages.each { |message| Rails.logger.warn(message) }
+    Rails.logger.info(
+      "Push WhatsApp 7h: #{result.push_sent} enviado(s), " \
+      "#{result.push_failed} falha(s)."
+    )
   rescue => e
     Rails.logger.error "Erro no lembrete de WhatsApp das 7h: #{e.message}"
   end
@@ -106,6 +110,10 @@ scheduler.cron '0 18 * * * America/Sao_Paulo', overlap: false do
   begin
     result = ReservationWhatsappTaskReminder.run(slot: :evening)
     result.messages.each { |message| Rails.logger.warn(message) }
+    Rails.logger.info(
+      "Push WhatsApp 18h: #{result.push_sent} enviado(s), " \
+      "#{result.push_failed} falha(s)."
+    )
   rescue => e
     Rails.logger.error "Erro no lembrete de WhatsApp das 18h: #{e.message}"
   end
