@@ -1,6 +1,9 @@
 class Admin::UsersController < ApplicationController
+  OPERATIONS_VIEWER_ACTIONS = %w[index].freeze
+
   before_action :authenticate_user!
-  before_action :authorize_admin
+  before_action :authorize_admin_or_operations_viewer
+  before_action :block_operations_viewer!, unless: :operations_viewer_allowed_action?
   before_action :set_user, only: [:edit, :update, :destroy]
 
   def index
@@ -69,12 +72,12 @@ class Admin::UsersController < ApplicationController
     @user = User.find(params[:id])
   end
 
-  def authorize_admin
-    redirect_to root_path, alert: 'Você não tem permissão para fazer isso.' unless current_user.admin?
-  end
-
   def user_params
     params.require(:user).permit(:name, :email, :telephone, :partner, :role, :filial_id, :password, :password_confirmation)
+  end
+
+  def operations_viewer_allowed_action?
+    !current_user&.operations_viewer? || OPERATIONS_VIEWER_ACTIONS.include?(action_name)
   end
 
   def remove_automatic_breakfasts_for_partner(user)

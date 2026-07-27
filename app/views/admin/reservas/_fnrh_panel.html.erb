@@ -58,42 +58,46 @@
     <div class="fnrh-error"><strong>Erro:</strong> <%= reserva.fnrh_last_error %></div>
   <% end %>
 
-  <div class="fnrh-actions">
-    <% can_bypass_fnrh = !reserva.fnrh_information_released? && !reserva.fnrh_status.in?(%w[cancelled no_show checked_out]) %>
-    <% if can_bypass_fnrh %>
-      <%= button_to 'Pular FNRH',
-          fnrh_bypass_precheckin_admin_reserva_path(reserva),
-          method: :post,
-          class: 'btn btn-outline-warning',
-          form: { data: { turbo_confirm: 'Liberar material do hóspede sem concluir a FNRH?' } } %>
-    <% end %>
+  <% can_bypass_fnrh = !reserva.fnrh_information_released? && !reserva.fnrh_status.in?(%w[cancelled no_show checked_out]) %>
+  <% if can_manage_reservations? || (operations_viewer_access? && can_bypass_fnrh) %>
+    <div class="fnrh-actions">
+      <% if can_bypass_fnrh %>
+        <%= button_to 'Pular FNRH',
+            fnrh_bypass_precheckin_admin_reserva_path(reserva),
+            method: :post,
+            class: 'btn btn-outline-warning',
+            form: { data: { turbo_confirm: 'Liberar material do hóspede sem concluir a FNRH?' } } %>
+      <% end %>
 
-    <% if reserva.fnrh_reservation_id.blank? %>
-      <% if reserva.fnrh_status == 'duplicate_in_fnrh' %>
-        <span class="btn btn-outline-secondary disabled">Sincronização pausada</span>
-      <% else %>
-      <%= button_to 'Sincronizar FNRH',
-          sync_fnrh_admin_reserva_path(reserva),
-          method: :post,
-          class: 'btn btn-primary',
-          form: { data: { turbo_confirm: "Confirmar envio da reserva ##{reserva.id} para a FNRH?" } } %>
+      <% if can_manage_reservations? %>
+        <% if reserva.fnrh_reservation_id.blank? %>
+          <% if reserva.fnrh_status == 'duplicate_in_fnrh' %>
+            <span class="btn btn-outline-secondary disabled">Sincronização pausada</span>
+          <% else %>
+          <%= button_to 'Sincronizar FNRH',
+              sync_fnrh_admin_reserva_path(reserva),
+              method: :post,
+              class: 'btn btn-primary',
+              form: { data: { turbo_confirm: "Confirmar envio da reserva ##{reserva.id} para a FNRH?" } } %>
+          <% end %>
+        <% else %>
+          <% if reserva.fnrh_status.in?(%w[awaiting_precheckin precheckin_completed error]) %>
+            <%= button_to 'Fazer check-in agora', fnrh_check_in_admin_reserva_path(reserva), method: :post, class: 'btn btn-success' %>
+            <%= button_to 'Marcar no-show', fnrh_no_show_admin_reserva_path(reserva), method: :post, class: 'btn btn-warning' %>
+          <% end %>
+          <% if reserva.fnrh_status == 'checked_in' %>
+            <%= button_to 'Fazer checkout agora', fnrh_checkout_admin_reserva_path(reserva), method: :post, class: 'btn btn-primary' %>
+          <% end %>
+          <% unless reserva.fnrh_status.in?(%w[cancelled checked_out]) %>
+            <%= button_to 'Cancelar na FNRH', fnrh_cancel_admin_reserva_path(reserva), method: :post, class: 'btn btn-danger', form: { data: { turbo_confirm: 'Confirmar cancelamento na FNRH?' } } %>
+          <% end %>
+          <% if reserva.fnrh_precheckin_url.present? && Fnrh::Configuration.mock? %>
+            <%= link_to 'Abrir pré-check-in simulado', reserva.fnrh_precheckin_url, class: 'btn btn-secondary', target: '_blank', rel: 'noopener' %>
+          <% end %>
+        <% end %>
       <% end %>
-    <% else %>
-      <% if reserva.fnrh_status.in?(%w[awaiting_precheckin precheckin_completed error]) %>
-        <%= button_to 'Fazer check-in agora', fnrh_check_in_admin_reserva_path(reserva), method: :post, class: 'btn btn-success' %>
-        <%= button_to 'Marcar no-show', fnrh_no_show_admin_reserva_path(reserva), method: :post, class: 'btn btn-warning' %>
-      <% end %>
-      <% if reserva.fnrh_status == 'checked_in' %>
-        <%= button_to 'Fazer checkout agora', fnrh_checkout_admin_reserva_path(reserva), method: :post, class: 'btn btn-primary' %>
-      <% end %>
-      <% unless reserva.fnrh_status.in?(%w[cancelled checked_out]) %>
-        <%= button_to 'Cancelar na FNRH', fnrh_cancel_admin_reserva_path(reserva), method: :post, class: 'btn btn-danger', form: { data: { turbo_confirm: 'Confirmar cancelamento na FNRH?' } } %>
-      <% end %>
-      <% if reserva.fnrh_precheckin_url.present? && Fnrh::Configuration.mock? %>
-        <%= link_to 'Abrir pré-check-in simulado', reserva.fnrh_precheckin_url, class: 'btn btn-secondary', target: '_blank', rel: 'noopener' %>
-      <% end %>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
 
   <% if reserva.fnrh_events.exists? %>
     <div class="fnrh-history">

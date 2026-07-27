@@ -65,8 +65,10 @@
         <p class="mb-0 text-white-50">Serviços comprados pelos clientes via portal e carrinho.</p>
       </div>
       <div class="d-flex gap-2 align-self-start">
-        <%= link_to closing_admin_service_purchases_path, class: "btn btn-light" do %>
-          <i class="bi bi-calculator me-1"></i> Fechamento
+        <% unless hide_financials? %>
+          <%= link_to closing_admin_service_purchases_path, class: "btn btn-light" do %>
+            <i class="bi bi-calculator me-1"></i> Fechamento
+          <% end %>
         <% end %>
         <%= link_to admin_reservas_summary_path, class: "btn btn-outline-light" do %>
           <i class="bi bi-calendar-check me-1"></i> Reservas
@@ -76,12 +78,14 @@
   </div>
 
   <div class="row g-3 mb-4">
-    <div class="col-12 col-md-3">
-      <div class="metric-card">
-        <div class="metric-label">Receita paga</div>
-        <p class="metric-value"><%= number_to_currency(@total_paid || 0, unit: "R$") %></p>
+    <% unless hide_financials? %>
+      <div class="col-12 col-md-3">
+        <div class="metric-card">
+          <div class="metric-label">Receita paga</div>
+          <p class="metric-value"><%= number_to_currency(@total_paid || 0, unit: "R$") %></p>
+        </div>
       </div>
-    </div>
+    <% end %>
     <div class="col-12 col-md-3">
       <div class="metric-card">
         <div class="metric-label">Pagas</div>
@@ -155,8 +159,10 @@
             <th>Servico</th>
             <th>Data do servico</th>
             <th>Qtd.</th>
-            <th>Valor unit.</th>
-            <th>Total pago</th>
+            <% unless hide_financials? %>
+              <th>Valor unit.</th>
+              <th>Total pago</th>
+            <% end %>
             <th>Pago em</th>
           </tr>
         </thead>
@@ -184,14 +190,16 @@
                 <td><%= purchase.service.name %></td>
                 <td><%= purchase.service_date&.strftime("%d/%m/%Y") || "-" %></td>
                 <td><%= purchase.quantity %></td>
-                <td><%= number_to_currency(purchase.unit_price_paid || purchase.service.price_for(purchase.reserva) || 0, unit: "R$") %></td>
-                <td><strong><%= number_to_currency(purchase.total_paid || 0, unit: "R$") %></strong></td>
+                <% unless hide_financials? %>
+                  <td><%= number_to_currency(purchase.unit_price_paid || purchase.service.price_for(purchase.reserva) || 0, unit: "R$") %></td>
+                  <td><strong><%= number_to_currency(purchase.total_paid || 0, unit: "R$") %></strong></td>
+                <% end %>
                 <td><%= purchase.paid_at&.in_time_zone("America/Sao_Paulo")&.strftime("%d/%m/%Y %H:%M") || "-" %></td>
               </tr>
             <% end %>
           <% else %>
             <tr>
-              <td colspan="11" class="text-center text-muted py-5">
+              <td colspan="<%= hide_financials? ? 9 : 11 %>" class="text-center text-muted py-5">
                 Nenhuma compra de servico encontrada para os filtros selecionados.
               </td>
             </tr>

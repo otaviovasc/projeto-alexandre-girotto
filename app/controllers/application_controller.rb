@@ -3,6 +3,8 @@ class ApplicationController < ActionController::Base
   before_action :store_user_location!, if: :should_store_location?
   before_action :restrict_partnership_agent_access
 
+  helper_method :operations_viewer_access?, :hide_financials?, :can_manage_reservations?
+
   private
 
   def store_user_location!
@@ -51,5 +53,33 @@ class ApplicationController < ActionController::Base
   def partnership_agent_allowed_path?
     request.path.start_with?('/parcerias') ||
       request.path.match?(%r{\A/cabanas/\d+/unavailable_dates\z})
+  end
+
+  def operations_viewer_access?
+    current_user&.operations_viewer?
+  end
+
+  def hide_financials?
+    current_user&.financial_data_hidden?
+  end
+
+  def can_manage_reservations?
+    current_user&.can_manage_reservations?
+  end
+
+  def authorize_admin
+    redirect_to root_path, alert: 'Você não tem permissão para fazer isso.' unless current_user&.admin?
+  end
+
+  def authorize_admin_or_operations_viewer
+    return if current_user&.admin_or_operations_viewer?
+
+    redirect_to root_path, alert: 'Você não tem permissão para acessar esta área.'
+  end
+
+  def block_operations_viewer!
+    return unless current_user&.operations_viewer?
+
+    redirect_to admin_reservas_summary_path, alert: 'Acesso somente para visualização.'
   end
 end

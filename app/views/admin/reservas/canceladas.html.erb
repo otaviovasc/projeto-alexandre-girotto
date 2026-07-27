@@ -11,8 +11,10 @@
       <%= link_to nao_finalizadas_admin_reservas_path, class: 'btn btn-outline-warning' do %>
         <i class="bi bi-hourglass-split me-1"></i> Não finalizadas
       <% end %>
-      <%= link_to export_sheets_admin_reservas_path, class: 'btn btn-warning', data: { turbo_method: :get } do %>
-        <i class="bi bi-cloud-upload me-1"></i> Atualizar Sheets
+      <% if can_manage_reservations? %>
+        <%= link_to export_sheets_admin_reservas_path, class: 'btn btn-warning', data: { turbo_method: :get } do %>
+          <i class="bi bi-cloud-upload me-1"></i> Atualizar Sheets
+        <% end %>
       <% end %>
       <%= link_to admin_reservas_summary_path, class: 'btn btn-outline-secondary' do %>
         <i class="bi bi-arrow-left me-1"></i> Reservas Ativas
@@ -29,14 +31,16 @@
         </div>
       </div>
     </div>
-    <div class="col-12 col-md-6">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <div class="text-muted text-uppercase fw-semibold small">Valor histórico</div>
-          <div class="fs-3 fw-bold"><%= number_to_currency(@total_receita || 0, unit: "R$") %></div>
+    <% unless hide_financials? %>
+      <div class="col-12 col-md-6">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="text-muted text-uppercase fw-semibold small">Valor histórico</div>
+            <div class="fs-3 fw-bold"><%= number_to_currency(@total_receita || 0, unit: "R$") %></div>
+          </div>
         </div>
       </div>
-    </div>
+    <% end %>
   </div>
 
   <div class="card p-3 mb-4 shadow-sm">
@@ -68,7 +72,9 @@
             <th>Período original</th>
             <th>Cabana</th>
             <th>Hóspede</th>
-            <th>Valor</th>
+            <% unless hide_financials? %>
+              <th>Valor</th>
+            <% end %>
             <th>Serviços</th>
             <th>Cancelado por</th>
             <th>Ações</th>
@@ -90,7 +96,9 @@
                   <strong><%= reserva.guest_name.presence || reserva.user&.name || "Sem nome" %></strong><br>
                   <span class="text-muted"><%= reserva.guest_phone.presence || reserva.user&.telephone || reserva.user&.email %></span>
                 </td>
-                <td><%= number_to_currency(reserva.total_price || 0, unit: "R$") %></td>
+                <% unless hide_financials? %>
+                  <td><%= number_to_currency(reserva.total_price || 0, unit: "R$") %></td>
+                <% end %>
                 <td>
                   <% active_service_count = reserva.reserva_services.size %>
                   <%= active_service_count %> serviço(s)
@@ -105,7 +113,7 @@
             <% end %>
           <% else %>
             <tr>
-              <td colspan="9" class="text-center text-muted py-5">
+              <td colspan="<%= hide_financials? ? 8 : 9 %>" class="text-center text-muted py-5">
                 <%= @history_empty_message || 'Nenhuma reserva cancelada encontrada.' %>
               </td>
             </tr>

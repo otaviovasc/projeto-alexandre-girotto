@@ -19,14 +19,15 @@ class User < ApplicationRecord
   after_create :send_welcome_email
 
   # Assigning custom values to the roles
-  enum role: { service_provider: 3, manager: 2, admin: 1, client: 0, partnership_agent: 4 }
+  enum role: { service_provider: 3, manager: 2, admin: 1, client: 0, partnership_agent: 4, operations_viewer: 5 }
 
   ROLE_LABELS = {
     'service_provider' => 'Prestador de serviço',
     'manager' => 'Gerente',
     'admin' => 'Admin',
     'client' => 'Cliente',
-    'partnership_agent' => 'Parcerias'
+    'partnership_agent' => 'Parcerias',
+    'operations_viewer' => 'Visualização sem valores'
   }.freeze
 
   belongs_to :filial, optional: true
@@ -37,6 +38,7 @@ class User < ApplicationRecord
   scope :managers, -> { where(role: :manager) }
   scope :admins, -> { where(role: :admin) }
   scope :partnership_agents, -> { where(role: :partnership_agent) }
+  scope :operations_viewers, -> { where(role: :operations_viewer) }
 
   # Scopes for partner status
   scope :partners, -> { where(partner: true) }
@@ -58,6 +60,18 @@ class User < ApplicationRecord
                 .first
 
     sync_filial_from_cabana!(reserva&.cabana)
+  end
+
+  def admin_or_operations_viewer?
+    admin? || operations_viewer?
+  end
+
+  def financial_data_hidden?
+    operations_viewer?
+  end
+
+  def can_manage_reservations?
+    admin?
   end
 
   def self.role_label(role)

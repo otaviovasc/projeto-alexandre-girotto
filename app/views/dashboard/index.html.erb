@@ -191,10 +191,12 @@
         <div class="hero-stat-value"><%= User.count %></div>
         <div class="hero-stat-label">Usuários</div>
       </div>
-      <div class="hero-stat">
-        <div class="hero-stat-value"><%= number_to_currency(Reserva.where.not(payment_status: ['canceled', 'refused']).sum(:total_price), unit: 'R$', precision: 0) %></div>
-        <div class="hero-stat-label">Receita</div>
-      </div>
+      <% unless hide_financials? %>
+        <div class="hero-stat">
+          <div class="hero-stat-value"><%= number_to_currency(Reserva.where.not(payment_status: ['canceled', 'refused']).sum(:total_price), unit: 'R$', precision: 0) %></div>
+          <div class="hero-stat-label">Receita</div>
+        </div>
+      <% end %>
     </div>
   </div>
 
@@ -205,17 +207,19 @@
   </div>
 
   <div class="cards-grid">
-    <!-- Usuários -->
-    <div class="dash-card">
-      <div class="card-icon icon-users">
-        <i class="bi bi-people-fill"></i>
+    <% if current_user.admin_or_operations_viewer? %>
+      <!-- Usuários -->
+      <div class="dash-card">
+        <div class="card-icon icon-users">
+          <i class="bi bi-people-fill"></i>
+        </div>
+        <h3 class="card-title">Usuários</h3>
+        <p class="card-description"><%= can_manage_reservations? ? 'Gerencie usuários e permissões' : 'Consulte usuários cadastrados' %></p>
+        <%= link_to admin_users_path, class: 'card-btn card-btn-primary' do %>
+          Acessar →
+        <% end %>
       </div>
-      <h3 class="card-title">Usuários</h3>
-      <p class="card-description">Gerencie usuários e permissões</p>
-      <%= link_to admin_users_path, class: 'card-btn card-btn-primary' do %>
-        Acessar →
-      <% end %>
-    </div>
+    <% end %>
 
     <!-- Cabanas -->
     <div class="dash-card">
@@ -223,7 +227,7 @@
         <i class="bi bi-house-fill"></i>
       </div>
       <h3 class="card-title">Cabanas</h3>
-      <p class="card-description">Adicione ou edite cabanas</p>
+      <p class="card-description"><%= can_manage_reservations? ? 'Adicione ou edite cabanas' : 'Consulte cabanas cadastradas' %></p>
       <%= link_to admin_cabanas_path, class: 'card-btn card-btn-primary' do %>
         Acessar →
       <% end %>
@@ -241,17 +245,19 @@
       <% end %>
     </div>
 
-    <!-- Leads -->
-    <div class="dash-card">
-      <div class="card-icon icon-funil">
-        <i class="bi bi-funnel-fill"></i>
+    <% if current_user.admin? %>
+      <!-- Leads -->
+      <div class="dash-card">
+        <div class="card-icon icon-funil">
+          <i class="bi bi-funnel-fill"></i>
+        </div>
+        <h3 class="card-title">Leads</h3>
+        <p class="card-description">Leads capturados pelo site</p>
+        <%= link_to admin_funil_mailers_path, class: 'card-btn card-btn-primary' do %>
+          Acessar →
+        <% end %>
       </div>
-      <h3 class="card-title">Leads</h3>
-      <p class="card-description">Leads capturados pelo site</p>
-      <%= link_to admin_funil_mailers_path, class: 'card-btn card-btn-primary' do %>
-        Acessar →
-      <% end %>
-    </div>
+    <% end %>
 
     <!-- Serviços -->
     <div class="dash-card">
@@ -259,7 +265,7 @@
         <i class="bi bi-star-fill"></i>
       </div>
       <h3 class="card-title">Serviços</h3>
-      <p class="card-description">Gerencie serviços oferecidos</p>
+      <p class="card-description"><%= can_manage_reservations? ? 'Gerencie serviços oferecidos' : 'Consulte serviços oferecidos' %></p>
       <%= link_to admin_services_path, class: 'card-btn card-btn-primary' do %>
         Acessar →
       <% end %>
@@ -275,8 +281,10 @@
       <%= link_to admin_service_purchases_path, class: 'card-btn card-btn-primary' do %>
         Acessar →
       <% end %>
-      <%= link_to closing_admin_service_purchases_path, class: 'card-btn card-btn-secondary mt-2' do %>
-        Fechamento →
+      <% unless hide_financials? %>
+        <%= link_to closing_admin_service_purchases_path, class: 'card-btn card-btn-secondary mt-2' do %>
+          Fechamento →
+        <% end %>
       <% end %>
     </div>
   </div>

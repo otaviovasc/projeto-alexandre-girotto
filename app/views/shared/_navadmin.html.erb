@@ -30,7 +30,7 @@
 
       <ul class="navbar-nav ms-auto">
         <% if user_signed_in? %>
-          <% if current_user.admin? %>
+          <% if current_user.admin_or_operations_viewer? %>
             <li class="nav-item">
               <%= link_to root_path, class: 'nav-link' do %>
                 <i class="bi bi-speedometer2 me-1"></i>Admin Dashboard

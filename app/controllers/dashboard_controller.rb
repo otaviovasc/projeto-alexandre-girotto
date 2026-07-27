@@ -2,7 +2,7 @@ class DashboardController < ApplicationController
   before_action :authenticate_user!
 
   def index
-    if current_user.admin?
+    if current_user.admin_or_operations_viewer?
       render :index
     elsif current_user.manager? && current_user.filial.present?
       redirect_to admin_filial_items_path(current_user.filial)

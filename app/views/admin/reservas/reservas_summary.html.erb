@@ -125,12 +125,14 @@
   </div>
 
   <div class="d-flex gap-2 mb-4">
-    <%= link_to 'Nova Reserva', new_admin_reserva_path, class: 'btn btn-primary d-flex align-items-center' %>
-    <%= link_to export_csv_admin_reservas_path(request.query_parameters.merge(format: :csv)), class: 'btn btn-success d-flex align-items-center' do %>
-      <i class="bi bi-file-earmark-spreadsheet me-1"></i> Exportar CSV
-    <% end %>
-    <%= link_to export_sheets_admin_reservas_path(request.query_parameters), class: 'btn btn-warning d-flex align-items-center', data: { turbo_method: :get } do %>
-      <i class="bi bi-cloud-upload me-1"></i> Enviar p/ Google Sheets
+    <% if can_manage_reservations? %>
+      <%= link_to 'Nova Reserva', new_admin_reserva_path, class: 'btn btn-primary d-flex align-items-center' %>
+      <%= link_to export_csv_admin_reservas_path(request.query_parameters.merge(format: :csv)), class: 'btn btn-success d-flex align-items-center' do %>
+        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Exportar CSV
+      <% end %>
+      <%= link_to export_sheets_admin_reservas_path(request.query_parameters), class: 'btn btn-warning d-flex align-items-center', data: { turbo_method: :get } do %>
+        <i class="bi bi-cloud-upload me-1"></i> Enviar p/ Google Sheets
+      <% end %>
     <% end %>
     <%= link_to canceladas_admin_reservas_path, class: 'btn btn-outline-danger d-flex align-items-center' do %>
       <i class="bi bi-archive me-1"></i> Reservas Canceladas
@@ -138,25 +140,29 @@
     <%= link_to nao_finalizadas_admin_reservas_path, class: 'btn btn-outline-warning d-flex align-items-center' do %>
       <i class="bi bi-hourglass-split me-1"></i> Não Finalizadas
     <% end %>
-    <%= link_to admin_reservation_email_templates_path, class: 'btn btn-outline-dark d-flex align-items-center' do %>
-      <i class="bi bi-envelope-gear me-1"></i> E-mails
+    <% if can_manage_reservations? %>
+      <%= link_to admin_reservation_email_templates_path, class: 'btn btn-outline-dark d-flex align-items-center' do %>
+        <i class="bi bi-envelope-gear me-1"></i> E-mails
+      <% end %>
     <% end %>
   </div>
 
-  <div class="card p-3 mb-4 shadow-sm">
-    <h4>Importar Reservas por Cabana</h4>
-    <div class="d-flex flex-wrap gap-2">
-      <% Cabana.all.each do |cabana| %>
-        <% begin %>
-          <% links = cabana.import_links.present? ? JSON.parse(cabana.import_links) : {} %>
-          <% next if links.blank? %>
-          <%= link_to cabana.name, select_cabana_import_admin_reservas_path(cabana_id: cabana.id), class: "btn btn-outline-success" %>
-        <% rescue JSON::ParserError %>
-          <%# Ignora cabanas com JSON inválido %>
+  <% if can_manage_reservations? %>
+    <div class="card p-3 mb-4 shadow-sm">
+      <h4>Importar Reservas por Cabana</h4>
+      <div class="d-flex flex-wrap gap-2">
+        <% Cabana.all.each do |cabana| %>
+          <% begin %>
+            <% links = cabana.import_links.present? ? JSON.parse(cabana.import_links) : {} %>
+            <% next if links.blank? %>
+            <%= link_to cabana.name, select_cabana_import_admin_reservas_path(cabana_id: cabana.id), class: "btn btn-outline-success" %>
+          <% rescue JSON::ParserError %>
+            <%# Ignora cabanas com JSON inválido %>
+          <% end %>
         <% end %>
-      <% end %>
+      </div>
     </div>
-  </div>
+  <% end %>
 
   <!-- Busca e filtro -->
   <div class="card p-3 mb-4 shadow-sm">
@@ -192,7 +198,7 @@
 
   <!-- Estatísticas -->
   <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="<%= hide_financials? ? 'col-md-6' : 'col-md-4' %>">
       <div class="card text-white bg-primary shadow-sm">
         <div class="card-body">
           <h5>Total de Reservas</h5>
@@ -200,15 +206,17 @@
         </div>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="card text-white bg-success shadow-sm">
-        <div class="card-body">
-          <h5>Receita Total</h5>
-          <h3><%= number_to_currency(@total_receita, unit: "R$") %></h3>
+    <% unless hide_financials? %>
+      <div class="col-md-4">
+        <div class="card text-white bg-success shadow-sm">
+          <div class="card-body">
+            <h5>Receita Total</h5>
+            <h3><%= number_to_currency(@total_receita, unit: "R$") %></h3>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="col-md-4">
+    <% end %>
+    <div class="<%= hide_financials? ? 'col-md-6' : 'col-md-4' %>">
       <div class="card text-white bg-info shadow-sm">
         <div class="card-body">
           <h5>Reservas por Status</h5>
@@ -253,7 +261,9 @@
             <th>Data Fim</th>
             <th>Cabana</th>
             <th>Status</th>
-            <th>Preço Total</th>
+            <% unless hide_financials? %>
+              <th>Preço Total</th>
+            <% end %>
             <th>Observações</th>
             <th>Usuário</th>
             <th>Telefone</th>
@@ -270,17 +280,23 @@
             <tr id="reserva-<%= reserva.id %>" data-updated-at="<%= reserva.updated_at.to_i %>" class="<%= row_classes.join(' ') %>">
               <td><%= reserva.id %></td>
               <td>
-                <%= check_box_tag(
-                      "reserva_#{reserva.id}_group_created",
-                      "1",
-                      reserva.group_created?,
-                      class: "form-check-input group-created-checkbox",
-                      data: {
-                        url: update_group_created_admin_reserva_path(reserva),
-                        reserva_id: reserva.id
-                      },
-                      title: "Grupo criado"
-                    ) %>
+                <% if can_manage_reservations? %>
+                  <%= check_box_tag(
+                        "reserva_#{reserva.id}_group_created",
+                        "1",
+                        reserva.group_created?,
+                        class: "form-check-input group-created-checkbox",
+                        data: {
+                          url: update_group_created_admin_reserva_path(reserva),
+                          reserva_id: reserva.id
+                        },
+                        title: "Grupo criado"
+                      ) %>
+                <% else %>
+                  <span class="badge <%= reserva.group_created? ? 'bg-success' : 'bg-secondary' %>">
+                    <%= reserva.group_created? ? 'Sim' : 'Não' %>
+                  </span>
+                <% end %>
               </td>
               <td><%= reserva.updated_at&.in_time_zone("America/Sao_Paulo")&.strftime("%d/%m/%Y - %H:%Mh") || "—" %></td>
               <td><%= reserva.start_date&.strftime("%d/%m/%y") || "—" %></td>
@@ -314,7 +330,9 @@
                   <span class="badge bg-secondary ms-1"><%= reserva.fnrh_status_label %></span>
                 <% end %>
               </td>
-              <td><%= number_to_currency(reserva.total_price, unit: "R$") %></td>
+              <% unless hide_financials? %>
+                <td><%= number_to_currency(reserva.total_price, unit: "R$") %></td>
+              <% end %>
               <td>
                 <% if reserva.ical_missing? %>
                   <div class="text-danger fw-semibold mb-1">
@@ -324,24 +342,28 @@
                   <div class="fw-semibold mb-1 ical-date-change-message" style="color:#c2410c;">
                     Possível troca de datas no iCal em <%= reserva.ical_date_change_since.strftime("%d/%m/%Y - %H:%Mh") %>
                   </div>
-                  <%= button_to acknowledge_ical_date_change_admin_reserva_path(reserva),
-                      method: :patch,
-                      class: "btn btn-sm btn-outline-success mb-2",
-                      form_class: "d-inline" do %>
-                    <i class="bi bi-check-circle me-1"></i> Concluído
+                  <% if can_manage_reservations? %>
+                    <%= button_to acknowledge_ical_date_change_admin_reserva_path(reserva),
+                        method: :patch,
+                        class: "btn btn-sm btn-outline-success mb-2",
+                        form_class: "d-inline" do %>
+                      <i class="bi bi-check-circle me-1"></i> Concluído
+                    <% end %>
                   <% end %>
                 <% end %>
                 <span class="observation-text"><%= reserva.observation.present? ? reserva.observation : '-' %></span>
-                <a href="#" class="edit-observation-btn ms-2" data-reserva-id="<%= reserva.id %>">
-                  <i class="bi bi-pencil-square text-primary"></i>
-                </a>
-                <div class="edit-observation-form d-none">
-                  <%= form_with url: update_observation_admin_reserva_path(reserva), method: :patch, class: "d-flex" do |f| %>
-                    <%= f.text_field :observation, value: reserva.observation, class: "form-control form-control-sm me-1" %>
-                    <%= f.submit "Salvar", class: "btn btn-sm btn-success" %>
-                    <button type="button" class="btn btn-sm btn-secondary ms-1 cancel-edit-btn">Cancelar</button>
-                  <% end %>
-                </div>
+                <% if can_manage_reservations? %>
+                  <a href="#" class="edit-observation-btn ms-2" data-reserva-id="<%= reserva.id %>">
+                    <i class="bi bi-pencil-square text-primary"></i>
+                  </a>
+                  <div class="edit-observation-form d-none">
+                    <%= form_with url: update_observation_admin_reserva_path(reserva), method: :patch, class: "d-flex" do |f| %>
+                      <%= f.text_field :observation, value: reserva.observation, class: "form-control form-control-sm me-1" %>
+                      <%= f.submit "Salvar", class: "btn btn-sm btn-success" %>
+                      <button type="button" class="btn btn-sm btn-secondary ms-1 cancel-edit-btn">Cancelar</button>
+                    <% end %>
+                  </div>
+                <% end %>
               </td>
               <td>
                 <% if reserva.guest_name.present? %>
@@ -358,7 +380,7 @@
                 <%= link_to admin_reserva_path(reserva), class: 'btn btn-sm btn-outline-primary me-1', title: 'Visualizar', data: { turbo: false } do %>
                   <i class="bi bi-eye"></i>
                 <% end %>
-                <% if reserva.pending? && !reserva.blocks_availability? %>
+                <% if can_manage_reservations? && reserva.pending? && !reserva.blocks_availability? %>
                   <%= button_to confirm_reservation_admin_reserva_path(reserva),
                       method: :patch,
                       class: 'btn btn-sm btn-success mt-1',

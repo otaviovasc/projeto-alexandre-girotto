@@ -1,4 +1,7 @@
 class Admin::ServicesController < ApplicationController
+  before_action :authenticate_user!
+  before_action :authorize_admin_or_operations_viewer
+  before_action :block_operations_viewer!, except: [:index]
   before_action :set_service, only: [:edit, :update, :destroy]
 
   def index

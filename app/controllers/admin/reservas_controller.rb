@@ -1,15 +1,17 @@
 class Admin::ReservasController < ApplicationController
   RESERVAS_SUMMARY_RECENT_LIMIT = 20
+  OPERATIONS_VIEWER_ACTIONS = %w[index show reservas_summary canceladas nao_finalizadas fnrh_bypass_precheckin].freeze
 
   before_action :authenticate_user!
-  before_action :authorize_admin
+  before_action :authorize_admin_or_operations_viewer
+  before_action :block_operations_viewer!, unless: :operations_viewer_allowed_action?
   before_action :set_reserva, only: [
     :edit, :update, :destroy, :cancel, :show, :update_observation, :update_group_created,
     :acknowledge_ical_date_change, :update_service_purchase_access, :update_service_installments, :sync_fnrh,
     :fnrh_check_in, :fnrh_no_show, :fnrh_checkout, :fnrh_cancel, :fnrh_bypass_precheckin,
     :confirm_reservation, :sync_service_payment
   ]
-  before_action :check_reservations_on_new, only: [:reservas_summary]
+  before_action :check_reservations_on_new, only: [:reservas_summary], if: -> { current_user&.admin? }
 
   def index
     @reservas = Reserva.active_for_operations.includes(:cabana, :user).all
@@ -237,8 +239,6 @@ class Admin::ReservasController < ApplicationController
   end
 
   def reservas_summary
-    return unless current_user.admin?
-
     @q = Reserva.active_for_operations.ransack(summary_ransack_params)
     filtered_reservas = apply_general_search(@q.result)
 
@@ -300,8 +300,6 @@ class Admin::ReservasController < ApplicationController
   end
 
   def canceladas
-    return unless current_user.admin?
-
     load_history_reservas(
       Reserva.canceled_for_external_history,
       title: 'Reservas Canceladas',
@@ -315,8 +313,6 @@ class Admin::ReservasController < ApplicationController
   end
 
   def nao_finalizadas
-    return unless current_user.admin?
-
     load_history_reservas(
       Reserva.unfinished_pre_reservations,
       title: 'Pré-reservas não finalizadas',
@@ -773,8 +769,8 @@ class Admin::ReservasController < ApplicationController
     params.require(:user).permit(:email, :password, :password_confirmation, :name, :telephone, :partner)
   end
 
-  def authorize_admin
-    redirect_to root_path, alert: 'Você não tem permissão para fazer isso.' unless current_user.admin?
+  def operations_viewer_allowed_action?
+    !current_user&.operations_viewer? || OPERATIONS_VIEWER_ACTIONS.include?(action_name)
   end
 
   def manual_override_update?(attrs)

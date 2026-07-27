@@ -1,6 +1,9 @@
 class Admin::CabanasController < ApplicationController
+  OPERATIONS_VIEWER_ACTIONS = %w[index show].freeze
+
   before_action :authenticate_user!
-  before_action :authorize_admin
+  before_action :authorize_admin_or_operations_viewer
+  before_action :block_operations_viewer!, unless: :operations_viewer_allowed_action?
   before_action :set_cabana, only: [:edit, :update, :destroy, :show, :price_rules_and_holidays, :edit_import_links, :update_import_links, :update_breakfast_inclusions]
 
   def index
@@ -124,7 +127,7 @@ class Admin::CabanasController < ApplicationController
     )
   end
 
-  def authorize_admin
-    redirect_to root_path, alert: 'Você não tem permissão para fazer isso.' unless current_user.admin?
+  def operations_viewer_allowed_action?
+    !current_user&.operations_viewer? || OPERATIONS_VIEWER_ACTIONS.include?(action_name)
   end
 end

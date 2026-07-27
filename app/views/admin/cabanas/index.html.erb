@@ -4,8 +4,10 @@
   <div class="d-flex gap-2 mb-4">
     <%= link_to 'Painel Administrativo', authenticated_root_path, class: 'btn btn-secondary d-flex align-items-center' %>
     <%= link_to 'Gerenciar Reservas', admin_reservas_path, class: 'btn btn-secondary d-flex align-items-center' %>
-    <%= link_to 'Gerenciar Usuários', admin_users_path, class: 'btn btn-secondary d-flex align-items-center' %>
-    <%= link_to 'Nova Cabana', new_admin_cabana_path, class: 'btn btn-primary d-flex align-items-center' %>
+    <% if can_manage_reservations? %>
+      <%= link_to 'Gerenciar Usuários', admin_users_path, class: 'btn btn-secondary d-flex align-items-center' %>
+      <%= link_to 'Nova Cabana', new_admin_cabana_path, class: 'btn btn-primary d-flex align-items-center' %>
+    <% end %>
   </div>
 
   <div class="table-responsive">
@@ -13,7 +15,9 @@
       <thead class="table-light">
         <tr>
           <th class="py-2 px-4">Nome</th>
-          <th class="py-2 px-4">Preço</th>
+          <% unless hide_financials? %>
+            <th class="py-2 px-4">Preço</th>
+          <% end %>
           <th class="py-2 px-4">Filial</th>
           <th class="py-2 px-4">Café incluso</th>
           <th class="py-2 px-4">Ações</th>
@@ -23,25 +27,34 @@
         <% @cabanas.each do |cabana| %>
           <tr>
             <td class="py-2 px-4"><%= cabana.name %></td>
-            <td class="py-2 px-4"><%= number_to_currency(cabana.price) %></td>
+            <% unless hide_financials? %>
+              <td class="py-2 px-4"><%= number_to_currency(cabana.price) %></td>
+            <% end %>
             <td class="py-2 px-4"><%= cabana.filial.name %></td>
             <td class="py-2 px-4">
-              <%= form_with url: update_breakfast_inclusions_admin_cabana_path(cabana), method: :patch, local: true, class: 'd-flex flex-column gap-1' do %>
-                <% Cabana.breakfast_source_options.each do |_source, label, column| %>
-                  <div class="form-check mb-0">
-                    <%= hidden_field_tag "cabana[#{column}]", "0" %>
-                    <%= check_box_tag "cabana[#{column}]", "1", cabana.public_send(column), id: "cabana_#{cabana.id}_#{column}", class: 'form-check-input' %>
-                    <%= label_tag "cabana_#{cabana.id}_#{column}", label, class: 'form-check-label' %>
-                  </div>
+              <% if can_manage_reservations? %>
+                <%= form_with url: update_breakfast_inclusions_admin_cabana_path(cabana), method: :patch, local: true, class: 'd-flex flex-column gap-1' do %>
+                  <% Cabana.breakfast_source_options.each do |_source, label, column| %>
+                    <div class="form-check mb-0">
+                      <%= hidden_field_tag "cabana[#{column}]", "0" %>
+                      <%= check_box_tag "cabana[#{column}]", "1", cabana.public_send(column), id: "cabana_#{cabana.id}_#{column}", class: 'form-check-input' %>
+                      <%= label_tag "cabana_#{cabana.id}_#{column}", label, class: 'form-check-label' %>
+                    </div>
+                  <% end %>
+                  <%= submit_tag 'Salvar café', class: 'btn btn-sm btn-outline-success mt-1 align-self-start' %>
                 <% end %>
-                <%= submit_tag 'Salvar café', class: 'btn btn-sm btn-outline-success mt-1 align-self-start' %>
+              <% else %>
+                <% enabled_sources = Cabana.breakfast_source_options.select { |_source, _label, column| cabana.public_send(column) }.map { |_source, label, _column| label } %>
+                <%= enabled_sources.any? ? enabled_sources.join(', ') : 'Nenhum' %>
               <% end %>
             </td>
             <td class="py-2 px-4 d-flex gap-2">
               <%= link_to 'Visualizar', admin_cabana_path(cabana), class: 'btn btn-sm btn-info' %>
-              <%= link_to 'Editar', edit_admin_cabana_path(cabana), class: 'btn btn-sm btn-warning' %>
-              <%= link_to 'Editar Links de Importação', edit_import_links_admin_cabana_path(cabana), class: 'btn btn-sm btn-primary' %>
-              <%= button_to 'Excluir', admin_cabana_path(cabana), method: :delete, data: { confirm: 'Você tem certeza?' }, class: 'btn btn-sm btn-danger' %>
+              <% if can_manage_reservations? %>
+                <%= link_to 'Editar', edit_admin_cabana_path(cabana), class: 'btn btn-sm btn-warning' %>
+                <%= link_to 'Editar Links de Importação', edit_import_links_admin_cabana_path(cabana), class: 'btn btn-sm btn-primary' %>
+                <%= button_to 'Excluir', admin_cabana_path(cabana), method: :delete, data: { confirm: 'Você tem certeza?' }, class: 'btn btn-sm btn-danger' %>
+              <% end %>
             </td>
           </tr>
         <% end %>

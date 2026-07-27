@@ -229,9 +229,11 @@
   <!-- Header -->
   <div class="services-header">
     <h1>🛎️ Serviços</h1>
-    <p>Gerencie os serviços oferecidos nas suas filiais</p>
-    <%= link_to new_admin_service_path, class: 'btn btn-light' do %>
-      <i class="bi bi-plus-lg me-1"></i> Novo Serviço
+    <p><%= can_manage_reservations? ? 'Gerencie os serviços oferecidos nas suas filiais' : 'Consulte os serviços oferecidos nas filiais' %></p>
+    <% if can_manage_reservations? %>
+      <%= link_to new_admin_service_path, class: 'btn btn-light' do %>
+        <i class="bi bi-plus-lg me-1"></i> Novo Serviço
+      <% end %>
     <% end %>
   </div>
 
@@ -283,18 +285,22 @@
                 <span class="meta-item">✅ Marketplace</span>
               <% end %>
             </div>
-            <div class="service-price">
-              <div>Hóspede: <%= number_to_currency(service.price, unit: "R$") %></div>
-              <div>Parceria: <%= number_to_currency(service.partner_price, unit: "R$") %></div>
-            </div>
-            <div class="service-actions">
-              <%= link_to edit_admin_service_path(service), class: 'btn-action btn-edit' do %>
-                ✏️ Editar
-              <% end %>
+            <% unless hide_financials? %>
+              <div class="service-price">
+                <div>Hóspede: <%= number_to_currency(service.price, unit: "R$") %></div>
+                <div>Parceria: <%= number_to_currency(service.partner_price, unit: "R$") %></div>
+              </div>
+            <% end %>
+            <% if can_manage_reservations? %>
+              <div class="service-actions">
+                <%= link_to edit_admin_service_path(service), class: 'btn-action btn-edit' do %>
+                  ✏️ Editar
+                <% end %>
               <%= link_to admin_service_path(service), method: :delete, data: { turbo_method: :delete, turbo_confirm: 'Tem certeza que deseja excluir este serviço?' }, class: 'btn-action btn-delete' do %>
                 🗑️ Excluir
               <% end %>
             </div>
+            <% end %>
           </div>
         </div>
       <% end %>

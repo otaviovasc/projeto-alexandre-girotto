@@ -365,10 +365,12 @@
         <span class="info-label">Noites</span>
         <span class="info-value"><%= (@reserva.end_date - @reserva.start_date).to_i %></span>
       </div>
-      <div class="info-item">
-        <span class="info-label">Preço Total</span>
-        <span class="info-value highlight"><%= number_to_currency(@reserva.total_price, unit: 'R$ ', separator: ',', delimiter: '.') %></span>
-      </div>
+      <% unless hide_financials? %>
+        <div class="info-item">
+          <span class="info-label">Preço Total</span>
+          <span class="info-value highlight"><%= number_to_currency(@reserva.total_price, unit: 'R$ ', separator: ',', delimiter: '.') %></span>
+        </div>
+      <% end %>
     </div>
 
     <% if @reserva.observation.present? %>
@@ -379,7 +381,7 @@
     <% end %>
   </div>
 
-  <% if @reserva.reserva_payments.any? %>
+  <% if @reserva.reserva_payments.any? && !hide_financials? %>
     <% reservation_payments = @reserva.reserva_payments.order(:installment_number) %>
     <% message_payments = reservation_payments.select { |payment| payment.paid? || payment.waiting_payment? } %>
     <% first_payment = message_payments.find(&:confirmation_installment?) || message_payments.first %>
@@ -589,7 +591,7 @@
     <div class="info-card">
       <div class="ical-history-header">
         <h3 class="info-card-title" style="margin-bottom: 0; flex: 1;">Histórico de alterações do iCal</h3>
-        <% if @reserva.ical_date_changed? %>
+        <% if can_manage_reservations? && @reserva.ical_date_changed? %>
           <%= button_to acknowledge_ical_date_change_admin_reserva_path(@reserva),
               method: :patch,
               class: 'btn btn-secondary',
@@ -655,14 +657,14 @@
         <% end %>
       </div>
 
-      <% if @reserva.service_purchase_override? %>
+      <% if can_manage_reservations? && @reserva.service_purchase_override? %>
         <%= button_to 'Revogar liberação',
             update_service_purchase_access_admin_reserva_path(@reserva),
             method: :patch,
             params: { service_purchase_override: false },
             class: 'btn btn-secondary',
             form_class: 'd-inline' %>
-      <% elsif !normal_purchase_window_open && @reserva.start_date.present? && Date.current <= @reserva.start_date %>
+      <% elsif can_manage_reservations? && !normal_purchase_window_open && @reserva.start_date.present? && Date.current <= @reserva.start_date %>
         <%= button_to 'Liberar até o check-in',
             update_service_purchase_access_admin_reserva_path(@reserva),
             method: :patch,
@@ -672,20 +674,22 @@
       <% end %>
     </div>
 
-    <div class="purchase-access-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-      <div>
-        <span class="purchase-access-status normal">Cartão em até <%= @reserva.service_max_installments %>x</span>
-        <p class="purchase-access-copy">Vale somente para novas compras de serviços desta reserva. A hospedagem não é alterada.</p>
-      </div>
+    <% if can_manage_reservations? %>
+      <div class="purchase-access-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+        <div>
+          <span class="purchase-access-status normal">Cartão em até <%= @reserva.service_max_installments %>x</span>
+          <p class="purchase-access-copy">Vale somente para novas compras de serviços desta reserva. A hospedagem não é alterada.</p>
+        </div>
 
-      <%= form_with url: update_service_installments_admin_reserva_path(@reserva), method: :patch, local: true, class: 'd-flex align-items-center gap-2' do %>
-        <%= select_tag :service_max_installments,
-            options_for_select((1..12).map { |number| ["#{number}x", number] }, @reserva.service_max_installments),
-            class: 'form-select',
-            style: 'width: auto;' %>
-        <%= submit_tag 'Salvar parcelas', class: 'btn btn-primary' %>
-      <% end %>
-    </div>
+        <%= form_with url: update_service_installments_admin_reserva_path(@reserva), method: :patch, local: true, class: 'd-flex align-items-center gap-2' do %>
+          <%= select_tag :service_max_installments,
+              options_for_select((1..12).map { |number| ["#{number}x", number] }, @reserva.service_max_installments),
+              class: 'form-select',
+              style: 'width: auto;' %>
+          <%= submit_tag 'Salvar parcelas', class: 'btn btn-primary' %>
+        <% end %>
+      </div>
+    <% end %>
   </div>
 
   <div class="info-card">
@@ -700,7 +704,9 @@
         <% end %>
         <p class="purchase-access-copy">Os disparos ficam registrados aqui para acompanhamento.</p>
       </div>
-      <%= link_to 'Configurar e-mails', admin_reservation_email_templates_path, class: 'btn btn-outline-primary' %>
+      <% if can_manage_reservations? %>
+        <%= link_to 'Configurar e-mails', admin_reservation_email_templates_path, class: 'btn btn-outline-primary' %>
+      <% end %>
     </div>
 
     <% deliveries = @reserva.reservation_email_deliveries.includes(:reservation_email_template).order(:scheduled_at, :id) %>
@@ -739,7 +745,7 @@
     <% end %>
   </div>
 
-  <% if @pending_service_payments.present? %>
+  <% if @pending_service_payments.present? && !hide_financials? %>
     <div class="info-card">
       <h3 class="info-card-title">Pagamentos de serviços aguardando confirmação</h3>
       <p class="purchase-access-copy">Use para consultar a Cielo agora quando o hóspede já pagou e o serviço ainda não apareceu na reserva.</p>
@@ -807,9 +813,11 @@
               <% else %>
                 <span class="service-status-badge" style="background: #dcfce7; color: #166534;">Ativo</span>
               <% end %>
-              <span style="margin-left: 0.5rem; color: #059669; font-weight: 600;">
-                <%= number_to_currency((rs.unit_price_paid || rs.service.price_for(@reserva)) * rs.quantity, unit: 'R$ ', separator: ',', delimiter: '.') %>
-              </span>
+              <% unless hide_financials? %>
+                <span style="margin-left: 0.5rem; color: #059669; font-weight: 600;">
+                  <%= number_to_currency((rs.unit_price_paid || rs.service.price_for(@reserva)) * rs.quantity, unit: 'R$ ', separator: ',', delimiter: '.') %>
+                </span>
+              <% end %>
             </div>
           </div>
           <% if rs.observation.present? %>
@@ -838,7 +846,7 @@
   <div class="action-buttons">
     <% if @reserva.canceled? %>
       <%= link_to '← Reservas Canceladas', canceladas_admin_reservas_path, class: 'btn btn-secondary' %>
-    <% elsif @reserva.pending? && !@reserva.blocks_availability? %>
+    <% elsif can_manage_reservations? && @reserva.pending? && !@reserva.blocks_availability? %>
       <%= button_to confirm_reservation_admin_reserva_path(@reserva),
           method: :patch,
           class: 'btn btn-success',
@@ -847,7 +855,7 @@
         <i class="bi bi-calendar-check"></i> Reservado
       <% end %>
     <% end %>
-    <% unless @reserva.canceled? %>
+    <% if can_manage_reservations? && !@reserva.canceled? %>
       <%= link_to '✏️ Editar Reserva', edit_admin_reserva_path(@reserva), class: 'btn btn-primary' %>
       <%= link_to export_sheets_admin_reservas_path(redirect_to: 'show', id: @reserva.id), class: 'btn btn-warning', style: "background: #f59e0b; color: white;", data: { turbo_method: :get } do %>
         <i class="bi bi-cloud-upload"></i> Sincronizar com Sheets
@@ -859,8 +867,8 @@
           data: { turbo_confirm: 'Cancelar esta reserva? Ela sairá da operação ativa, mas o histórico será preservado.' } do %>
         <i class="bi bi-x-circle"></i> Cancelar reserva
       <% end %>
-      <%= link_to '← Voltar', admin_reservas_summary_path, class: 'btn btn-secondary' %>
     <% end %>
+    <%= link_to '← Voltar', admin_reservas_summary_path, class: 'btn btn-secondary' %>
   </div>
 </div>
 

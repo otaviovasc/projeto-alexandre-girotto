@@ -1,6 +1,7 @@
 class Admin::ServicePurchasesController < ApplicationController
   before_action :authenticate_user!
-  before_action :authorize_admin
+  before_action :authorize_admin_or_operations_viewer
+  before_action :block_operations_viewer!, only: [:closing]
 
   def index
     @selected_status = params[:status].presence || 'paid'
@@ -47,7 +48,4 @@ class Admin::ServicePurchasesController < ApplicationController
     nil
   end
 
-  def authorize_admin
-    redirect_to root_path, alert: 'Voce nao tem permissao para fazer isso.' unless current_user.admin?
-  end
 end

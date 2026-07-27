@@ -33,8 +33,10 @@
   <div class="d-flex gap-2 mb-4">
     <%= link_to 'Painel Administrativo', authenticated_root_path, class: 'btn btn-secondary d-flex align-items-center' %>
     <%= link_to 'Gerenciar Cabanas', admin_cabanas_path, class: 'btn btn-secondary d-flex align-items-center' %>
-    <%= link_to 'Gerenciar Usuários', admin_users_path, class: 'btn btn-secondary d-flex align-items-center' %>
-    <%= link_to 'Nova Reserva', new_admin_reserva_path, class: 'btn btn-primary d-flex align-items-center' %>
+    <% if can_manage_reservations? %>
+      <%= link_to 'Gerenciar Usuários', admin_users_path, class: 'btn btn-secondary d-flex align-items-center' %>
+      <%= link_to 'Nova Reserva', new_admin_reserva_path, class: 'btn btn-primary d-flex align-items-center' %>
+    <% end %>
   </div>
 
   <div class="table-responsive">
@@ -43,7 +45,9 @@
         <tr>
           <th class="py-2 px-4">Cabana</th>
           <th class="py-2 px-4">Usuário</th>
-          <th class="py-2 px-4">Preço</th>
+          <% unless hide_financials? %>
+            <th class="py-2 px-4">Preço</th>
+          <% end %>
           <th class="py-2 px-4">
             <%= link_to 'Data de Início ▲', admin_reservas_path(sort: 'start_date_asc'), class: 'text-decoration-none' %>
             |
@@ -62,12 +66,16 @@
           <tr>
             <td class="py-2 px-4"><%= reserva.cabana.name %></td>
             <td class="py-2 px-4"><%= reserva.user.email %></td>
-            <td class="py-2 px-4"><%= reserva.total_price %></td>
+            <% unless hide_financials? %>
+              <td class="py-2 px-4"><%= reserva.total_price %></td>
+            <% end %>
             <td class="py-2 px-4"><%= reserva.start_date.strftime("%d/%m/%Y") %></td>
             <td class="py-2 px-4"><%= reserva.end_date.strftime("%d/%m/%Y") %></td>
             <td class="py-2 px-4 d-flex gap-2">
               <%= link_to 'Detalhes', admin_reserva_path(reserva), class: 'btn btn-sm btn-primary' %>
-              <%= link_to 'Editar', edit_admin_reserva_path(reserva), class: 'btn btn-sm btn-warning' %>
+              <% if can_manage_reservations? %>
+                <%= link_to 'Editar', edit_admin_reserva_path(reserva), class: 'btn btn-sm btn-warning' %>
+              <% end %>
             </td>
           </tr>
         <% end %>
