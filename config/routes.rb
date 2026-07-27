@@ -113,6 +113,7 @@ Rails.application.routes.draw do
         post :toggle
       end
     end
+    resources :reservation_whatsapp_tasks, only: [:index, :update], path: 'mensagens_whatsapp'
 
     resources :service_purchases, only: [:index] do
       collection do

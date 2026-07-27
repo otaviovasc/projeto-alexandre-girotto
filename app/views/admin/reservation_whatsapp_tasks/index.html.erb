@@ -1,0 +1,231 @@
+<% content_for :head do %>
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+<% end %>
+
+<style>
+  .whatsapp-board {
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .whatsapp-board .page-kicker {
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 700;
+    font-size: .78rem;
+  }
+
+  .whatsapp-board .task-card {
+    border: 1px solid #dbe2ea;
+    border-left: 6px solid #2f6b46;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+    transition: background .2s ease, opacity .2s ease;
+  }
+
+  .whatsapp-board .task-card.task-overdue {
+    border-left-color: #f59e0b;
+    background: #fff7ed;
+  }
+
+  .whatsapp-board .task-card.task-completed {
+    border-left-color: #94a3b8;
+    background: #f1f5f9;
+    color: #64748b;
+    text-decoration: line-through;
+    opacity: .85;
+  }
+
+  .whatsapp-board .task-status {
+    border-radius: 999px;
+    padding: .35rem .7rem;
+    font-size: .8rem;
+    font-weight: 700;
+  }
+
+  .whatsapp-board .task-status.pending {
+    color: #166534;
+    background: #dcfce7;
+  }
+
+  .whatsapp-board .task-status.overdue {
+    color: #9a3412;
+    background: #fed7aa;
+  }
+
+  .whatsapp-board .task-status.completed {
+    color: #475569;
+    background: #e2e8f0;
+  }
+
+  .whatsapp-board .task-label {
+    color: #64748b;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .whatsapp-board .copy-feedback {
+    display: none;
+    color: #166534;
+    font-weight: 700;
+  }
+
+  .whatsapp-board .copy-feedback.is-visible {
+    display: inline;
+  }
+
+  .whatsapp-board .todo-checkbox {
+    width: 1.45rem;
+    height: 1.45rem;
+  }
+</style>
+
+<div class="container py-4 whatsapp-board" data-turbo-cache="false">
+  <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4">
+    <div>
+      <div class="page-kicker">Aplicativo Flavia</div>
+      <h1 class="h2 mb-2">Mensagens de WhatsApp</h1>
+      <p class="text-muted mb-0">
+        Mensagens do dia e atrasadas, montadas a partir dos e-mails automáticos.
+      </p>
+    </div>
+
+    <div class="text-md-end">
+      <div class="badge bg-dark fs-6 px-3 py-2">
+        <%= @pending_tasks.size %> pendente(s)
+      </div>
+      <div class="small text-muted mt-2">
+        Atualizado em <%= Time.current.strftime('%d/%m/%Y às %H:%M') %>
+      </div>
+    </div>
+  </div>
+
+  <% if @pending_tasks.any? %>
+    <div class="alert alert-warning border-0 shadow-sm">
+      <strong>🚨 (<%= @pending_tasks.size %>) mensagem(ns) com envio pendente.</strong>
+      <div class="mt-2">
+        <% @pending_by_template.each do |template_name, tasks| %>
+          <div>Mensagem de <%= template_name %>: <%= tasks.size %> pendente(s)</div>
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <div class="alert alert-success border-0 shadow-sm">
+      Nenhuma mensagem pendente para envio hoje.
+    </div>
+  <% end %>
+
+  <% if @tasks.any? %>
+    <div class="d-grid gap-3">
+      <% @tasks.each do |task| %>
+        <% overdue = task.overdue? %>
+        <% completed = task.completed? %>
+        <div class="task-card p-3 p-md-4 <%= 'task-overdue' if overdue %> <%= 'task-completed' if completed %>">
+          <div class="row g-3 align-items-center">
+            <div class="col-12 col-lg-2">
+              <div class="task-label">Mensagem</div>
+              <div class="fw-bold"><%= task.template_name %></div>
+              <div class="small text-muted">
+                <%= task.scheduled_at.strftime('%d/%m às %H:%M') %>
+              </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-2">
+              <div class="task-label">Hóspede</div>
+              <div class="fw-bold"><%= task.guest_name.presence || 'Não informado' %></div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-2">
+              <div class="task-label">Cabana</div>
+              <div class="fw-bold"><%= task.cabana_name %></div>
+            </div>
+
+            <div class="col-6 col-lg-1">
+              <div class="task-label">Reserva</div>
+              <div class="fw-bold">#<%= task.reserva_id %></div>
+            </div>
+
+            <div class="col-6 col-lg-2">
+              <div class="task-label">Número</div>
+              <div class="fw-bold"><%= task.guest_phone.presence || 'Não informado' %></div>
+            </div>
+
+            <div class="col-12 col-lg-3">
+              <div class="d-flex flex-wrap justify-content-lg-end align-items-center gap-3">
+                <% status_class = completed ? 'completed' : (overdue ? 'overdue' : 'pending') %>
+                <% status_label = completed ? 'Enviado' : (overdue ? 'Atrasado' : 'Pendente') %>
+                <span class="task-status <%= status_class %>"><%= status_label %></span>
+
+                <textarea id="whatsapp-task-message-<%= task.id %>" class="visually-hidden"><%= task.message_body %></textarea>
+                <button type="button"
+                        class="btn btn-outline-success"
+                        data-copy-target="whatsapp-task-message-<%= task.id %>">
+                  Copiar
+                </button>
+                <span class="copy-feedback" data-copy-feedback-for="whatsapp-task-message-<%= task.id %>">Copiado</span>
+
+                <%= form_with url: admin_reservation_whatsapp_task_path(task), method: :patch, local: true, class: 'm-0' do %>
+                  <%= hidden_field_tag :sent, '0' %>
+                  <%= check_box_tag :sent, '1', completed, id: "sent_task_#{task.id}", class: 'form-check-input todo-checkbox', title: 'Marcar como enviado', onchange: 'this.form.submit()' %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="card shadow-sm border-0">
+      <div class="card-body py-5 text-center text-muted">
+        Não há mensagens programadas para hoje.
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<script>
+  function setupWhatsappTaskCopy() {
+    document.querySelectorAll("[data-copy-target]").forEach(function(button) {
+      if (button.dataset.copyBound === "true") return;
+      button.dataset.copyBound = "true";
+
+      button.addEventListener("click", function() {
+        var targetId = button.getAttribute("data-copy-target");
+        var textarea = document.getElementById(targetId);
+        if (!textarea) return;
+
+        var feedback = document.querySelector("[data-copy-feedback-for='" + targetId + "']");
+        var showFeedback = function() {
+          if (!feedback) return;
+          feedback.classList.add("is-visible");
+          setTimeout(function() { feedback.classList.remove("is-visible"); }, 1800);
+        };
+
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(textarea.value).then(showFeedback).catch(function() {
+            textarea.classList.remove("visually-hidden");
+            textarea.select();
+            document.execCommand("copy");
+            textarea.classList.add("visually-hidden");
+            showFeedback();
+          });
+        } else {
+          textarea.classList.remove("visually-hidden");
+          textarea.select();
+          document.execCommand("copy");
+          textarea.classList.add("visually-hidden");
+          showFeedback();
+        }
+      });
+    });
+  }
+
+  document.addEventListener("turbo:load", setupWhatsappTaskCopy);
+  document.addEventListener("DOMContentLoaded", setupWhatsappTaskCopy);
+</script>

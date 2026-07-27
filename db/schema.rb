@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_25_165000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_27_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -304,6 +304,27 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_25_165000) do
     t.index ["trigger_key"], name: "index_reservation_email_templates_on_trigger_key", unique: true
   end
 
+  create_table "reservation_whatsapp_tasks", force: :cascade do |t|
+    t.bigint "reserva_id", null: false
+    t.bigint "reservation_email_template_id"
+    t.string "trigger_key", null: false
+    t.string "template_name", null: false
+    t.text "message_body", null: false
+    t.datetime "scheduled_at", null: false
+    t.date "scheduled_on", null: false
+    t.datetime "completed_at"
+    t.date "morning_notified_on"
+    t.date "evening_notified_on"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["completed_at"], name: "index_reservation_whatsapp_tasks_on_completed_at"
+    t.index ["reserva_id", "reservation_email_template_id"], name: "idx_reservation_whatsapp_tasks_unique_template", unique: true
+    t.index ["reserva_id"], name: "index_reservation_whatsapp_tasks_on_reserva_id"
+    t.index ["reservation_email_template_id"], name: "idx_reservation_whatsapp_tasks_on_template_id"
+    t.index ["scheduled_on"], name: "index_reservation_whatsapp_tasks_on_scheduled_on"
+    t.index ["trigger_key"], name: "index_reservation_whatsapp_tasks_on_trigger_key"
+  end
+
   create_table "reservas", force: :cascade do |t|
     t.date "start_date"
     t.date "end_date"
@@ -426,6 +447,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_25_165000) do
   add_foreign_key "reserva_services", "services"
   add_foreign_key "reservation_email_deliveries", "reservas"
   add_foreign_key "reservation_email_deliveries", "reservation_email_templates"
+  add_foreign_key "reservation_whatsapp_tasks", "reservas"
+  add_foreign_key "reservation_whatsapp_tasks", "reservation_email_templates"
   add_foreign_key "reservas", "cabanas"
   add_foreign_key "reservas", "users"
   add_foreign_key "reservas", "users", column: "canceled_by_id"

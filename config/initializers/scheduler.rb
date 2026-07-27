@@ -72,6 +72,45 @@ scheduler.every '3m', first_in: '1m', overlap: false do
   end
 end
 
+scheduler.cron '5 0 * * * America/Sao_Paulo', overlap: false do
+  next unless EmailAutomationSetting.enabled?
+
+  Rails.logger.info 'Preparando mensagens de WhatsApp do dia...'
+  begin
+    result = ReservationWhatsappTaskMaterializer.run
+    Rails.logger.info(
+      "Mensagens WhatsApp preparadas: #{result.checked} verificadas, " \
+      "#{result.created} criadas, #{result.updated} atualizadas."
+    )
+  rescue => e
+    Rails.logger.error "Erro ao preparar mensagens WhatsApp: #{e.message}"
+  end
+end
+
+scheduler.cron '0 7 * * * America/Sao_Paulo', overlap: false do
+  next unless EmailAutomationSetting.enabled?
+
+  Rails.logger.info 'Conferindo lembrete de WhatsApp das 7h...'
+  begin
+    result = ReservationWhatsappTaskReminder.run(slot: :morning)
+    result.messages.each { |message| Rails.logger.warn(message) }
+  rescue => e
+    Rails.logger.error "Erro no lembrete de WhatsApp das 7h: #{e.message}"
+  end
+end
+
+scheduler.cron '0 18 * * * America/Sao_Paulo', overlap: false do
+  next unless EmailAutomationSetting.enabled?
+
+  Rails.logger.info 'Conferindo lembrete de WhatsApp das 18h...'
+  begin
+    result = ReservationWhatsappTaskReminder.run(slot: :evening)
+    result.messages.each { |message| Rails.logger.warn(message) }
+  rescue => e
+    Rails.logger.error "Erro no lembrete de WhatsApp das 18h: #{e.message}"
+  end
+end
+
 scheduler.every '1d', first_in: '15m', overlap: false do
   Rails.logger.info 'Limpando PDFs antigos de fotos impressas...'
   begin
