@@ -19,7 +19,8 @@ class Admin::ReservationEmailTemplatesController < ApplicationController
       send_time: '09:00',
       filial_scope: 'all',
       subject: '',
-      body: ''
+      body: '',
+      whatsapp_body: ''
     )
   end
 
@@ -82,6 +83,7 @@ class Admin::ReservationEmailTemplatesController < ApplicationController
       :filial_scope,
       :subject,
       :body,
+      :whatsapp_body,
       :active
     )
   end

@@ -50,14 +50,28 @@
 
       <hr>
 
+      <h2 class="h5 mb-3">E-mail automático</h2>
+
       <div class="mb-3">
-        <%= form.label :subject, 'Assunto', class: 'form-label' %>
+        <%= form.label :subject, 'Assunto do e-mail', class: 'form-label' %>
         <%= form.text_field :subject, class: 'form-control' %>
       </div>
 
       <div class="mb-3">
-        <%= form.label :body, 'Mensagem', class: 'form-label' %>
+        <%= form.label :body, 'Mensagem do e-mail', class: 'form-label' %>
         <%= form.text_area :body, rows: 12, class: 'form-control' %>
+      </div>
+
+      <hr>
+
+      <h2 class="h5 mb-3">WhatsApp para a Flavia copiar</h2>
+
+      <div class="mb-3">
+        <%= form.label :whatsapp_body, 'Mensagem do WhatsApp', class: 'form-label' %>
+        <%= form.text_area :whatsapp_body, rows: 8, class: 'form-control' %>
+        <div class="form-text">
+          Use um texto natural para colar direto no grupo de estadia. Evite assinatura, telefone e frases de e-mail.
+        </div>
       </div>
 
       <div class="alert alert-light border">

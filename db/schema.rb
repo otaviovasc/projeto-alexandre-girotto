@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_27_200000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_28_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -295,6 +295,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_27_200000) do
     t.string "filial_scope", default: "all", null: false
     t.string "subject", null: false
     t.text "body", null: false
+    t.text "whatsapp_body", null: false
     t.boolean "active", default: true, null: false
     t.boolean "system_template", default: false, null: false
     t.datetime "created_at", null: false
