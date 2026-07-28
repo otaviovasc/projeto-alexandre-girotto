@@ -97,15 +97,22 @@
 
                         <div>
                           <label class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Data do serviço</label>
-                          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                            <% @available_dates.each do |d| %>
-                              <label class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 cursor-pointer hover:border-[#c8a96e] hover:bg-[#fffdf8]">
-                                <%= check_box_tag "service_dates[]", d.to_s, false,
-                                    class: "rounded border-gray-300 text-[#1a2e1a] focus:ring-[#c8a96e] w-4 h-4 cursor-pointer" %>
-                                <span><%= "#{dias_semana[d.wday]}, #{d.day}/#{d.month}" %></span>
-                              </label>
-                            <% end %>
-                          </div>
+                          <% service_dates = portal_service_dates(service, @reserva) %>
+                          <% if service_dates.any? %>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                              <% service_dates.each do |d| %>
+                                <label class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 cursor-pointer hover:border-[#c8a96e] hover:bg-[#fffdf8]">
+                                  <%= check_box_tag "service_dates[]", d.to_s, false,
+                                      class: "rounded border-gray-300 text-[#1a2e1a] focus:ring-[#c8a96e] w-4 h-4 cursor-pointer" %>
+                                  <span><%= "#{dias_semana[d.wday]}, #{d.day}/#{d.month}" %></span>
+                                </label>
+                              <% end %>
+                            </div>
+                          <% else %>
+                            <div class="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
+                              Sem datas disponíveis para este serviço nesta reserva.
+                            </div>
+                          <% end %>
                         </div>
 
                         <% if fondue_service?(service) %>

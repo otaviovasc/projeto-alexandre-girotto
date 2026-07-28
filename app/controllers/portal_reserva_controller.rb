@@ -7,11 +7,14 @@ class PortalReservaController < ApplicationController
   ]
   before_action :ensure_service_purchase_window_open!, only: [:servicos, :adicionar, :remover, :revisar_servicos, :pagar]
   helper_method :food_service_for_observation?, :decoration_service_for_observation?,
-                :fondue_service?, :photo_print_service?, :service_price_for
+                :fondue_service?, :photo_print_service?, :service_price_for,
+                :portal_service_dates
 
   PARTNER_SERVICE_CREDIT_CARD_INTEREST_RATE = 3
   PHOTO_PRINT_ALLOWED_CONTENT_TYPES = %w[image/jpeg image/png].freeze
   PHOTO_PRINT_MAX_FILE_SIZE = 10.megabytes
+  PORTAL_CHECKIN_AFTERNOON_NOTE = "de tarde após check-in".freeze
+  PORTAL_CHECKOUT_MORNING_NOTE = "de manhã antes do check-out".freeze
 
   # GET /minha-reserva
   def index
@@ -152,16 +155,19 @@ class PortalReservaController < ApplicationController
       redirect_to portal_reserva_servicos_path and return
     end
 
-    observation = observation_for_service(service)
-
     if service_dates_param.include?("all_days")
-      dates_to_add = (@reserva.start_date..@reserva.end_date).to_a
+      dates_to_add = portal_service_dates(service, @reserva)
     else
       dates_to_add = service_dates_param.filter_map { |d| Date.parse(d) rescue nil }
     end
 
     if dates_to_add.empty?
       flash[:alert] = "Selecione pelo menos uma data válida."
+      redirect_to portal_reserva_servicos_path and return
+    end
+
+    unless dates_to_add.all? { |date| portal_service_date_allowed?(service, @reserva, date) }
+      flash[:alert] = portal_service_date_error_message(service)
       redirect_to portal_reserva_servicos_path and return
     end
 
@@ -179,7 +185,7 @@ class PortalReservaController < ApplicationController
               service:      service,
               quantity:     quantity,
               service_date: date,
-              observation:   observation
+              observation:   observation_for_service(service, date)
             )
             if cart_item.save
               created_cart_items << cart_item
@@ -366,13 +372,13 @@ class PortalReservaController < ApplicationController
     end
   end
 
-  def observation_for_service(service)
-    return unless food_service_for_observation?(service) || decoration_service_for_observation?(service)
-
+  def observation_for_service(service, service_date = nil)
     notes = []
+    notes << automatic_observation_for_service_date(service, service_date)
+
     notes << "Fondue: #{fondue_choice}" if fondue_service?(service)
     notes << params[:observation].to_s.strip if params[:observation].present?
-    notes.join(". ").presence
+    notes.compact_blank.join(". ").presence
   end
 
   def fondue_choice
@@ -402,6 +408,71 @@ class PortalReservaController < ApplicationController
         render json: { found: false, paid: false, status: "fnrh_pending" }, status: :forbidden
       end
     end
+  end
+
+  def portal_service_dates(service, reserva = @reserva)
+    return [] if reserva.blank? || reserva.start_date.blank? || reserva.end_date.blank?
+
+    (reserva.start_date..reserva.end_date).select do |date|
+      portal_service_date_allowed?(service, reserva, date)
+    end
+  end
+
+  def portal_service_date_allowed?(service, reserva, date)
+    return false if service.blank? || reserva.blank? || date.blank?
+    return false if reserva.start_date.blank? || reserva.end_date.blank?
+    return false unless date.between?(reserva.start_date, reserva.end_date)
+    return false if checkout_date?(reserva, date) && checkout_blocked_service?(service)
+
+    true
+  end
+
+  def checkout_blocked_service?(service)
+    afternoon_checkin_note_service?(service) ||
+      cold_cuts_service?(service) ||
+      fondue_service?(service)
+  end
+
+  def automatic_observation_for_service_date(service, service_date)
+    return if service_date.blank?
+
+    return PORTAL_CHECKIN_AFTERNOON_NOTE if afternoon_checkin_note_service?(service)
+
+    if massage_service?(service)
+      return PORTAL_CHECKIN_AFTERNOON_NOTE if checkin_date?(@reserva, service_date)
+      return PORTAL_CHECKOUT_MORNING_NOTE if checkout_date?(@reserva, service_date)
+    end
+  end
+
+  def portal_service_date_error_message(service)
+    if checkout_blocked_service?(service)
+      "#{service.name} não pode ser selecionado para o dia do checkout."
+    else
+      "Selecione uma data válida para este serviço."
+    end
+  end
+
+  def afternoon_checkin_note_service?(service)
+    normalized_name = service.name.to_s.parameterize
+    normalized_name.include?("trilha") ||
+      normalized_name.include?("cavalo") ||
+      normalized_name.include?("piquenique")
+  end
+
+  def massage_service?(service)
+    service.name.to_s.parameterize.include?("massagem")
+  end
+
+  def cold_cuts_service?(service)
+    service.name.to_s.parameterize.match?(/tabua.*frio/)
+  end
+
+  def checkin_date?(reserva, date)
+    reserva.present? && date == reserva.start_date
+  end
+
+  def checkout_date?(reserva, date)
+    reserva.present? && date == reserva.end_date
   end
 
   def ensure_service_purchase_window_open!
