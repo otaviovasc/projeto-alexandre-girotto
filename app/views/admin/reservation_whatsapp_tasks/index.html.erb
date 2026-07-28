@@ -92,7 +92,7 @@
   }
 </style>
 
-<div class="container py-4 whatsapp-board" data-turbo-cache="false">
+<div class="container py-4 whatsapp-board" data-turbo-cache="false" data-board-date="<%= Date.current.iso8601 %>">
   <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4">
     <div>
       <div class="page-kicker">Aplicativo Flavia</div>
@@ -257,4 +257,45 @@
 
   document.addEventListener("turbo:load", setupWhatsappTaskCopy);
   document.addEventListener("DOMContentLoaded", setupWhatsappTaskCopy);
+
+  function setupWhatsappTaskDayRefresh() {
+    var board = document.querySelector("[data-board-date]");
+    if (!board || board.dataset.dayRefreshBound === "true") return;
+    board.dataset.dayRefreshBound = "true";
+
+    var boardDate = board.getAttribute("data-board-date");
+    var reloadIfDayChanged = function() {
+      var today = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Sao_Paulo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(new Date());
+
+      if (today !== boardDate) window.location.reload();
+    };
+
+    var scheduleNextCheck = function() {
+      var now = new Date();
+      var nextCheck = new Date(now);
+      nextCheck.setHours(24, 2, 0, 0);
+      var delay = Math.max(nextCheck.getTime() - now.getTime(), 60000);
+
+      window.setTimeout(function() {
+        reloadIfDayChanged();
+        scheduleNextCheck();
+      }, delay);
+    };
+
+    document.addEventListener("visibilitychange", function() {
+      if (!document.hidden) reloadIfDayChanged();
+    });
+
+    window.addEventListener("focus", reloadIfDayChanged);
+    window.addEventListener("pageshow", reloadIfDayChanged);
+    scheduleNextCheck();
+  }
+
+  document.addEventListener("turbo:load", setupWhatsappTaskDayRefresh);
+  document.addEventListener("DOMContentLoaded", setupWhatsappTaskDayRefresh);
 </script>
