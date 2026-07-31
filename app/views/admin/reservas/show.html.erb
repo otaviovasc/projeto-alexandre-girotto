@@ -381,7 +381,52 @@
     <% end %>
   </div>
 
-  <% unless hide_financials? %>
+  <% if !hide_financials? && @reserva.paid? && @reserva.reserva_payments.none? %>
+    <% next_extra_due_at = 1.day.from_now.in_time_zone('America/Sao_Paulo').strftime('%Y-%m-%dT%H:%M') %>
+    <% installment_options = [['Padrão: até 6x', '']] + (1..12).map { |number| ["Até #{number}x", number] } %>
+
+    <div class="info-card">
+      <h3 class="info-card-title">Pagamento da reserva</h3>
+      <p class="purchase-access-copy">Crie um link público com aceite de termos antes de seguir para a Cielo.</p>
+
+      <div class="info-item" style="margin-top: 1rem;">
+        <span class="info-label">Adicionar pagamento pendente</span>
+        <%= form_with url: admin_reserva_payments_path,
+            method: :post,
+            local: true,
+            class: 'mt-2 d-flex flex-wrap gap-2 align-items-end' do |form| %>
+          <%= hidden_field_tag :reserva_id, @reserva.id %>
+          <div>
+            <%= form.label :amount, 'Valor', class: 'form-label mb-1' %>
+            <%= form.text_field :amount,
+                class: 'form-control form-control-sm',
+                placeholder: 'Ex.: 500,00',
+                style: 'max-width: 120px;' %>
+          </div>
+          <div>
+            <%= form.label :due_at, 'Prazo', class: 'form-label mb-1' %>
+            <%= form.datetime_local_field :due_at,
+                value: next_extra_due_at,
+                class: 'form-control form-control-sm' %>
+          </div>
+          <div>
+            <%= form.label :max_credit_card_installments, 'Parcelas no cartão', class: 'form-label mb-1' %>
+            <%= form.select :max_credit_card_installments,
+                options_for_select(installment_options, ReservaPayment::DEFAULT_MAX_CREDIT_CARD_INSTALLMENTS),
+                {},
+                class: 'form-select form-select-sm' %>
+          </div>
+          <%= form.submit 'Gerar pagamento pendente',
+              class: 'btn btn-sm btn-primary',
+              data: { turbo_confirm: 'Gerar pagamento pendente para esta reserva?' } %>
+        <% end %>
+      </div>
+
+      <div class="empty-state">Nenhum link ativo para enviar ao hóspede.</div>
+    </div>
+  <% end %>
+
+  <% if @reserva.reserva_payments.any? && !hide_financials? %>
     <% reservation_payments = @reserva.reserva_payments.order(:installment_number) %>
     <% message_payments = reservation_payments.select { |payment| payment.paid? || payment.waiting_payment? } %>
     <% first_payment = message_payments.find(&:confirmation_installment?) || message_payments.first %>
