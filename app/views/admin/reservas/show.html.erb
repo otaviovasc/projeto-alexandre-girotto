@@ -381,7 +381,7 @@
     <% end %>
   </div>
 
-  <% if @reserva.reserva_payments.any? && !hide_financials? %>
+  <% unless hide_financials? %>
     <% reservation_payments = @reserva.reserva_payments.order(:installment_number) %>
     <% message_payments = reservation_payments.select { |payment| payment.paid? || payment.waiting_payment? } %>
     <% first_payment = message_payments.find(&:confirmation_installment?) || message_payments.first %>
@@ -533,7 +533,7 @@
 
       <% if active_payment_count < 3 %>
         <div class="info-item" style="margin-top: 1rem;">
-          <span class="info-label">Adicionar parcela</span>
+          <span class="info-label">Adicionar pagamento pendente</span>
           <%= form_with url: admin_reserva_payments_path,
               method: :post,
               local: true,
@@ -559,9 +559,11 @@
                   {},
                   class: 'form-select form-select-sm' %>
             </div>
-            <%= form.submit 'Gerar mais uma parcela',
+            <%= form.submit(
+                active_payment_count.zero? ? 'Gerar pagamento pendente' : 'Gerar mais uma parcela',
                 class: 'btn btn-sm btn-primary',
-                data: { turbo_confirm: 'Gerar mais uma parcela para esta reserva?' } %>
+                data: { turbo_confirm: 'Gerar pagamento pendente para esta reserva?' }
+              ) %>
           <% end %>
         </div>
       <% end %>
