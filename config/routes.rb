@@ -62,6 +62,7 @@ Rails.application.routes.draw do
         patch 'update_group_created'
         patch 'acknowledge_ical_date_change'
         patch 'update_service_purchase_access'
+        patch 'update_service_purchase_late_fee'
         patch 'update_service_installments'
         patch 'sync_service_payment'
         patch 'confirm_reservation'

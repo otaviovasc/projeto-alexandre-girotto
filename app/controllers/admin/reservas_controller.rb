@@ -7,7 +7,8 @@ class Admin::ReservasController < ApplicationController
   before_action :block_operations_viewer!, unless: :operations_viewer_allowed_action?
   before_action :set_reserva, only: [
     :edit, :update, :destroy, :cancel, :show, :update_observation, :update_group_created,
-    :acknowledge_ical_date_change, :update_service_purchase_access, :update_service_installments, :sync_fnrh,
+    :acknowledge_ical_date_change, :update_service_purchase_access, :update_service_purchase_late_fee,
+    :update_service_installments, :sync_fnrh,
     :fnrh_check_in, :fnrh_no_show, :fnrh_checkout, :fnrh_cancel, :fnrh_bypass_precheckin,
     :confirm_reservation, :sync_service_payment
   ]
@@ -507,17 +508,54 @@ class Admin::ReservasController < ApplicationController
   def update_service_purchase_access
     enabled = ActiveModel::Type::Boolean.new.cast(params[:service_purchase_override])
 
-    if enabled && (@reserva.start_date.blank? || Date.current > @reserva.start_date)
-      redirect_to admin_reserva_path(@reserva), alert: 'O check-in desta reserva já passou; não é possível liberar novas compras.'
-      return
+    if enabled
+      deadline = service_purchase_override_deadline_param || @reserva.end_date || @reserva.start_date
+
+      if deadline.blank?
+        redirect_to admin_reserva_path(@reserva), alert: 'Informe uma data final para liberar a compra de serviços.'
+        return
+      end
+
+      if Date.current > deadline
+        redirect_to admin_reserva_path(@reserva), alert: 'A data final da liberação já passou.'
+        return
+      end
+
+      if @reserva.end_date.present? && deadline > @reserva.end_date
+        redirect_to admin_reserva_path(@reserva), alert: 'A liberação de compra não pode passar do check-out.'
+        return
+      end
+
+      @reserva.update_columns(
+        service_purchase_override: true,
+        service_purchase_override_until: deadline,
+        updated_at: Time.current
+      )
+    else
+      @reserva.update_columns(
+        service_purchase_override: false,
+        service_purchase_override_until: nil,
+        updated_at: Time.current
+      )
     end
 
-    @reserva.update_columns(service_purchase_override: enabled, updated_at: Time.current)
-
     message = if enabled
-                "Compra de serviços liberada para esta reserva até o check-in em #{@reserva.start_date.strftime('%d/%m/%Y')}."
+                "Compra de serviços liberada para esta reserva até #{deadline.strftime('%d/%m/%Y')}."
               else
                 'Liberação especial de compra de serviços revogada.'
+              end
+
+    redirect_to admin_reserva_path(@reserva), notice: message
+  end
+
+  def update_service_purchase_late_fee
+    waived = ActiveModel::Type::Boolean.new.cast(params[:service_purchase_late_fee_waived])
+    @reserva.update_columns(service_purchase_late_fee_waived: waived, updated_at: Time.current)
+
+    message = if waived
+                'Taxa administrativa para compra fora do prazo anulada para esta reserva.'
+              else
+                'Taxa administrativa para compra fora do prazo reativada para esta reserva.'
               end
 
     redirect_to admin_reserva_path(@reserva), notice: message
@@ -743,6 +781,14 @@ class Admin::ReservasController < ApplicationController
     else
       { notice: 'A Cielo ainda mostra este pagamento como aguardando.' }
     end
+  end
+
+  def service_purchase_override_deadline_param
+    return if params[:service_purchase_override_until].blank?
+
+    Date.iso8601(params[:service_purchase_override_until].to_s)
+  rescue ArgumentError
+    nil
   end
 
  

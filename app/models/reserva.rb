@@ -1,7 +1,10 @@
+require 'bigdecimal'
 require 'uri'
 
 class Reserva < ApplicationRecord
   SERVICE_PURCHASE_BLOCK_DAYS_BEFORE_CHECKIN = 10
+  SERVICE_PURCHASE_LATE_FEE = BigDecimal("50")
+  SERVICE_PURCHASE_LATE_FEE_LABEL = "taxa administrativa para compra fora do prazo"
 
   attr_accessor :include_breakfast, :breakfast_quantity
 
@@ -39,6 +42,7 @@ class Reserva < ApplicationRecord
             format: { with: URI::MailTo::EMAIL_REGEXP },
             allow_blank: true
   validates :service_max_installments, inclusion: { in: 1..12 }
+  validate :service_purchase_override_until_within_stay
 
   enum payment_status: {
     pending: 'pending',
@@ -133,11 +137,27 @@ class Reserva < ApplicationRecord
   end
 
   def service_purchase_override_open?(date = Date.current)
-    service_purchase_override? && start_date.present? && date <= start_date
+    service_purchase_override? && service_purchase_override_deadline.present? && date <= service_purchase_override_deadline
   end
 
   def service_purchase_override_used?(date = Date.current)
     !service_purchase_regular_window_open?(date) && service_purchase_override_open?(date)
+  end
+
+  def service_purchase_override_deadline
+    service_purchase_override_until.presence || start_date
+  end
+
+  def service_purchase_late_fee_applicable?(date = Date.current)
+    service_purchase_override_used?(date) && !service_purchase_late_fee_waived?
+  end
+
+  def service_purchase_late_fee_amount(date = Date.current)
+    service_purchase_late_fee_applicable?(date) ? SERVICE_PURCHASE_LATE_FEE : 0.to_d
+  end
+
+  def service_purchase_late_fee_label
+    SERVICE_PURCHASE_LATE_FEE_LABEL
   end
 
   def service_purchase_closed_message
@@ -257,6 +277,14 @@ class Reserva < ApplicationRecord
     end
   end
 
+  def service_purchase_override_until_within_stay
+    return if service_purchase_override_until.blank?
+
+    if end_date.present? && service_purchase_override_until > end_date
+      errors.add(:service_purchase_override_until, "não pode passar do check-out.")
+    end
+  end
+
   def check_and_cancel_expired_reservations
     if expired? && waiting_payment?
       cancel_for_operations!(by: nil, reason: 'Pagamento vencido sem confirmação.')
@@ -360,7 +388,7 @@ class Reserva < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    ["blocks_availability", "breakfast_manual_override", "cabana_id", "canceled_at", "canceled_by_id", "cancellation_reason", "created_at", "early_checkin", "end_date", "group_created", "guest_email", "guest_name", "guest_phone", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "late_checkout", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_max_installments", "service_purchase_override", "start_date", "total_price", "updated_at", "user_id"]
+    ["blocks_availability", "breakfast_manual_override", "cabana_id", "canceled_at", "canceled_by_id", "cancellation_reason", "created_at", "early_checkin", "end_date", "group_created", "guest_email", "guest_name", "guest_phone", "ical_date_change_since", "ical_missing_since", "ical_uid", "ical_uid_from_feed", "id", "imported_end_date", "imported_start_date", "late_checkout", "manual_override", "partnership_creator_id", "payment_expires_at", "payment_link_id", "payment_link_url", "payment_status", "platform_uid", "service_max_installments", "service_purchase_late_fee_waived", "service_purchase_override", "service_purchase_override_until", "start_date", "total_price", "updated_at", "user_id"]
   end
 
   private

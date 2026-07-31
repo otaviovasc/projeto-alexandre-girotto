@@ -32,6 +32,34 @@ class ReservaTest < ActiveSupport::TestCase
     assert_not reserva.service_purchase_window_open?(Date.new(2026, 1, 27))
   end
 
+  test "service purchase override can use selected date through checkout" do
+    reserva = Reserva.new(
+      start_date: Date.new(2026, 1, 26),
+      end_date: Date.new(2026, 1, 28),
+      service_purchase_override: true,
+      service_purchase_override_until: Date.new(2026, 1, 28)
+    )
+
+    assert reserva.service_purchase_window_open?(Date.new(2026, 1, 26))
+    assert reserva.service_purchase_window_open?(Date.new(2026, 1, 28))
+    assert_not reserva.service_purchase_window_open?(Date.new(2026, 1, 29))
+  end
+
+  test "service purchase late fee applies after normal deadline unless waived" do
+    reserva = Reserva.new(
+      start_date: Date.new(2026, 1, 26),
+      end_date: Date.new(2026, 1, 28),
+      service_purchase_override: true,
+      service_purchase_override_until: Date.new(2026, 1, 28)
+    )
+
+    assert_equal BigDecimal("50"), reserva.service_purchase_late_fee_amount(Date.new(2026, 1, 20))
+
+    reserva.service_purchase_late_fee_waived = true
+
+    assert_equal 0.to_d, reserva.service_purchase_late_fee_amount(Date.new(2026, 1, 20))
+  end
+
   test "recognizes reservations marked as partnership" do
     assert Reserva.new(user: User.new(partner: true)).partnership_reservation?
     assert Reserva.new(user: User.new(partner: false), partnership_creator_id: 123).partnership_reservation?

@@ -62,6 +62,7 @@ class PaymentStatusProcessor
             payment_expires_at: cart_item.payment_expires_at,
             unit_price_paid: cart_item.unit_price_paid,
             total_paid: cart_item.total_paid,
+            service_late_fee_amount: cart_item.service_late_fee_amount,
             paid_at: Time.current,
             observation: cart_item.observation.presence,
             purchased_after_service_deadline: cart_item.purchased_after_service_deadline?
@@ -70,7 +71,7 @@ class PaymentStatusProcessor
           created_reserva_services << reserva_service
         end
 
-        increment_reserva_total!(cart_item.reserva, cart_item.total_paid)
+        increment_reserva_total!(cart_item.reserva, (cart_item.total_paid || 0).to_d + (cart_item.service_late_fee_amount || 0).to_d)
         cart_item.destroy!
       end
     end
@@ -150,7 +151,7 @@ class PaymentStatusProcessor
 
   def increment_reserva_totals!(reserva_services)
     reserva_services.group_by(&:reserva).each do |reserva, services|
-      total = services.sum { |reserva_service| reserva_service.total_paid || 0 }
+      total = services.sum { |reserva_service| (reserva_service.total_paid || 0).to_d + (reserva_service.service_late_fee_amount || 0).to_d }
       increment_reserva_total!(reserva, total)
     end
   end

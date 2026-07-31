@@ -128,6 +128,7 @@ class PortalReservaController < ApplicationController
     
     # Apenas itens adicionados nesta sessão do portal
     @portal_cart_items = portal_cart_items(@reserva).includes(:service)
+    @service_purchase_late_fee_amount = service_purchase_late_fee_amount_for(@reserva, @portal_cart_items)
 
     # Datas disponíveis para selecionar (dentro do período da reserva)
     @available_dates = (@reserva.start_date..@reserva.end_date).to_a
@@ -244,6 +245,7 @@ class PortalReservaController < ApplicationController
     end
 
     @portal_cart_items = portal_cart_items(@reserva).includes(:service).order(:service_date, :id)
+    @service_purchase_late_fee_amount = service_purchase_late_fee_amount_for(@reserva, @portal_cart_items)
 
     if @portal_cart_items.empty?
       flash[:alert] = "Seu carrinho está vazio."
@@ -260,6 +262,7 @@ class PortalReservaController < ApplicationController
     @reserva = Reserva.find(session[:portal_reserva_id])
     expire_stale_portal_cart_items(@reserva)
     @portal_cart_items = portal_cart_items(@reserva).includes(:service)
+    @service_purchase_late_fee_amount = service_purchase_late_fee_amount_for(@reserva, @portal_cart_items)
     
     if @portal_cart_items.empty?
       flash[:alert] = "Seu carrinho está vazio."
@@ -309,6 +312,7 @@ class PortalReservaController < ApplicationController
     @payment_status_label = payment_status_label(@payment_status)
     @payment_paid = @payment_status == "paid"
     @payment_open = @payment_status == "waiting_payment"
+    @service_purchase_late_fee_amount = service_purchase_late_fee_amount_for(@reserva, @purchased_services)
     @summary_text = purchase_summary_text(@reserva, @purchased_services)
   end
 
@@ -490,6 +494,7 @@ class PortalReservaController < ApplicationController
     order_code = portal_payment_order_code
     @portal_payment_order_code = order_code
     expires_in = 10
+    late_fee_amount = service_purchase_late_fee_amount_for(@reserva, @portal_cart_items)
 
     payment_link = create_service_payment_link(
       order_code: order_code,
@@ -502,10 +507,13 @@ class PortalReservaController < ApplicationController
 
     payment_expires_at = expires_in.minutes.from_now
     now = Time.current
+    late_fee_assigned = false
 
     @portal_cart_items.find_each do |cart_item|
       unit_price = service_price_for(cart_item.service) || 0
       quantity = cart_item.quantity || 1
+      cart_item_late_fee = late_fee_assigned ? 0.to_d : late_fee_amount
+      late_fee_assigned = true
 
       cart_item.update_columns(
         payment_status: 'waiting_payment',
@@ -516,6 +524,7 @@ class PortalReservaController < ApplicationController
         unit_price_paid: unit_price,
         total_paid: unit_price * quantity,
         purchased_after_service_deadline: @reserva.service_purchase_override_used?,
+        service_late_fee_amount: cart_item_late_fee,
         updated_at: now
       )
     end
@@ -713,13 +722,15 @@ class PortalReservaController < ApplicationController
     grouped_services = purchased_services.group_by do |reserva_service|
       [reserva_service.service_id, reserva_service.service_date, reserva_service.observation.to_s.strip]
     end
-    total = grouped_services.sum do |_key, items|
+    services_total = grouped_services.sum do |_key, items|
       first_item = items.first
       quantity = items.sum { |item| item.quantity.to_i }
       unit_price = first_item.unit_price_paid || service_price_for(first_item.service, reserva) || 0
 
       unit_price * quantity
     end
+    late_fee_amount = service_purchase_late_fee_amount_for(reserva, purchased_services)
+    total = services_total + late_fee_amount
 
     lines = [
       "Resumo da compra - Villaggio Girotto",
@@ -743,6 +754,10 @@ class PortalReservaController < ApplicationController
       lines << line
     end
 
+    if late_fee_amount.positive?
+      lines << "- #{reserva.service_purchase_late_fee_label}: R$ #{format('%.2f', late_fee_amount).tr('.', ',')}"
+    end
+
     lines << ""
     lines << "Total pago: R$ #{format('%.2f', total).tr('.', ',')}"
 
@@ -750,7 +765,7 @@ class PortalReservaController < ApplicationController
   end
 
   def payment_items
-    items = @portal_cart_items.map do |reserva_service|
+    service_items = @portal_cart_items.map do |reserva_service|
       service_date = reserva_service.service_date&.strftime('%d/%m')
       name = [reserva_service.service.name, service_date].compact.join(' - ')
 
@@ -761,15 +776,40 @@ class PortalReservaController < ApplicationController
         quantity: reserva_service.quantity
       }
     end
+    late_fee_amount = service_purchase_late_fee_amount_for(@reserva, @portal_cart_items)
+    fee_item = if late_fee_amount.positive?
+                 {
+                   id: "taxa-fora-prazo",
+                   name: @reserva.service_purchase_late_fee_label,
+                   unit_price: late_fee_amount,
+                   quantity: 1
+                 }
+               end
+    items = service_items + Array(fee_item)
 
     return items if items.size <= 10
 
     [{
       id: "reserva-#{@reserva.id}-servicos",
       name: "Serviços adicionais - Reserva #{@reserva.id}",
-      unit_price: @portal_cart_items.sum { |reserva_service| service_price_for(reserva_service.service) * reserva_service.quantity },
+      unit_price: @portal_cart_items.sum { |reserva_service| service_price_for(reserva_service.service) * reserva_service.quantity } + late_fee_amount,
       quantity: 1
     }]
+  end
+
+  def service_purchase_late_fee_amount_for(reserva, items)
+    items = Array(items)
+    persisted_late_fee = items.sum do |item|
+      next 0.to_d unless item.respond_to?(:service_late_fee_amount)
+
+      (item.service_late_fee_amount || 0).to_d
+    end
+
+    return persisted_late_fee if persisted_late_fee.positive?
+    return 0.to_d if items.empty?
+    return 0.to_d if items.any? { |item| item.respond_to?(:payment_order_code) && item.payment_order_code.present? }
+
+    reserva&.service_purchase_late_fee_amount || 0.to_d
   end
 
   def photo_print_uploads

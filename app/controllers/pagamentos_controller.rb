@@ -157,6 +157,7 @@ class PagamentosController < ApplicationController
             payment_expires_at: cart_item.payment_expires_at,
             unit_price_paid: cart_item.unit_price_paid,
             total_paid: cart_item.total_paid,
+            service_late_fee_amount: cart_item.service_late_fee_amount,
             paid_at: Time.current,
             observation: cart_item.observation.presence,
             purchased_after_service_deadline: cart_item.purchased_after_service_deadline?
@@ -165,7 +166,7 @@ class PagamentosController < ApplicationController
           created_reserva_services << reserva_service
         end
 
-        increment_reserva_total!(cart_item.reserva, cart_item.total_paid)
+        increment_reserva_total!(cart_item.reserva, (cart_item.total_paid || 0).to_d + (cart_item.service_late_fee_amount || 0).to_d)
         cart_item.destroy!
       end
     end
@@ -257,7 +258,7 @@ class PagamentosController < ApplicationController
 
   def increment_reserva_totals!(reserva_services)
     reserva_services.group_by(&:reserva).each do |reserva, services|
-      total = services.sum { |reserva_service| reserva_service.total_paid || 0 }
+      total = services.sum { |reserva_service| (reserva_service.total_paid || 0).to_d + (reserva_service.service_late_fee_amount || 0).to_d }
       increment_reserva_total!(reserva, total)
     end
   end
@@ -485,7 +486,9 @@ class PagamentosController < ApplicationController
       total = BigDecimal(unit_price.to_s) * (record.quantity.presence || 1)
     end
 
-    (BigDecimal(total.to_s) * 100).round.to_i
+    late_fee = record.respond_to?(:service_late_fee_amount) ? record.service_late_fee_amount : 0
+
+    ((BigDecimal(total.to_s) + BigDecimal(late_fee.to_s)) * 100).round.to_i
   end
 
 end

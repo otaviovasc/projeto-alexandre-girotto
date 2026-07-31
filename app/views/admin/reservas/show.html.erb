@@ -637,6 +637,9 @@
 
   <% normal_purchase_window_open = @reserva.service_purchase_block_date.present? && Date.current < @reserva.service_purchase_block_date %>
   <% special_purchase_access_open = @reserva.service_purchase_override_open? %>
+  <% special_purchase_deadline = @reserva.service_purchase_override_deadline %>
+  <% suggested_purchase_deadline = special_purchase_deadline.present? && special_purchase_deadline >= Date.current ? special_purchase_deadline : (@reserva.end_date || @reserva.start_date) %>
+  <% can_release_service_purchase = @reserva.end_date.present? && Date.current <= @reserva.end_date %>
 
   <div class="info-card">
     <h3 class="info-card-title">Compra de serviços pelo hóspede</h3>
@@ -644,37 +647,68 @@
       <div>
         <% if special_purchase_access_open %>
           <span class="purchase-access-status open">Liberação especial ativa</span>
-          <p class="purchase-access-copy">Esta reserva pode comprar serviços até o check-in em <%= @reserva.start_date.strftime('%d/%m/%Y') %>.</p>
+          <p class="purchase-access-copy">Esta reserva pode comprar serviços até <%= special_purchase_deadline.strftime('%d/%m/%Y') %>.</p>
+        <% elsif @reserva.service_purchase_override? %>
+          <span class="purchase-access-status closed">Liberação especial expirada</span>
+          <p class="purchase-access-copy">A data final da liberação especial já passou.</p>
         <% elsif normal_purchase_window_open %>
           <span class="purchase-access-status normal">Prazo normal aberto</span>
           <p class="purchase-access-copy">As compras ficam abertas normalmente até <%= @reserva.service_purchase_block_date.strftime('%d/%m/%Y') %>.</p>
-        <% elsif @reserva.start_date.present? && Date.current <= @reserva.start_date %>
+        <% elsif can_release_service_purchase %>
           <span class="purchase-access-status closed">Prazo normal encerrado</span>
-          <p class="purchase-access-copy">Você pode liberar uma exceção somente para esta reserva.</p>
+          <p class="purchase-access-copy">Você pode liberar uma exceção e escolher a data final de compra.</p>
         <% else %>
-          <span class="purchase-access-status closed">Check-in já iniciado</span>
-          <p class="purchase-access-copy">Não é possível liberar novas compras depois do check-in.</p>
+          <span class="purchase-access-status closed">Checkout já passou</span>
+          <p class="purchase-access-copy">Não é possível liberar novas compras depois do check-out.</p>
         <% end %>
       </div>
 
-      <% if can_manage_reservations? && @reserva.service_purchase_override? %>
-        <%= button_to 'Revogar liberação',
-            update_service_purchase_access_admin_reserva_path(@reserva),
-            method: :patch,
-            params: { service_purchase_override: false },
-            class: 'btn btn-secondary',
-            form_class: 'd-inline' %>
-      <% elsif can_manage_reservations? && !normal_purchase_window_open && @reserva.start_date.present? && Date.current <= @reserva.start_date %>
-        <%= button_to 'Liberar até o check-in',
-            update_service_purchase_access_admin_reserva_path(@reserva),
-            method: :patch,
-            params: { service_purchase_override: true },
-            class: 'btn btn-primary',
-            form_class: 'd-inline' %>
+      <% if can_manage_reservations? && can_release_service_purchase %>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <%= form_with url: update_service_purchase_access_admin_reserva_path(@reserva), method: :patch, local: true, class: 'd-flex flex-wrap align-items-center gap-2' do %>
+            <%= hidden_field_tag :service_purchase_override, true %>
+            <%= date_field_tag :service_purchase_override_until,
+                suggested_purchase_deadline,
+                min: Date.current,
+                max: @reserva.end_date,
+                class: 'form-control',
+                style: 'width: auto;',
+                required: true %>
+            <%= submit_tag(@reserva.service_purchase_override? ? 'Atualizar liberação' : 'Liberar compra', class: 'btn btn-primary') %>
+          <% end %>
+
+          <% if @reserva.service_purchase_override? %>
+            <%= button_to 'Revogar liberação',
+                update_service_purchase_access_admin_reserva_path(@reserva),
+                method: :patch,
+                params: { service_purchase_override: false },
+                class: 'btn btn-secondary',
+                form_class: 'd-inline' %>
+          <% end %>
+        </div>
       <% end %>
     </div>
 
     <% if can_manage_reservations? %>
+      <div class="purchase-access-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+        <div>
+          <% if @reserva.service_purchase_late_fee_waived? %>
+            <span class="purchase-access-status open">Taxa administrativa anulada</span>
+            <p class="purchase-access-copy">Esta reserva não terá a taxa de <%= number_to_currency(Reserva::SERVICE_PURCHASE_LATE_FEE) %> mesmo comprando fora do prazo.</p>
+          <% else %>
+            <span class="purchase-access-status normal">Taxa administrativa ativa</span>
+            <p class="purchase-access-copy">Se o hóspede comprar fora do prazo normal, o checkout adiciona <%= number_to_currency(Reserva::SERVICE_PURCHASE_LATE_FEE) %> como taxa administrativa para compra fora do prazo.</p>
+          <% end %>
+        </div>
+
+        <%= button_to(@reserva.service_purchase_late_fee_waived? ? 'Reativar taxa' : 'Anular taxa',
+            update_service_purchase_late_fee_admin_reserva_path(@reserva),
+            method: :patch,
+            params: { service_purchase_late_fee_waived: !@reserva.service_purchase_late_fee_waived? },
+            class: @reserva.service_purchase_late_fee_waived? ? 'btn btn-secondary' : 'btn btn-primary',
+            form_class: 'd-inline') %>
+      </div>
+
       <div class="purchase-access-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
         <div>
           <span class="purchase-access-status normal">Cartão em até <%= @reserva.service_max_installments %>x</span>
@@ -755,7 +789,7 @@
           <% first_item = items.first %>
           <% order_total = items.sum do |item|
                unit_price = item.unit_price_paid || item.service&.price_for(@reserva) || 0
-               item.total_paid || (unit_price * (item.quantity || 1))
+               (item.total_paid || (unit_price * (item.quantity || 1))).to_d + (item.service_late_fee_amount || 0).to_d
              end %>
           <% item_names = items.map { |item| "#{item.service&.name || 'Serviço'} em #{item.service_date&.strftime('%d/%m/%Y') || '-'}" }.join(', ') %>
 
