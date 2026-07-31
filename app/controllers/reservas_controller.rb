@@ -1,4 +1,6 @@
 class ReservasController < ApplicationController
+  after_action :allow_public_availability_cors, only: :unavailable_dates
+
   layout "clientside"
   before_action :check_reservations_on_new, only: [:new]
   before_action :set_reserva, only: [:show, :pay]
@@ -272,6 +274,11 @@ class ReservasController < ApplicationController
   end
 
   private
+
+  def allow_public_availability_cors
+    response.set_header('Access-Control-Allow-Origin', '*')
+    response.set_header('Access-Control-Allow-Methods', 'GET')
+  end
 
   def check_reservations_on_new
     @cabana = Cabana.find(params[:cabana_id] || session[:cabana_id])
