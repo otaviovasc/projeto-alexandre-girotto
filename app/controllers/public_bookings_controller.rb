@@ -198,15 +198,24 @@ class PublicBookingsController < ApplicationController
       total: @reserva_payment.public_booking_daily_total
     }]
 
-    @reserva_payment.public_booking_services.each do |service|
-      items << {
-        name: service['name'],
-        detail: Date.parse(service['service_date'].to_s).strftime('%d/%m/%Y'),
-        quantity: service['quantity'].to_i,
-        total: BigDecimal(service['total'].to_s)
-      }
-    rescue ArgumentError, TypeError
-      next
+    if materialized_public_booking_services.any?
+      materialized_public_booking_services.each do |reserva_service|
+        items << {
+          name: reserva_service.service&.name || 'Serviço',
+          detail: reserva_service.service_date.strftime('%d/%m/%Y'),
+          quantity: reserva_service.quantity.to_i,
+          total: reserva_service_total(reserva_service)
+        }
+      end
+    else
+      @reserva_payment.public_booking_services.each do |service|
+        items << {
+          name: service['name'],
+          detail: public_booking_service_detail(service),
+          quantity: service['quantity'].to_i,
+          total: BigDecimal(service['total'].to_s)
+        }
+      end
     end
 
     items
@@ -234,11 +243,16 @@ class PublicBookingsController < ApplicationController
       "Total: #{helpers.number_to_currency(@reserva_payment.amount, unit: 'R$ ', separator: ',', delimiter: '.')}"
     ]
 
-    service_lines = @reserva_payment.public_booking_services.map do |service|
-      "- #{service['name']} em #{Date.parse(service['service_date'].to_s).strftime('%d/%m/%Y')} (#{service['quantity']}x)"
-    rescue ArgumentError, TypeError
-      nil
-    end.compact
+    service_lines = if materialized_public_booking_services.any?
+                      materialized_public_booking_services.map do |reserva_service|
+                        "- #{reserva_service.service&.name || 'Serviço'} - #{reserva_service.service_date.strftime('%d/%m/%Y')} (#{reserva_service.quantity}x)"
+                      end
+                    else
+                      @reserva_payment.public_booking_services.map do |service|
+                        date_text = ActiveModel::Type::Boolean.new.cast(service['date_pending']) ? 'data a definir no menu de serviços' : public_booking_service_detail(service)
+                        "- #{service['name']} - #{date_text} (#{service['quantity']}x)"
+                      end.compact
+                    end
 
     if service_lines.any?
       lines << ""
@@ -258,6 +272,33 @@ class PublicBookingsController < ApplicationController
     else
       "https://wa.me/?text=#{encoded_text}"
     end
+  end
+
+  def public_booking_service_detail(service)
+    return 'Data a definir no menu de serviços' if ActiveModel::Type::Boolean.new.cast(service['date_pending'])
+
+    Date.parse(service['service_date'].to_s).strftime('%d/%m/%Y')
+  rescue ArgumentError, TypeError
+    'Data a definir no menu de serviços'
+  end
+
+  def materialized_public_booking_services
+    @materialized_public_booking_services ||= @reserva.reserva_services
+                                                    .includes(:service)
+                                                    .where(payment_order_code: @reserva_payment.payment_order_code)
+                                                    .order(:service_date, :id)
+                                                    .to_a
+  end
+
+  def reserva_service_total(reserva_service)
+    return BigDecimal(reserva_service.total_paid.to_s) if reserva_service.total_paid.present?
+
+    unit_price = reserva_service.unit_price_paid.presence ||
+                 reserva_service.service&.price_for(@reserva) ||
+                 0
+    BigDecimal(unit_price.to_s) * reserva_service.quantity.to_i
+  rescue ArgumentError, TypeError
+    0.to_d
   end
 
   def whatsapp_number_for(filial)

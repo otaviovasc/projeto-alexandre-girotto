@@ -62,7 +62,11 @@
                         <% @service_email_items.each do |service_item| %>
                           <li>
                             <%= service_item[:name] %>
-                            em <%= service_item[:service_date]&.strftime("%d/%m/%Y") || "data a definir" %>
+                            <% if service_item[:date_pending] %>
+                              - data a definir no menu de serviços
+                            <% else %>
+                              em <%= service_item[:service_date]&.strftime("%d/%m/%Y") || "data a definir" %>
+                            <% end %>
                             (<%= service_item[:quantity] %>x) -
                             <%= number_to_currency(service_item[:total], unit: 'R$ ', separator: ',', delimiter: '.') %>
                           </li>

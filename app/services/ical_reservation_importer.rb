@@ -21,6 +21,11 @@ class IcalReservationImporter
     'calendario importado',
     'calendário importado'
   ].freeze
+  IGNORED_PLATFORM_UIDS = {
+    'holmy' => [
+      'b0ba833f6f6ecad658415bbd6e3489f544ede966'
+    ]
+  }.freeze
 
   EventRange = Struct.new(:uid, :uid_from_feed, :platform_uid, :start_date, :end_date, keyword_init: true)
   Result = Struct.new(:created, :updated, :skipped, :missing, keyword_init: true) do
@@ -130,11 +135,21 @@ class IcalReservationImporter
 
   def importable_event?(event)
     normalized_text = normalized_event_text(event)
+    return false if ignored_platform_uid_event?(event)
     return false if airbnb_not_available_event?(normalized_text)
     return false if SELF_ORIGIN_MARKERS.any? { |marker| normalized_text.include?(marker) }
     return false if EXTERNAL_CALENDAR_BLOCK_MARKERS.any? { |marker| normalized_text.include?(marker) }
 
     true
+  end
+
+  def ignored_platform_uid_event?(event)
+    ignored_uids = IGNORED_PLATFORM_UIDS[@platform]
+    return false if ignored_uids.blank?
+
+    candidate_uids = [event.uid.to_s.strip, platform_uid_for(event)].compact_blank.map(&:downcase)
+    candidate_uids += candidate_uids.map { |uid| uid.split('@').first }
+    candidate_uids.uniq.any? { |uid| ignored_uids.include?(uid) }
   end
 
   def airbnb_not_available_event?(normalized_text)

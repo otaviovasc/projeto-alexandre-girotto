@@ -105,7 +105,7 @@
         <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 class="vg-card-title">Serviços opcionais</h2>
-            <p class="vg-card-copy">A compra de serviços fica disponível apenas com mais de 10 dias de antecedência.</p>
+            <p class="vg-card-copy">A compra de serviços fica disponível apenas com mais de 10 dias de antecedência. A data de uso poderá ser ajustada depois, na área de serviços.</p>
           </div>
           <p id="services-window-warning" class="vg-alert warning hidden">
             Para datas próximas, os serviços serão validados antes do pagamento.
@@ -128,13 +128,6 @@
                   <span class="block text-sm text-[#637066]"><%= number_to_currency(public_service_price, unit: 'R$ ', separator: ',', delimiter: '.') %></span>
                 </span>
               </label>
-
-              <div>
-                <label class="vg-label">Data</label>
-                <%= date_field_tag "booking[service_items][#{service.id}][service_date]",
-                    service_values["service_date"],
-                    class: "service-date vg-input py-2 text-sm" %>
-              </div>
 
               <div>
                 <label class="vg-label">Qtd</label>
@@ -295,11 +288,9 @@
       return selectedServiceRows().map(function(row) {
         var name = row.dataset.serviceName || "Serviço";
         var quantityInput = row.querySelector('input[type="number"]');
-        var dateInput = row.querySelector(".service-date");
         var quantity = Math.max(parseInt(quantityInput && quantityInput.value || "1", 10), 1);
-        var dateText = dateInput && dateInput.value ? " em " + formatDateLabel(dateInput.value) : "";
 
-        return "- " + name + dateText + " (" + quantity + "x)";
+        return "- " + name + " (" + quantity + "x)";
       });
     }
 
@@ -354,9 +345,6 @@
 
     function syncServiceRows() {
       var filialId = selectedFilialId();
-      var startDate = startInput.value;
-      var endDate = endInput.value;
-
       if (warning) warning.classList.add("hidden");
 
       serviceRows.forEach(function(row) {
@@ -367,13 +355,6 @@
         row.querySelectorAll("input").forEach(function(input) {
           input.disabled = !visible;
         });
-
-        var dateInput = row.querySelector(".service-date");
-        if (dateInput) {
-          dateInput.min = startDate || "";
-          dateInput.max = endDate || "";
-          if (startDate && !dateInput.value) dateInput.value = startDate;
-        }
 
         if (!visible) {
           var checkbox = row.querySelector(".service-checkbox");
@@ -449,14 +430,13 @@
         var name = row.dataset.serviceName || "Serviço";
         var price = parseFloat(row.dataset.servicePrice || "0");
         var quantityInput = row.querySelector('input[type="number"]');
-        var dateInput = row.querySelector(".service-date");
         var quantity = Math.max(parseInt(quantityInput && quantityInput.value || "1", 10), 1);
         var lineTotal = price * quantity;
         servicesValue += lineTotal;
 
         addSummaryItem(
           name,
-          (dateInput && dateInput.value ? formatDateLabel(dateInput.value) : "Data a definir") + " · " + quantity + "x",
+          "Data a definir no menu de serviços · " + quantity + "x",
           formatCurrency(lineTotal)
         );
       });

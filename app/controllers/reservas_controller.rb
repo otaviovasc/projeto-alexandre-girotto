@@ -251,7 +251,6 @@ class ReservasController < ApplicationController
     end
   end
 
-
   def calculate_price
     start_date = Date.parse(params[:start_date])
     end_date = Date.parse(params[:end_date])

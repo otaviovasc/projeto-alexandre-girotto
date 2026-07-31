@@ -141,6 +141,40 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
     assert_equal 1, @cabana.reservas.where(origem: "booking").count
   end
 
+  test "ignores known Holmy phantom block uid" do
+    result = import_holmy(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:b0ba833f6f6ecad658415bbd6e3489f544ede966@www.holmy.com.br
+      DTSTART;VALUE=DATE:20261117
+      DTEND;VALUE=DATE:20261117
+      SUMMARY:CLOSED - Not available
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    assert_equal 0, result.created
+    assert_equal 0, @cabana.reservas.where(origem: "holmy").count
+  end
+
+  test "still imports other Holmy closed not available events" do
+    result = import_holmy(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:7e60734e9b7775905708cec8e607966e03abe501@www.holmy.com.br
+      DTSTART;VALUE=DATE:20260604
+      DTEND;VALUE=DATE:20260606
+      SUMMARY:CLOSED - Not available
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    assert_equal 1, result.created
+    assert_equal 1, @cabana.reservas.where(origem: "holmy").count
+  end
+
   test "converts datetime events using the application time zone" do
     import(<<~ICS)
       BEGIN:VCALENDAR

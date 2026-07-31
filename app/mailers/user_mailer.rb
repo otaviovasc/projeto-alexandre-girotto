@@ -74,26 +74,30 @@ class UserMailer < ApplicationMailer
   def public_booking_service_email_items
     public_booking_services = @reserva_payment&.public_booking_services || []
 
-    if public_booking_services.any?
-      public_booking_services.filter_map do |service_payload|
-        {
-          name: service_payload['name'],
-          service_date: parse_mailer_date(service_payload['service_date']),
-          quantity: service_payload['quantity'].to_i,
-          total: decimal_value(service_payload['total'])
-        }
-      end
-    else
+    if @services.any?
       @services.map do |reserva_service|
         quantity = reserva_service.quantity.to_i
         unit_price = reserva_service.unit_price_paid.presence || reserva_service.service.price || 0
         {
           name: reserva_service.service.name,
           service_date: reserva_service.service_date,
+          date_pending: false,
           quantity: quantity,
           total: reserva_service.total_paid.presence || (unit_price * quantity)
         }
       end
+    elsif public_booking_services.any?
+      public_booking_services.filter_map do |service_payload|
+        {
+          name: service_payload['name'],
+          service_date: ActiveModel::Type::Boolean.new.cast(service_payload['date_pending']) ? nil : parse_mailer_date(service_payload['service_date']),
+          date_pending: ActiveModel::Type::Boolean.new.cast(service_payload['date_pending']),
+          quantity: service_payload['quantity'].to_i,
+          total: decimal_value(service_payload['total'])
+        }
+      end
+    else
+      []
     end
   end
 

@@ -154,15 +154,24 @@ class ReservaPaymentsController < ApplicationController
       total: @reserva_payment.public_booking_daily_total
     }]
 
-    @reserva_payment.public_booking_services.each do |service|
-      items << {
-        name: service['name'],
-        detail: Date.parse(service['service_date'].to_s).strftime('%d/%m/%Y'),
-        quantity: service['quantity'].to_i,
-        total: decimal_value(service['total'])
-      }
-    rescue ArgumentError, TypeError
-      next
+    if materialized_public_booking_services.any?
+      materialized_public_booking_services.each do |reserva_service|
+        items << {
+          name: reserva_service.service&.name || 'Serviço',
+          detail: service_detail(reserva_service),
+          quantity: reserva_service.quantity.to_i,
+          total: reserva_service_total(reserva_service)
+        }
+      end
+    else
+      @reserva_payment.public_booking_services.each do |service|
+        items << {
+          name: service['name'],
+          detail: public_booking_service_detail(service),
+          quantity: service['quantity'].to_i,
+          total: decimal_value(service['total'])
+        }
+      end
     end
 
     items
@@ -203,6 +212,14 @@ class ReservaPaymentsController < ApplicationController
     end
   end
 
+  def materialized_public_booking_services
+    @materialized_public_booking_services ||= @reserva.reserva_services
+                                                    .includes(:service)
+                                                    .where(payment_order_code: @reserva_payment.payment_order_code)
+                                                    .order(:service_date, :id)
+                                                    .to_a
+  end
+
   def reserva_service_total(reserva_service)
     return decimal_value(reserva_service.total_paid) if reserva_service.total_paid.present?
 
@@ -228,6 +245,14 @@ class ReservaPaymentsController < ApplicationController
 
   def service_detail(reserva_service)
     reserva_service.service_date.strftime('%d/%m/%Y')
+  end
+
+  def public_booking_service_detail(service)
+    return 'Data a definir no menu de serviços' if ActiveModel::Type::Boolean.new.cast(service['date_pending'])
+
+    Date.parse(service['service_date'].to_s).strftime('%d/%m/%Y')
+  rescue ArgumentError, TypeError
+    'Data a definir no menu de serviços'
   end
 
   def nights_count

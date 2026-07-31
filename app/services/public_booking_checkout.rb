@@ -90,8 +90,7 @@ class PublicBookingCheckout
       errors.add(:base, "#{service.name} não está disponível para compra online.") if service.present? && service.show_in_marketplace == false
       errors.add(:base, "#{service.name} não está disponível para compra online.") if service.present? && internal_public_service?(service)
       errors.add(:base, "Não foi possível validar o preço oficial de #{service.name}.") if service.present? && item[:unit_price].blank?
-      errors.add(:base, "Informe a data de #{service.name}.") if service.present? && item[:service_date].blank?
-      next if service.blank? || item[:service_date].blank? || @start_date.blank? || @end_date.blank?
+      next if service.blank? || item[:date_pending] || item[:service_date].blank? || @start_date.blank? || @end_date.blank?
 
       unless item[:service_date].between?(@start_date, @end_date)
         errors.add(:base, "#{service.name} precisa ficar entre a entrada e a saída.")
@@ -206,11 +205,13 @@ class PublicBookingCheckout
       service = Service.find_by(id: service_id)
       quantity = positive_integer(attrs[:quantity].presence || attrs['quantity'], 1)
       unit_price = official_service_price(service)
+      selected_date = parse_date(attrs[:service_date].presence || attrs['service_date'])
 
       {
         service_id: service_id,
         service: service,
-        service_date: parse_date(attrs[:service_date].presence || attrs['service_date']),
+        service_date: selected_date || @start_date,
+        date_pending: selected_date.blank?,
         quantity: quantity,
         unit_price: unit_price,
         observation: attrs[:observation].presence || attrs['observation'].presence
@@ -252,6 +253,7 @@ class PublicBookingCheckout
           service_id: item[:service].id,
           name: item[:service].name,
           service_date: item[:service_date].to_s,
+          date_pending: item[:date_pending],
           quantity: item[:quantity],
           unit_price: decimal_string(item[:unit_price]),
           total: decimal_string(item[:unit_price] * item[:quantity]),
@@ -272,9 +274,10 @@ class PublicBookingCheckout
 
     @selected_services.each do |item|
       service = item[:service]
+      item_name = item[:date_pending] ? service.name : "#{service.name} - #{item[:service_date].strftime('%d/%m')}"
       items << {
         id: "SV#{service.id}",
-        name: "#{service.name} - #{item[:service_date].strftime('%d/%m')}",
+        name: item_name,
         description: "#{service.name} - Reserva ##{@reserva.id}",
         unit_price: item[:unit_price],
         quantity: item[:quantity]
