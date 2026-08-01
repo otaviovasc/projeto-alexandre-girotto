@@ -1,4 +1,5 @@
 <% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -96,7 +97,7 @@
   }
 </style>
 
-<div class="container py-4 whatsapp-board" data-turbo-cache="false" data-board-date="<%= Date.current.iso8601 %>">
+<div class="container py-4 whatsapp-board" data-turbo-cache="false" data-board-date="<%= Date.current.iso8601 %>" data-rendered-at="<%= Time.current.to_i %>">
   <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4">
     <div>
       <div class="page-kicker">Aplicativo Flavia</div>
@@ -279,6 +280,8 @@
     board.dataset.dayRefreshBound = "true";
 
     var boardDate = board.getAttribute("data-board-date");
+    var renderedAt = parseInt(board.getAttribute("data-rendered-at"), 10);
+
     var reloadIfDayChanged = function() {
       var today = new Intl.DateTimeFormat("en-CA", {
         timeZone: "America/Sao_Paulo",
@@ -288,6 +291,18 @@
       }).format(new Date());
 
       if (today !== boardDate) window.location.reload();
+    };
+
+    var reloadIfPageIsOld = function() {
+      if (!renderedAt) return;
+
+      var maxAgeMs = 15 * 60 * 1000;
+      if ((Date.now() - (renderedAt * 1000)) > maxAgeMs) window.location.reload();
+    };
+
+    var reloadIfNeeded = function() {
+      reloadIfDayChanged();
+      reloadIfPageIsOld();
     };
 
     var scheduleNextCheck = function() {
@@ -303,11 +318,11 @@
     };
 
     document.addEventListener("visibilitychange", function() {
-      if (!document.hidden) reloadIfDayChanged();
+      if (!document.hidden) reloadIfNeeded();
     });
 
-    window.addEventListener("focus", reloadIfDayChanged);
-    window.addEventListener("pageshow", reloadIfDayChanged);
+    window.addEventListener("focus", reloadIfNeeded);
+    window.addEventListener("pageshow", reloadIfNeeded);
     scheduleNextCheck();
   }
 
