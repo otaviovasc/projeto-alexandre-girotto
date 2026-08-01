@@ -35,6 +35,12 @@ class ServiceTest < ActiveSupport::TestCase
     assert_not Service.new(name: "Decoração de Pétalas e Luzinhas").photo_print_service?
   end
 
+  test "hides evaluation request services from guests" do
+    assert Service.new(name: "🚩 Enviar Avaliação (SP)").hidden_from_guests?
+    assert Service.new(name: "Enviar Avaliacao (MG)").hidden_from_guests?
+    assert_not Service.new(name: "Piquenique").hidden_from_guests?
+  end
+
   test "shows the correct people label in the portal" do
     assert_equal "Para até 2 pessoas", Service.new(name: "Trilha a Pé").portal_people_label
     assert_equal "Para 1 pessoa", Service.new(name: "Massagem para uma pessoa").portal_people_label

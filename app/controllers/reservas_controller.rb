@@ -17,7 +17,9 @@ class ReservasController < ApplicationController
   end
 
   def show
-    @reserva_services = @reserva.reserva_services.includes(:service)
+    @reserva_services = @reserva.reserva_services.includes(:service).reject do |reserva_service|
+      reserva_service.service&.hidden_from_guests?
+    end
     @reserva_items = @reserva.reserva_items.includes(:item)
     if @reserva.expired? && (@reserva.waiting_payment? || @reserva.pending?)
       @reserva.cancel_for_operations!(by: nil, reason: 'Pagamento vencido sem confirmação.')

@@ -54,6 +54,7 @@ class PublicBookingServicesMaterializer
     @service_items ||= @reserva_payment.public_booking_services.filter_map do |item|
       service = Service.find_by(id: item['service_id'])
       next if service.blank?
+      next if service.hidden_from_guests?
 
       {
         item: item,

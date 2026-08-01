@@ -221,7 +221,8 @@ class PublicBookingCheckout
 
   def internal_public_service?(service)
     CleaningServicesAssigner.cleaning_service?(service) ||
-      ReservaService.free_date_service?(service)
+      ReservaService.free_date_service?(service) ||
+      service&.hidden_from_guests?
   end
 
   def official_quote

@@ -164,7 +164,7 @@ class ReservaPaymentsController < ApplicationController
         }
       end
     else
-      @reserva_payment.public_booking_services.each do |service|
+      @reserva_payment.public_booking_services.reject { |service| Service.hidden_from_guest_name?(service['name']) }.each do |service|
         items << {
           name: service['name'],
           detail: public_booking_service_detail(service),
@@ -204,6 +204,7 @@ class ReservaPaymentsController < ApplicationController
   def displayable_reserva_services
     @displayable_reserva_services ||= @reserva.reserva_services.includes(:service).select do |reserva_service|
       next false unless reserva_service.active?
+      next false if reserva_service.service&.hidden_from_guests?
       next false if CleaningServicesAssigner.cleaning_service?(reserva_service.service)
       next false if BreakfastServicesAssigner.included_breakfast_service?(reserva_service)
       next false if ReservaService.free_date_service?(reserva_service.service)
@@ -218,6 +219,7 @@ class ReservaPaymentsController < ApplicationController
                                                     .where(payment_order_code: @reserva_payment.payment_order_code)
                                                     .order(:service_date, :id)
                                                     .to_a
+                                                    .reject { |reserva_service| reserva_service.service&.hidden_from_guests? }
   end
 
   def reserva_service_total(reserva_service)

@@ -6,6 +6,7 @@ class MarketplaceController < ApplicationController
     @services = @reserva.cabana.filial.services
                        .where(show_in_marketplace: [true, nil])
                        .order(:name)
+                       .reject(&:hidden_from_guests?)
   end
 
   def items
@@ -16,6 +17,7 @@ class MarketplaceController < ApplicationController
 
   def show_service
     @service = Service.find(params[:id])
+    redirect_to services_marketplace_index_path, alert: 'Serviço não encontrado.' and return if @service.hidden_from_guests?
   end
 
   def show_item

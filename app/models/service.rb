@@ -65,6 +65,16 @@ class Service < ApplicationRecord
     name.to_s.parameterize.match?(/foto.*impress/)
   end
 
+  def hidden_from_guests?
+    self.class.hidden_from_guest_name?(name)
+  end
+
+  def self.hidden_from_guest_name?(service_name)
+    normalized_name = service_name.to_s.parameterize
+
+    normalized_name.include?("enviar") && normalized_name.include?("avaliacao")
+  end
+
   def self.ransackable_attributes(auth_object = nil)
     ["created_at", "description", "duration", "end_time", "filial_id", "id", "name", "partner_price", "price", "region", "show_in_marketplace", "start_time", "updated_at", "user_id"]
   end

@@ -119,6 +119,7 @@ class PortalReservaController < ApplicationController
     @services = @reserva.cabana.filial.services
                        .where(show_in_marketplace: [true, nil])
                        .order(:name)
+                       .reject(&:hidden_from_guests?)
 
     expire_stale_portal_cart_items(@reserva)
 
@@ -142,6 +143,10 @@ class PortalReservaController < ApplicationController
 
     @reserva = Reserva.includes(cabana: :filial).find(session[:portal_reserva_id])
     service  = @reserva.cabana.filial.services.find(params[:service_id])
+    if internal_service_for_portal?(service)
+      redirect_to portal_reserva_servicos_path, alert: "Serviço não encontrado." and return
+    end
+
     quantity = 1
     service_dates_param = params[:service_dates] || []
     photo_uploads = photo_print_uploads
@@ -605,12 +610,14 @@ class PortalReservaController < ApplicationController
     cart_items = CartItem.includes(:service, reserva: [:user, :cabana])
                          .where(payment_order_code: order_code, reserva_id: session[:portal_reserva_id])
                          .order(:service_date, :id)
+    visible_cart_items = cart_items.reject { |cart_item| cart_item.service&.hidden_from_guests? }
 
-    return cart_items if cart_items.any?
+    return visible_cart_items if visible_cart_items.any?
 
     ReservaService.includes(:service, reserva: [:user, :cabana])
                   .where(payment_order_code: order_code, reserva_id: session[:portal_reserva_id])
                   .order(:service_date, :id)
+                  .reject { |reserva_service| reserva_service.service&.hidden_from_guests? }
   end
 
   def sync_cielo_checkout_status!(purchased_services)
@@ -662,13 +669,14 @@ class PortalReservaController < ApplicationController
   end
 
   def internal_service_for_portal?(service)
+    return false if service.blank?
+    return true if service.hidden_from_guests?
     return true if CleaningServicesAssigner.cleaning_service?(service)
 
     normalized_name = service.name.to_s.parameterize
-    evaluation_service = normalized_name.include?("enviar") && normalized_name.include?("avaliacao")
     charge_service = normalized_name.split("-").include?("cobrar")
 
-    evaluation_service || charge_service
+    charge_service
   end
 
   def operational_services_for_portal(reserva)
@@ -765,7 +773,8 @@ class PortalReservaController < ApplicationController
   end
 
   def payment_items
-    service_items = @portal_cart_items.map do |reserva_service|
+    visible_portal_cart_items = @portal_cart_items.reject { |reserva_service| reserva_service.service&.hidden_from_guests? }
+    service_items = visible_portal_cart_items.map do |reserva_service|
       service_date = reserva_service.service_date&.strftime('%d/%m')
       name = [reserva_service.service.name, service_date].compact.join(' - ')
 
@@ -792,7 +801,7 @@ class PortalReservaController < ApplicationController
     [{
       id: "reserva-#{@reserva.id}-servicos",
       name: "Serviços adicionais - Reserva #{@reserva.id}",
-      unit_price: @portal_cart_items.sum { |reserva_service| service_price_for(reserva_service.service) * reserva_service.quantity } + late_fee_amount,
+      unit_price: visible_portal_cart_items.sum { |reserva_service| service_price_for(reserva_service.service) * reserva_service.quantity } + late_fee_amount,
       quantity: 1
     }]
   end

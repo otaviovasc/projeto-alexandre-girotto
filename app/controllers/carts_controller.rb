@@ -12,6 +12,8 @@ class CartsController < ApplicationController
       redirect_fallback = items_marketplace_index_path
     elsif params[:service_id].present?
       service = @reserva.cabana.filial.services.find(params[:service_id])
+      redirect_to services_marketplace_index_path, alert: 'Serviço não encontrado.' and return if service.hidden_from_guests?
+
       @cart_item = @cart.cart_items.find_or_initialize_by(service: service)
       redirect_fallback = services_marketplace_index_path
     end
@@ -32,6 +34,8 @@ class CartsController < ApplicationController
       @cart_item = @cart.cart_items.find_or_initialize_by(item: item)
     elsif params[:service_id].present?
       service = @reserva.cabana.filial.services.find(params[:service_id])
+      redirect_to services_marketplace_index_path, alert: 'Serviço não encontrado.' and return if service.hidden_from_guests?
+
       @cart_item = @cart.cart_items.find_or_initialize_by(service: service)
     end
 

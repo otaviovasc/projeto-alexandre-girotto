@@ -108,7 +108,8 @@ class PublicBookingsController < ApplicationController
 
   def internal_public_service?(service)
     CleaningServicesAssigner.cleaning_service?(service) ||
-      ReservaService.free_date_service?(service)
+      ReservaService.free_date_service?(service) ||
+      service&.hidden_from_guests?
   end
 
   def set_reserva_payment
@@ -208,7 +209,7 @@ class PublicBookingsController < ApplicationController
         }
       end
     else
-      @reserva_payment.public_booking_services.each do |service|
+      @reserva_payment.public_booking_services.reject { |service| Service.hidden_from_guest_name?(service['name']) }.each do |service|
         items << {
           name: service['name'],
           detail: public_booking_service_detail(service),
@@ -248,7 +249,7 @@ class PublicBookingsController < ApplicationController
                         "- #{reserva_service.service&.name || 'Serviço'} - #{reserva_service.service_date.strftime('%d/%m/%Y')} (#{reserva_service.quantity}x)"
                       end
                     else
-                      @reserva_payment.public_booking_services.map do |service|
+                      @reserva_payment.public_booking_services.reject { |service| Service.hidden_from_guest_name?(service['name']) }.map do |service|
                         date_text = ActiveModel::Type::Boolean.new.cast(service['date_pending']) ? 'data a definir no menu de serviços' : public_booking_service_detail(service)
                         "- #{service['name']} - #{date_text} (#{service['quantity']}x)"
                       end.compact
@@ -288,6 +289,7 @@ class PublicBookingsController < ApplicationController
                                                     .where(payment_order_code: @reserva_payment.payment_order_code)
                                                     .order(:service_date, :id)
                                                     .to_a
+                                                    .reject { |reserva_service| reserva_service.service&.hidden_from_guests? }
   end
 
   def reserva_service_total(reserva_service)
@@ -375,6 +377,7 @@ class PublicBookingsController < ApplicationController
 
       service = services_by_id[service_id.to_s] || Service.find_by(id: service_id)
       next if service.blank?
+      next if internal_public_service?(service)
 
       service_date = parse_date_param(attrs[:service_date].presence || attrs['service_date'])
       quantity = attrs[:quantity].presence || attrs['quantity'].presence || 1

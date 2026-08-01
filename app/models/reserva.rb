@@ -293,6 +293,7 @@ class Reserva < ApplicationRecord
 
   def pending_payment_chargeable_service?(reserva_service)
     return false if reserva_service.blank? || reserva_service.cancelled?
+    return false if reserva_service.service&.hidden_from_guests?
     return false if CleaningServicesAssigner.cleaning_service?(reserva_service.service)
     return false if BreakfastServicesAssigner.included_breakfast_service?(reserva_service)
     return false if ReservaService.free_date_service?(reserva_service.service)
