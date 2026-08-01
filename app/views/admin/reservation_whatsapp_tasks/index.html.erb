@@ -71,8 +71,9 @@
     text-transform: uppercase;
   }
 
-  .whatsapp-board .stay-dates {
-    white-space: nowrap;
+  .whatsapp-board .stay-date-grid {
+    display: grid;
+    gap: .5rem;
   }
 
   .whatsapp-board .copy-feedback {
@@ -140,21 +141,6 @@
     </div>
   <% end %>
 
-  <% if @pending_tasks.any? %>
-    <div class="alert alert-warning border-0 shadow-sm">
-      <strong>🚨 (<%= @pending_tasks.size %>) mensagem(ns) com envio pendente.</strong>
-      <div class="mt-2">
-        <% @pending_by_template.each do |template_name, tasks| %>
-          <div>Mensagem de <%= template_name %>: <%= tasks.size %> pendente(s)</div>
-        <% end %>
-      </div>
-    </div>
-  <% else %>
-    <div class="alert alert-success border-0 shadow-sm">
-      Nenhuma mensagem pendente para envio hoje.
-    </div>
-  <% end %>
-
   <% if @tasks.any? %>
     <div class="d-grid gap-3">
       <% @tasks.each do |task| %>
@@ -188,11 +174,16 @@
             </div>
 
             <div class="col-6 col-lg-2">
-              <div class="task-label">Estadia</div>
-              <div class="fw-bold stay-dates">
-                <%= checkin_date ? checkin_date.strftime('%d/%m/%y') : '-' %>
-                até
-                <%= checkout_date ? checkout_date.strftime('%d/%m/%y') : '-' %>
+              <div class="stay-date-grid">
+                <div>
+                  <div class="task-label">Check-in</div>
+                  <div class="fw-bold"><%= checkin_date ? checkin_date.strftime('%d/%m/%y') : '-' %></div>
+                </div>
+
+                <div>
+                  <div class="task-label">Check-out</div>
+                  <div class="fw-bold"><%= checkout_date ? checkout_date.strftime('%d/%m/%y') : '-' %></div>
+                </div>
               </div>
             </div>
 

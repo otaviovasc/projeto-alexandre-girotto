@@ -18,6 +18,10 @@ function setPushButtonsState({ disabled = false, text = null } = {}) {
   });
 }
 
+function notificationPermissionHelp() {
+  return "No Android/Xiaomi, se não apareceu a janela de permissão, abra as permissões deste site no navegador e permita Notificações. Depois toque em tentar novamente.";
+}
+
 function isIosDevice() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -61,14 +65,15 @@ async function registerWebPush() {
   }
 
   if (Notification.permission === "denied") {
-    setPushStatus("Notificações bloqueadas neste aparelho.");
+    setPushStatus("Notificações bloqueadas neste aparelho. Libere nas permissões do navegador/sistema e tente novamente.");
     return false;
   }
 
   if (Notification.permission !== "granted") {
+    setPushStatus("Confirme a permissão de notificação quando o navegador pedir. " + notificationPermissionHelp());
     const permission = await requestNotificationPermission();
     if (permission !== "granted") {
-      setPushStatus("Permissão de notificação não ativada.");
+      setPushStatus("Permissão de notificação não ativada. " + notificationPermissionHelp());
       return false;
     }
   }
@@ -90,7 +95,7 @@ async function registerWebPush() {
     body: JSON.stringify({ subscription: subscription.toJSON() })
   });
 
-  if (!response.ok) throw new Error("Falha ao salvar aparelho");
+  if (!response.ok) throw new Error("Falha ao salvar aparelho: " + response.status);
 
   setPushStatus("Notificações ativadas neste aparelho.");
   return true;
@@ -102,7 +107,7 @@ function setupWebPushButtons() {
   } else if (Notification.permission === "granted") {
     setPushStatus("Notificações já liberadas neste aparelho. Toque para confirmar o cadastro.");
   } else if (Notification.permission === "denied") {
-    setPushStatus("Notificações bloqueadas neste aparelho.");
+    setPushStatus("Notificações bloqueadas neste aparelho. Libere nas permissões do navegador/sistema e tente novamente.");
   }
 
   document.querySelectorAll("[data-web-push-enable]").forEach((button) => {
@@ -117,11 +122,15 @@ function setupWebPushButtons() {
         if (activated) {
           setPushButtonsState({ disabled: false, text: "Notificações ativadas" });
         } else {
-          setPushButtonsState({ disabled: false, text: "Ativar notificações neste aparelho" });
+          setPushButtonsState({ disabled: false, text: "Tentar ativar novamente" });
         }
       }).catch((error) => {
         console.warn(error);
-        setPushStatus("Não foi possível ativar as notificações neste aparelho.");
+        if (error && error.name === "NotAllowedError") {
+          setPushStatus("O navegador recusou a permissão de notificação. " + notificationPermissionHelp());
+        } else {
+          setPushStatus("Não foi possível ativar as notificações neste aparelho. " + notificationPermissionHelp());
+        }
         setPushButtonsState({ disabled: false, text: "Tentar ativar novamente" });
       });
     });
