@@ -70,6 +70,10 @@
     text-transform: uppercase;
   }
 
+  .whatsapp-board .stay-dates {
+    white-space: nowrap;
+  }
+
   .whatsapp-board .copy-feedback {
     display: none;
     color: #166534;
@@ -155,6 +159,8 @@
       <% @tasks.each do |task| %>
         <% overdue = task.overdue? %>
         <% completed = task.completed? %>
+        <% checkin_date = task.reserva&.start_date %>
+        <% checkout_date = task.reserva&.end_date %>
         <div class="task-card p-3 p-md-4 <%= 'task-overdue' if overdue %> <%= 'task-completed' if completed %>">
           <div class="row g-3 align-items-center">
             <div class="col-12 col-lg-2">
@@ -181,11 +187,20 @@
             </div>
 
             <div class="col-6 col-lg-2">
+              <div class="task-label">Estadia</div>
+              <div class="fw-bold stay-dates">
+                <%= checkin_date ? checkin_date.strftime('%d/%m/%y') : '-' %>
+                até
+                <%= checkout_date ? checkout_date.strftime('%d/%m/%y') : '-' %>
+              </div>
+            </div>
+
+            <div class="col-6 col-lg-1">
               <div class="task-label">Número</div>
               <div class="fw-bold"><%= task.guest_phone.presence || 'Não informado' %></div>
             </div>
 
-            <div class="col-12 col-lg-3">
+            <div class="col-12 col-lg-2">
               <div class="d-flex flex-wrap justify-content-lg-end align-items-center gap-3">
                 <% status_class = completed ? 'completed' : (overdue ? 'overdue' : 'pending') %>
                 <% status_label = completed ? 'Enviado' : (overdue ? 'Atrasado' : 'Pendente') %>
