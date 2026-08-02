@@ -83,7 +83,7 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     assert_equal "de manhã antes do check-out", controller.send(:observation_for_service, service, reserva.end_date)
   end
 
-  test "adds automatic afternoon note to trail horse ride and picnic" do
+  test "adds automatic afternoon note to trail horse ride and picnic only on check in" do
     controller = PortalReservaController.new
     reserva = Reserva.new(start_date: Date.new(2026, 8, 10), end_date: Date.new(2026, 8, 12))
     controller.instance_variable_set(:@reserva, reserva)
@@ -92,7 +92,7 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
       service = Service.new(name: service_name)
 
       assert_equal "de tarde após check-in", controller.send(:observation_for_service, service, reserva.start_date)
-      assert_equal "de tarde após check-in", controller.send(:observation_for_service, service, Date.new(2026, 8, 11))
+      assert_nil controller.send(:observation_for_service, service, Date.new(2026, 8, 11))
     end
   end
 

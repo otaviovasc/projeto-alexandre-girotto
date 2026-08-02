@@ -446,7 +446,11 @@ class PortalReservaController < ApplicationController
   def automatic_observation_for_service_date(service, service_date)
     return if service_date.blank?
 
-    return PORTAL_CHECKIN_AFTERNOON_NOTE if afternoon_checkin_note_service?(service)
+    if afternoon_checkin_note_service?(service)
+      return PORTAL_CHECKIN_AFTERNOON_NOTE if checkin_date?(@reserva, service_date)
+
+      return
+    end
 
     if massage_service?(service)
       return PORTAL_CHECKIN_AFTERNOON_NOTE if checkin_date?(@reserva, service_date)
