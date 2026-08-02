@@ -1,7 +1,7 @@
 class PortalReservaController < ApplicationController
   layout "portal_reserva"
   skip_before_action :authenticate_user!
-  before_action :require_fnrh_information_release!, only: [
+  before_action :require_terms_acceptance!, only: [
     :inicio, :comprados, :atualizar_servico_comprado, :servicos, :adicionar,
     :remover, :revisar_servicos, :pagar, :confirmacao, :confirmacao_status
   ]
@@ -401,20 +401,21 @@ class PortalReservaController < ApplicationController
     service.price_for(reserva)
   end
 
-  def require_fnrh_information_release!
+  def require_terms_acceptance!
     return unless session[:portal_reserva_id].present?
 
     reserva = Reserva.find_by(id: session[:portal_reserva_id])
-    return if reserva.blank? || reserva.fnrh_information_released?
+    return if reserva.blank? || reserva.fnrh_events.where(event_type: 'terms_accepted').exists?
 
     session[:fnrh_portal_reserva_id] = reserva.id
+    session[:pending_terms_reserva_id] = reserva.id
 
     respond_to do |format|
       format.html do
-        redirect_to fnrh_terms_path, alert: "Conclua o pré-check-in para acessar os serviços e o material do hóspede."
+        redirect_to fnrh_terms_path, alert: "Leia e confirme os termos para acessar os serviços e o material do hóspede."
       end
       format.json do
-        render json: { found: false, paid: false, status: "fnrh_pending" }, status: :forbidden
+        render json: { found: false, paid: false, status: "terms_pending" }, status: :forbidden
       end
     end
   end

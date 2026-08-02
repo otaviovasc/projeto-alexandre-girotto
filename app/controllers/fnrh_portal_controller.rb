@@ -112,10 +112,10 @@ class FnrhPortalController < ApplicationController
     @reserva = portal_reserva
     refresh_fnrh_release_status(@reserva) if @reserva
     @reserva&.reload
-    return if @reserva&.fnrh_information_released?
+    return if @reserva && terms_already_accepted?(@reserva)
 
     session.delete(:fnrh_portal_reserva_id)
-    redirect_to fnrh_portal_path, alert: 'Conclua o pré-check-in para acessar as informações da hospedagem.'
+    redirect_to fnrh_terms_path, alert: 'Leia e confirme os termos para acessar as informações da hospedagem.'
   end
 
   def logout

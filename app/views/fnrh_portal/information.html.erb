@@ -1,4 +1,4 @@
-<% content_for :title, 'Informações da hospedagem - Villaggio Girotto' %>
+<% content_for :title, 'Material do hóspede - Villaggio Girotto' %>
 
 <main class="min-h-screen px-4 py-10">
   <div class="mx-auto max-w-2xl">
@@ -7,8 +7,10 @@
     <% end %>
 
     <header class="mb-7">
-      <p class="text-sm font-semibold text-[#5f755f]">Pré-check-in concluído</p>
-      <h1 class="mt-1 text-3xl font-semibold">Informações da hospedagem</h1>
+      <p class="text-sm font-semibold text-[#5f755f]">
+        <%= @reserva.fnrh_information_released? ? 'Pré-check-in concluído' : 'Termos aceitos' %>
+      </p>
+      <h1 class="mt-1 text-3xl font-semibold">Material do hóspede</h1>
     </header>
 
     <section class="border border-[#d9dfd7] bg-white p-6 shadow-sm">

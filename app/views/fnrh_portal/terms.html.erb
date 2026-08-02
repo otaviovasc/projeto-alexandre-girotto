@@ -35,7 +35,7 @@
       </div>
     <% end %>
 
-    <% if @reserva.present? && @terms_accepted && @reserva.fnrh_information_released? %>
+    <% if @reserva.present? && @terms_accepted %>
       <section class="border border-[#d8cdb8] bg-[#f7f1e4] p-6 shadow-[0_18px_48px_rgba(42,43,36,0.08)] sm:p-9">
         <div class="grid gap-6 border-b border-[#d8cdb8] pb-7 sm:grid-cols-[1fr_auto] sm:items-start">
           <div>
@@ -69,12 +69,22 @@
               portal_reserva_comprados_path,
               class: 'inline-flex min-h-[56px] w-full items-center justify-center border border-[#55613a] bg-transparent px-5 py-4 text-center font-extrabold text-[#3f4a2f] transition hover:bg-[#55613a] hover:text-white' %>
 
+          <%= link_to 'Material do hóspede',
+              fnrh_portal_information_path,
+              class: 'inline-flex min-h-[56px] w-full items-center justify-center border border-[#d8cdb8] bg-[#fbf7ee] px-5 py-4 text-center font-extrabold text-[#20241f] transition hover:border-[#55613a]' %>
+
           <% if @reserva.fnrh_information_released? %>
-            <%= link_to 'Material do hóspede',
-                fnrh_portal_information_path,
-                class: 'inline-flex min-h-[56px] w-full items-center justify-center border border-[#d8cdb8] bg-[#fbf7ee] px-5 py-4 text-center font-extrabold text-[#20241f] transition hover:border-[#55613a]' %>
-          <% else %>
-            <%= button_to 'Material do hóspede',
+            <% precheckin_done_label =
+                 if @reserva.fnrh_status == 'precheckin_bypassed' || @reserva.partnership_reservation?
+                   'Pré Check-in dispensado'
+                 else
+                   'Pré Check-in concluído'
+                 end %>
+            <button type="button" disabled class="inline-flex min-h-[56px] w-full cursor-not-allowed items-center justify-center border border-[#d8cdb8] bg-[#e8e1d4] px-5 py-4 text-center font-extrabold text-[#8b8f84]">
+              <%= precheckin_done_label %>
+            </button>
+          <% elsif @reserva.fnrh_eligible? || @reserva.fnrh_reservation_id.present? %>
+            <%= button_to 'Pré Check-in Obrigatório',
                 fnrh_portal_access_path,
                 method: :post,
                 params: {
@@ -82,7 +92,11 @@
                   reservation_code: @reserva.id
                 },
                 form: { data: { fnrh_loading: true } },
-                class: 'inline-flex min-h-[56px] w-full items-center justify-center border border-[#d8cdb8] bg-[#fbf7ee] px-5 py-4 text-center font-extrabold text-[#20241f] transition hover:border-[#55613a]' %>
+                class: 'inline-flex min-h-[56px] w-full items-center justify-center border border-[#9f7f4f] bg-transparent px-5 py-4 text-center font-extrabold text-[#6f5738] transition hover:bg-[#9f7f4f] hover:text-white' %>
+          <% else %>
+            <button type="button" disabled class="inline-flex min-h-[56px] w-full cursor-not-allowed items-center justify-center border border-[#d8cdb8] bg-[#e8e1d4] px-5 py-4 text-center font-extrabold text-[#8b8f84]">
+              Pré Check-in em preparação
+            </button>
           <% end %>
 
           <%= link_to 'Conte como nos conheceu',
@@ -90,77 +104,6 @@
               target: '_blank',
               rel: 'noopener',
               class: 'inline-flex min-h-[56px] w-full items-center justify-center border border-[#d8cdb8] bg-transparent px-5 py-4 text-center font-extrabold text-[#3f4a2f] transition hover:border-[#55613a] hover:bg-[#fbf7ee]' %>
-        </div>
-
-        <%= button_to 'Sair',
-            fnrh_portal_logout_path,
-            method: :delete,
-            class: 'mt-7 text-sm font-bold text-[#55613a] underline underline-offset-4' %>
-      </section>
-    <% elsif @reserva.present? && @terms_accepted %>
-      <section class="border border-[#d8cdb8] bg-[#f7f1e4] p-6 shadow-[0_18px_48px_rgba(42,43,36,0.08)] sm:p-9">
-        <div class="grid gap-6 border-b border-[#d8cdb8] pb-7 sm:grid-cols-[1fr_auto] sm:items-start">
-          <div>
-            <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#9f7f4f]">Reserva #<%= @reserva.id %></p>
-            <h2 class="mt-3 text-3xl font-medium leading-tight sm:text-4xl" style="font-family: Georgia, 'Times New Roman', serif;">
-              <%= @reserva.cabana.name %>
-            </h2>
-            <p class="mt-3 text-base text-[#6c7066]">
-              <%= @reserva.start_date.strftime('%d/%m/%Y') %> a <%= @reserva.end_date.strftime('%d/%m/%Y') %>
-            </p>
-          </div>
-
-          <span class="inline-flex w-fit items-center border border-[#d8cdb8] bg-[#fbf7ee] px-4 py-3 text-sm font-bold text-[#55613a]">
-            Termos aceitos
-          </span>
-        </div>
-
-        <div class="mt-8 border border-[#d8cdb8] bg-[#fbf7ee] p-5">
-          <% if @precheckin_link_opened %>
-            <p class="text-xs font-bold uppercase tracking-[0.12em] text-[#9f7f4f]">Pré-check-in em análise</p>
-            <h3 class="mt-2 text-2xl font-medium" style="font-family: Georgia, 'Times New Roman', serif;">Estamos verificando o gov.br.</h3>
-            <p class="mt-3 text-sm leading-6 text-[#6c7066]">
-              Se a confirmação oficial continuar pendente por alguns minutos, liberamos o acesso automaticamente para não travar sua chegada.
-            </p>
-
-            <div class="mt-5 flex flex-col gap-3 sm:flex-row">
-              <%= button_to 'Verificar novamente',
-                  fnrh_portal_verify_path,
-                  method: :post,
-                  form: { data: { fnrh_loading: true } },
-                  class: 'inline-flex min-h-[52px] w-full items-center justify-center border border-[#55613a] bg-[#55613a] px-5 py-3 text-center font-extrabold text-white transition hover:border-[#3f4a2f] hover:bg-[#3f4a2f] sm:w-auto' %>
-
-              <% if @reserva.fnrh_precheckin_url.present? %>
-                <%= link_to 'Abrir gov.br novamente',
-                    @reserva.fnrh_precheckin_url,
-                    target: '_blank',
-                    rel: 'noopener',
-                    class: 'inline-flex min-h-[52px] w-full items-center justify-center border border-[#55613a] bg-transparent px-5 py-3 text-center font-extrabold text-[#3f4a2f] transition hover:bg-[#55613a] hover:text-white sm:w-auto' %>
-              <% end %>
-            </div>
-          <% elsif @reserva.fnrh_eligible? || @reserva.fnrh_reservation_id.present? %>
-            <p class="text-xs font-bold uppercase tracking-[0.12em] text-[#9f7f4f]">Pré-check-in gov.br</p>
-            <h3 class="mt-2 text-2xl font-medium" style="font-family: Georgia, 'Times New Roman', serif;">Finalize o pré-check-in para liberar o acesso.</h3>
-            <p class="mt-3 text-sm leading-6 text-[#6c7066]">
-              Depois que o gov.br confirmar o preenchimento, esta área libera serviços, serviços comprados e material do hóspede.
-            </p>
-
-            <%= button_to 'Continuar pelo gov.br',
-                fnrh_portal_access_path,
-                method: :post,
-                params: {
-                  guest_name: @guest_name,
-                  reservation_code: @reserva.id
-                },
-                form: { data: { fnrh_loading: true }, class: 'mt-5' },
-                class: 'inline-flex min-h-[56px] w-full items-center justify-center border border-[#55613a] bg-[#55613a] px-5 py-4 text-center font-extrabold text-white transition hover:border-[#3f4a2f] hover:bg-[#3f4a2f]' %>
-          <% else %>
-            <p class="text-xs font-bold uppercase tracking-[0.12em] text-[#9f7f4f]">Acesso em preparação</p>
-            <h3 class="mt-2 text-2xl font-medium" style="font-family: Georgia, 'Times New Roman', serif;">Seu pré-check-in ainda está sendo preparado.</h3>
-            <p class="mt-3 text-sm leading-6 text-[#6c7066]">
-              Tente novamente em alguns minutos. Se estiver próximo do horário de chegada, fale com a equipe pelo grupo de estadia.
-            </p>
-          <% end %>
         </div>
 
         <%= button_to 'Sair',
@@ -245,7 +188,7 @@
           </div>
 
           <button type="submit" class="inline-flex min-h-[56px] w-full items-center justify-center border border-[#55613a] bg-[#55613a] px-5 py-4 text-center font-extrabold text-white transition hover:border-[#3f4a2f] hover:bg-[#3f4a2f]">
-            Acessar Serviços e Material do Hospede
+            Acessar Serviços e Material do Hóspede
           </button>
         <% end %>
       </section>
