@@ -1,13 +1,16 @@
 class ReservationWhatsappTaskReminder
-  Result = Struct.new(:pending_count, :messages, :push_sent, :push_failed, keyword_init: true)
+  DEFAULT_RECIPIENT = 'flavoloski@gmail.com'.freeze
 
-  def self.run(slot:, date: Date.current)
-    new(slot: slot, date: date).run
+  Result = Struct.new(:pending_count, :messages, :email_sent, :email_failed, keyword_init: true)
+
+  def self.run(slot: :morning, date: Date.current, recipient: nil)
+    new(slot: slot, date: date, recipient: recipient).run
   end
 
-  def initialize(slot:, date:)
+  def initialize(slot:, date:, recipient:)
     @slot = slot.to_sym
     @date = date
+    @recipient = recipient.presence || ENV['WHATSAPP_TASK_ALERT_EMAIL'].presence || DEFAULT_RECIPIENT
   end
 
   def run
@@ -15,18 +18,18 @@ class ReservationWhatsappTaskReminder
 
     tasks = pending_tasks
     grouped = tasks.group_by(&:template_name)
-    messages = grouped.map do |template_name, grouped_tasks|
+    messages = grouped.sort_by { |template_name, _| template_name.to_s }.map do |template_name, grouped_tasks|
       "🚨 (#{grouped_tasks.size}) Mensagem de #{template_name} com envio pendente"
     end
-    push_result = notify_pending_groups(grouped)
+    email_result = deliver_email(tasks, messages)
 
-    mark_notified(tasks) if messages.any?
+    mark_notified(tasks) if email_result.fetch(:sent).positive?
 
     Result.new(
       pending_count: tasks.size,
       messages: messages,
-      push_sent: push_result.fetch(:sent),
-      push_failed: push_result.fetch(:failed)
+      email_sent: email_result.fetch(:sent),
+      email_failed: email_result.fetch(:failed)
     )
   end
 
@@ -43,6 +46,16 @@ class ReservationWhatsappTaskReminder
       .select { |task| task.reservation_email_template&.active? }
   end
 
+  def deliver_email(tasks, messages)
+    return { sent: 0, failed: 0 } if tasks.empty?
+
+    UserMailer.whatsapp_task_daily_alert(@recipient, tasks, messages, @date).deliver_now
+    { sent: 1, failed: 0 }
+  rescue => e
+    Rails.logger.error "Erro ao enviar e-mail de WhatsApp para #{@recipient}: #{e.message}"
+    { sent: 0, failed: 1 }
+  end
+
   def mark_notified(tasks)
     ids = tasks.map(&:id)
     return if ids.empty?
@@ -51,26 +64,5 @@ class ReservationWhatsappTaskReminder
     attrs[@slot == :morning ? :morning_notified_on : :evening_notified_on] = @date
 
     ReservationWhatsappTask.where(id: ids).update_all(attrs)
-  end
-
-  def notify_pending_groups(grouped)
-    grouped.each_with_object({ sent: 0, failed: 0 }) do |(template_name, grouped_tasks), result|
-      title = "🚨 (#{grouped_tasks.size}) Mensagem de #{template_name} com envio pendente"
-      response = WhatsappTaskPushNotifier.deliver(
-        title: title,
-        body: 'Abra o aplicativo da Flavia para copiar e marcar o envio.',
-        tag: "whatsapp-task-#{@slot}-#{@date}-#{template_name.parameterize}",
-        url: ENV['WHATSAPP_TASKS_URL']
-      )
-
-      if response.sent.to_i.positive?
-        result[:sent] += response.sent.to_i
-      else
-        result[:failed] += 1
-        Rails.logger.warn("Push WhatsApp não enviado: #{response.message}")
-      end
-
-      result[:failed] += response.failed.to_i
-    end
   end
 end

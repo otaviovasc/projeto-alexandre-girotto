@@ -1,0 +1,48 @@
+<span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;">
+  🚨 <%= @pending_count %> mensagem(ns) com envio pendente no Villaggio.
+</span>
+
+<div style="margin:0;padding:24px;background:#f5efe3;font-family:Arial,Helvetica,sans-serif;color:#172018;">
+  <div style="max-width:680px;margin:0 auto;background:#fffaf1;border:1px solid #d8cdb8;border-radius:16px;overflow:hidden;">
+    <div style="background:#2f5f3f;color:#fff;padding:22px 26px;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.9;">
+        Villaggio Girotto
+      </div>
+      <h1 style="margin:10px 0 0;font-size:26px;line-height:1.25;">
+        🚨 <%= @pending_count %> mensagem(ns) pendente(s)
+      </h1>
+      <p style="margin:10px 0 0;font-size:15px;line-height:1.5;color:#edf6ee;">
+        Existem mensagens de WhatsApp para copiar e enviar nos grupos de estadia.
+      </p>
+    </div>
+
+    <div style="padding:24px 26px;">
+      <div style="background:#fff3cd;border-left:5px solid #f59e0b;padding:14px 16px;margin-bottom:22px;color:#4b3210;">
+        <strong>Ação necessária:</strong> abra o aplicativo da Flávia, copie as mensagens pendentes e marque cada item como enviado.
+      </div>
+
+      <h2 style="margin:0 0 12px;font-size:18px;color:#172018;">Resumo das pendências</h2>
+
+      <% @tasks_by_template.each do |template_name, tasks| %>
+        <div style="border:1px solid #e1d8c8;background:#fffdf7;border-radius:12px;padding:14px 16px;margin-bottom:12px;">
+          <div style="font-size:15px;font-weight:700;color:#2f5f3f;">
+            <%= template_name %>
+          </div>
+          <div style="font-size:22px;font-weight:800;margin-top:6px;color:#172018;">
+            <%= tasks.size %> pendente(s)
+          </div>
+        </div>
+      <% end %>
+
+      <div style="margin:26px 0;">
+        <a href="<%= @url %>" style="display:block;background:#2f5f3f;color:#fff;text-decoration:none;text-align:center;font-size:17px;font-weight:700;padding:16px 18px;border-radius:10px;">
+          Abrir mensagens da Flávia
+        </a>
+      </div>
+
+      <p style="margin:0;color:#6d766d;font-size:13px;line-height:1.5;">
+        Aviso automático enviado em <%= @date.strftime('%d/%m/%Y') %> às 7h30.
+      </p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,14 @@
+🚨 <%= @pending_count %> mensagem(ns) com envio pendente no Villaggio.
+
+Existem mensagens de WhatsApp para copiar e enviar nos grupos de estadia.
+
+Resumo das pendências:
+
+<% @messages.each do |message| %>
+<%= message %>
+<% end %>
+
+Abra o aplicativo da Flávia:
+<%= @url %>
+
+Aviso automático enviado em <%= @date.strftime('%d/%m/%Y') %> às 7h30.

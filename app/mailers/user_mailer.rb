@@ -60,6 +60,20 @@ class UserMailer < ApplicationMailer
     mail(to: delivery.recipient_email, subject: delivery.subject)
   end
 
+  def whatsapp_task_daily_alert(recipient_email, tasks, messages, date)
+    @tasks = tasks
+    @messages = messages
+    @date = date
+    @pending_count = tasks.size
+    @tasks_by_template = tasks.group_by(&:template_name).sort_by { |template_name, _| template_name.to_s }
+    @url = ENV['WHATSAPP_TASKS_URL'].presence || 'https://villaggio-stock.onrender.com/admin/mensagens_whatsapp'
+
+    mail(
+      to: recipient_email,
+      subject: '🚨 Envio pendente de mensagens no Villaggio'
+    )
+  end
+
   private
 
   def public_booking_daily_total

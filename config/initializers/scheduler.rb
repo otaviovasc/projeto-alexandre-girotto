@@ -87,35 +87,19 @@ scheduler.cron '5 0 * * * America/Sao_Paulo', overlap: false do
   end
 end
 
-scheduler.cron '0 7 * * * America/Sao_Paulo', overlap: false do
+scheduler.cron '30 7 * * * America/Sao_Paulo', overlap: false do
   next unless EmailAutomationSetting.enabled?
 
-  Rails.logger.info 'Conferindo lembrete de WhatsApp das 7h...'
+  Rails.logger.info 'Conferindo e-mail de WhatsApp das 7h30...'
   begin
     result = ReservationWhatsappTaskReminder.run(slot: :morning)
     result.messages.each { |message| Rails.logger.warn(message) }
     Rails.logger.info(
-      "Push WhatsApp 7h: #{result.push_sent} enviado(s), " \
-      "#{result.push_failed} falha(s)."
+      "E-mail WhatsApp 7h30: #{result.email_sent} enviado(s), " \
+      "#{result.email_failed} falha(s)."
     )
   rescue => e
-    Rails.logger.error "Erro no lembrete de WhatsApp das 7h: #{e.message}"
-  end
-end
-
-scheduler.cron '0 18 * * * America/Sao_Paulo', overlap: false do
-  next unless EmailAutomationSetting.enabled?
-
-  Rails.logger.info 'Conferindo lembrete de WhatsApp das 18h...'
-  begin
-    result = ReservationWhatsappTaskReminder.run(slot: :evening)
-    result.messages.each { |message| Rails.logger.warn(message) }
-    Rails.logger.info(
-      "Push WhatsApp 18h: #{result.push_sent} enviado(s), " \
-      "#{result.push_failed} falha(s)."
-    )
-  rescue => e
-    Rails.logger.error "Erro no lembrete de WhatsApp das 18h: #{e.message}"
+    Rails.logger.error "Erro no e-mail de WhatsApp das 7h30: #{e.message}"
   end
 end
 
