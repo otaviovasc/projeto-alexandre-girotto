@@ -432,34 +432,43 @@ class PortalReservaController < ApplicationController
     return false if service.blank? || reserva.blank? || date.blank?
     return false if reserva.start_date.blank? || reserva.end_date.blank?
     return false unless date.between?(reserva.start_date, reserva.end_date)
-    return false if checkout_date?(reserva, date) && checkout_blocked_service?(service)
+    return false if checkin_date?(reserva, date) && checkin_blocked_service?(service) && !reserva.early_checkin?
+    return false if checkout_date?(reserva, date) && checkout_blocked_service?(service, reserva)
 
     true
   end
 
-  def checkout_blocked_service?(service)
-    afternoon_checkin_note_service?(service) ||
-      cold_cuts_service?(service) ||
-      fondue_service?(service)
+  def checkin_blocked_service?(service)
+    breakfast_service?(service) || lunch_service?(service)
+  end
+
+  def checkout_blocked_service?(service, reserva = @reserva)
+    return true if cold_cuts_service?(service) || fondue_service?(service)
+    return false if reserva&.late_checkout?
+
+    dinner_service?(service) || picnic_service?(service)
   end
 
   def automatic_observation_for_service_date(service, service_date)
     return if service_date.blank?
 
     if afternoon_checkin_note_service?(service)
-      return PORTAL_CHECKIN_AFTERNOON_NOTE if checkin_date?(@reserva, service_date)
+      return PORTAL_CHECKIN_AFTERNOON_NOTE if checkin_date?(@reserva, service_date) && !@reserva&.early_checkin?
+      return PORTAL_CHECKOUT_MORNING_NOTE if trail_or_horse_service?(service) && checkout_date?(@reserva, service_date) && !@reserva&.late_checkout?
 
       return
     end
 
     if massage_service?(service)
-      return PORTAL_CHECKIN_AFTERNOON_NOTE if checkin_date?(@reserva, service_date)
-      return PORTAL_CHECKOUT_MORNING_NOTE if checkout_date?(@reserva, service_date)
+      return PORTAL_CHECKIN_AFTERNOON_NOTE if checkin_date?(@reserva, service_date) && !@reserva&.early_checkin?
+      return PORTAL_CHECKOUT_MORNING_NOTE if checkout_date?(@reserva, service_date) && !@reserva&.late_checkout?
     end
   end
 
   def portal_service_date_error_message(service)
-    if checkout_blocked_service?(service)
+    if checkin_blocked_service?(service)
+      "#{service.name} não pode ser selecionado para o dia do check-in sem early check-in."
+    elsif checkout_blocked_service?(service)
       "#{service.name} não pode ser selecionado para o dia do checkout."
     else
       "Selecione uma data válida para este serviço."
@@ -467,10 +476,29 @@ class PortalReservaController < ApplicationController
   end
 
   def afternoon_checkin_note_service?(service)
+    trail_or_horse_service?(service) || picnic_service?(service)
+  end
+
+  def trail_or_horse_service?(service)
     normalized_name = service.name.to_s.parameterize
     normalized_name.include?("trilha") ||
-      normalized_name.include?("cavalo") ||
-      normalized_name.include?("piquenique")
+      normalized_name.include?("cavalo")
+  end
+
+  def breakfast_service?(service)
+    service.name.to_s.parameterize.include?("cafe-da-manha")
+  end
+
+  def lunch_service?(service)
+    service.name.to_s.parameterize.include?("almoco")
+  end
+
+  def dinner_service?(service)
+    service.name.to_s.parameterize.include?("jantar")
+  end
+
+  def picnic_service?(service)
+    service.name.to_s.parameterize.include?("piquenique")
   end
 
   def massage_service?(service)

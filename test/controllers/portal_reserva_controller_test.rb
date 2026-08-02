@@ -57,12 +57,58 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Fondue: chocolate. Sem lactose", controller.send(:observation_for_service, service)
   end
 
-  test "blocks checkout date for services that cannot happen on checkout" do
+  test "blocks breakfast and lunch on check in unless reservation has early check in" do
+    controller = PortalReservaController.new
+    reserva = Reserva.new(start_date: Date.new(2026, 8, 10), end_date: Date.new(2026, 8, 12))
+    allowed_dates = [Date.new(2026, 8, 11), Date.new(2026, 8, 12)]
+
+    ["Café da Manhã", "Almoço"].each do |service_name|
+      service = Service.new(name: service_name)
+
+      assert_equal allowed_dates, controller.send(:portal_service_dates, service, reserva), service_name
+      assert_not controller.send(:portal_service_date_allowed?, service, reserva, reserva.start_date), service_name
+    end
+
+    reserva.early_checkin = true
+
+    ["Café da Manhã", "Almoço"].each do |service_name|
+      service = Service.new(name: service_name)
+
+      assert_equal [Date.new(2026, 8, 10), Date.new(2026, 8, 11), Date.new(2026, 8, 12)],
+                   controller.send(:portal_service_dates, service, reserva),
+                   service_name
+    end
+  end
+
+  test "blocks checkout for dinner and picnic unless reservation has late checkout" do
     controller = PortalReservaController.new
     reserva = Reserva.new(start_date: Date.new(2026, 8, 10), end_date: Date.new(2026, 8, 12))
     allowed_dates = [Date.new(2026, 8, 10), Date.new(2026, 8, 11)]
 
-    ["Passeio a Cavalo", "Trilha a Pé", "Piquenique", "Tábua de Frios", "Kit de Fondue"].each do |service_name|
+    ["Jantar", "Piquenique"].each do |service_name|
+      service = Service.new(name: service_name)
+
+      assert_equal allowed_dates, controller.send(:portal_service_dates, service, reserva), service_name
+      assert_not controller.send(:portal_service_date_allowed?, service, reserva, reserva.end_date), service_name
+    end
+
+    reserva.late_checkout = true
+
+    ["Jantar", "Piquenique"].each do |service_name|
+      service = Service.new(name: service_name)
+
+      assert_equal [Date.new(2026, 8, 10), Date.new(2026, 8, 11), Date.new(2026, 8, 12)],
+                   controller.send(:portal_service_dates, service, reserva),
+                   service_name
+    end
+  end
+
+  test "always blocks checkout for cold cuts and fondue" do
+    controller = PortalReservaController.new
+    reserva = Reserva.new(start_date: Date.new(2026, 8, 10), end_date: Date.new(2026, 8, 12), late_checkout: true)
+    allowed_dates = [Date.new(2026, 8, 10), Date.new(2026, 8, 11)]
+
+    ["Tábua de Frios", "Kit de Fondue"].each do |service_name|
       service = Service.new(name: service_name)
 
       assert_equal allowed_dates, controller.send(:portal_service_dates, service, reserva), service_name
@@ -83,16 +129,46 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     assert_equal "de manhã antes do check-out", controller.send(:observation_for_service, service, reserva.end_date)
   end
 
-  test "adds automatic afternoon note to trail horse ride and picnic only on check in" do
+  test "adds automatic timing notes to trail horse ride and picnic only when needed" do
     controller = PortalReservaController.new
     reserva = Reserva.new(start_date: Date.new(2026, 8, 10), end_date: Date.new(2026, 8, 12))
     controller.instance_variable_set(:@reserva, reserva)
 
-    ["Passeio a Cavalo", "Trilha a Pé", "Piquenique"].each do |service_name|
+    ["Passeio a Cavalo", "Trilha a Pé"].each do |service_name|
       service = Service.new(name: service_name)
 
+      assert_equal [Date.new(2026, 8, 10), Date.new(2026, 8, 11), Date.new(2026, 8, 12)],
+                   controller.send(:portal_service_dates, service, reserva),
+                   service_name
       assert_equal "de tarde após check-in", controller.send(:observation_for_service, service, reserva.start_date)
       assert_nil controller.send(:observation_for_service, service, Date.new(2026, 8, 11))
+      assert_equal "de manhã antes do check-out", controller.send(:observation_for_service, service, reserva.end_date)
+    end
+
+    picnic = Service.new(name: "Piquenique")
+
+    assert_equal [Date.new(2026, 8, 10), Date.new(2026, 8, 11)],
+                 controller.send(:portal_service_dates, picnic, reserva)
+    assert_equal "de tarde após check-in", controller.send(:observation_for_service, picnic, reserva.start_date)
+    assert_nil controller.send(:observation_for_service, picnic, Date.new(2026, 8, 11))
+    assert_nil controller.send(:observation_for_service, picnic, reserva.end_date)
+  end
+
+  test "skips automatic timing notes when early check in or late checkout gives enough stay time" do
+    controller = PortalReservaController.new
+    reserva = Reserva.new(
+      start_date: Date.new(2026, 8, 10),
+      end_date: Date.new(2026, 8, 12),
+      early_checkin: true,
+      late_checkout: true
+    )
+    controller.instance_variable_set(:@reserva, reserva)
+
+    ["Passeio a Cavalo", "Trilha a Pé", "Piquenique", "Massagem para uma pessoa"].each do |service_name|
+      service = Service.new(name: service_name)
+
+      assert_nil controller.send(:observation_for_service, service, reserva.start_date), service_name
+      assert_nil controller.send(:observation_for_service, service, reserva.end_date), service_name
     end
   end
 
