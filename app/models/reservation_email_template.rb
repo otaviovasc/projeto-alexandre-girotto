@@ -125,23 +125,56 @@ class ReservationEmailTemplate < ApplicationRecord
       BODY
     },
     {
-      trigger_key: 'checkin_day_7am',
-      name: 'Dia da chegada - 7h',
+      trigger_key: 'checkin_day_7am_serra',
+      name: 'Dia da chegada - 7h (Serra)',
       trigger_anchor: 'checkin',
       offset_days: 0,
       send_time: '07:00',
-      filial_scope: 'all',
+      filial_scope: 'serra',
       subject: 'Hoje é o dia da sua chegada na {{cabana}}',
       body: <<~BODY
         Olá, {{hospede}}.
 
         Hoje é o dia da sua chegada ao Villaggio.
 
-        Confira o horário combinado no grupo de estadia e baixe o material do hóspede.
+        O limite de entrada é até as 19h. Se não conseguir chegar até esse horário, nos avise e te ajudamos com isso.
+
+        Baixe o material do hóspede antes da viagem.
 
         Carregue a rota APENAS pelo Google Maps e siga as instruções do material do hóspede.
 
         Não temos portaria fixa e não há equipe no local após o horário de chegada. Se não se sentir confortável com a última parte do trajeto, pare no estacionamento da entrada.
+
+        Código da reserva: {{codigo}}
+
+        Qualquer dúvida, fale conosco pelo WhatsApp: {{whatsapp}}.
+
+        Atenciosamente,
+
+        Maisa,
+        Responsável pela curadoria do Villaggio Girotto.
+      BODY
+    },
+    {
+      trigger_key: 'checkin_day_7am_brauna',
+      name: 'Dia da chegada - 7h (Braúna)',
+      trigger_anchor: 'checkin',
+      offset_days: 0,
+      send_time: '07:00',
+      filial_scope: 'brauna',
+      subject: 'Hoje é o dia da sua chegada na {{cabana}}',
+      body: <<~BODY
+        Olá, {{hospede}}.
+
+        Hoje é o dia da sua chegada ao Villaggio.
+
+        O limite de entrada é até as 19h. Se não conseguir chegar até esse horário, nos avise e te ajudamos com isso.
+
+        Baixe o material do hóspede antes da viagem.
+
+        Carregue a rota APENAS pelo Google Maps e siga as instruções do material do hóspede.
+
+        Não temos portaria fixa e não há equipe no local após o horário de chegada.
 
         Código da reserva: {{codigo}}
 
@@ -307,14 +340,27 @@ class ReservationEmailTemplate < ApplicationRecord
 
       Antes da viagem, confira o material do hóspede na primeira mensagem deste grupo.
     BODY
-    'checkin_day_7am' => <<~BODY,
+    'checkin_day_7am_serra' => <<~BODY,
       Olá, {{hospede}}! Hoje é o dia da sua chegada ao Villaggio.
 
-      Confira o horário combinado aqui no grupo e baixe o material do hóspede.
+      O limite de entrada é até as 19h. Se não conseguir chegar até esse horário, nos avise e te ajudamos com isso.
+
+      Baixe o material do hóspede antes da viagem.
 
       Carregue a rota APENAS pelo Google Maps e siga as instruções do material.
 
       Não temos portaria fixa e não há equipe no local após o horário de chegada. Se não se sentir confortável com a última parte do trajeto, pare no estacionamento da entrada.
+    BODY
+    'checkin_day_7am_brauna' => <<~BODY,
+      Olá, {{hospede}}! Hoje é o dia da sua chegada ao Villaggio.
+
+      O limite de entrada é até as 19h. Se não conseguir chegar até esse horário, nos avise e te ajudamos com isso.
+
+      Baixe o material do hóspede antes da viagem.
+
+      Carregue a rota APENAS pelo Google Maps e siga as instruções do material.
+
+      Não temos portaria fixa e não há equipe no local após o horário de chegada.
     BODY
     'first_night_check' => <<~BODY,
       Olá, {{hospede}}! Passando para saber se está tudo certo com sua estadia.
