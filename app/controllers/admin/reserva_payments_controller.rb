@@ -28,7 +28,7 @@ class Admin::ReservaPaymentsController < ApplicationController
       return
     end
 
-    @reserva_payment.update!(payment_status: 'canceled', canceled_at: Time.current)
+    ReservaPaymentProcessor.call(reserva_payment: @reserva_payment, status: 'canceled', source: 'manual_cancel')
     redirect_to admin_reserva_path(@reserva_payment.reserva), notice: 'Link cancelado no sistema.'
   rescue => e
     redirect_to admin_reserva_path(@reserva_payment.reserva), alert: "Não foi possível cancelar o link: #{e.message}"
@@ -74,6 +74,8 @@ class Admin::ReservaPaymentsController < ApplicationController
   def sync_flash_for(result)
     if result.paid.positive?
       { notice: 'Pagamento confirmado na Cielo e aplicado no sistema.' }
+    elsif result.respond_to?(:late_paid) && result.late_paid.positive?
+      { alert: 'A Cielo informou pagamento após o vencimento. A reserva não foi reativada automaticamente.' }
     elsif result.refused.positive?
       { alert: 'A Cielo informou pagamento recusado.' }
     elsif result.canceled.positive?

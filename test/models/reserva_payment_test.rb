@@ -50,4 +50,33 @@ class ReservaPaymentTest < ActiveSupport::TestCase
     assert_equal created_at + 15.minutes, payment.guest_visible_due_at
     assert_nil payment.guest_visible_hold_label
   end
+
+  test "late online payment does not confirm reservation" do
+    filial = Filial.create!(name: "Filial pagamento tarde")
+    cabana = Cabana.create!(name: "Cabana pagamento tarde", price: 100, filial: filial)
+    reserva = Reserva.create!(
+      cabana: cabana,
+      user: users(:one),
+      start_date: Date.current + 2.months,
+      end_date: Date.current + 2.months + 2.days,
+      payment_status: "canceled",
+      blocks_availability: false,
+      total_price: 100
+    )
+    payment = reserva.reserva_payments.create!(
+      installment_number: 1,
+      amount: 100,
+      due_at: 1.hour.ago,
+      payment_status: "canceled",
+      payment_order_code: "RP#{reserva.id}LATE"
+    )
+
+    GoogleSheetsExportService.stub(:configured?, false) do
+      ReservaPaymentProcessor.call(reserva_payment: payment, status: "paid", source: "cielo_sync")
+    end
+
+    assert payment.reload.late_paid?
+    assert reserva.reload.canceled?
+    assert_not reserva.blocks_availability?
+  end
 end

@@ -8,6 +8,7 @@ class ReservaPayment < ApplicationRecord
   enum payment_status: {
     waiting_payment: 'waiting_payment',
     paid: 'paid',
+    late_paid: 'late_paid',
     refused: 'refused',
     canceled: 'canceled',
     overdue: 'overdue'
@@ -27,9 +28,18 @@ class ReservaPayment < ApplicationRecord
   scope :open, -> { where(payment_status: 'waiting_payment') }
   scope :expired, -> { open.where('due_at < ?', Time.current) }
   scope :overdue_installments, -> { where(payment_status: 'overdue') }
+  scope :late_paid_installments, -> { where(payment_status: 'late_paid') }
 
   def expired?
     waiting_payment? && due_at.present? && due_at < Time.current
+  end
+
+  def paid_for_history?
+    paid? || late_paid?
+  end
+
+  def inactive_for_guest_payment?
+    canceled? || overdue? || refused? || late_paid?
   end
 
   def confirmation_installment?

@@ -126,6 +126,17 @@
     color: #991b1b;
   }
 
+  .service-item.payment-late-paid {
+    background: #fff7ed;
+    border-color: #f97316;
+    color: #9a3412;
+  }
+
+  .service-item.payment-late-paid .service-date,
+  .service-item.payment-late-paid .service-name {
+    color: #9a3412;
+  }
+
   .service-info {
     display: flex;
     align-items: center;
@@ -311,6 +322,15 @@
     <% end %>
   </div>
 
+  <% late_paid_reserva_payments = @reserva.reserva_payments.late_paid_installments.order(:paid_at, :due_at) %>
+  <% if !hide_financials? && late_paid_reserva_payments.any? %>
+    <div class="alert alert-warning" style="border-left: 5px solid #f97316;">
+      <strong>Pagamento recebido após o vencimento.</strong>
+      O pagamento foi identificado, mas a reserva não foi reativada automaticamente e as datas não foram travadas novamente.
+      Confira manualmente antes de qualquer ajuste.
+    </div>
+  <% end %>
+
   <!-- Informações Principais -->
   <div class="info-card">
     <h3 class="info-card-title">📋 Informações da Reserva</h3>
@@ -430,10 +450,11 @@
     <% reservation_payments = @reserva.reserva_payments.order(:installment_number) %>
     <% message_payments = reservation_payments.select { |payment| payment.paid? || payment.waiting_payment? } %>
     <% first_payment = message_payments.find(&:confirmation_installment?) || message_payments.first %>
-    <% active_payment_count = reservation_payments.reject(&:canceled?).size %>
+    <% active_payment_count = reservation_payments.reject(&:inactive_for_guest_payment?).size %>
     <% next_extra_due_at = 1.day.from_now.in_time_zone('America/Sao_Paulo').strftime('%Y-%m-%dT%H:%M') %>
     <% currency = ->(amount) { number_to_currency(amount, unit: 'R$ ', separator: ',', delimiter: '.') } %>
-    <% display_due_at_for = ->(payment) { payment.guest_visible_due_at.in_time_zone('America/Sao_Paulo') } %>
+    <% display_due_at_for = ->(payment) { (payment&.guest_visible_due_at || payment&.due_at || Time.current).in_time_zone('America/Sao_Paulo') } %>
+    <% actual_due_at_for = ->(payment) { (payment&.due_at || payment&.guest_visible_due_at || Time.current).in_time_zone('America/Sao_Paulo') } %>
     <% display_hold_label_for = ->(payment) { payment.guest_visible_hold_label.presence || 'o prazo informado' } %>
     <% installment_options = [['Padrão: até 6x', '']] + (1..12).map { |number| ["Até #{number}x", number] } %>
     <% payment_service_items = @reserva.pending_payment_service_items %>
@@ -448,6 +469,7 @@
     <% end %>
     <% purchase_summary_lines << "Total: #{currency.call(@reserva.pending_payment_checkout_total)}" %>
     <% purchase_summary_lines << "" %>
+    <% message_lines = [] %>
     <% if message_payments.one? %>
       <% payment = message_payments.first %>
       <% due_at_text = display_due_at_for.call(payment).strftime('%d/%m/%Y, às %Hh%M') %>
@@ -464,7 +486,7 @@
       <% message_lines << "⚠️ A data e o link ficam pré-reservados por até #{display_hold_label_for.call(payment)}. Após a confirmação do pagamento, as datas serão confirmadas." %>
       <% message_lines << "" %>
       <% message_lines << "⚠️ Caso o pagamento não seja realizado dentro do prazo, a reserva poderá ser cancelada automaticamente." %>
-    <% else %>
+    <% elsif message_payments.many? %>
       <% message_lines = ["Segue abaixo os links para realizar a reserva e mantê-la em dia:", ""] %>
       <% message_lines.concat(purchase_summary_lines) %>
       <% if first_payment&.waiting_payment? %>
@@ -487,13 +509,16 @@
 
       <div class="services-list" style="margin-top: 1rem;">
         <% reservation_payments.each do |payment| %>
-          <% if payment.canceled? %>
-            <div class="service-item payment-canceled">
+          <% if payment.canceled? || payment.late_paid? %>
+            <div class="service-item <%= payment.late_paid? ? 'payment-late-paid' : 'payment-canceled' %>">
               <div class="service-info">
-                <span class="service-date"><%= payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %></span>
-                <span class="service-quantity"><%= payment.payment_status.humanize %></span>
+                <span class="service-date"><%= actual_due_at_for.call(payment).strftime('%d/%m/%Y às %H:%M') %></span>
+                <span class="service-quantity"><%= payment.late_paid? ? 'Pago após vencimento' : payment.payment_status.humanize %></span>
+                <% if payment.late_paid? && payment.paid_at.present? %>
+                  <span class="service-date">Pago em <%= payment.paid_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %></span>
+                <% end %>
               </div>
-              <span style="margin-left: 0.5rem; color: #991b1b; font-weight: 600;">
+              <span style="margin-left: 0.5rem; color: <%= payment.late_paid? ? '#9a3412' : '#991b1b' %>; font-weight: 600;">
                 <%= number_to_currency(payment.amount, unit: 'R$ ', separator: ',', delimiter: '.') %>
               </span>
             </div>
@@ -501,7 +526,7 @@
             <div class="service-item">
               <div class="service-info">
                 <span class="service-name"><%= payment.installment_number %>ª parcela</span>
-                <span class="service-date"><%= payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %></span>
+                <span class="service-date"><%= actual_due_at_for.call(payment).strftime('%d/%m/%Y às %H:%M') %></span>
                 <span class="service-quantity"><%= payment.payment_status.humanize %></span>
                 <span class="service-quantity">Cartão até <%= payment.max_credit_card_installments %>x</span>
               </div>
@@ -556,7 +581,7 @@
                   <div>
                     <%= form.label :due_at, 'Novo prazo', class: 'form-label mb-1' %>
                     <%= form.datetime_local_field :due_at,
-                        value: payment.due_at.in_time_zone('America/Sao_Paulo').strftime('%Y-%m-%dT%H:%M'),
+                        value: actual_due_at_for.call(payment).strftime('%Y-%m-%dT%H:%M'),
                         class: 'form-control form-control-sm' %>
                   </div>
                   <div>

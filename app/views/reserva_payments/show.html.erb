@@ -88,9 +88,16 @@
       </div>
 
       <div class="vg-summary-total">
-        <span>Total da reserva</span>
-        <strong><%= number_to_currency(@reservation_total, unit: 'R$ ', separator: ',', delimiter: '.') %></strong>
+        <span><%= @payment_amount_differs_from_reservation_total ? 'Valor deste pagamento' : 'Total da reserva' %></span>
+        <strong><%= number_to_currency(@payment_amount, unit: 'R$ ', separator: ',', delimiter: '.') %></strong>
       </div>
+
+      <% if @payment_amount_differs_from_reservation_total %>
+        <div class="mt-4 border border-[#d9dfd7] bg-[#f7f9f6] p-4 text-sm leading-6 text-[#3f4b43]">
+          Este link cobra somente este pagamento.
+          Total geral da reserva: <strong><%= number_to_currency(@reservation_total, unit: 'R$ ', separator: ',', delimiter: '.') %></strong>.
+        </div>
+      <% end %>
 
       <% if @reserva.reserva_payments.where.not(payment_status: 'canceled').count > 1 %>
         <div class="mt-5 border border-[#d9dfd7] bg-[#f7f9f6] p-4 text-sm leading-6 text-[#3f4b43]">
@@ -134,6 +141,12 @@
       <% elsif @reserva_payment.terms_accepted? %>
         <div class="vg-alert success">
           Termos aceitos por <strong><%= @reserva_payment.terms_acceptance_display_name %></strong>.
+        </div>
+
+        <div class="vg-alert warning">
+          <strong>Atenção ao prazo.</strong>
+          Não realize o pagamento após o horário limite informado nesta página, mesmo que o checkout da Cielo ainda esteja abrindo.
+          Pagamentos feitos fora do prazo não confirmam a reserva automaticamente e dependem de conferência manual de disponibilidade.
         </div>
 
         <%= link_to 'Pagar com segurança pela Cielo',

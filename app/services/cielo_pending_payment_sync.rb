@@ -2,7 +2,7 @@ class CieloPendingPaymentSync
   DEFAULT_LIMIT = 25
   DEFAULT_LOOKBACK_HOURS = 14 * 24
 
-  Result = Struct.new(:checked, :paid, :refused, :canceled, :errors, keyword_init: true)
+  Result = Struct.new(:checked, :paid, :late_paid, :refused, :canceled, :errors, keyword_init: true)
 
   def self.run(limit: nil, lookback_hours: nil)
     new(limit: limit, lookback_hours: lookback_hours).call
@@ -18,7 +18,7 @@ class CieloPendingPaymentSync
       lookback_hours || ENV["CIELO_PENDING_PAYMENT_SYNC_LOOKBACK_HOURS"],
       DEFAULT_LOOKBACK_HOURS
     )
-    @result = Result.new(checked: 0, paid: 0, refused: 0, canceled: 0, errors: 0)
+    @result = Result.new(checked: 0, paid: 0, late_paid: 0, refused: 0, canceled: 0, errors: 0)
   end
 
   def call
@@ -103,13 +103,25 @@ class CieloPendingPaymentSync
   end
 
   def pending_reserva_payments
-    ReservaPayment
+    waiting_payments = ReservaPayment
       .includes(reserva: { cabana: :filial })
       .where(payment_status: "waiting_payment")
       .where.not(payment_order_code: nil)
       .order(:due_at, :updated_at)
       .limit(scan_limit)
       .to_a
+
+    inactive_recent_payments = ReservaPayment
+      .includes(reserva: { cabana: :filial })
+      .where(payment_status: %w[canceled overdue refused])
+      .where(paid_at: nil)
+      .where.not(payment_order_code: nil)
+      .where("due_at >= :cutoff OR updated_at >= :cutoff", cutoff: cutoff_time)
+      .order(:updated_at)
+      .limit(scan_limit)
+      .to_a
+
+    (waiting_payments + inactive_recent_payments).uniq(&:id)
   end
 
   def sync_order(order)
@@ -138,7 +150,7 @@ class CieloPendingPaymentSync
       status: status
     )
 
-    increment_result(status)
+    increment_result(status, order)
   rescue CieloCheckoutService::Error => e
     @result.errors += 1
     Rails.logger.warn(
@@ -181,10 +193,14 @@ class CieloPendingPaymentSync
     CieloCheckoutService.checkout_order_number_from(record&.payment_link_id, record&.payment_order_code)
   end
 
-  def increment_result(status)
+  def increment_result(status, order)
     case status
     when "paid"
-      @result.paid += 1
+      if ReservaPayment.where(payment_order_code: order.order_code, payment_status: "late_paid").exists?
+        @result.late_paid += 1
+      else
+        @result.paid += 1
+      end
     when "refused"
       @result.refused += 1
     when "canceled", "cancelled"

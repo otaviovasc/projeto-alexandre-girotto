@@ -116,6 +116,24 @@ class CieloCheckoutService
       raise Error.new("Erro ao consultar pagamento Cielo: #{parsed_response['message'] || response.message}", response)
     end
 
+    def void_checkout_order(checkout_order_number)
+      raise Error, "Codigo de checkout da Cielo nao informado para cancelar." if checkout_order_number.blank?
+
+      response = HTTParty.put(
+        "#{TRANSACTIONS_API_URL}/orders/#{checkout_order_number}/void",
+        headers: {
+          "Authorization" => "Bearer #{access_token}",
+          "Accept" => "application/json"
+        },
+        timeout: REQUEST_TIMEOUT_SECONDS
+      )
+
+      parsed_response = parse_response(response)
+      return parsed_response if response.code.between?(200, 299)
+
+      raise Error.new("Erro ao cancelar checkout Cielo: #{parsed_response['message'] || response.message}", response)
+    end
+
     def find_by_order_number(order_number)
       return {} if order_number.blank?
 

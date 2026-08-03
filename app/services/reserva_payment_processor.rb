@@ -28,13 +28,16 @@ class ReservaPaymentProcessor
   private
 
   def mark_paid!
-    if @reserva_payment.public_booking? && @reserva_payment.expired?
-      Rails.logger.warn("Pagamento recebido depois do prazo para reserva publica #{@reserva_payment.id}; reserva nao foi confirmada.")
-      mark_overdue!
+    if late_or_inactive_reservation_payment?
+      Rails.logger.warn(
+        "Pagamento recebido depois do prazo ou em link inativo para reserva_payment ##{@reserva_payment.id}; " \
+        "reserva nao foi confirmada."
+      )
+      mark_late_paid!
       return
     end
 
-    if @reserva_payment.canceled? || @reserva_payment.overdue? || @reserva_payment.refused?
+    if @reserva_payment.canceled? || @reserva_payment.overdue? || @reserva_payment.refused? || @reserva_payment.late_paid?
       Rails.logger.warn("Pagamento recebido para link inativo de reserva_payment ##{@reserva_payment.id}; reserva nao foi alterada.")
       return
     end
@@ -86,30 +89,65 @@ class ReservaPaymentProcessor
   end
 
   def mark_waiting!
-    return if @reserva_payment.paid?
+    return if payment_finalized?
 
     @reserva_payment.update!(payment_status: 'waiting_payment')
   end
 
   def mark_refused!
-    return if @reserva_payment.paid?
+    return if payment_finalized?
 
     @reserva_payment.update!(payment_status: 'refused')
     cancel_reserva!("Pagamento recusado pela Cielo.") if confirmation_payment_still_needed?
   end
 
   def mark_canceled!
-    return if @reserva_payment.paid?
+    return if payment_finalized?
+    return if @reserva_payment.canceled? || @reserva_payment.overdue?
 
+    cancel_cielo_link
+
+    @reserva_payment.reload
+    return if payment_finalized?
     @reserva_payment.update!(payment_status: 'canceled', canceled_at: Time.current)
     cancel_reserva!("Pagamento cancelado na Cielo.") if confirmation_payment_still_needed?
   end
 
   def mark_overdue!
-    return if @reserva_payment.paid?
+    return if payment_finalized?
+    return if @reserva_payment.canceled? || @reserva_payment.overdue?
 
+    cancel_cielo_link
+
+    @reserva_payment.reload
+    return if payment_finalized?
     @reserva_payment.update!(payment_status: 'overdue')
     cancel_reserva!("Primeira parcela vencida sem pagamento.") if confirmation_payment_still_needed?
+  end
+
+  def mark_late_paid!
+    newly_late_paid = false
+    canceled_reserva = false
+
+    ReservaPayment.transaction do
+      @reserva_payment.lock!
+      unless @reserva_payment.paid? || @reserva_payment.late_paid?
+        newly_late_paid = true
+        @reserva_payment.update!(
+          payment_status: 'late_paid',
+          paid_at: @reserva_payment.paid_at || Time.current
+        )
+      end
+    end
+
+    return unless newly_late_paid
+
+    if confirmation_payment_still_needed?
+      cancel_reserva!("Pagamento recebido após vencimento; reserva não confirmada.")
+      canceled_reserva = true
+    end
+
+    export_reservas_to_sheets unless canceled_reserva
   end
 
   def cancel_reserva!(reason)
@@ -150,5 +188,25 @@ class ReservaPaymentProcessor
 
   def confirmation_payment_still_needed?
     @reserva_payment.confirmation_installment? && !@reserva.paid?
+  end
+
+  def payment_finalized?
+    @reserva_payment.paid? || @reserva_payment.late_paid?
+  end
+
+  def late_or_inactive_reservation_payment?
+    return false if @source.to_s == 'manual'
+
+    deadline_passed = @reserva_payment.due_at.present? && @reserva_payment.due_at < Time.current
+    link_inactive = @reserva_payment.canceled? || @reserva_payment.overdue? || @reserva_payment.refused?
+    reservation_inactive = @reserva.canceled? && !@reserva_payment.paid?
+
+    deadline_passed || link_inactive || reservation_inactive
+  end
+
+  def cancel_cielo_link
+    return if @source.to_s == 'cielo_cancel_guard'
+
+    CieloCheckoutLinkCanceller.call(reserva_payment: @reserva_payment, source: @source)
   end
 end

@@ -59,7 +59,8 @@ class ReservaPaymentsController < ApplicationController
   end
 
   def sync_cielo_checkout_status!
-    return unless @reserva_payment.waiting_payment?
+    return if @reserva_payment.paid? || @reserva_payment.late_paid?
+    return unless @reserva_payment.waiting_payment? || @reserva_payment.inactive_for_guest_payment?
     return if @reserva_payment.payment_order_code.blank?
 
     filial = @reserva_payment.reserva.cabana.filial
@@ -109,8 +110,7 @@ class ReservaPaymentsController < ApplicationController
 
   def payment_link_unavailable?
     @reserva.canceled? ||
-      @reserva_payment.canceled? ||
-      @reserva_payment.overdue? ||
+      @reserva_payment.inactive_for_guest_payment? ||
       @reserva_payment.expired?
   end
 
@@ -120,20 +120,26 @@ class ReservaPaymentsController < ApplicationController
     @payment_unavailable = payment_link_unavailable?
     @payment_status_label = payment_status_label(@reserva_payment.payment_status)
     @payment_link_url = @reserva_payment.payment_link_url
-    @purchase_items = purchase_items
     @reservation_total = reservation_total
+    @payment_amount = decimal_value(@reserva_payment.amount)
+    @payment_amount_differs_from_reservation_total = @payment_amount != @reservation_total
+    @purchase_items = purchase_items
     @payment_due_at = @reserva_payment.guest_visible_due_at&.in_time_zone('America/Sao_Paulo')
     @nights_count = nights_count
   end
 
   def payment_open?
-    @reserva_payment.waiting_payment? && !@reserva_payment.expired? && !@reserva.canceled?
+    @reserva_payment.waiting_payment? &&
+      !@reserva_payment.expired? &&
+      !@reserva_payment.inactive_for_guest_payment? &&
+      !@reserva.canceled?
   end
 
   def payment_status_label(status)
     {
       'waiting_payment' => 'Aguardando pagamento',
       'paid' => 'Pagamento confirmado',
+      'late_paid' => 'Pago após vencimento',
       'refused' => 'Pagamento recusado',
       'canceled' => 'Link cancelado',
       'overdue' => 'Prazo vencido'
@@ -141,9 +147,25 @@ class ReservaPaymentsController < ApplicationController
   end
 
   def purchase_items
+    return payment_only_purchase_items if @payment_amount_differs_from_reservation_total
     return public_booking_purchase_items if @reserva_payment.public_booking?
 
     admin_purchase_items
+  end
+
+  def payment_only_purchase_items
+    [{
+      name: payment_item_name,
+      detail: stay_detail,
+      quantity: 1,
+      total: @payment_amount
+    }]
+  end
+
+  def payment_item_name
+    return "#{@reserva_payment.installment_number}ª parcela da reserva" if @reserva_payment.installment_number.to_i > 1
+
+    'Pagamento da reserva'
   end
 
   def public_booking_purchase_items
