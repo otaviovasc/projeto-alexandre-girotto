@@ -42,7 +42,7 @@ class PortalReservaController < ApplicationController
     
     expire_stale_portal_cart_items(reserva)
     
-    redirect_to portal_reserva_inicio_path
+    redirect_to fnrh_terms_path
   end
 
   # GET /minha-reserva/inicio
@@ -65,7 +65,6 @@ class PortalReservaController < ApplicationController
     @reserva = Reserva.includes(:user, cabana: :filial).find(session[:portal_reserva_id])
     @purchased_services = reservation_services_for_portal(@reserva)
     @operational_services = operational_services_for_portal(@reserva)
-    @available_service_dates = available_service_dates(@reserva)
   end
 
   # PATCH /minha-reserva/comprados/:id
@@ -90,8 +89,12 @@ class PortalReservaController < ApplicationController
     end
 
     new_date = parse_service_date(params[:service_date])
-    unless new_date.present? && new_date.between?(@reserva.start_date, @reserva.end_date)
-      redirect_to portal_reserva_comprados_path, alert: "Escolha uma data dentro do período da reserva." and return
+    unless new_date.present?
+      redirect_to portal_reserva_comprados_path, alert: "Escolha uma data válida." and return
+    end
+
+    unless reserva_services.all? { |item| portal_service_date_allowed?(item.service, @reserva, new_date) }
+      redirect_to portal_reserva_comprados_path, alert: portal_service_date_error_message(reserva_service.service) and return
     end
 
     ReservaService.transaction do
@@ -287,7 +290,7 @@ class PortalReservaController < ApplicationController
     flash[:alert] = e.message
     redirect_to portal_reserva_servicos_path
   rescue => e
-    Rails.logger.error("Unexpected portal payment error: #{e.message}")
+    Rails.logger.error("Unexpected portal payment error: #{e.class}: #{e.message}\n#{Array(e.backtrace).first(5).join("\n")}")
     flash[:alert] = "Nao foi possivel iniciar o pagamento. Tente novamente."
     redirect_to portal_reserva_servicos_path
   end
@@ -525,7 +528,7 @@ class PortalReservaController < ApplicationController
 
     portal_cart_items(reserva).destroy_all
     flash[:alert] = reserva.service_purchase_closed_message
-    redirect_to portal_reserva_inicio_path
+    redirect_to fnrh_terms_path
   end
 
   def create_portal_payment_link
@@ -553,7 +556,7 @@ class PortalReservaController < ApplicationController
       cart_item_late_fee = late_fee_assigned ? 0.to_d : late_fee_amount
       late_fee_assigned = true
 
-      cart_item.update_columns(
+      payment_attributes = {
         payment_status: 'waiting_payment',
         payment_link_id: payment_link['id'],
         payment_link_url: payment_link['url'],
@@ -561,10 +564,12 @@ class PortalReservaController < ApplicationController
         payment_expires_at: payment_expires_at,
         unit_price_paid: unit_price,
         total_paid: unit_price * quantity,
-        purchased_after_service_deadline: @reserva.service_purchase_override_used?,
-        service_late_fee_amount: cart_item_late_fee,
         updated_at: now
-      )
+      }
+      payment_attributes[:purchased_after_service_deadline] = @reserva.service_purchase_override_used? if cart_item.has_attribute?(:purchased_after_service_deadline)
+      payment_attributes[:service_late_fee_amount] = cart_item_late_fee if cart_item.has_attribute?(:service_late_fee_amount)
+
+      cart_item.update_columns(payment_attributes)
     end
 
     payment_link

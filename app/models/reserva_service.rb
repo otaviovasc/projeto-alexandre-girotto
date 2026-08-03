@@ -41,16 +41,16 @@ class ReservaService < ApplicationRecord
 
   def guest_change_allowed?(date = Date.current)
     active? &&
-      !purchased_after_service_deadline? &&
       !automatic_included_breakfast? &&
-      reserva&.service_purchase_regular_window_open?(date)
+      reserva&.service_purchase_window_open?(date) &&
+      (!purchased_after_service_deadline? || reserva&.service_purchase_override_open?(date))
   end
 
   def guest_change_block_reason(date = Date.current)
     return 'Serviço cancelado.' if cancelled?
     return 'Este serviço foi incluído automaticamente e não pode ser alterado pelo hóspede.' if automatic_included_breakfast?
-    return 'Este serviço foi comprado com liberação especial fora do prazo normal. Alterações devem ser feitas pelo atendimento.' if purchased_after_service_deadline?
-    return 'O prazo para alterar serviços pelo sistema já encerrou.' unless reserva&.service_purchase_regular_window_open?(date)
+    return 'O prazo para alterar serviços pelo sistema já encerrou.' unless reserva&.service_purchase_window_open?(date)
+    return 'Este serviço foi comprado com liberação especial fora do prazo normal. Alterações devem ser feitas pelo atendimento.' if purchased_after_service_deadline? && !reserva&.service_purchase_override_open?(date)
 
     nil
   end

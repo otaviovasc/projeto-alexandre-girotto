@@ -37,6 +37,7 @@ class PaymentStatusProcessor
 
   def finalize_paid_cart_items(cart_items)
     created_reserva_services = []
+    cart_item_late_fees = service_late_fee_amounts_for_cart_items(cart_items)
 
     CartItem.transaction do
       cart_items.lock.includes(:item, :service, :reserva).find_each do |cart_item|
@@ -49,7 +50,7 @@ class PaymentStatusProcessor
             quantity: cart_item.quantity
           )
         elsif cart_item.service.present?
-          reserva_service = ReservaService.create!(
+          service_attributes = {
             reserva: cart_item.reserva,
             service: cart_item.service,
             quantity: cart_item.quantity,
@@ -62,16 +63,20 @@ class PaymentStatusProcessor
             payment_expires_at: cart_item.payment_expires_at,
             unit_price_paid: cart_item.unit_price_paid,
             total_paid: cart_item.total_paid,
-            service_late_fee_amount: cart_item.service_late_fee_amount,
             paid_at: Time.current,
-            observation: cart_item.observation.presence,
-            purchased_after_service_deadline: cart_item.purchased_after_service_deadline?
-          )
+            observation: cart_item.observation.presence
+          }
+          if ReservaService.column_names.include?("purchased_after_service_deadline")
+            service_attributes[:purchased_after_service_deadline] = cart_item.respond_to?(:purchased_after_service_deadline?) && cart_item.purchased_after_service_deadline?
+          end
+          service_attributes[:service_late_fee_amount] = cart_item_late_fees[cart_item.id] if ReservaService.column_names.include?("service_late_fee_amount")
+
+          reserva_service = ReservaService.create!(service_attributes)
           copy_photo_print_attachments(cart_item, reserva_service)
           created_reserva_services << reserva_service
         end
 
-        increment_reserva_total!(cart_item.reserva, (cart_item.total_paid || 0).to_d + (cart_item.service_late_fee_amount || 0).to_d)
+        increment_reserva_total!(cart_item.reserva, (cart_item.total_paid || 0).to_d + cart_item_late_fees.fetch(cart_item.id, 0.to_d))
         cart_item.destroy!
       end
     end
@@ -151,9 +156,47 @@ class PaymentStatusProcessor
 
   def increment_reserva_totals!(reserva_services)
     reserva_services.group_by(&:reserva).each do |reserva, services|
-      total = services.sum { |reserva_service| (reserva_service.total_paid || 0).to_d + (reserva_service.service_late_fee_amount || 0).to_d }
+      total = services.sum { |reserva_service| (reserva_service.total_paid || 0).to_d + service_late_fee_amount_for(reserva_service) }
       increment_reserva_total!(reserva, total)
     end
+  end
+
+  def service_late_fee_amounts_for_cart_items(cart_items)
+    amounts_by_id = {}
+    assigned_by_order = {}
+
+    cart_items.includes(:reserva, :service).order(:payment_order_code, :id).find_each do |cart_item|
+      amount = if cart_item.has_attribute?(:service_late_fee_amount)
+                 (cart_item.service_late_fee_amount || 0).to_d
+               elsif cart_item.service.present? && cart_item.respond_to?(:purchased_after_service_deadline?) && cart_item.purchased_after_service_deadline?
+                 late_fee_amount_for_first_item_in_order(cart_item, assigned_by_order)
+               else
+                 0.to_d
+               end
+
+      amounts_by_id[cart_item.id] = amount
+    end
+
+    amounts_by_id
+  end
+
+  def late_fee_amount_for_first_item_in_order(cart_item, assigned_by_order)
+    return 0.to_d if cart_item.reserva&.service_purchase_late_fee_waived?
+
+    order_key = [
+      cart_item.reserva_id,
+      cart_item.payment_order_code.presence || cart_item.payment_link_id.presence || cart_item.cart_id
+    ]
+    return 0.to_d if assigned_by_order[order_key]
+
+    assigned_by_order[order_key] = true
+    Reserva::SERVICE_PURCHASE_LATE_FEE
+  end
+
+  def service_late_fee_amount_for(record)
+    return 0.to_d unless record.respond_to?(:service_late_fee_amount)
+
+    (record.service_late_fee_amount || 0).to_d
   end
 
   def increment_reserva_total!(reserva, amount)

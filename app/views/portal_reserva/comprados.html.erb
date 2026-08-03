@@ -4,7 +4,7 @@
 <div class="min-h-screen bg-[#f7f5f0]">
   <header class="bg-[#1a2e1a] text-white px-4 py-5 shadow-lg">
     <div class="max-w-3xl mx-auto flex items-center justify-between gap-4">
-      <%= link_to portal_reserva_inicio_path, class: "text-white/70 hover:text-white text-sm" do %>← Voltar<% end %>
+      <%= link_to fnrh_terms_path, class: "text-white/70 hover:text-white text-sm" do %>← Voltar<% end %>
       <div class="text-right">
         <p class="text-white/50 text-xs uppercase tracking-widest">Reserva #<%= @reserva.id %></p>
         <h1 class="text-lg font-bold">Serviços comprados</h1>
@@ -31,6 +31,7 @@
               <% end %>
 
               <% if first_item.guest_change_allowed? %>
+                <% available_dates_for_service = portal_service_dates(first_item.service, @reserva) %>
                 <div class="mt-4 rounded-lg border border-[#d7c8aa] bg-[#fbfaf6] p-4">
                   <p class="text-sm font-semibold text-[#1a2e1a] mb-3">Alterar serviço</p>
                   <%= form_with url: portal_reserva_atualizar_servico_comprado_path(first_item),
@@ -44,7 +45,7 @@
                     <div>
                       <%= form.label :service_date, "Nova data", class: "block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1" %>
                       <%= form.select :service_date,
-                            options_for_select(@available_service_dates.map { |date| [date.strftime("%d/%m/%Y"), date.to_s] }, first_item.service_date&.to_s),
+                            options_for_select(available_dates_for_service.map { |date| [date.strftime("%d/%m/%Y"), date.to_s] }, first_item.service_date&.to_s),
                             {},
                             class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm" %>
                     </div>

@@ -63,17 +63,32 @@ class ReservaServiceTest < ActiveSupport::TestCase
     assert reserva_service.guest_change_allowed?(Date.new(2027, 7, 1))
   end
 
-  test "blocks guest changes for service bought after deadline through manual release" do
+  test "allows guest changes for service bought after deadline while manual release is open" do
     reserva_service = build_purchased_service(
       start_date: Date.new(2027, 7, 20),
       end_date: Date.new(2027, 7, 22),
+      service_purchase_override: true,
+      service_purchase_override_until: Date.new(2027, 7, 22),
       purchased_after_service_deadline: true
     )
 
-    assert_not reserva_service.guest_change_allowed?(Date.new(2027, 7, 15))
+    assert reserva_service.guest_change_allowed?(Date.new(2027, 7, 15))
+    assert reserva_service.guest_change_allowed?(Date.new(2027, 7, 18))
+  end
+
+  test "blocks guest changes for service bought after deadline after manual release expires" do
+    reserva_service = build_purchased_service(
+      start_date: Date.new(2027, 7, 20),
+      end_date: Date.new(2027, 7, 22),
+      service_purchase_override: true,
+      service_purchase_override_until: Date.new(2027, 7, 18),
+      purchased_after_service_deadline: true
+    )
+
+    assert_not reserva_service.guest_change_allowed?(Date.new(2027, 7, 19))
     assert_equal(
-      'Este serviço foi comprado com liberação especial fora do prazo normal. Alterações devem ser feitas pelo atendimento.',
-      reserva_service.guest_change_block_reason(Date.new(2027, 7, 15))
+      'O prazo para alterar serviços pelo sistema já encerrou.',
+      reserva_service.guest_change_block_reason(Date.new(2027, 7, 19))
     )
   end
 
@@ -88,7 +103,7 @@ class ReservaServiceTest < ActiveSupport::TestCase
     )
   end
 
-  def build_purchased_service(start_date:, end_date:, purchased_after_service_deadline: false)
+  def build_purchased_service(start_date:, end_date:, service_purchase_override: false, service_purchase_override_until: nil, purchased_after_service_deadline: false)
     suffix = SecureRandom.hex(4)
     filial = Filial.create!(name: "Filial alteração #{suffix}", region: "MG")
     cabana = Cabana.create!(name: "Cabana alteração #{suffix}", price: 100, filial: filial)
@@ -104,7 +119,9 @@ class ReservaServiceTest < ActiveSupport::TestCase
       start_date: start_date,
       end_date: end_date,
       payment_status: "paid",
-      total_price: 0
+      total_price: 0,
+      service_purchase_override: service_purchase_override,
+      service_purchase_override_until: service_purchase_override_until
     )
 
     ReservaService.create!(
