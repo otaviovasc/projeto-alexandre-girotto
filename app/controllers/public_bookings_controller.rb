@@ -129,7 +129,8 @@ class PublicBookingsController < ApplicationController
   end
 
   def sync_cielo_checkout_status!
-    return unless @reserva_payment.waiting_payment?
+    return if @reserva_payment.paid? || @reserva_payment.late_paid?
+    return unless @reserva_payment.waiting_payment? || @reserva_payment.inactive_for_guest_payment?
     return if @reserva_payment.payment_order_code.blank?
 
     filial = @reserva_payment.reserva.cabana.filial
@@ -188,7 +189,10 @@ class PublicBookingsController < ApplicationController
   end
 
   def payment_open?
-    @reserva_payment.waiting_payment? && !@reserva_payment.expired? && !@reserva.canceled?
+    @reserva_payment.waiting_payment? &&
+      !@reserva_payment.expired? &&
+      !@reserva_payment.inactive_for_guest_payment? &&
+      !@reserva.canceled?
   end
 
   def purchase_items
@@ -226,6 +230,7 @@ class PublicBookingsController < ApplicationController
     {
       'waiting_payment' => 'Aguardando pagamento',
       'paid' => 'Pagamento confirmado',
+      'late_paid' => 'Pago após vencimento',
       'refused' => 'Pagamento recusado',
       'canceled' => 'Pagamento cancelado',
       'overdue' => 'Prazo vencido'

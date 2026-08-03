@@ -191,7 +191,7 @@ class Reserva < ApplicationRecord
   end
 
   def unfinished_pre_reservation?
-    canceled? && reserva_payments.any? && reserva_payments.none?(&:paid?)
+    canceled? && reserva_payments.any? && reserva_payments.none?(&:paid_for_history?)
   end
 
   def reserva_payment_overdue?
@@ -199,6 +199,14 @@ class Reserva < ApplicationRecord
       reserva_payments.any?(&:overdue?)
     else
       reserva_payments.overdue_installments.exists?
+    end
+  end
+
+  def reserva_payment_late_paid?
+    if association(:reserva_payments).loaded?
+      reserva_payments.any?(&:late_paid?)
+    else
+      reserva_payments.late_paid_installments.exists?
     end
   end
 
@@ -210,7 +218,7 @@ class Reserva < ApplicationRecord
         status: 'cancelled',
         updated_at: now
       )
-      reserva_payments.where.not(payment_status: 'paid').update_all(
+      reserva_payments.where.not(payment_status: ['paid', 'late_paid']).update_all(
         payment_status: 'canceled',
         canceled_at: now,
         updated_at: now
@@ -234,7 +242,7 @@ class Reserva < ApplicationRecord
       .select(:reserva_id)
       .where.not(reserva_id: nil)
       .group(:reserva_id)
-      .having("SUM(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) = 0")
+      .having("SUM(CASE WHEN payment_status IN ('paid', 'late_paid') THEN 1 ELSE 0 END) = 0")
   end
 
   def availability_start_date

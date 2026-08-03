@@ -78,6 +78,19 @@
     .ical-missing-row:hover {
       background: #ffe4e6 !important;
     }
+    .late-paid-row {
+      --bs-table-bg: #fff7ed;
+      --bs-table-striped-bg: #fff7ed;
+      --bs-table-hover-bg: #ffedd5;
+      background: #fff7ed !important;
+      border-left: 5px solid #f97316 !important;
+    }
+    .late-paid-row td {
+      border-color: #fed7aa !important;
+    }
+    .late-paid-row:hover {
+      background: #ffedd5 !important;
+    }
     .group-created-checkbox {
       width: 1.2rem;
       height: 1.2rem;
@@ -275,6 +288,7 @@
             <% row_classes = [] %>
             <% row_classes << 'partner-row' if reserva.user.partner? %>
             <% row_classes << 'partnership-created-row' if reserva.partnership_created? %>
+            <% row_classes << 'late-paid-row' if reserva.reserva_payment_late_paid? %>
             <% row_classes << 'ical-date-change-row' if reserva.ical_date_changed? && !reserva.ical_missing? %>
             <% row_classes << 'ical-missing-row' if reserva.ical_missing? %>
             <tr id="reserva-<%= reserva.id %>" data-updated-at="<%= reserva.updated_at.to_i %>" class="<%= row_classes.join(' ') %>">
@@ -320,6 +334,9 @@
                 <% end %>
                 <% if reserva.reserva_payment_overdue? %>
                   <span class="badge bg-danger ms-1">Pagamento atrasado</span>
+                <% end %>
+                <% if reserva.reserva_payment_late_paid? %>
+                  <span class="badge bg-warning text-dark ms-1">Pago após vencimento</span>
                 <% end %>
                 <% if reserva.ical_missing? %>
                   <span class="badge bg-danger ms-1">Possível cancelamento iCal</span>

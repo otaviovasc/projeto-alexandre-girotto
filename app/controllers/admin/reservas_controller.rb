@@ -674,11 +674,12 @@ class Admin::ReservasController < ApplicationController
     Arel.sql(
       "CASE " \
       "WHEN payment_status IN ('pending', 'waiting_payment') THEN 0 " \
-      "WHEN EXISTS (SELECT 1 FROM reserva_payments WHERE reserva_payments.reserva_id = reservas.id AND reserva_payments.payment_status = 'overdue') THEN 1 " \
-      "WHEN group_created = FALSE THEN 2 " \
-      "WHEN ical_date_change_since IS NOT NULL THEN 3 " \
-      "WHEN ical_missing_since IS NOT NULL THEN 4 " \
-      "ELSE 5 END ASC"
+      "WHEN EXISTS (SELECT 1 FROM reserva_payments WHERE reserva_payments.reserva_id = reservas.id AND reserva_payments.payment_status = 'late_paid') THEN 1 " \
+      "WHEN EXISTS (SELECT 1 FROM reserva_payments WHERE reserva_payments.reserva_id = reservas.id AND reserva_payments.payment_status = 'overdue') THEN 2 " \
+      "WHEN group_created = FALSE THEN 3 " \
+      "WHEN ical_date_change_since IS NOT NULL THEN 4 " \
+      "WHEN ical_missing_since IS NOT NULL THEN 5 " \
+      "ELSE 6 END ASC"
     )
   end
 
@@ -691,6 +692,7 @@ class Admin::ReservasController < ApplicationController
 
     priority_scope = scope.where(
       "payment_status IN ('pending', 'waiting_payment') OR " \
+      "EXISTS (SELECT 1 FROM reserva_payments WHERE reserva_payments.reserva_id = reservas.id AND reserva_payments.payment_status = 'late_paid') OR " \
       "EXISTS (SELECT 1 FROM reserva_payments WHERE reserva_payments.reserva_id = reservas.id AND reserva_payments.payment_status = 'overdue') OR " \
       "group_created = FALSE OR ical_date_change_since IS NOT NULL OR ical_missing_since IS NOT NULL"
     )
@@ -772,6 +774,8 @@ class Admin::ReservasController < ApplicationController
   def service_payment_sync_flash_for(result)
     if result.paid.positive?
       { notice: 'Pagamento de serviço confirmado na Cielo e lançado na reserva.' }
+    elsif result.respond_to?(:late_paid) && result.late_paid.positive?
+      { alert: 'A Cielo informou pagamento após vencimento em um link de reserva. A reserva não foi reativada automaticamente.' }
     elsif result.refused.positive?
       { alert: 'A Cielo informou pagamento recusado.' }
     elsif result.canceled.positive?

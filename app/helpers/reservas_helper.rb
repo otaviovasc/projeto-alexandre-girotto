@@ -4,6 +4,7 @@ module ReservasHelper
       'pending' => 'Pendente',
       'waiting_payment' => 'Aguardando Pagamento',
       'paid' => 'Pago',
+      'late_paid' => 'Pago após vencimento',
       'refused' => 'Recusado',
       'canceled' => 'Cancelado'
     }[status] || status
@@ -14,6 +15,7 @@ module ReservasHelper
     when 'pending' then 'bg-warning'         # Amarelo para pendente
     when 'waiting_payment' then 'bg-secondary' # Cinza para aguardando pagamento
     when 'paid' then 'bg-success'           # Verde para pago
+    when 'late_paid' then 'bg-warning text-dark'
     when 'refused' then 'bg-danger'         # Vermelho para recusado
     when 'canceled' then 'bg-dark'          # Preto para cancelado
     else 'bg-light text-dark'               # Branco padrão
