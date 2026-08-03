@@ -8,6 +8,9 @@ class ReservaServicesController < ApplicationController
     service = Service.find(params[:service_id])
     quantity = params[:quantity].to_i
     service_date = requested_service_date
+    if ServicePurchaseDatePolicy.blocked_holiday_service_date?(service_date)
+      redirect_to services_marketplace_index_path, alert: ServicePurchaseDatePolicy.holiday_block_message and return
+    end
 
     @reserva_service = ReservaService.find_or_initialize_by(reserva: @reserva, service: service)
     @reserva_service.quantity = quantity

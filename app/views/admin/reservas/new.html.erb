@@ -351,6 +351,18 @@
     renderServicesList();
   });
 
+  const SERVICE_HOLIDAY_BLOCK_MESSAGE = 'Para as datas selecionadas, fale diretamente com um atendente no WhatsApp para consultar a possibilidade da entrega de serviços.';
+
+  function isHolidayServiceDate(value) {
+    if (!value) return false;
+
+    const parts = value.split('-').map(Number);
+    const month = parts[1];
+    const day = parts[2];
+
+    return (month === 12 && day >= 24) || (month === 1 && day <= 2);
+  }
+
   function updateServiceDateBounds() {
     const dateInput = document.getElementById('service-date-input');
     const serviceSelect = document.getElementById('service-select');
@@ -414,6 +426,10 @@
     const endDate = document.getElementById('end_date')?.value;
     if (!freeDate && (serviceDate < startDate || serviceDate > endDate)) {
       alert('A data do serviço deve estar entre o check-in e o check-out da reserva.');
+      return;
+    }
+    if (!freeDate && isHolidayServiceDate(serviceDate)) {
+      alert(SERVICE_HOLIDAY_BLOCK_MESSAGE);
       return;
     }
 

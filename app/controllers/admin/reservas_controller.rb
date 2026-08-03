@@ -103,6 +103,13 @@ class Admin::ReservasController < ApplicationController
       @reserva.total_price = @reserva.calculate_total_price!
     end
 
+    if (blocked_service_error = service_holiday_block_error(@reserva))
+      load_new_form_collections
+      flash.now[:alert] = blocked_service_error
+      render :new, status: :unprocessable_entity
+      return
+    end
+
     begin
       Reserva.transaction do
         @user.save! if @user.new_record?
@@ -175,8 +182,16 @@ class Admin::ReservasController < ApplicationController
     # Atualiza os atributos da reserva
     attrs = reserva_params
     @reserva.manual_override = true if manual_override_update?(attrs)
+    @reserva.assign_attributes(attrs)
 
-    if @reserva.update(attrs)
+    if (blocked_service_error = service_holiday_block_error(@reserva))
+      @services = Service.all
+      flash.now[:alert] = blocked_service_error
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
+    if @reserva.save
       # Atualiza o status de parceiro do usuário se os parâmetros estiverem presentes
       if params[:reserva][:user_attributes] && params[:reserva][:user_attributes][:partner].present?
         user = @reserva.user
@@ -721,6 +736,36 @@ class Admin::ReservasController < ApplicationController
     hours.positive? ? hours : ReservaPendingPaymentSetup::DEFAULT_HOLD_HOURS
   rescue ArgumentError, TypeError
     ReservaPendingPaymentSetup::DEFAULT_HOLD_HOURS
+  end
+
+  def service_holiday_block_error(reserva)
+    blocked_services = reserva.reserva_services.to_a.filter_map do |reserva_service|
+      next if reserva_service.marked_for_destruction?
+      next if service_holiday_block_exempt?(reserva_service.service)
+      next unless service_holiday_block_candidate?(reserva_service)
+      next unless ServicePurchaseDatePolicy.blocked_holiday_service_date?(reserva_service.service_date)
+
+      service_name = reserva_service.service&.name.presence || 'Serviço'
+      "#{service_name} em #{reserva_service.service_date.strftime('%d/%m/%Y')}"
+    end
+
+    return if blocked_services.blank?
+
+    "#{ServicePurchaseDatePolicy.holiday_block_message} Datas bloqueadas: #{blocked_services.join(', ')}."
+  end
+
+  def service_holiday_block_candidate?(reserva_service)
+    reserva_service.new_record? ||
+      reserva_service.will_save_change_to_service_date? ||
+      reserva_service.will_save_change_to_service_id?
+  end
+
+  def service_holiday_block_exempt?(service)
+    return true if service.blank?
+
+    CleaningServicesAssigner.cleaning_service?(service) ||
+      ReservaService.free_date_service?(service) ||
+      service.hidden_from_guests?
   end
 
   def sync_all_reservas_to_sheets

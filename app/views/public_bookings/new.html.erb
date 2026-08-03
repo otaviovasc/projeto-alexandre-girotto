@@ -204,8 +204,8 @@
     <div id="service-deadline-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
       <div class="w-full max-w-2xl border border-[#d7d0c1] bg-[#f5efe0] p-6 shadow-xl">
         <p class="vg-kicker">Serviços adicionais</p>
-        <h2 class="vg-card-title mt-2">Compra online indisponível para este período.</h2>
-        <p class="vg-card-copy mt-3">
+        <h2 id="service-deadline-title" class="vg-card-title mt-2">Compra online indisponível para este período.</h2>
+        <p id="service-deadline-copy" class="vg-card-copy mt-3">
           Os serviços adicionais exigem preparo, compra de insumos e confirmação de agenda com prestadores parceiros.
           Como sua estadia está próxima, a compra online de serviços não está disponível para este período.
         </p>
@@ -230,6 +230,8 @@
     var endInput = document.getElementById("booking-end-date");
     var warning = document.getElementById("services-window-warning");
     var serviceDeadlineModal = document.getElementById("service-deadline-modal");
+    var serviceDeadlineTitle = document.getElementById("service-deadline-title");
+    var serviceDeadlineCopy = document.getElementById("service-deadline-copy");
     var serviceDeadlineWhatsapp = document.getElementById("service-deadline-whatsapp");
     var serviceDeadlineContinue = document.getElementById("service-deadline-continue");
     var serviceRows = Array.prototype.slice.call(document.querySelectorAll(".service-row"));
@@ -243,6 +245,9 @@
     var quoteRequestId = 0;
     var continueWithoutServices = false;
     var bookingQuote = { loading: false, error: null, dailyTotal: null, nights: null };
+    var holidayBlockMessage = <%= raw ServicePurchaseDatePolicy.holiday_block_message.to_json %>;
+    var defaultServiceDeadlineTitle = serviceDeadlineTitle ? serviceDeadlineTitle.textContent : "";
+    var defaultServiceDeadlineCopy = serviceDeadlineCopy ? serviceDeadlineCopy.textContent : "";
     var today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -321,9 +326,45 @@
       return number ? "https://wa.me/" + number + "?text=" + text : "https://wa.me/?text=" + text;
     }
 
-    function openServiceDeadlineModal() {
+    function selectedPeriodTouchesHolidayBlock() {
+      if (!startInput.value || !endInput.value) return false;
+
+      var start = new Date(startInput.value + "T00:00:00");
+      var end = new Date(endInput.value + "T00:00:00");
+      if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return false;
+
+      for (var date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        var month = date.getMonth() + 1;
+        var day = date.getDate();
+        if ((month === 12 && day >= 24) || (month === 1 && day <= 2)) return true;
+      }
+
+      return false;
+    }
+
+    function serviceRestrictionReason() {
+      if (selectedPeriodTouchesHolidayBlock()) return "holiday";
+      if (!servicesAllowed()) return "deadline";
+
+      return null;
+    }
+
+    function setServiceDeadlineModalContent(reason) {
+      if (!serviceDeadlineTitle || !serviceDeadlineCopy) return;
+
+      if (reason === "holiday") {
+        serviceDeadlineTitle.textContent = "Serviços indisponíveis para as datas selecionadas.";
+        serviceDeadlineCopy.textContent = holidayBlockMessage;
+      } else {
+        serviceDeadlineTitle.textContent = defaultServiceDeadlineTitle;
+        serviceDeadlineCopy.textContent = defaultServiceDeadlineCopy;
+      }
+    }
+
+    function openServiceDeadlineModal(reason) {
       if (!serviceDeadlineModal) return;
 
+      setServiceDeadlineModalContent(reason);
       serviceDeadlineModal.classList.remove("hidden");
       serviceDeadlineModal.classList.add("flex");
     }
@@ -345,18 +386,29 @@
 
     function syncServiceRows() {
       var filialId = selectedFilialId();
-      if (warning) warning.classList.add("hidden");
+      var holidayBlocked = selectedPeriodTouchesHolidayBlock();
+
+      if (warning) {
+        if (holidayBlocked) {
+          warning.textContent = holidayBlockMessage;
+          warning.classList.remove("hidden");
+        } else {
+          warning.classList.add("hidden");
+        }
+      }
 
       serviceRows.forEach(function(row) {
         var sameFilial = !!filialId && row.dataset.filialId === filialId;
         var visible = sameFilial;
+        var disabledForHoliday = visible && holidayBlocked;
         row.classList.toggle("hidden", !visible);
+        row.classList.toggle("opacity-60", disabledForHoliday);
 
         row.querySelectorAll("input").forEach(function(input) {
-          input.disabled = !visible;
+          input.disabled = !visible || disabledForHoliday;
         });
 
-        if (!visible) {
+        if (!visible || disabledForHoliday) {
           var checkbox = row.querySelector(".service-checkbox");
           if (checkbox) checkbox.checked = false;
         }
@@ -528,9 +580,10 @@
       form.addEventListener("submit", function(event) {
         if (continueWithoutServices) return;
 
-        if (!servicesAllowed() && selectedServiceRows().length > 0) {
+        var restrictionReason = serviceRestrictionReason();
+        if (restrictionReason && selectedServiceRows().length > 0) {
           event.preventDefault();
-          openServiceDeadlineModal();
+          openServiceDeadlineModal(restrictionReason);
         }
       });
     }

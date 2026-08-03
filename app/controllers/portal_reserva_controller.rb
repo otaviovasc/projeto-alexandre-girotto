@@ -94,7 +94,7 @@ class PortalReservaController < ApplicationController
     end
 
     unless reserva_services.all? { |item| portal_service_date_allowed?(item.service, @reserva, new_date) }
-      redirect_to portal_reserva_comprados_path, alert: portal_service_date_error_message(reserva_service.service) and return
+      redirect_to portal_reserva_comprados_path, alert: portal_service_date_error_message(reserva_service.service, [new_date]) and return
     end
 
     ReservaService.transaction do
@@ -176,7 +176,7 @@ class PortalReservaController < ApplicationController
     end
 
     unless dates_to_add.all? { |date| portal_service_date_allowed?(service, @reserva, date) }
-      flash[:alert] = portal_service_date_error_message(service)
+      flash[:alert] = portal_service_date_error_message(service, dates_to_add)
       redirect_to portal_reserva_servicos_path and return
     end
 
@@ -274,6 +274,11 @@ class PortalReservaController < ApplicationController
     
     if @portal_cart_items.empty?
       flash[:alert] = "Seu carrinho está vazio."
+      redirect_to portal_reserva_servicos_path and return
+    end
+
+    if @portal_cart_items.any? { |item| ServicePurchaseDatePolicy.blocked_holiday_service_date?(item.service_date) }
+      flash[:alert] = ServicePurchaseDatePolicy.holiday_block_message
       redirect_to portal_reserva_servicos_path and return
     end
 
@@ -435,6 +440,7 @@ class PortalReservaController < ApplicationController
     return false if service.blank? || reserva.blank? || date.blank?
     return false if reserva.start_date.blank? || reserva.end_date.blank?
     return false unless date.between?(reserva.start_date, reserva.end_date)
+    return false if ServicePurchaseDatePolicy.blocked_holiday_service_date?(date)
     return false if checkin_date?(reserva, date) && checkin_blocked_service?(service) && !reserva.early_checkin?
     return false if checkout_date?(reserva, date) && checkout_blocked_service?(service, reserva)
 
@@ -468,7 +474,11 @@ class PortalReservaController < ApplicationController
     end
   end
 
-  def portal_service_date_error_message(service)
+  def portal_service_date_error_message(service, dates = [])
+    if Array(dates).any? { |date| ServicePurchaseDatePolicy.blocked_holiday_service_date?(date) }
+      return ServicePurchaseDatePolicy.holiday_block_message
+    end
+
     if checkin_blocked_service?(service)
       "#{service.name} não pode ser selecionado para o dia do check-in sem early check-in."
     elsif checkout_blocked_service?(service)
