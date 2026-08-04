@@ -48,6 +48,7 @@ class IcalReservationImporter
     user = imported_user
     imported_ids = []
 
+    ignored_count = cancel_ignored_platform_uid_imports
     event_ranges = normalized_ranges
     matched_reservas = event_ranges.to_h do |event_range|
       [event_range.object_id, find_existing_import(event_range)]
@@ -92,7 +93,7 @@ class IcalReservationImporter
       end
     end
 
-    result.missing = mark_missing_imports(imported_ids, event_ranges)
+    result.missing = mark_missing_imports(imported_ids, event_ranges) + ignored_count
 
     result
   end
@@ -144,12 +145,44 @@ class IcalReservationImporter
   end
 
   def ignored_platform_uid_event?(event)
-    ignored_uids = IGNORED_PLATFORM_UIDS[@platform]
+    ignored_uids = ignored_platform_uids
     return false if ignored_uids.blank?
 
     candidate_uids = [event.uid.to_s.strip, platform_uid_for(event)].compact_blank.map(&:downcase)
     candidate_uids += candidate_uids.map { |uid| uid.split('@').first }
     candidate_uids.uniq.any? { |uid| ignored_uids.include?(uid) }
+  end
+
+  def cancel_ignored_platform_uid_imports
+    ignored_uids = ignored_platform_uids
+    return 0 if ignored_uids.blank?
+
+    canceled = 0
+
+    missing_import_scope.find_each do |reserva|
+      next if reserva.manual_override?
+      next unless ignored_platform_uid_value?(reserva.ical_uid, ignored_uids) ||
+                  ignored_platform_uid_value?(reserva.platform_uid, ignored_uids)
+
+      reserva.cancel_for_operations!(
+        by: nil,
+        reason: "Evento #{@platform.capitalize} ignorado por UID fantasma no iCal."
+      )
+      canceled += 1
+    end
+
+    canceled
+  end
+
+  def ignored_platform_uids
+    IGNORED_PLATFORM_UIDS[@platform].to_a.map(&:downcase)
+  end
+
+  def ignored_platform_uid_value?(value, ignored_uids)
+    uid = value.to_s.strip.downcase
+    return false if uid.blank?
+
+    ignored_uids.include?(uid) || ignored_uids.include?(uid.split('@').first)
   end
 
   def airbnb_not_available_event?(normalized_text)
