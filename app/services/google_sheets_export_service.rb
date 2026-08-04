@@ -145,7 +145,7 @@ class GoogleSheetsExportService
         value_range,
         value_input_option: 'USER_ENTERED'
       )
-      clear_legacy_canceled_reservas_sheet(service)
+      legacy_canceled_result = export_legacy_canceled_reservas_sheet(service)
       canceled_history_result = export_canceled_reservas_sheet(service)
       unless canceled_history_result[:success]
         Rails.logger.error "Google Sheets Canceled History Export Error: #{canceled_history_result[:error]}"
@@ -154,7 +154,7 @@ class GoogleSheetsExportService
       {
         success: true,
         rows_updated: result.updated_rows,
-        message: "#{result.updated_rows} linhas exportadas para Google Sheets e histórico de canceladas sincronizado em planilha separada"
+        message: "#{result.updated_rows} linhas exportadas para Google Sheets, #{legacy_canceled_result.to_i} linha(s) detalhada(s) de canceladas e histórico sincronizado em planilha separada"
       }
     rescue => e
       Rails.logger.error "Google Sheets Export Error: #{e.message}"
@@ -251,6 +251,41 @@ class GoogleSheetsExportService
     { success: false, error: e.message }
   end
 
+  def export_legacy_canceled_reservas_sheet(service)
+    canceled_reservas = canceled_history_relation(Reserva.canceled_for_external_history)
+    rows = legacy_canceled_reservas_rows(canceled_reservas)
+
+    ensure_sheet_exists!(service, LEGACY_CANCELED_SHEET_TITLE)
+    service.clear_values(@spreadsheet_id, quoted_range(LEGACY_CANCELED_SHEET_TITLE, 'A:AB'))
+    value_range = Google::Apis::SheetsV4::ValueRange.new(values: [legacy_canceled_reservas_headers] + rows)
+    result = service.update_spreadsheet_value(
+      @spreadsheet_id,
+      quoted_range(LEGACY_CANCELED_SHEET_TITLE, 'A1'),
+      value_range,
+      value_input_option: 'USER_ENTERED'
+    )
+
+    result.updated_rows
+  end
+
+  def legacy_canceled_reservas_headers
+    reservas_headers + ['Data Cancelamento', 'Cancelado Por', 'Motivo Cancelamento']
+  end
+
+  def legacy_canceled_reservas_rows(canceled_reservas)
+    rows = ReservasExportService.new(canceled_reservas).generate_array
+    cancel_metadata_by_id = canceled_reservas.index_by(&:id)
+
+    rows.map do |row|
+      reserva = cancel_metadata_by_id[row[1].to_i]
+      row + [
+        format_datetime(reserva&.canceled_at),
+        reserva&.canceled_by&.name || reserva&.canceled_by&.email || '-',
+        reserva&.cancellation_reason.presence || '-'
+      ]
+    end
+  end
+
   def canceled_history_relation(scope)
     scope
       .includes(:cabana, :user, :canceled_by, :reserva_payments, reserva_services: :service)
@@ -269,14 +304,6 @@ class GoogleSheetsExportService
     )
 
     result.updated_rows
-  end
-
-  def clear_legacy_canceled_reservas_sheet(service)
-    return unless sheet_exists?(service, @spreadsheet_id, LEGACY_CANCELED_SHEET_TITLE)
-
-    service.clear_values(@spreadsheet_id, quoted_range(LEGACY_CANCELED_SHEET_TITLE, 'A:AA'))
-  rescue => e
-    Rails.logger.error "Google Sheets Legacy Canceled Sheet Clear Error: #{e.message}"
   end
 
   def canceled_history_headers

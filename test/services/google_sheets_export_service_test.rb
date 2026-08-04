@@ -39,4 +39,33 @@ class GoogleSheetsExportServiceTest < ActiveSupport::TestCase
   ensure
     ENV['GOOGLE_SHEETS_CANCELED_SPREADSHEET_ID'] = previous_value
   end
+
+  test "legacy canceled reservation rows keep detailed services and cancellation metadata" do
+    canceled_at = Time.find_zone('America/Sao_Paulo').local(2026, 8, 3, 20, 22)
+    reserva = reservas(:one)
+    reserva.update_columns(
+      payment_status: 'canceled',
+      canceled_at: canceled_at,
+      canceled_by_id: users(:two).id,
+      cancellation_reason: 'Cancelamento teste'
+    )
+    reserva_services(:one).update_columns(
+      service_date: Date.new(2026, 8, 5),
+      status: 'cancelled'
+    )
+
+    exporter = GoogleSheetsExportService.new
+    headers = exporter.send(:legacy_canceled_reservas_headers)
+    rows = exporter.send(:legacy_canceled_reservas_rows, Reserva.where(id: reserva.id))
+
+    assert_equal 'Data Cancelamento', headers[-3]
+    assert_equal 2, rows.size
+    assert_equal ['Reserva', 'Serviço'], rows.map(&:first)
+    rows.each do |row|
+      assert_equal '03/08/2026 20:22', row[-3]
+      assert_equal 'Usuario Teste Dois', row[-2]
+      assert_equal 'Cancelamento teste', row[-1]
+    end
+    assert_equal 'Cancelado', rows.second[15]
+  end
 end
