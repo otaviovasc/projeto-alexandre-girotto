@@ -37,7 +37,7 @@ class ReservaPaymentProcessor
       return
     end
 
-    if @reserva_payment.canceled? || @reserva_payment.overdue? || @reserva_payment.refused? || @reserva_payment.late_paid?
+    if inactive_payment_without_manual_override?
       Rails.logger.warn("Pagamento recebido para link inativo de reserva_payment ##{@reserva_payment.id}; reserva nao foi alterada.")
       return
     end
@@ -202,6 +202,12 @@ class ReservaPaymentProcessor
     reservation_inactive = @reserva.canceled? && !@reserva_payment.paid?
 
     deadline_passed || link_inactive || reservation_inactive
+  end
+
+  def inactive_payment_without_manual_override?
+    return @reserva_payment.canceled? || @reserva_payment.late_paid? if @source.to_s == 'manual'
+
+    @reserva_payment.canceled? || @reserva_payment.overdue? || @reserva_payment.refused? || @reserva_payment.late_paid?
   end
 
   def cancel_cielo_link

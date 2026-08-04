@@ -39,7 +39,7 @@ class ReservaPayment < ApplicationRecord
   end
 
   def inactive_for_guest_payment?
-    canceled? || overdue? || refused? || late_paid?
+    paid? || canceled? || overdue? || refused? || late_paid?
   end
 
   def confirmation_installment?

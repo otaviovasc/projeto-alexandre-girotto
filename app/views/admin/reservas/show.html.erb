@@ -137,6 +137,17 @@
     color: #9a3412;
   }
 
+  .service-item.payment-paid {
+    background: #f0fdf4;
+    border-color: #16a34a;
+    color: #166534;
+  }
+
+  .service-item.payment-paid .service-date,
+  .service-item.payment-paid .service-name {
+    color: #166534;
+  }
+
   .service-info {
     display: flex;
     align-items: center;
@@ -448,9 +459,9 @@
 
   <% if @reserva.reserva_payments.any? && !hide_financials? %>
     <% reservation_payments = @reserva.reserva_payments.order(:installment_number) %>
-    <% message_payments = reservation_payments.select { |payment| payment.paid? || payment.waiting_payment? } %>
+    <% message_payments = reservation_payments.select { |payment| payment.waiting_payment? && !payment.expired? } %>
     <% first_payment = message_payments.find(&:confirmation_installment?) || message_payments.first %>
-    <% active_payment_count = reservation_payments.reject(&:inactive_for_guest_payment?).size %>
+    <% active_payment_count = message_payments.size %>
     <% next_extra_due_at = 1.day.from_now.in_time_zone('America/Sao_Paulo').strftime('%Y-%m-%dT%H:%M') %>
     <% currency = ->(amount) { number_to_currency(amount, unit: 'R$ ', separator: ',', delimiter: '.') } %>
     <% display_due_at_for = ->(payment) { (payment&.guest_visible_due_at || payment&.due_at || Time.current).in_time_zone('America/Sao_Paulo') } %>
@@ -509,7 +520,21 @@
 
       <div class="services-list" style="margin-top: 1rem;">
         <% reservation_payments.each do |payment| %>
-          <% if payment.canceled? || payment.late_paid? %>
+          <% if payment.paid? %>
+            <div class="service-item payment-paid">
+              <div class="service-info">
+                <span class="service-name"><%= payment.installment_number %>ª parcela</span>
+                <span class="service-date"><%= actual_due_at_for.call(payment).strftime('%d/%m/%Y às %H:%M') %></span>
+                <span class="service-quantity">PAGO</span>
+                <% if payment.paid_at.present? %>
+                  <span class="service-date">Pago em <%= payment.paid_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %></span>
+                <% end %>
+              </div>
+              <span style="margin-left: 0.5rem; color: #166534; font-weight: 700;">
+                <%= number_to_currency(payment.amount, unit: 'R$ ', separator: ',', delimiter: '.') %>
+              </span>
+            </div>
+          <% elsif payment.canceled? || payment.late_paid? %>
             <div class="service-item <%= payment.late_paid? ? 'payment-late-paid' : 'payment-canceled' %>">
               <div class="service-info">
                 <span class="service-date"><%= actual_due_at_for.call(payment).strftime('%d/%m/%Y às %H:%M') %></span>
