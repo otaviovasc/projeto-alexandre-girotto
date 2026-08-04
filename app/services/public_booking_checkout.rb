@@ -102,6 +102,10 @@ class PublicBookingCheckout
       unless item[:service_date].between?(@start_date, @end_date)
         errors.add(:base, "#{service.name} precisa ficar entre a entrada e a saída.")
       end
+
+      if brauna_cabana?(@cabana) && trail_or_horse_service?(service) && item[:service_date] == @end_date
+        errors.add(:base, "#{service.name} não está disponível para o dia do checkout na Fattoria di Brauna.")
+      end
     end
   end
 
@@ -230,6 +234,16 @@ class PublicBookingCheckout
     CleaningServicesAssigner.cleaning_service?(service) ||
       ReservaService.free_date_service?(service) ||
       service&.hidden_from_guests?
+  end
+
+  def brauna_cabana?(cabana)
+    normalized_filial_name = I18n.transliterate(cabana&.filial&.name.to_s).downcase
+    normalized_filial_name.include?('brauna')
+  end
+
+  def trail_or_horse_service?(service)
+    normalized_name = I18n.transliterate(service&.name.to_s).downcase
+    normalized_name.include?('trilha') || normalized_name.include?('cavalo')
   end
 
   def official_quote

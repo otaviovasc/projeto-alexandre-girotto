@@ -452,6 +452,7 @@ class PortalReservaController < ApplicationController
   end
 
   def checkout_blocked_service?(service, reserva = @reserva)
+    return true if brauna_reservation?(reserva) && trail_or_horse_service?(service)
     return true if cold_cuts_service?(service) || fondue_service?(service)
     return false if reserva&.late_checkout?
 
@@ -463,7 +464,7 @@ class PortalReservaController < ApplicationController
 
     if afternoon_checkin_note_service?(service)
       return PORTAL_CHECKIN_AFTERNOON_NOTE if checkin_date?(@reserva, service_date) && !@reserva&.early_checkin?
-      return PORTAL_CHECKOUT_MORNING_NOTE if trail_or_horse_service?(service) && checkout_date?(@reserva, service_date) && !@reserva&.late_checkout?
+      return PORTAL_CHECKOUT_MORNING_NOTE if trail_or_horse_service?(service) && checkout_date?(@reserva, service_date) && !@reserva&.late_checkout? && !brauna_reservation?(@reserva)
 
       return
     end
@@ -481,7 +482,7 @@ class PortalReservaController < ApplicationController
 
     if checkin_blocked_service?(service)
       "#{service.name} não pode ser selecionado para o dia do check-in sem early check-in."
-    elsif checkout_blocked_service?(service)
+    elsif checkout_blocked_service?(service, @reserva)
       "#{service.name} não pode ser selecionado para o dia do checkout."
     else
       "Selecione uma data válida para este serviço."
@@ -496,6 +497,11 @@ class PortalReservaController < ApplicationController
     normalized_name = service.name.to_s.parameterize
     normalized_name.include?("trilha") ||
       normalized_name.include?("cavalo")
+  end
+
+  def brauna_reservation?(reserva = @reserva)
+    normalized_filial_name = I18n.transliterate(reserva&.cabana&.filial&.name.to_s).downcase
+    normalized_filial_name.include?("brauna")
   end
 
   def breakfast_service?(service)

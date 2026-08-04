@@ -154,6 +154,30 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     assert_nil controller.send(:observation_for_service, picnic, reserva.end_date)
   end
 
+  test "blocks trail and horse ride on checkout for Brauna even with late checkout" do
+    controller = PortalReservaController.new
+    filial = Filial.new(name: "Fattoria di Brauna")
+    cabana = Cabana.new(name: "Zucchero - Fattoria di Brauna", filial: filial)
+    reserva = Reserva.new(
+      cabana: cabana,
+      start_date: Date.new(2026, 8, 10),
+      end_date: Date.new(2026, 8, 12),
+      late_checkout: true
+    )
+    controller.instance_variable_set(:@reserva, reserva)
+    allowed_dates = [Date.new(2026, 8, 10), Date.new(2026, 8, 11)]
+
+    ["Passeio a Cavalo", "Trilha a Pé"].each do |service_name|
+      service = Service.new(name: service_name)
+
+      assert_equal allowed_dates,
+                   controller.send(:portal_service_dates, service, reserva),
+                   service_name
+      assert_not controller.send(:portal_service_date_allowed?, service, reserva, reserva.end_date), service_name
+      assert_nil controller.send(:observation_for_service, service, reserva.end_date), service_name
+    end
+  end
+
   test "skips automatic timing notes when early check in or late checkout gives enough stay time" do
     controller = PortalReservaController.new
     reserva = Reserva.new(
