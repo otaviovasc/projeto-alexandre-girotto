@@ -158,6 +158,23 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
     assert_equal 0, @cabana.reservas.where(origem: "holmy").count
   end
 
+  test "ignores any zero-night Holmy closed availability block" do
+    result = import_holmy(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:new-holmy-zero-night-uid@www.holmy.com.br
+      DTSTART;VALUE=DATE:20261117
+      DTEND;VALUE=DATE:20261117
+      SUMMARY:CLOSED - Not available
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    assert_equal 0, result.created
+    assert_equal 0, @cabana.reservas.where(origem: "holmy").count
+  end
+
   test "cancels an existing reservation created from known Holmy phantom uid" do
     user = User.create!(
       name: "Holmy",
@@ -185,6 +202,47 @@ class IcalReservationImporterTest < ActiveSupport::TestCase
       VERSION:2.0
       BEGIN:VEVENT
       UID:b0ba833f6f6ecad658415bbd6e3489f544ede966@www.holmy.com.br
+      DTSTART;VALUE=DATE:20261117
+      DTEND;VALUE=DATE:20261117
+      SUMMARY:CLOSED - Not available
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    assert_equal 0, result.created
+    assert_equal 1, result.missing
+    assert reserva.reload.canceled?
+    assert_not reserva.blocks_availability?
+    assert_equal "Evento Holmy ignorado por UID fantasma no iCal.", reserva.cancellation_reason
+  end
+
+  test "cancels an existing reservation created from zero-night Holmy block with new uid" do
+    user = User.create!(
+      name: "Holmy",
+      email: "holmy-zero-night-existing@example.com",
+      password: "password",
+      password_confirmation: "password"
+    )
+    reserva = @cabana.reservas.create!(
+      user: user,
+      origem: "holmy",
+      start_date: Date.new(2026, 11, 17),
+      end_date: Date.new(2026, 11, 18),
+      payment_status: "paid",
+      blocks_availability: true,
+      total_price: 0,
+      ical_uid: "new-holmy-zero-night-uid@www.holmy.com.br",
+      platform_uid: "new-holmy-zero-night-uid@www.holmy.com.br",
+      ical_uid_from_feed: true,
+      imported_start_date: Date.new(2026, 11, 17),
+      imported_end_date: Date.new(2026, 11, 18)
+    )
+
+    result = import_holmy(<<~ICS)
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      BEGIN:VEVENT
+      UID:new-holmy-zero-night-uid@www.holmy.com.br
       DTSTART;VALUE=DATE:20261117
       DTEND;VALUE=DATE:20261117
       SUMMARY:CLOSED - Not available

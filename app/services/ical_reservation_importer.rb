@@ -106,11 +106,11 @@ class IcalReservationImporter
   end
 
   def calendars
-    Icalendar::Calendar.parse(ics_content)
+    @calendars ||= Icalendar::Calendar.parse(ics_content)
   end
 
   def ics_content
-    @ics_content || URI.parse(@url).open(open_timeout: 10, read_timeout: 25).read
+    @loaded_ics_content ||= @ics_content || URI.parse(@url).open(open_timeout: 10, read_timeout: 25).read
   end
 
   def range_for(event)
@@ -119,7 +119,10 @@ class IcalReservationImporter
     start_date = calendar_date(event.dtstart)
     return unless start_date
 
-    end_date = calendar_date(event.dtend) || start_date + 1.day
+    parsed_end_date = calendar_date(event.dtend)
+    return if ignored_zero_night_holmy_block?(event, start_date, parsed_end_date)
+
+    end_date = parsed_end_date || start_date + 1.day
     end_date = start_date + 1.day if end_date <= start_date
 
     return if end_date <= @today
@@ -154,7 +157,7 @@ class IcalReservationImporter
   end
 
   def cancel_ignored_platform_uid_imports
-    ignored_uids = ignored_platform_uids
+    ignored_uids = (ignored_platform_uids + ignored_event_platform_uids).uniq
     return 0 if ignored_uids.blank?
 
     canceled = 0
@@ -178,11 +181,31 @@ class IcalReservationImporter
     IGNORED_PLATFORM_UIDS[@platform].to_a.map(&:downcase)
   end
 
+  def ignored_event_platform_uids
+    calendars.flat_map(&:events).filter_map do |event|
+      start_date = calendar_date(event.dtstart)
+      end_date = calendar_date(event.dtend)
+      next unless ignored_zero_night_holmy_block?(event, start_date, end_date)
+
+      candidate_uids = [event.uid.to_s.strip, platform_uid_for(event)].compact_blank
+      candidate_uids += candidate_uids.map { |uid| uid.split('@').first }
+      candidate_uids
+    end.flatten.compact_blank.map(&:downcase).uniq
+  end
+
   def ignored_platform_uid_value?(value, ignored_uids)
     uid = value.to_s.strip.downcase
     return false if uid.blank?
 
     ignored_uids.include?(uid) || ignored_uids.include?(uid.split('@').first)
+  end
+
+  def ignored_zero_night_holmy_block?(event, start_date, end_date)
+    return false unless @platform == 'holmy'
+    return false unless start_date.present? && end_date.present? && end_date <= start_date
+
+    normalized_text = normalized_event_text(event)
+    normalized_text.include?('closed') && normalized_text.include?('not available')
   end
 
   def airbnb_not_available_event?(normalized_text)
