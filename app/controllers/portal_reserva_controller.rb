@@ -833,9 +833,11 @@ class PortalReservaController < ApplicationController
       subtotal = unit_price * quantity
       service_date = first_item.service_date&.strftime("%d/%m/%Y")
       observation = first_item.observation.to_s.strip
+      menu_text = helpers.portal_service_menu_for_date(first_item.service, reserva, first_item.service_date)
 
       line = "- #{first_item.service.name} | #{quantity} #{quantity == 1 ? 'unidade' : 'unidades'} | #{service_date} | R$ #{format('%.2f', subtotal).tr('.', ',')}"
       line += " | Obs: #{observation}" if observation.present?
+      line += " | Cardápio: #{menu_text}" if menu_text.present?
       lines << line
     end
 

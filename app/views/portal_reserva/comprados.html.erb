@@ -29,6 +29,9 @@
               <% if first_item.observation.present? %>
                 <p class="text-sm text-gray-600 mt-2">Observação: <%= first_item.observation %></p>
               <% end %>
+              <% if (menu_text = portal_service_menu_for_date(first_item.service, @reserva, first_item.service_date)) %>
+                <p class="text-sm text-gray-600 mt-2">Cardápio: <%= menu_text %></p>
+              <% end %>
 
               <% if first_item.guest_change_allowed? %>
                 <% available_dates_for_service = portal_service_dates(first_item.service, @reserva) %>

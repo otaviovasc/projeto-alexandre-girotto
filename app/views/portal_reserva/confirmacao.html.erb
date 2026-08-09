@@ -105,6 +105,9 @@
               <% if first_item.observation.present? %>
                 <p class="text-sm text-gray-600 mt-1">Observação: <%= first_item.observation %></p>
               <% end %>
+              <% if (menu_text = portal_service_menu_for_date(first_item.service, @reserva, first_item.service_date)) %>
+                <p class="text-sm text-gray-600 mt-1">Cardápio: <%= menu_text %></p>
+              <% end %>
             </div>
             <p class="font-bold text-[#1a2e1a] whitespace-nowrap"><%= number_to_currency(subtotal) %></p>
           </div>

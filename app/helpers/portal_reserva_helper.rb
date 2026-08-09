@@ -31,11 +31,7 @@ module PortalReservaHelper
   end
 
   def portal_service_menu(service, reserva)
-    return unless service.portal_region == "MG"
-
-    normalized_name = service.name.to_s.parameterize
-    menu = MG_MENUS["almoco"] if normalized_name.include?("almoco")
-    menu ||= MG_MENUS["jantar"] if normalized_name.include?("jantar")
+    menu = portal_service_menu_by_service(service)
     return unless menu
 
     (reserva.start_date..reserva.end_date).map do |date|
@@ -43,7 +39,28 @@ module PortalReservaHelper
     end
   end
 
+  def portal_service_menu_for_date(service, reserva, date)
+    menu = portal_service_menu_by_service(service)
+    return unless menu
+    return if reserva.blank? || date.blank?
+    return if reserva.start_date.blank? || reserva.end_date.blank?
+    return unless date.between?(reserva.start_date, reserva.end_date)
+
+    "#{WEEKDAYS[date.wday]}, #{date.strftime('%d/%m')}: #{menu.fetch(date.wday)}"
+  end
+
   def printed_photos_service?(service)
     service.name.to_s.parameterize.match?(/foto.*impress/)
+  end
+
+  private
+
+  def portal_service_menu_by_service(service)
+    return unless service&.portal_region == "MG"
+
+    normalized_name = service.name.to_s.parameterize
+    menu = MG_MENUS["almoco"] if normalized_name.include?("almoco")
+    menu ||= MG_MENUS["jantar"] if normalized_name.include?("jantar")
+    menu
   end
 end
