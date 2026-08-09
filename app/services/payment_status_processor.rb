@@ -181,7 +181,7 @@ class PaymentStatusProcessor
   end
 
   def late_fee_amount_for_first_item_in_order(cart_item, assigned_by_order)
-    return 0.to_d if cart_item.reserva&.service_purchase_late_fee_waived?
+    return 0.to_d if cart_item.reserva.blank?
 
     order_key = [
       cart_item.reserva_id,
@@ -190,7 +190,7 @@ class PaymentStatusProcessor
     return 0.to_d if assigned_by_order[order_key]
 
     assigned_by_order[order_key] = true
-    Reserva::SERVICE_PURCHASE_LATE_FEE
+    cart_item.reserva.service_purchase_late_fee_amount
   end
 
   def service_late_fee_amount_for(record)

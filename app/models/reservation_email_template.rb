@@ -60,7 +60,7 @@ class ReservationEmailTemplate < ApplicationRecord
 
         Faltam 7 dias para sua estadia na {{cabana}}.
 
-        Lembre-se de preencher o pré-check-in/FNRH e acessar o material do hóspede, que fica na primeira mensagem do grupo de estadia no WhatsApp.
+        {{fnrh_material_email}}
 
         Código da reserva: {{codigo}}
 
@@ -324,7 +324,7 @@ class ReservationEmailTemplate < ApplicationRecord
     'fnrh_7_days' => <<~BODY,
       Olá, {{hospede}}! Falta 7 dias para sua estadia no Villaggio.
 
-      Lembre de preencher o pré-check-in/FNRH e acessar o material do hóspede, que fica na primeira mensagem deste grupo.
+      {{fnrh_material_whatsapp}}
     BODY
     'fnrh_4_days' => <<~BODY,
       Olá, {{hospede}}! Sua estadia está chegando.
@@ -436,15 +436,19 @@ class ReservationEmailTemplate < ApplicationRecord
   end
 
   def render_subject(reserva)
-    interpolate(subject, reserva)
+    adapt_fnrh_copy(interpolate(subject, reserva), reserva)
   end
 
   def render_body(reserva)
-    interpolate(body, reserva)
+    adapt_fnrh_copy(interpolate(body, reserva), reserva)
   end
 
   def render_whatsapp_body(reserva)
-    interpolate(whatsapp_body.presence || body, reserva)
+    adapt_fnrh_copy(interpolate(whatsapp_body.presence || body, reserva), reserva)
+  end
+
+  def display_name_for(reserva)
+    adapt_fnrh_copy(name, reserva)
   end
 
   private
@@ -475,12 +479,44 @@ class ReservationEmailTemplate < ApplicationRecord
       'saida' => reserva.end_date&.strftime('%d/%m/%Y').to_s,
       'material_url' => public_material_url,
       'maps_url' => reserva.cabana&.filial&.address.to_s.presence || 'Consulte o material do hóspede',
-      'whatsapp' => whatsapp_number_for(reserva.cabana&.filial)
+      'whatsapp' => whatsapp_number_for(reserva.cabana&.filial),
+      'fnrh_material_email' => fnrh_material_email_text(reserva),
+      'fnrh_material_whatsapp' => fnrh_material_whatsapp_text(reserva)
     }
 
     tokens.reduce(text.to_s) do |memo, (key, value)|
       memo.gsub("{{#{key}}}", value.to_s)
     end
+  end
+
+  def fnrh_material_email_text(reserva)
+    if reserva&.fnrh_reminder_needed?
+      'Lembre-se de preencher o pré-check-in/FNRH e acessar o material do hóspede, que fica na primeira mensagem do grupo de estadia no WhatsApp.'
+    else
+      'Acesse o material do hóspede, que fica na primeira mensagem do grupo de estadia no WhatsApp.'
+    end
+  end
+
+  def fnrh_material_whatsapp_text(reserva)
+    if reserva&.fnrh_reminder_needed?
+      'Lembre de preencher o pré-check-in/FNRH e acessar o material do hóspede, que fica na primeira mensagem deste grupo.'
+    else
+      'Acesse o material do hóspede, que fica na primeira mensagem deste grupo.'
+    end
+  end
+
+  def adapt_fnrh_copy(text, reserva)
+    return text.to_s unless trigger_key.to_s.start_with?('fnrh_')
+    return text.to_s if reserva&.fnrh_reminder_needed?
+
+    text.to_s
+        .gsub(/Lembre-se de preencher o pré-check-in\/FNRH e acessar o material do hóspede/i, 'Acesse o material do hóspede')
+        .gsub(/Lembre de preencher o pré-check-in\/FNRH e acessar o material do hóspede/i, 'Acesse o material do hóspede')
+        .gsub(/preencher o pré-check-in\/FNRH e /i, '')
+        .gsub(/FNRH e material/i, 'Material do hóspede')
+        .gsub(/FNRH e chegada/i, 'Chegada')
+        .gsub(/pré-check-in\/FNRH/i, 'material do hóspede')
+        .gsub(/\bFNRH\b/i, 'material do hóspede')
   end
 
   def public_material_url

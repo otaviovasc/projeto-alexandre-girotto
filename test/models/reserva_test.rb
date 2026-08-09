@@ -45,7 +45,7 @@ class ReservaTest < ActiveSupport::TestCase
     assert_not reserva.service_purchase_window_open?(Date.new(2026, 1, 29))
   end
 
-  test "service purchase late fee applies after normal deadline unless waived" do
+  test "service purchase late fee is disabled after normal deadline" do
     reserva = Reserva.new(
       start_date: Date.new(2026, 1, 26),
       end_date: Date.new(2026, 1, 28),
@@ -53,7 +53,8 @@ class ReservaTest < ActiveSupport::TestCase
       service_purchase_override_until: Date.new(2026, 1, 28)
     )
 
-    assert_equal BigDecimal("50"), reserva.service_purchase_late_fee_amount(Date.new(2026, 1, 20))
+    assert reserva.service_purchase_late_fee_applicable?(Date.new(2026, 1, 20))
+    assert_equal 0.to_d, reserva.service_purchase_late_fee_amount(Date.new(2026, 1, 20))
 
     reserva.service_purchase_late_fee_waived = true
 

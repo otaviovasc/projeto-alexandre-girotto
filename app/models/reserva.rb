@@ -153,7 +153,7 @@ class Reserva < ApplicationRecord
   end
 
   def service_purchase_late_fee_amount(date = Date.current)
-    service_purchase_late_fee_applicable?(date) ? SERVICE_PURCHASE_LATE_FEE : 0.to_d
+    0.to_d
   end
 
   def service_purchase_late_fee_label
@@ -366,6 +366,18 @@ class Reserva < ApplicationRecord
 
   def fnrh_information_released?
     partnership_reservation? || fnrh_status.in?(%w[precheckin_completed precheckin_bypassed checked_in checked_out])
+  end
+
+  def fnrh_precheckin_open?
+    fnrh_status == 'awaiting_precheckin' &&
+      fnrh_precheckin_url.present? &&
+      end_date.present? &&
+      end_date >= Date.current &&
+      !partnership_reservation?
+  end
+
+  def fnrh_reminder_needed?
+    fnrh_precheckin_open?
   end
 
   def reservation_email_recipient_email

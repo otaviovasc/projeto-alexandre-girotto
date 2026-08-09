@@ -58,7 +58,7 @@ class ReservationWhatsappTaskMaterializer
 
     task.assign_attributes(
       trigger_key: template.trigger_key,
-      template_name: template.name,
+      template_name: template.display_name_for(reserva),
       message_body: template.render_whatsapp_body(reserva),
       scheduled_at: scheduled_at,
       scheduled_on: scheduled_at.to_date

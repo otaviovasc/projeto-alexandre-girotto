@@ -789,21 +789,9 @@
     <% if can_manage_reservations? %>
       <div class="purchase-access-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
         <div>
-          <% if @reserva.service_purchase_late_fee_waived? %>
-            <span class="purchase-access-status open">Taxa administrativa anulada</span>
-            <p class="purchase-access-copy">Esta reserva não terá a taxa de <%= number_to_currency(Reserva::SERVICE_PURCHASE_LATE_FEE) %> mesmo comprando fora do prazo.</p>
-          <% else %>
-            <span class="purchase-access-status normal">Taxa administrativa ativa</span>
-            <p class="purchase-access-copy">Se o hóspede comprar fora do prazo normal, o checkout adiciona <%= number_to_currency(Reserva::SERVICE_PURCHASE_LATE_FEE) %> como taxa administrativa para compra fora do prazo.</p>
-          <% end %>
+          <span class="purchase-access-status open">Taxa administrativa desativada</span>
+          <p class="purchase-access-copy">Compras liberadas fora do prazo seguem sem taxa administrativa no checkout.</p>
         </div>
-
-        <%= button_to(@reserva.service_purchase_late_fee_waived? ? 'Reativar taxa' : 'Anular taxa',
-            update_service_purchase_late_fee_admin_reserva_path(@reserva),
-            method: :patch,
-            params: { service_purchase_late_fee_waived: !@reserva.service_purchase_late_fee_waived? },
-            class: @reserva.service_purchase_late_fee_waived? ? 'btn btn-secondary' : 'btn btn-primary',
-            form_class: 'd-inline') %>
       </div>
 
       <div class="purchase-access-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
