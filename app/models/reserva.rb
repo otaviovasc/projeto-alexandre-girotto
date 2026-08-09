@@ -153,7 +153,9 @@ class Reserva < ApplicationRecord
   end
 
   def service_purchase_late_fee_amount(date = Date.current)
-    0.to_d
+    return 0.to_d unless service_purchase_late_fee_applicable?(date)
+
+    SERVICE_PURCHASE_LATE_FEE
   end
 
   def service_purchase_late_fee_label

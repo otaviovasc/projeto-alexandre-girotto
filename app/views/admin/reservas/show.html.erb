@@ -789,9 +789,39 @@
     <% if can_manage_reservations? %>
       <div class="purchase-access-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
         <div>
-          <span class="purchase-access-status open">Taxa administrativa desativada</span>
-          <p class="purchase-access-copy">Compras liberadas fora do prazo seguem sem taxa administrativa no checkout.</p>
+          <% if @reserva.service_purchase_late_fee_applicable? %>
+            <span class="purchase-access-status closed">Taxa administrativa ativa</span>
+            <p class="purchase-access-copy">
+              Compras liberadas fora do prazo incluem
+              <strong><%= number_to_currency(@reserva.service_purchase_late_fee_amount) %></strong>
+              de taxa administrativa no checkout.
+            </p>
+          <% elsif @reserva.service_purchase_override_used? && @reserva.service_purchase_late_fee_waived? %>
+            <span class="purchase-access-status open">Taxa administrativa anulada</span>
+            <p class="purchase-access-copy">Compras liberadas fora do prazo seguem sem taxa administrativa nesta reserva.</p>
+          <% else %>
+            <span class="purchase-access-status normal">Taxa administrativa inativa</span>
+            <p class="purchase-access-copy">A taxa só aparece quando a compra for liberada fora do prazo normal.</p>
+          <% end %>
         </div>
+
+        <% if @reserva.service_purchase_override_used? %>
+          <% if @reserva.service_purchase_late_fee_waived? %>
+            <%= button_to 'Reativar taxa',
+                update_service_purchase_late_fee_admin_reserva_path(@reserva),
+                method: :patch,
+                params: { service_purchase_late_fee_waived: false },
+                class: 'btn btn-primary',
+                form_class: 'd-inline' %>
+          <% else %>
+            <%= button_to 'Anular taxa',
+                update_service_purchase_late_fee_admin_reserva_path(@reserva),
+                method: :patch,
+                params: { service_purchase_late_fee_waived: true },
+                class: 'btn btn-secondary',
+                form_class: 'd-inline' %>
+          <% end %>
+        <% end %>
       </div>
 
       <div class="purchase-access-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
