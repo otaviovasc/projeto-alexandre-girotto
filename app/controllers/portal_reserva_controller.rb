@@ -15,6 +15,10 @@ class PortalReservaController < ApplicationController
   PHOTO_PRINT_MAX_FILE_SIZE = 10.megabytes
   PORTAL_CHECKIN_AFTERNOON_NOTE = "de tarde após check-in".freeze
   PORTAL_CHECKOUT_MORNING_NOTE = "de manhã antes do check-out".freeze
+  PORTAL_AUTOMATIC_TIMING_NOTES = [
+    PORTAL_CHECKIN_AFTERNOON_NOTE,
+    PORTAL_CHECKOUT_MORNING_NOTE
+  ].freeze
 
   # GET /minha-reserva
   def index
@@ -97,11 +101,17 @@ class PortalReservaController < ApplicationController
       redirect_to portal_reserva_comprados_path, alert: portal_service_date_error_message(reserva_service.service, [new_date]) and return
     end
 
+    manual_observation = manual_observation_without_automatic_timing(params[:observation])
+
     ReservaService.transaction do
       reserva_services.each do |item|
         item.update!(
           service_date: new_date,
-          observation: params[:observation].to_s.strip.presence
+          observation: observation_for_service(
+            item.service,
+            new_date,
+            manual_observation: manual_observation
+          )
         )
       end
     end
@@ -389,13 +399,26 @@ class PortalReservaController < ApplicationController
     end
   end
 
-  def observation_for_service(service, service_date = nil)
+  def observation_for_service(service, service_date = nil, manual_observation: params[:observation])
     notes = []
     notes << automatic_observation_for_service_date(service, service_date)
 
-    notes << "Fondue: #{fondue_choice}" if fondue_service?(service)
-    notes << params[:observation].to_s.strip if params[:observation].present?
+    notes << "Fondue: #{fondue_choice}" if fondue_service?(service) && fondue_choice.present?
+    notes << manual_observation.to_s.strip if manual_observation.present?
     notes.compact_blank.join(". ").presence
+  end
+
+  def manual_observation_without_automatic_timing(observation)
+    text = observation.to_s.strip
+    return if text.blank?
+
+    PORTAL_AUTOMATIC_TIMING_NOTES.each do |automatic_note|
+      escaped_note = Regexp.escape(automatic_note)
+      text = text.gsub(/\A#{escaped_note}\.?\s*/i, "")
+                 .gsub(/\s*\.\s*#{escaped_note}\.?\s*/i, ". ")
+    end
+
+    text.squish.presence
   end
 
   def fondue_choice

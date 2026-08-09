@@ -57,6 +57,19 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Fondue: chocolate. Sem lactose", controller.send(:observation_for_service, service)
   end
 
+  test "does not add blank fondue choice while editing existing observation" do
+    controller = PortalReservaController.new
+    service = Service.new(name: "Kit de Fondue")
+
+    assert_equal "Fondue: chocolate. Sem lactose",
+                 controller.send(
+                   :observation_for_service,
+                   service,
+                   Date.new(2026, 8, 11),
+                   manual_observation: "Fondue: chocolate. Sem lactose"
+                 )
+  end
+
   test "blocks breakfast and lunch on check in unless reservation has early check in" do
     controller = PortalReservaController.new
     reserva = Reserva.new(start_date: Date.new(2026, 8, 10), end_date: Date.new(2026, 8, 12))
@@ -176,6 +189,26 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
       assert_not controller.send(:portal_service_date_allowed?, service, reserva, reserva.end_date), service_name
       assert_nil controller.send(:observation_for_service, service, reserva.end_date), service_name
     end
+  end
+
+  test "recalculates automatic timing notes when purchased service date changes" do
+    controller = PortalReservaController.new
+    reserva = Reserva.new(start_date: Date.new(2026, 8, 10), end_date: Date.new(2026, 8, 12))
+    controller.instance_variable_set(:@reserva, reserva)
+    service = Service.new(name: "Passeio a Cavalo")
+
+    manual_observation = controller.send(:manual_observation_without_automatic_timing, "de tarde após check-in")
+    assert_nil controller.send(:observation_for_service, service, Date.new(2026, 8, 11), manual_observation: manual_observation)
+
+    manual_observation = controller.send(:manual_observation_without_automatic_timing, "de tarde após check-in. Levar água")
+    assert_equal "Levar água",
+                 controller.send(:observation_for_service, service, Date.new(2026, 8, 11), manual_observation: manual_observation)
+    assert_equal "de manhã antes do check-out. Levar água",
+                 controller.send(:observation_for_service, service, reserva.end_date, manual_observation: manual_observation)
+
+    reserva.late_checkout = true
+    assert_equal "Levar água",
+                 controller.send(:observation_for_service, service, reserva.end_date, manual_observation: manual_observation)
   end
 
   test "skips automatic timing notes when early check in or late checkout gives enough stay time" do
