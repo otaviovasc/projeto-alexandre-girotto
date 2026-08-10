@@ -189,6 +189,17 @@
                       Reservado
                     <% end %>
                   <% end %>
+                  <% unless reserva.canceled? %>
+                    <%= button_to cancel_partnership_reserva_path(reserva),
+                        method: :patch,
+                        class: 'btn btn-sm btn-danger mt-1',
+                        form_class: 'd-inline',
+                        params: { cancellation_reason: 'Parceria cancelada pelo painel de parcerias.' },
+                        data: { turbo_confirm: 'Cancelar esta parceria? As datas serão liberadas e os serviços vinculados serão cancelados.' } do %>
+                      <i class="bi bi-x-circle"></i>
+                      Cancelar parceria
+                    <% end %>
+                  <% end %>
                 </td>
               </tr>
             <% end %>

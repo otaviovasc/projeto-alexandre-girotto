@@ -7,7 +7,7 @@ class Partnership::ReservasController < ApplicationController
   helper ReservasHelper
 
   before_action :authorize_partnership_access
-  before_action :set_partnership_reserva, only: [:edit, :update, :confirm_reservation]
+  before_action :set_partnership_reserva, only: [:edit, :update, :confirm_reservation, :cancel]
 
   def index
     @reference_date = partnership_reference_date
@@ -106,6 +106,18 @@ class Partnership::ReservasController < ApplicationController
       redirect_to partnership_dashboard_path,
                   alert: "Não foi possível reservar estas datas: #{@reserva.errors.full_messages.join(', ')}"
     end
+  end
+
+  def cancel
+    if @reserva.canceled?
+      redirect_to partnership_dashboard_path, alert: 'Esta parceria já está cancelada.'
+      return
+    end
+
+    @reserva.cancel_for_operations!(by: current_user, reason: params[:cancellation_reason].presence || 'Parceria cancelada pelo painel de parcerias.')
+    sync_all_reservas_to_sheets
+
+    redirect_to partnership_dashboard_path, notice: 'Parceria cancelada e datas liberadas.'
   end
 
   private

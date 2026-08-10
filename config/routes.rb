@@ -26,6 +26,7 @@ Rails.application.routes.draw do
     resources :reservas, only: [:create, :edit, :update] do
       member do
         patch :confirm_reservation
+        patch :cancel
       end
     end
   end

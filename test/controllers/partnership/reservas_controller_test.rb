@@ -73,6 +73,33 @@ class Partnership::ReservasControllerTest < ActionDispatch::IntegrationTest
     assert @reserva.blocks_availability?
   end
 
+  test "partnership agent can cancel a partnership without deleting it" do
+    service = Service.create!(
+      name: "Jantar parceria",
+      price: 100,
+      partner_price: 80,
+      filial: @reserva.cabana.filial
+    )
+    reserva_service = @reserva.reserva_services.create!(
+      service: service,
+      quantity: 1,
+      service_date: @reserva.start_date
+    )
+
+    patch cancel_partnership_reserva_path(@reserva), params: {
+      cancellation_reason: "Pedido da parceria"
+    }
+
+    assert_redirected_to partnership_dashboard_path
+    @reserva.reload
+    assert @reserva.canceled?
+    assert_not @reserva.blocks_availability?
+    assert_equal @agent, @reserva.canceled_by
+    assert_equal "Pedido da parceria", @reserva.cancellation_reason
+    assert reserva_service.reload.cancelled?
+    assert Reserva.exists?(@reserva.id)
+  end
+
   test "partnership agent cannot edit a regular reservation" do
     regular_guest = User.create!(
       name: "Hóspede comum",
