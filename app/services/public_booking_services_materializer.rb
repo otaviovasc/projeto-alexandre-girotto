@@ -21,14 +21,14 @@ class PublicBookingServicesMaterializer
 
     ReservaService.transaction do
       service_items.each do |entry|
-        dates_for_service(entry).tally.each do |service_date, quantity|
+        dates_for_service(entry).each do |service_date|
           service = entry[:service]
           unit_price = entry[:unit_price]
           observation = service_observation(entry)
 
           created_services << @reserva.reserva_services.create!(
             service: service,
-            quantity: quantity,
+            quantity: 1,
             service_date: service_date,
             status: 'active',
             payment_status: 'paid',
@@ -36,7 +36,7 @@ class PublicBookingServicesMaterializer
             payment_link_url: @reserva_payment.payment_link_url,
             payment_order_code: @reserva_payment.payment_order_code,
             unit_price_paid: unit_price,
-            total_paid: unit_price * quantity,
+            total_paid: unit_price,
             paid_at: @reserva_payment.paid_at || Time.current,
             observation: observation.presence,
             purchased_after_service_deadline: false

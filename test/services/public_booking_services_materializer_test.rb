@@ -32,6 +32,19 @@ class PublicBookingServicesMaterializerTest < ActiveSupport::TestCase
     assert_equal [Date.new(2027, 7, 28), Date.new(2027, 7, 29)], service_dates(reserva, cafe)
   end
 
+  test "creates one reservation service per purchased unit" do
+    reserva = create_reserva(start_date: Date.new(2027, 7, 27), end_date: Date.new(2027, 7, 28))
+    jantar = create_service("Jantar")
+    payment = create_payment(reserva, [service_payload(jantar, quantity: 2)])
+
+    PublicBookingServicesMaterializer.call(payment)
+
+    purchased_services = reserva.reserva_services.where(service: jantar).order(:id)
+    assert_equal 2, purchased_services.count
+    assert_equal [1, 1], purchased_services.pluck(:quantity)
+    assert_equal [Date.new(2027, 7, 27), Date.new(2027, 7, 27)], purchased_services.pluck(:service_date)
+  end
+
   test "assigns arrival and evening services from checkin" do
     reserva = create_reserva(start_date: Date.new(2027, 7, 27), end_date: Date.new(2027, 7, 29))
     espumante = create_service("Espumante")
