@@ -17,7 +17,7 @@
        date: reserva_service.service_date&.iso8601,
        quantity: reserva_service.quantity.to_i,
        total: unit_price.to_f * reserva_service.quantity.to_i,
-       observation: reserva_service.observation.to_s
+       observation: reserva_service.visible_observation.to_s
      }
    end.compact %>
 

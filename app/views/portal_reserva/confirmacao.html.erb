@@ -1,7 +1,7 @@
 <% content_for :title, "#{@payment_paid ? 'Compra confirmada' : 'Aguardando pagamento'} - Villaggio Girotto" %>
 
 <% grouped_services = @purchased_services.group_by do |reserva_service|
-     [reserva_service.service_id, reserva_service.service_date, reserva_service.observation.to_s.strip]
+     [reserva_service.service_id, reserva_service.service_date, reserva_service.visible_observation.to_s.strip]
    end %>
 <% services_total = grouped_services.sum do |_key, items|
      first_item = items.first
@@ -89,6 +89,7 @@
       <div class="divide-y divide-gray-100">
         <% grouped_services.each_value do |items| %>
           <% first_item = items.first %>
+          <% visible_observation = first_item.visible_observation %>
           <% quantity = items.sum { |item| item.quantity.to_i } %>
           <% unit_price = first_item.unit_price_paid || first_item.service.price_for(first_item.reserva) || 0 %>
           <% subtotal = unit_price * quantity %>
@@ -102,8 +103,8 @@
                   - <%= first_item.service_date.strftime("%d/%m/%Y") %>
                 <% end %>
               </p>
-              <% if first_item.observation.present? %>
-                <p class="text-sm text-gray-600 mt-1">Observação: <%= first_item.observation %></p>
+              <% if visible_observation.present? %>
+                <p class="text-sm text-gray-600 mt-1">Observação: <%= visible_observation %></p>
               <% end %>
               <% if (menu_text = portal_service_menu_for_date(first_item.service, @reserva, first_item.service_date)) %>
                 <p class="text-sm text-gray-600 mt-1">Cardápio: <%= menu_text %></p>

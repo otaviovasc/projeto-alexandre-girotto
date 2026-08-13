@@ -1,6 +1,6 @@
 <% content_for :title, "Confirmar serviços - Villaggio Girotto" %>
 
-<% grouped_cart_items = @portal_cart_items.group_by { |item| [item.service_id, item.service_date, item.observation.to_s.strip] } %>
+<% grouped_cart_items = @portal_cart_items.group_by { |item| [item.service_id, item.service_date, ReservaService.visible_observation_text(item.observation).to_s.strip] } %>
 <% services_total = grouped_cart_items.sum do |_key, items|
      first_item = items.first
      quantity = items.sum { |item| item.quantity.to_i }
@@ -53,6 +53,7 @@
           <% first_item = items.first %>
           <% quantity = items.sum { |item| item.quantity.to_i } %>
           <% subtotal = service_price_for(first_item.service) * quantity %>
+          <% visible_observation = ReservaService.visible_observation_text(first_item.observation) %>
 
           <div class="px-5 py-4 sm:px-7 flex items-start justify-between gap-4">
             <div class="min-w-0">
@@ -63,8 +64,8 @@
                   - <%= first_item.service_date.strftime("%d/%m/%Y") %>
                 <% end %>
               </p>
-              <% if first_item.observation.present? %>
-                <p class="text-sm text-gray-600 mt-1">Observação: <%= first_item.observation %></p>
+              <% if visible_observation.present? %>
+                <p class="text-sm text-gray-600 mt-1">Observação: <%= visible_observation %></p>
               <% end %>
             </div>
             <p class="font-bold text-[#1a2e1a] whitespace-nowrap"><%= number_to_currency(subtotal) %></p>

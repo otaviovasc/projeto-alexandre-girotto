@@ -186,6 +186,22 @@ class ReservaTest < ActiveSupport::TestCase
     assert_includes Reserva.integration_ready, confirmed
   end
 
+  test "generic imported email is not treated as real guest email" do
+    imported = Reserva.new(user: User.new(email: "airbnb@importado.com"))
+    real_guest = Reserva.new(user: User.new(email: "booking@importado.com"), guest_email: "hospede@example.com")
+
+    assert imported.missing_real_guest_email?
+    assert_not real_guest.missing_real_guest_email?
+    assert_equal "hospede@example.com", real_guest.reservation_email_recipient_email
+  end
+
+  test "visible service observation hides automatic notes and keeps manual notes" do
+    observation = "Adicionado automaticamente por cafe da manha incluso na cabana. Sem lactose. de tarde após check-in"
+
+    assert_equal "Sem lactose", ReservaService.visible_observation_text(observation)
+    assert_nil ReservaService.visible_observation_text("Data do serviço definida automaticamente pelo sistema. O hóspede pode ajustar no menu de serviços dentro do prazo.")
+  end
+
   test "canceling a reservation preserves history and releases operation" do
     filial = Filial.create!(name: "Filial cancelamento")
     cabana = Cabana.create!(name: "Cabana cancelamento", price: 100, filial: filial)

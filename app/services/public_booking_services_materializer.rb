@@ -1,6 +1,4 @@
 class PublicBookingServicesMaterializer
-  AUTOMATIC_DATE_OBSERVATION = 'Data do serviço definida automaticamente pelo sistema. O hóspede pode ajustar no menu de serviços dentro do prazo.'
-
   def self.call(reserva_payment)
     new(reserva_payment).call
   end
@@ -83,10 +81,7 @@ class PublicBookingServicesMaterializer
   end
 
   def service_observation(entry)
-    observation = entry[:item]['observation'].presence
-    return observation unless entry[:date_pending]
-
-    [observation, AUTOMATIC_DATE_OBSERVATION].compact.join(' ')
+    entry[:item]['observation'].presence
   end
 
   def automatic_date_candidates(category)

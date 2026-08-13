@@ -324,6 +324,9 @@
                 <span class="badge <%= badge_class(reserva.payment_status) %>">
                   <%= status_translate(reserva.payment_status) %>
                 </span>
+                <% if reserva.missing_real_guest_email? %>
+                  <span class="badge bg-warning text-dark ms-1">E-mail pendente</span>
+                <% end %>
                 <% unless reserva.blocks_availability? %>
                   <span class="badge bg-light text-dark border ms-1">Não bloqueia datas</span>
                 <% end %>

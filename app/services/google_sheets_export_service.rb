@@ -449,7 +449,7 @@ class GoogleSheetsExportService
         reserva_service.service.name,
         reserva_service.quantity,
         format_currency(reserva_service.total_paid || ((reserva_service.unit_price_paid || reserva_service.service.price_for(reserva_service.reserva) || 0) * (reserva_service.quantity || 1))),
-        reserva_service.observation.presence || '-',
+        reserva_service.visible_observation.presence || '-',
         reserva_service.photo_print_pdf_download_url.presence || '-'
       ]
     end

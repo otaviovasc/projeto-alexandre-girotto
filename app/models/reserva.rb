@@ -385,9 +385,19 @@ class Reserva < ApplicationRecord
   def reservation_email_recipient_email
     email = guest_email.presence || user&.email
     normalized_email = email.to_s.squish.downcase
-    return if normalized_email.blank? || imported_placeholder_email?(normalized_email)
+    return if normalized_email.blank? ||
+              imported_placeholder_email?(normalized_email) ||
+              !normalized_email.match?(URI::MailTo::EMAIL_REGEXP)
 
     normalized_email
+  end
+
+  def real_guest_email_present?
+    reservation_email_recipient_email.present?
+  end
+
+  def missing_real_guest_email?
+    !real_guest_email_present?
   end
 
   def reservation_confirmation_email_allowed?

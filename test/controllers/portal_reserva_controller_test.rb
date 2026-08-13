@@ -129,7 +129,7 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "allows massage on every stay date with automatic timing observations" do
+  test "allows massage on every stay date without automatic timing observations" do
     controller = PortalReservaController.new
     reserva = Reserva.new(start_date: Date.new(2026, 8, 10), end_date: Date.new(2026, 8, 12))
     controller.instance_variable_set(:@reserva, reserva)
@@ -137,12 +137,12 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
 
     assert_equal [Date.new(2026, 8, 10), Date.new(2026, 8, 11), Date.new(2026, 8, 12)],
                  controller.send(:portal_service_dates, service, reserva)
-    assert_equal "de tarde após check-in", controller.send(:observation_for_service, service, reserva.start_date)
+    assert_nil controller.send(:observation_for_service, service, reserva.start_date)
     assert_nil controller.send(:observation_for_service, service, Date.new(2026, 8, 11))
-    assert_equal "de manhã antes do check-out", controller.send(:observation_for_service, service, reserva.end_date)
+    assert_nil controller.send(:observation_for_service, service, reserva.end_date)
   end
 
-  test "adds automatic timing notes to trail horse ride and picnic only when needed" do
+  test "keeps service date rules without adding automatic timing notes" do
     controller = PortalReservaController.new
     reserva = Reserva.new(start_date: Date.new(2026, 8, 10), end_date: Date.new(2026, 8, 12))
     controller.instance_variable_set(:@reserva, reserva)
@@ -153,16 +153,16 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
       assert_equal [Date.new(2026, 8, 10), Date.new(2026, 8, 11), Date.new(2026, 8, 12)],
                    controller.send(:portal_service_dates, service, reserva),
                    service_name
-      assert_equal "de tarde após check-in", controller.send(:observation_for_service, service, reserva.start_date)
+      assert_nil controller.send(:observation_for_service, service, reserva.start_date)
       assert_nil controller.send(:observation_for_service, service, Date.new(2026, 8, 11))
-      assert_equal "de manhã antes do check-out", controller.send(:observation_for_service, service, reserva.end_date)
+      assert_nil controller.send(:observation_for_service, service, reserva.end_date)
     end
 
     picnic = Service.new(name: "Piquenique")
 
     assert_equal [Date.new(2026, 8, 10), Date.new(2026, 8, 11)],
                  controller.send(:portal_service_dates, picnic, reserva)
-    assert_equal "de tarde após check-in", controller.send(:observation_for_service, picnic, reserva.start_date)
+    assert_nil controller.send(:observation_for_service, picnic, reserva.start_date)
     assert_nil controller.send(:observation_for_service, picnic, Date.new(2026, 8, 11))
     assert_nil controller.send(:observation_for_service, picnic, reserva.end_date)
   end
@@ -191,7 +191,7 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "recalculates automatic timing notes when purchased service date changes" do
+  test "keeps manual observation when purchased service date changes" do
     controller = PortalReservaController.new
     reserva = Reserva.new(start_date: Date.new(2026, 8, 10), end_date: Date.new(2026, 8, 12))
     controller.instance_variable_set(:@reserva, reserva)
@@ -203,7 +203,7 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     manual_observation = controller.send(:manual_observation_without_automatic_timing, "de tarde após check-in. Levar água")
     assert_equal "Levar água",
                  controller.send(:observation_for_service, service, Date.new(2026, 8, 11), manual_observation: manual_observation)
-    assert_equal "de manhã antes do check-out. Levar água",
+    assert_equal "Levar água",
                  controller.send(:observation_for_service, service, reserva.end_date, manual_observation: manual_observation)
 
     reserva.late_checkout = true

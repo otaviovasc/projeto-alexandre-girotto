@@ -1,4 +1,11 @@
 class ReservaService < ApplicationRecord
+  HIDDEN_AUTOMATIC_OBSERVATIONS = [
+    'Adicionado automaticamente por cafe da manha incluso na cabana',
+    'Data do serviço definida automaticamente pelo sistema. O hóspede pode ajustar no menu de serviços dentro do prazo.',
+    'de tarde após check-in',
+    'de manhã antes do check-out'
+  ].freeze
+
   attr_accessor :skip_breakfast_override
 
   belongs_to :reserva
@@ -66,6 +73,24 @@ class ReservaService < ApplicationRecord
       host: host,
       protocol: 'https'
     )
+  end
+
+  def self.visible_observation_text(observation)
+    automatic_notes = HIDDEN_AUTOMATIC_OBSERVATIONS.map do |automatic_observation|
+      I18n.transliterate(automatic_observation).downcase.squish
+    end
+
+    observation.to_s
+               .split(/\s*\.\s*/)
+               .map(&:strip)
+               .reject(&:blank?)
+               .reject { |note| automatic_notes.include?(I18n.transliterate(note).downcase.squish) }
+               .join(". ")
+               .presence
+  end
+
+  def visible_observation
+    self.class.visible_observation_text(observation)
   end
 
   private

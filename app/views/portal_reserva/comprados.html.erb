@@ -1,5 +1,5 @@
 <% content_for :title, "Serviços comprados - Villaggio Girotto" %>
-<% grouped_services = @purchased_services.group_by { |item| [item.service_id, item.service_date, item.observation.to_s.strip, item.unit_price_paid] } %>
+<% grouped_services = @purchased_services.group_by { |item| [item.service_id, item.service_date, item.visible_observation.to_s.strip, item.unit_price_paid] } %>
 
 <div class="min-h-screen bg-[#f7f5f0]">
   <header class="bg-[#1a2e1a] text-white px-4 py-5 shadow-lg">
@@ -17,6 +17,7 @@
       <div class="bg-white border border-gray-200 rounded-lg shadow-sm divide-y divide-gray-100">
         <% grouped_services.each_value do |items| %>
           <% first_item = items.first %>
+          <% visible_observation = first_item.visible_observation %>
           <% quantity = items.sum { |item| item.quantity.to_i } %>
           <% unit_price = first_item.unit_price_paid || first_item.service.price_for(@reserva) || 0 %>
           <div class="p-5 flex items-start justify-between gap-4">
@@ -26,8 +27,8 @@
                 <%= quantity %> <%= quantity == 1 ? "unidade" : "unidades" %>
                 <% if first_item.service_date.present? %> · <%= first_item.service_date.strftime("%d/%m/%Y") %><% end %>
               </p>
-              <% if first_item.observation.present? %>
-                <p class="text-sm text-gray-600 mt-2">Observação: <%= first_item.observation %></p>
+              <% if visible_observation.present? %>
+                <p class="text-sm text-gray-600 mt-2">Observação: <%= visible_observation %></p>
               <% end %>
               <% if (menu_text = portal_service_menu_for_date(first_item.service, @reserva, first_item.service_date)) %>
                 <p class="text-sm text-gray-600 mt-2">Cardápio: <%= menu_text %></p>
@@ -56,7 +57,7 @@
                     <div>
                       <%= form.label :observation, "Observação", class: "block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1" %>
                       <%= form.text_area :observation,
-                            value: first_item.observation,
+                            value: visible_observation,
                             rows: 2,
                             class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm",
                             placeholder: "Ex.: sem lactose, horário combinado, detalhe do serviço..." %>

@@ -126,7 +126,7 @@ class ReservasExportService
       format_currency((rs.unit_price_paid || rs.service&.price_for(reserva)).to_f * rs.quantity.to_i),
       '-',
       format_datetime(rs.created_at),
-      rs.observation.presence || '-',
+      rs.visible_observation.presence || '-',
       group_created_label(reserva),
       reserva.guest_name,
       reserva.guest_phone,

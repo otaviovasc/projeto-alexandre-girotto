@@ -13,13 +13,6 @@ class PortalReservaController < ApplicationController
   PARTNER_SERVICE_CREDIT_CARD_INTEREST_RATE = 3
   PHOTO_PRINT_ALLOWED_CONTENT_TYPES = %w[image/jpeg image/png].freeze
   PHOTO_PRINT_MAX_FILE_SIZE = 10.megabytes
-  PORTAL_CHECKIN_AFTERNOON_NOTE = "de tarde após check-in".freeze
-  PORTAL_CHECKOUT_MORNING_NOTE = "de manhã antes do check-out".freeze
-  PORTAL_AUTOMATIC_TIMING_NOTES = [
-    PORTAL_CHECKIN_AFTERNOON_NOTE,
-    PORTAL_CHECKOUT_MORNING_NOTE
-  ].freeze
-
   # GET /minha-reserva
   def index
   end
@@ -399,26 +392,15 @@ class PortalReservaController < ApplicationController
     end
   end
 
-  def observation_for_service(service, service_date = nil, manual_observation: params[:observation])
+  def observation_for_service(service, _service_date = nil, manual_observation: params[:observation])
     notes = []
-    notes << automatic_observation_for_service_date(service, service_date)
-
     notes << "Fondue: #{fondue_choice}" if fondue_service?(service) && fondue_choice.present?
     notes << manual_observation.to_s.strip if manual_observation.present?
     notes.compact_blank.join(". ").presence
   end
 
   def manual_observation_without_automatic_timing(observation)
-    text = observation.to_s.strip
-    return if text.blank?
-
-    PORTAL_AUTOMATIC_TIMING_NOTES.each do |automatic_note|
-      escaped_note = Regexp.escape(automatic_note)
-      text = text.gsub(/\A#{escaped_note}\.?\s*/i, "")
-                 .gsub(/\s*\.\s*#{escaped_note}\.?\s*/i, ". ")
-    end
-
-    text.squish.presence
+    ReservaService.visible_observation_text(observation)
   end
 
   def fondue_choice
@@ -480,22 +462,6 @@ class PortalReservaController < ApplicationController
     return false if reserva&.late_checkout?
 
     dinner_service?(service) || picnic_service?(service)
-  end
-
-  def automatic_observation_for_service_date(service, service_date)
-    return if service_date.blank?
-
-    if afternoon_checkin_note_service?(service)
-      return PORTAL_CHECKIN_AFTERNOON_NOTE if checkin_date?(@reserva, service_date) && !@reserva&.early_checkin?
-      return PORTAL_CHECKOUT_MORNING_NOTE if trail_or_horse_service?(service) && checkout_date?(@reserva, service_date) && !@reserva&.late_checkout? && !brauna_reservation?(@reserva)
-
-      return
-    end
-
-    if massage_service?(service)
-      return PORTAL_CHECKIN_AFTERNOON_NOTE if checkin_date?(@reserva, service_date) && !@reserva&.early_checkin?
-      return PORTAL_CHECKOUT_MORNING_NOTE if checkout_date?(@reserva, service_date) && !@reserva&.late_checkout?
-    end
   end
 
   def portal_service_date_error_message(service, dates = [])
@@ -805,7 +771,7 @@ class PortalReservaController < ApplicationController
 
   def purchase_summary_text(reserva, purchased_services)
     grouped_services = purchased_services.group_by do |reserva_service|
-      [reserva_service.service_id, reserva_service.service_date, reserva_service.observation.to_s.strip]
+      [reserva_service.service_id, reserva_service.service_date, reserva_service.visible_observation.to_s.strip]
     end
     services_total = grouped_services.sum do |_key, items|
       first_item = items.first
@@ -832,7 +798,7 @@ class PortalReservaController < ApplicationController
       unit_price = first_item.unit_price_paid || service_price_for(first_item.service, reserva) || 0
       subtotal = unit_price * quantity
       service_date = first_item.service_date&.strftime("%d/%m/%Y")
-      observation = first_item.observation.to_s.strip
+      observation = first_item.visible_observation.to_s.strip
       menu_text = helpers.portal_service_menu_for_date(first_item.service, reserva, first_item.service_date)
 
       line = "- #{first_item.service.name} | #{quantity} #{quantity == 1 ? 'unidade' : 'unidades'} | #{service_date} | R$ #{format('%.2f', subtotal).tr('.', ',')}"

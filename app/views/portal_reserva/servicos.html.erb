@@ -194,12 +194,13 @@
         <div class="divide-y divide-gray-50">
           <% if @portal_cart_items.any? %>
             <% total = 0 %>
-            <% grouped_cart_items = @portal_cart_items.group_by { |rs| [rs.service_id, rs.service_date, rs.observation.to_s.strip] } %>
+            <% grouped_cart_items = @portal_cart_items.group_by { |rs| [rs.service_id, rs.service_date, ReservaService.visible_observation_text(rs.observation).to_s.strip] } %>
             <% late_fee_amount = @service_purchase_late_fee_amount || 0 %>
             <% grouped_cart_items.each_value do |items| %>
               <% first_item = items.first %>
               <% quantity = items.sum { |item| item.quantity.to_i } %>
               <% subtotal = service_price_for(first_item.service) * quantity %>
+              <% visible_observation = ReservaService.visible_observation_text(first_item.observation) %>
               <% total += subtotal %>
               <div class="px-5 py-4 flex items-start justify-between gap-3">
                 <div class="flex-1 min-w-0">
@@ -210,8 +211,8 @@
                       · <%= first_item.service_date.strftime("%d/%m") %>
                     <% end %>
                   </p>
-                  <% if first_item.observation.present? %>
-                    <p class="text-xs text-gray-500 mt-1 leading-snug">Obs: <%= first_item.observation %></p>
+                  <% if visible_observation.present? %>
+                    <p class="text-xs text-gray-500 mt-1 leading-snug">Obs: <%= visible_observation %></p>
                   <% end %>
                   <% if first_item.respond_to?(:photo_print_pdf) && first_item.photo_print_pdf.attached? %>
                     <p class="text-xs text-[#7a571d] mt-1 leading-snug">PDF das fotos anexado</p>

@@ -436,8 +436,9 @@
                   <div class="cancelled-info">
                     <p>📅 Data: <%= rs.service_date&.strftime('%d/%m/%Y') || 'N/A' %></p>
                     <p>📦 Quantidade: <%= rs.quantity %></p>
-                    <% if rs.observation.present? %>
-                      <p>📝 Obs: <%= rs.observation %></p>
+                    <% visible_observation = rs.visible_observation %>
+                    <% if visible_observation.present? %>
+                      <p>📝 Obs: <%= visible_observation %></p>
                     <% end %>
                     <p style="margin-top: 0.5rem; font-style: italic; color: #991b1b;">
                       Este serviço foi cancelado e não será cobrado.
