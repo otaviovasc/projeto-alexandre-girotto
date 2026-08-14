@@ -9,6 +9,10 @@ class CartItem < ApplicationRecord
 
   validate :item_or_service_present
 
+  def visible_observation
+    ReservaService.visible_observation_text(observation)
+  end
+
   private
 
   def item_or_service_present
