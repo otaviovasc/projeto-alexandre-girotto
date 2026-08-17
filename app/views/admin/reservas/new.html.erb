@@ -25,6 +25,7 @@
   <h1 class="text-2xl font-bold mb-4"><%= partnership_form ? 'Nova Reserva de Parceria' : 'Nova Reserva' %></h1>
 
   <%= form_with model: @reserva, url: form_url, local: true, html: { class: 'needs-validation' } do |form| %>
+    <%= hidden_field_tag :service_holiday_block_override, '0', id: 'service_holiday_block_override' %>
     
     <!-- Toggle para criar novo usuário -->
     <div class="form-check mb-3">
@@ -429,8 +430,11 @@
       return;
     }
     if (!freeDate && isHolidayServiceDate(serviceDate)) {
-      alert(SERVICE_HOLIDAY_BLOCK_MESSAGE);
-      return;
+      const confirmed = confirm(`${SERVICE_HOLIDAY_BLOCK_MESSAGE}\n\nClique em OK para adicionar mesmo assim.`);
+      if (!confirmed) return;
+
+      const overrideInput = document.getElementById('service_holiday_block_override');
+      if (overrideInput) overrideInput.value = '1';
     }
 
     // Criar objeto do serviço

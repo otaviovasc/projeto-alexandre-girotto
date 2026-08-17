@@ -739,6 +739,8 @@ class Admin::ReservasController < ApplicationController
   end
 
   def service_holiday_block_error(reserva)
+    return if service_holiday_block_override?
+
     blocked_services = reserva.reserva_services.to_a.filter_map do |reserva_service|
       next if reserva_service.marked_for_destruction?
       next if service_holiday_block_exempt?(reserva_service.service)
@@ -752,6 +754,10 @@ class Admin::ReservasController < ApplicationController
     return if blocked_services.blank?
 
     "#{ServicePurchaseDatePolicy.holiday_block_message} Datas bloqueadas: #{blocked_services.join(', ')}."
+  end
+
+  def service_holiday_block_override?
+    ActiveModel::Type::Boolean.new.cast(params[:service_holiday_block_override])
   end
 
   def service_holiday_block_candidate?(reserva_service)
