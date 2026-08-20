@@ -201,7 +201,7 @@ class Admin::ReservasController < ApplicationController
 
       sync_all_reservas_to_sheets if @reserva.integration_ready?
       
-      redirect_to admin_reservas_summary_path, notice: 'Reserva foi atualizada com sucesso.'
+      redirect_to admin_reserva_path(@reserva), notice: 'Reserva foi atualizada com sucesso.'
     else
       @services = Service.all
       flash.now[:alert] = 'Houve um erro ao atualizar a reserva. Verifique os campos e tente novamente.'

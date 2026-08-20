@@ -612,7 +612,7 @@
 
 <!-- Script para toggle de criação de usuário -->
 <script>
-  document.addEventListener('turbo:load', function () {
+  function initializeReservationUserToggle() {
     // Script para toggle de criação de usuário
     const toggle = document.getElementById('create_user_toggle');
     const userFields = document.getElementById('new_user_fields');
@@ -620,7 +620,7 @@
     const userSelect = document.getElementById('user_select');
     
     // Inicializar Select2
-    if (userSelect) {
+    if (userSelect && window.jQuery && $.fn.select2 && !$(userSelect).hasClass('select2-hidden-accessible')) {
       $('#user_select').select2({
         theme: 'bootstrap-5',
         width: '100%',
@@ -651,7 +651,11 @@
         
         // Remover obrigatoriedade da seleção de usuário e limpar Select2
         userSelect.removeAttribute("required");
-        $('#user_select').val(null).trigger('change');
+        if (window.jQuery && $.fn.select2) {
+          $('#user_select').val(null).trigger('change');
+        } else {
+          userSelect.value = "";
+        }
         
       } else {
         // Usando usuário existente
@@ -675,11 +679,19 @@
       }
     }
 
-    toggle.addEventListener('change', updateRequiredFields);
+    if (toggle.dataset.userToggleInitialized !== 'true') {
+      toggle.addEventListener('change', updateRequiredFields);
+      toggle.dataset.userToggleInitialized = 'true';
+    }
     
     // Inicializar estado correto
     updateRequiredFields();
-  });
+  }
+
+  document.addEventListener('DOMContentLoaded', initializeReservationUserToggle);
+  document.addEventListener('turbo:load', initializeReservationUserToggle);
+  document.addEventListener('turbo:render', initializeReservationUserToggle);
+  window.addEventListener('pageshow', initializeReservationUserToggle);
 </script>
 
 <!-- Estilo para Select2 com Bootstrap 5 (ajuste fino se o tema não carregar perfeitamente) -->
