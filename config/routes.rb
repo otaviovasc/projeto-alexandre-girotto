@@ -152,6 +152,9 @@ Rails.application.routes.draw do
 
   post 'pagamentos/webhook', to: 'pagamentos#webhook', as: 'pagamentos_webhook'
   post 'pagamentos/cielo_checkout', to: 'pagamentos#cielo_checkout', as: 'cielo_checkout_webhook'
+
+  get 'api/dashboard/unfinished_reservations', to: 'api/dashboard#unfinished_reservations'
+
   get  'reserva-online', to: 'public_bookings#new', as: :new_public_booking
   post 'reserva-online', to: 'public_bookings#create', as: :public_bookings
   get  'reserva-online/cotacao', to: 'public_bookings#quote', as: :public_booking_quote
