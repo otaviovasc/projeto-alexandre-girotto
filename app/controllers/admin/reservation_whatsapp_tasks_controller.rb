@@ -28,7 +28,7 @@ class Admin::ReservationWhatsappTasksController < ApplicationController
       .visible_on(Date.current)
       .includes(:reservation_email_template, reserva: [:user, { cabana: :filial }])
       .to_a
-      .select { |task| task.reservation_email_template&.active? }
+      .select(&:active_for_whatsapp?)
       .sort_by do |task|
         priority =
           if task.overdue?

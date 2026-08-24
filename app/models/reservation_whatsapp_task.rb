@@ -21,6 +21,10 @@ class ReservationWhatsappTask < ApplicationRecord
     !completed? && scheduled_on < date
   end
 
+  def active_for_whatsapp?
+    reservation_email_template.blank? || reservation_email_template.active?
+  end
+
   def guest_name
     reserva.guest_name.presence || reserva.user&.name.to_s
   end
