@@ -8,11 +8,13 @@ class PortalReservaController < ApplicationController
   before_action :ensure_service_purchase_window_open!, only: [:servicos, :adicionar, :remover, :revisar_servicos, :pagar]
   helper_method :food_service_for_observation?, :decoration_service_for_observation?,
                 :fondue_service?, :photo_print_service?, :service_price_for,
-                :portal_service_dates
+                :portal_service_dates, :petals_and_lights_service?,
+                :service_observation_word_limit
 
   PARTNER_SERVICE_CREDIT_CARD_INTEREST_RATE = 3
   PHOTO_PRINT_ALLOWED_CONTENT_TYPES = %w[image/jpeg image/png].freeze
   PHOTO_PRINT_MAX_FILE_SIZE = 10.megabytes
+  PETALS_AND_LIGHTS_OBSERVATION_WORD_LIMIT = 8
   # GET /minha-reserva
   def index
   end
@@ -164,6 +166,11 @@ class PortalReservaController < ApplicationController
 
     if (photo_print_error = photo_print_upload_error(service, photo_uploads))
       flash[:alert] = photo_print_error
+      redirect_to portal_reserva_servicos_path and return
+    end
+
+    if (observation_error = service_observation_word_limit_error(service))
+      flash[:alert] = observation_error
       redirect_to portal_reserva_servicos_path and return
     end
 
@@ -390,6 +397,30 @@ class PortalReservaController < ApplicationController
     ["decoracao", "petala", "luzinha", "espumante", "foto-impress"].any? do |keyword|
       normalized_name.include?(keyword)
     end
+  end
+
+  def petals_and_lights_service?(service)
+    normalized_name = service.name.to_s.parameterize
+
+    normalized_name.include?("petala") || normalized_name.include?("luzinha")
+  end
+
+  def service_observation_word_limit(service)
+    PETALS_AND_LIGHTS_OBSERVATION_WORD_LIMIT if petals_and_lights_service?(service)
+  end
+
+  def service_observation_word_limit_error(service, observation = params[:observation])
+    limit = service_observation_word_limit(service)
+    return if limit.blank?
+
+    word_count = observation_word_count(observation)
+    return if word_count <= limit
+
+    "Use no máximo #{limit} palavras para a frase de Pétalas e Luzinhas."
+  end
+
+  def observation_word_count(observation)
+    observation.to_s.split(/\s+/).reject(&:blank?).size
   end
 
   def observation_for_service(service, _service_date = nil, manual_observation: params[:observation])

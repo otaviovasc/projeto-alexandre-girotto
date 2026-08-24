@@ -44,6 +44,25 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     assert_not controller.send(:decoration_service_for_observation?, Service.new(name: "Passeio a Cavalo"))
   end
 
+  test "limits petals and lights guest phrase to eight words" do
+    controller = PortalReservaController.new
+    service = Service.new(name: "Decoração de Pétalas e Luzinhas")
+
+    assert controller.send(:petals_and_lights_service?, service)
+    assert_equal 8, controller.send(:service_observation_word_limit, service)
+    assert_nil controller.send(:service_observation_word_limit_error, service, "Feliz aniversário meu amor eu te amo")
+    assert_equal "Use no máximo 8 palavras para a frase de Pétalas e Luzinhas.",
+                 controller.send(:service_observation_word_limit_error, service, "Feliz aniversário meu amor eu te amo muito sempre")
+  end
+
+  test "does not limit other decoration observations by words" do
+    controller = PortalReservaController.new
+    service = Service.new(name: "Espumante")
+
+    assert_nil controller.send(:service_observation_word_limit, service)
+    assert_nil controller.send(:service_observation_word_limit_error, service, "Preparar durante o passeio a cavalo perto da entrada")
+  end
+
   test "requires and includes the fondue choice in the observation" do
     controller = PortalReservaController.new
     service = Service.new(name: "Kit de Fondue")

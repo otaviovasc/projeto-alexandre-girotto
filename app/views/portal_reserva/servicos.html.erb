@@ -133,17 +133,36 @@
                         <% end %>
 
                         <% if food_service_for_observation?(service) || decoration_service_for_observation?(service) %>
+                          <% observation_word_limit = service_observation_word_limit(service) %>
                           <div>
                             <label class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2 block">
-                              <%= food_service_for_observation?(service) ? "Restrição alimentar ou alergia (opcional)" : "Detalhes da decoração ou surpresa (opcional)" %>
+                              <% if observation_word_limit.present? %>
+                                Frase para pétalas e luzinhas (até <%= observation_word_limit %> palavras)
+                              <% else %>
+                                <%= food_service_for_observation?(service) ? "Restrição alimentar ou alergia (opcional)" : "Detalhes da decoração ou surpresa (opcional)" %>
+                              <% end %>
                             </label>
                             <%= f.text_area :observation,
                                 rows: 2,
-                                maxlength: 500,
+                                maxlength: observation_word_limit.present? ? 120 : 500,
                                 id: "service_#{service.id}_observation",
-                                placeholder: food_service_for_observation?(service) ? "Ex: intolerância à lactose, alergia a castanhas, sem cebola..." : "Ex: escrever 'Feliz aniversário' e preparar durante o passeio a cavalo...",
+                                placeholder: if food_service_for_observation?(service)
+                                               "Ex: intolerância à lactose, alergia a castanhas, sem cebola..."
+                                             elsif observation_word_limit.present?
+                                               "Ex: Feliz aniversário, meu amor"
+                                             else
+                                               "Ex: escrever 'Feliz aniversário' e preparar durante o passeio a cavalo..."
+                                             end,
+                                data: { observation_word_limit: observation_word_limit },
                                 class: "w-full bg-white border border-gray-200 text-gray-700 placeholder-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] transition resize-none" %>
-                            <p class="text-gray-400 text-[11px] mt-1">Essa observação será enviada junto com o serviço.</p>
+                            <% if observation_word_limit.present? %>
+                              <p class="text-gray-400 text-[11px] mt-1">
+                                Use no máximo <%= observation_word_limit %> palavras.
+                                <span data-observation-word-count-for="service_<%= service.id %>_observation">0/<%= observation_word_limit %> palavras</span>.
+                              </p>
+                            <% else %>
+                              <p class="text-gray-400 text-[11px] mt-1">Essa observação será enviada junto com o serviço.</p>
+                            <% end %>
                           </div>
                         <% end %>
 
@@ -276,7 +295,36 @@
   (function() {
     function setupPortalServicesPage() {
       setupPhotoPrintInputs();
+      setupObservationWordLimits();
       setupPortalCartForms();
+    }
+
+    function setupObservationWordLimits() {
+      document.querySelectorAll("[data-observation-word-limit]").forEach(function(input) {
+        if (input.dataset.observationWordLimitReady === "true") return;
+        input.dataset.observationWordLimitReady = "true";
+
+        var limit = parseInt(input.dataset.observationWordLimit || "0", 10);
+        if (!limit) return;
+
+        var counter = document.querySelector("[data-observation-word-count-for='" + input.id + "']");
+        var update = function() {
+          var count = wordCount(input.value);
+          input.setCustomValidity(count > limit ? "Use no máximo " + limit + " palavras." : "");
+          if (counter) {
+            counter.textContent = count + "/" + limit + " palavras";
+            counter.classList.toggle("text-red-500", count > limit);
+          }
+        };
+
+        input.addEventListener("input", update);
+        update();
+      });
+    }
+
+    function wordCount(value) {
+      var matches = (value || "").trim().match(/\S+/g);
+      return matches ? matches.length : 0;
     }
 
     function setupPhotoPrintInputs() {
