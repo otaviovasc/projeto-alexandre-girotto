@@ -40,18 +40,22 @@ class OfficialSitePricing
     raise Error, 'Datas inválidas para cálculo.' if start_date.blank? || end_date.blank? || end_date <= start_date
 
     nights = each_night(start_date, end_date).map do |date|
+      holiday = holiday_for_date(date)
+
       {
         date: date,
         price: price_for_night(cabana, date),
         weekend: weekend_night?(date),
-        holiday: holiday_for_date(date).present?,
+        holiday: holiday.present?,
+        holiday_name: holiday&.fetch(:nome, nil),
+        holiday_date: holiday&.fetch(:data_feriado, nil)&.to_s,
         season: season_for_date(date).fetch(:temporada)
       }
     end
 
     has_weekend = nights.any? { |night| night[:weekend] }
     has_holiday = nights.any? { |night| night[:holiday] }
-    minimum = has_weekend || has_holiday ? 2 : 1
+    minimum = minimum_for_stay(cabana, start_date, end_date)
     stay_total = nights.sum { |night| night[:price] }
     nights_count = (end_date - start_date).to_i
 
@@ -61,8 +65,17 @@ class OfficialSitePricing
       stay_total: stay_total,
       minimum: minimum,
       meets_minimum: nights_count >= minimum,
-      minimum_message: minimum_message(has_weekend: has_weekend, has_holiday: has_holiday, nights_count: nights_count)
+      minimum_message: minimum_message(
+        has_weekend: has_weekend,
+        has_holiday: has_holiday,
+        nights_count: nights_count,
+        minimum: minimum
+      )
     }
+  end
+
+  def available?(cabana:, start_date:, end_date:)
+    cabin_available_for_range?(cabana, start_date, end_date)
   end
 
   def service_price(service:, filial:)
@@ -306,8 +319,67 @@ class OfficialSitePricing
     sheet_boolean(row[key], false)
   end
 
-  def minimum_message(has_weekend:, has_holiday:, nights_count:)
-    return '' if nights_count >= 2
+  def minimum_for_stay(cabana, start_date, end_date)
+    nights = each_night(start_date, end_date)
+    requires_two = nights.any? { |date| base_minimum_for_night(date) > 1 }
+    return 1 unless requires_two
+    return 2 unless (end_date - start_date).to_i == 1
+
+    allows_one_night_gap?(cabana, start_date, end_date) ? 1 : 2
+  end
+
+  def allows_one_night_gap?(cabana, start_date, end_date)
+    return false unless (end_date - start_date).to_i == 1
+    return false unless cabin_available_for_range?(cabana, start_date, end_date)
+
+    if weekend_night?(start_date)
+      allows_one_night_weekend_gap?(cabana, start_date, end_date)
+    else
+      allows_one_night_adjacent_gap?(cabana, start_date, end_date)
+    end
+  end
+
+  def allows_one_night_weekend_gap?(cabana, start_date, end_date)
+    if start_date.friday?
+      !cabin_available_for_range?(cabana, end_date, end_date + 1.day)
+    elsif start_date.saturday?
+      !cabin_available_for_range?(cabana, start_date - 1.day, start_date)
+    else
+      false
+    end
+  end
+
+  def allows_one_night_adjacent_gap?(cabana, start_date, end_date)
+    previous_night_blocked = !cabin_available_for_range?(cabana, start_date - 1.day, start_date)
+    next_night_blocked = !cabin_available_for_range?(cabana, end_date, end_date + 1.day)
+
+    previous_night_blocked || next_night_blocked
+  end
+
+  def base_minimum_for_night(date)
+    weekend_night?(date) || holiday_for_date(date).present? ? 2 : 1
+  end
+
+  def cabin_available_for_range?(cabana, start_date, end_date)
+    return false if cabana.blank? || start_date.blank? || end_date.blank? || end_date <= start_date
+
+    range = start_date...end_date
+
+    active_availability_reservations(cabana).none? do |reserva|
+      reserva_range = reserva.availability_range
+      reserva_range.present? && reserva_range.overlaps?(range)
+    end
+  end
+
+  def active_availability_reservations(cabana)
+    Reserva.where(cabana_id: cabana.id)
+           .where(blocks_availability: true)
+           .where(payment_status: %w[pending waiting_payment paid])
+           .where('payment_expires_at IS NULL OR payment_expires_at > ?', Time.current)
+  end
+
+  def minimum_message(has_weekend:, has_holiday:, nights_count:, minimum:)
+    return '' if nights_count >= minimum
     return 'Feriados exigem mínimo de 2 diárias.' if has_holiday
     return 'Finais de semana exigem mínimo de 2 diárias.' if has_weekend
 
@@ -333,18 +405,60 @@ class OfficialSitePricing
   end
 
   def holiday_for_date(date)
-    recurring_holiday_for_date(date) ||
-      data[:feriados].find do |holiday|
-        holiday[:ativo] != false &&
-          holiday[:inicio].present? &&
-          holiday[:fim].present? &&
-          date >= holiday[:inicio] &&
-          date <= holiday[:fim]
-      end
+    recurring_holiday_for_date(date) || configured_holiday_for_date(date)
   end
 
   def recurring_holiday_for_date(date)
-    RECURRING_HOLIDAYS[date.strftime('%m-%d')]
+    night_date = date.to_date
+    years = [night_date.year - 1, night_date.year, night_date.year + 1]
+
+    years.each do |year|
+      RECURRING_HOLIDAYS.each do |key, holiday|
+        month, day = key.split('-').map(&:to_i)
+        holiday_date = Date.new(year, month, day)
+
+        if holiday_pricing_window_cover?(night_date, holiday_date)
+          return holiday.merge(
+            inicio: holiday_date,
+            fim: holiday_date,
+            data_feriado: holiday_date
+          )
+        end
+      end
+    end
+
+    nil
+  end
+
+  def configured_holiday_for_date(date)
+    night_date = date.to_date
+
+    data[:feriados].each do |holiday|
+      next if holiday[:ativo] == false
+      next if holiday[:inicio].blank? || holiday[:fim].blank?
+
+      (holiday[:inicio]..holiday[:fim]).each do |holiday_date|
+        return holiday.merge(data_feriado: holiday_date) if holiday_pricing_window_cover?(night_date, holiday_date)
+      end
+    end
+
+    nil
+  end
+
+  def holiday_pricing_window_cover?(night_date, holiday_date)
+    window = holiday_pricing_window(holiday_date)
+    night_date >= window[:start] && night_date <= window[:end]
+  end
+
+  def holiday_pricing_window(holiday_date)
+    case holiday_date.wday
+    when 2
+      { start: holiday_date - 4.days, end: holiday_date }
+    when 4
+      { start: holiday_date, end: holiday_date + 2.days }
+    else
+      { start: holiday_date, end: holiday_date }
+    end
   end
 
   def season_key_for_name(name)
