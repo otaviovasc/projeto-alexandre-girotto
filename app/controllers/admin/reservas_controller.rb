@@ -745,7 +745,11 @@ class Admin::ReservasController < ApplicationController
       next if reserva_service.marked_for_destruction?
       next if service_holiday_block_exempt?(reserva_service.service)
       next unless service_holiday_block_candidate?(reserva_service)
-      next unless ServicePurchaseDatePolicy.blocked_holiday_service_date?(reserva_service.service_date)
+      next unless ServicePurchaseDatePolicy.blocked_service_date?(
+        reserva_service.service_date,
+        reserva: reserva,
+        filial: reserva_service.service&.filial
+      )
 
       service_name = reserva_service.service&.name.presence || 'Serviço'
       "#{service_name} em #{reserva_service.service_date.strftime('%d/%m/%Y')}"

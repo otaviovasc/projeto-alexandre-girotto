@@ -40,7 +40,7 @@
     <div class="flex-1 order-2 lg:order-1">
       <h2 class="text-lg font-bold text-[#1a2e1a] mb-4">Serviços disponíveis</h2>
 
-      <% if ServicePurchaseDatePolicy.blocked_holiday_period?(@reserva.start_date, @reserva.end_date) %>
+      <% if ServicePurchaseDatePolicy.blocked_service_period?(@reserva.start_date, @reserva.end_date, reserva: @reserva) %>
         <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <%= ServicePurchaseDatePolicy.holiday_block_message %>
         </div>

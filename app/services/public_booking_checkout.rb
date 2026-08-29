@@ -71,7 +71,7 @@ class PublicBookingCheckout
     errors.add(:base, 'Informe um e-mail válido.') unless @guest_email.match?(URI::MailTo::EMAIL_REGEXP)
     errors.add(:base, 'Informe um WhatsApp válido.') unless @guest_phone.length.between?(8, 15)
     errors.add(:base, 'Confirme o aceite dos termos para continuar.') unless @terms_accepted
-    if @selected_services.any? && ServicePurchaseDatePolicy.blocked_holiday_period?(@start_date, @end_date)
+    if @selected_services.any? && ServicePurchaseDatePolicy.blocked_service_period?(@start_date, @end_date, cabana: @cabana)
       errors.add(:base, ServicePurchaseDatePolicy.holiday_block_message)
     end
     if @selected_services.any? && !services_available?
@@ -95,7 +95,7 @@ class PublicBookingCheckout
       errors.add(:base, "Não foi possível validar o preço oficial de #{service.name}.") if service.present? && item[:unit_price].blank?
       next if service.blank? || item[:date_pending] || item[:service_date].blank? || @start_date.blank? || @end_date.blank?
 
-      if ServicePurchaseDatePolicy.blocked_holiday_service_date?(item[:service_date])
+      if ServicePurchaseDatePolicy.blocked_service_date?(item[:service_date], cabana: @cabana, filial: service.filial)
         errors.add(:base, "#{service.name} não está disponível para compra online na data selecionada.")
       end
 

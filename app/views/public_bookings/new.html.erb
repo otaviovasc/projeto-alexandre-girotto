@@ -39,7 +39,7 @@
           <div class="sm:col-span-3">
             <%= form.label :cabana_id, "Cabana", class: "vg-label" %>
             <%= form.select :cabana_id,
-                options_for_select(@cabanas.map { |cabana| [cabana.name, cabana.id, { data: { filial_id: cabana.filial_id } }] }, @booking_values["cabana_id"]),
+                options_for_select(@cabanas.map { |cabana| [cabana.name, cabana.id, { data: { filial_id: cabana.filial_id, filial_name: cabana.filial&.name } }] }, @booking_values["cabana_id"]),
                 { prompt: "Selecione a cabana" },
                 required: true,
                 id: "booking-cabana",
@@ -268,6 +268,14 @@
       return option && option.value ? option.textContent : "";
     }
 
+    function selectedCabanaIsMantiqueira() {
+      var option = cabanaSelect.options[cabanaSelect.selectedIndex];
+      var text = option ? [option.dataset.filialName || "", option.textContent || ""].join(" ") : "";
+      var normalized = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+      return normalized.indexOf("serra") >= 0 || normalized.indexOf("mantiqueira") >= 0;
+    }
+
     function formatDateLabel(value) {
       if (!value) return "";
       return value.split("-").reverse().join("/");
@@ -337,6 +345,7 @@
         var month = date.getMonth() + 1;
         var day = date.getDate();
         if ((month === 12 && day >= 24) || (month === 1 && day <= 2)) return true;
+        if (selectedCabanaIsMantiqueira() && date.getFullYear() === 2026 && month === 9 && day >= 16 && day <= 19) return true;
       }
 
       return false;

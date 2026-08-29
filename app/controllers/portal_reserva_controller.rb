@@ -287,7 +287,7 @@ class PortalReservaController < ApplicationController
       redirect_to portal_reserva_servicos_path and return
     end
 
-    if @portal_cart_items.any? { |item| ServicePurchaseDatePolicy.blocked_holiday_service_date?(item.service_date) }
+    if @portal_cart_items.any? { |item| ServicePurchaseDatePolicy.blocked_service_date?(item.service_date, reserva: @reserva) }
       flash[:alert] = ServicePurchaseDatePolicy.holiday_block_message
       redirect_to portal_reserva_servicos_path and return
     end
@@ -476,7 +476,7 @@ class PortalReservaController < ApplicationController
     return false if service.blank? || reserva.blank? || date.blank?
     return false if reserva.start_date.blank? || reserva.end_date.blank?
     return false unless date.between?(reserva.start_date, reserva.end_date)
-    return false if ServicePurchaseDatePolicy.blocked_holiday_service_date?(date)
+    return false if ServicePurchaseDatePolicy.blocked_service_date?(date, reserva: reserva, filial: service.filial)
     return false if checkin_date?(reserva, date) && checkin_blocked_service?(service) && !reserva.early_checkin?
     return false if checkout_date?(reserva, date) && checkout_blocked_service?(service, reserva)
 
@@ -496,7 +496,7 @@ class PortalReservaController < ApplicationController
   end
 
   def portal_service_date_error_message(service, dates = [])
-    if Array(dates).any? { |date| ServicePurchaseDatePolicy.blocked_holiday_service_date?(date) }
+    if Array(dates).any? { |date| ServicePurchaseDatePolicy.blocked_service_date?(date, reserva: @reserva, filial: service.filial) }
       return ServicePurchaseDatePolicy.holiday_block_message
     end
 
