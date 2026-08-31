@@ -105,11 +105,13 @@
       </div>
     </div>
 
-    <!-- Preço total -->
+    <!-- Preço das diárias -->
     <div class="mb-3">
-      <%= form.label :total_price, 'Preço Total *', class: 'form-label' %>
-      <span class="text-muted" style="font-size: smaller;">*obs: se deixar VAZIO, o preço é calculado normalmente.</span>
-      <%= form.number_field :total_price, class: 'form-control', step: '0.01', required: true, min: '0' %>
+      <%= form.label :total_price, 'Preço das diárias', class: 'form-label' %>
+      <span class="text-muted d-block" style="font-size: smaller;">
+        Somente hospedagem. Os serviços são somados abaixo. Se deixar VAZIO, o preço das diárias é calculado normalmente.
+      </span>
+      <%= form.number_field :total_price, class: 'form-control', step: '0.01', min: '0' %>
     </div>
 
     <!-- Observation -->
@@ -176,6 +178,18 @@
         <div id="services-list">
           <p id="no-services-msg" class="text-center text-muted py-3">Nenhum serviço adicionado ainda.</p>
         </div>
+      </div>
+
+      <div class="border rounded p-3 mt-3" style="background: #f8fafc;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="fw-bold">Total dos serviços</span>
+          <strong id="services-total-value" class="text-success">R$ 0,00</strong>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="fw-bold">Total geral</span>
+          <strong id="checkout-total-value" class="text-primary">R$ 0,00</strong>
+        </div>
+        <small class="text-muted d-block mt-2">Total geral = diárias + serviços adicionados.</small>
       </div>
       
       <!-- Container para hidden inputs dos serviços -->
@@ -324,6 +338,8 @@
     createUserToggle?.addEventListener('change', updateServicePrices);
     partnerCheckbox?.addEventListener('change', updateServicePrices);
     userSelect?.addEventListener('change', updateServicePrices);
+    const totalPriceInput = document.getElementById('reserva_total_price');
+    totalPriceInput?.addEventListener('input', updatePaymentTotals);
     updateServicePrices();
 
     function applyServiceFilial(filialId) {
@@ -350,6 +366,7 @@
     });
     filterServicesForCabana();
     renderServicesList();
+    updatePaymentTotals();
   });
 
   const SERVICE_HOLIDAY_BLOCK_MESSAGE = 'Para as datas selecionadas, fale diretamente com um atendente no WhatsApp para consultar a possibilidade da entrega de serviços.';
@@ -470,6 +487,32 @@
     renderServicesList();
   }
 
+  function formatCurrency(value) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
+  }
+
+  function parseCurrencyInput(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return 0;
+
+    const normalized = raw.includes(',')
+      ? raw.replace(/\./g, '').replace(',', '.')
+      : raw;
+    const parsed = Number(normalized);
+
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function updatePaymentTotals() {
+    const servicesTotal = addedServices.reduce((sum, service) => sum + (Number(service.total) || 0), 0);
+    const dailyTotal = parseCurrencyInput(document.getElementById('reserva_total_price')?.value);
+    const servicesTotalElement = document.getElementById('services-total-value');
+    const checkoutTotalElement = document.getElementById('checkout-total-value');
+
+    if (servicesTotalElement) servicesTotalElement.textContent = formatCurrency(servicesTotal);
+    if (checkoutTotalElement) checkoutTotalElement.textContent = formatCurrency(dailyTotal + servicesTotal);
+  }
+
   function renderServicesList() {
     const listContainer = document.getElementById('services-list');
     const hiddenInputsContainer = document.getElementById('services-hidden-inputs');
@@ -481,6 +524,7 @@
 
     if (addedServices.length === 0) {
       listContainer.innerHTML = '<p id="no-services-msg" class="text-center text-muted py-3">Nenhum serviço adicionado ainda.</p>';
+      updatePaymentTotals();
       return;
     }
 
@@ -518,6 +562,8 @@
       `;
       hiddenInputsContainer.insertAdjacentHTML('beforeend', hiddenInputsHtml);
     });
+
+    updatePaymentTotals();
   }
 </script>
 
