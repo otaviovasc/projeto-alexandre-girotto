@@ -471,13 +471,8 @@ class PublicBookingsController < ApplicationController
   end
 
   def public_service_prices(services)
-    pricing = OfficialSitePricing.new
-
     services.each_with_object({}) do |service, prices|
-      prices[service.id] = pricing.service_price(service: service, filial: service.filial) || service.price
+      prices[service.id] = service.price
     end
-  rescue OfficialSitePricing::Error => e
-    Rails.logger.warn("Unable to load official service prices for public booking: #{e.message}")
-    services.each_with_object({}) { |service, prices| prices[service.id] = service.price }
   end
 end

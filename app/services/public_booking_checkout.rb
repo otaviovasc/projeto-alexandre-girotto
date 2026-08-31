@@ -252,8 +252,11 @@ class PublicBookingCheckout
 
   def official_service_price(service)
     return if service.blank? || @cabana.blank?
+    return if service.filial_id != @cabana.filial_id
 
-    official_pricing.service_price(service: service, filial: @cabana.filial)
+    BigDecimal(service.price.to_s)
+  rescue ArgumentError, TypeError
+    nil
   end
 
   def official_pricing

@@ -28,13 +28,6 @@ class OfficialSitePricing
     '12-31' => { nome: 'Virada do ano', acrescimo: 0.25.to_d }
   }.freeze
 
-  BRAUNA_SERVICE_PRICES = {
-    'cafe da manha' => 129.to_d,
-    'almoco' => 109.to_d,
-    'jantar' => 109.to_d,
-    'piquenique' => 116.to_d
-  }.freeze
-
   def quote(cabana:, start_date:, end_date:)
     raise Error, 'Cabana inválida para cálculo.' if cabana.blank?
     raise Error, 'Datas inválidas para cálculo.' if start_date.blank? || end_date.blank? || end_date <= start_date
@@ -78,19 +71,6 @@ class OfficialSitePricing
     cabin_available_for_range?(cabana, start_date, end_date)
   end
 
-  def service_price(service:, filial:)
-    return nil if service.blank? || filial.blank?
-
-    row = service_row_for(service.name)
-    return nil if row.blank?
-    return nil unless service_available_for_filial?(row, filial)
-
-    brauna_price = BRAUNA_SERVICE_PRICES[normalize_service_name(row[:servico])]
-    return brauna_price if brauna_filial?(filial) && brauna_price.present?
-
-    row[:preco]
-  end
-
   private
 
   def data
@@ -98,8 +78,7 @@ class OfficialSitePricing
       {
         cabanas: rows_to_cabins(load_sheet('Cabanas')),
         precos: rows_to_prices(load_sheet('Precos')),
-        feriados: rows_to_holidays(load_sheet('Feriados')),
-        servicos: rows_to_services(load_sheet('Servicos'))
+        feriados: rows_to_holidays(load_sheet('Feriados'))
       }
     end
   rescue Error
@@ -199,40 +178,6 @@ class OfficialSitePricing
     end
   end
 
-  def rows_to_services(rows)
-    services = rows.map do |row|
-      {
-        categoria: row['Categoria'],
-        servico: row['Servico'].to_s.strip,
-        preco: sheet_number(row['Preco']),
-        disponivel_serra: service_availability(row, 'Disponivel Serra'),
-        disponivel_brauna: service_availability(row, 'Disponivel Brauna'),
-        cobranca: row['Cobranca'],
-        observacoes: row['Observacoes']
-      }
-    end
-
-    apply_service_overrides(services)
-  end
-
-  def apply_service_overrides(services)
-    adjusted = services.map do |service|
-      normalize_service_name(service[:servico]) == 'tabua de frios' ? service.merge(preco: 167.to_d) : service
-    end
-
-    return adjusted if adjusted.any? { |service| normalize_service_name(service[:servico]).include?('bicic') }
-
-    adjusted + [{
-      categoria: 'Passeios e Relaxamento',
-      servico: 'Bicicletas',
-      preco: 80.to_d,
-      disponivel_serra: false,
-      disponivel_brauna: true,
-      cobranca: 'por diaria',
-      observacoes: 'Disponivel apenas na Fattoria di Brauna.'
-    }]
-  end
-
   def price_for_night(cabana, date)
     weekend = weekend_night?(date)
     season = season_for_date(date)
@@ -274,49 +219,6 @@ class OfficialSitePricing
       normalize_cabin(row[:cabana]) == target_cabana &&
         normalize_text(row[:filial]) == target_filial
     end
-  end
-
-  def service_row_for(service_name)
-    target = normalize_service_name(service_name)
-    services = data[:servicos]
-
-    services.find { |service| normalize_service_name(service[:servico]) == target } ||
-      services.find do |service|
-        normalized = normalize_service_name(service[:servico])
-        normalized.include?(target) || target.include?(normalized)
-      end ||
-      fuzzy_service_row(services, target)
-  end
-
-  def fuzzy_service_row(services, target)
-    target_tokens = target.split
-    return if target_tokens.blank?
-
-    services
-      .map do |service|
-        normalized = normalize_service_name(service[:servico])
-        score = (target_tokens & normalized.split).size
-        [service, score]
-      end
-      .select { |_service, score| score >= 2 }
-      .max_by { |_service, score| score }
-      &.first
-  end
-
-  def service_available_for_filial?(service_row, filial)
-    brauna_filial?(filial) ? service_row[:disponivel_brauna] : service_row[:disponivel_serra]
-  end
-
-  def brauna_filial?(filial)
-    normalize_text(filial&.name || filial).include?('brauna')
-  end
-
-  def service_availability(row, key)
-    serra = sheet_boolean(row['Disponivel Serra'], nil)
-    brauna = sheet_boolean(row['Disponivel Brauna'], nil)
-    return true if serra.nil? && brauna.nil?
-
-    sheet_boolean(row[key], false)
   end
 
   def minimum_for_stay(cabana, start_date, end_date)
@@ -475,12 +377,6 @@ class OfficialSitePricing
     return 'Vecchio Toro' if name == 'Vecchio'
 
     name
-  end
-
-  def normalize_service_name(value)
-    normalize_text(value)
-      .gsub(/\b(?:sp|mg)\b/, ' ')
-      .squish
   end
 
   def normalize_text(value)
