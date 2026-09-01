@@ -88,13 +88,15 @@ class OfficialQuoteApi
 
   def quote_for(cabana)
     pricing_quote = @pricing.quote(
-      cabin: cabana.name,
+      cabana: cabana,
       start_date: @checkin,
       end_date: @checkout
     )
 
     available = available_for_range?(cabana)
-    minimum_ok = pricing_quote[:minimum_ok] != false
+    stay_total = pricing_quote[:stay_total] || pricing_quote[:total]
+    minimum_nights = pricing_quote[:minimum] || pricing_quote[:minimum_nights]
+    minimum_ok = pricing_quote[:meets_minimum] != false
     reasons = []
     reasons << 'Periodo indisponivel no calendario.' unless available
     reasons << pricing_quote[:minimum_message] if pricing_quote[:minimum_message].present?
@@ -108,10 +110,10 @@ class OfficialQuoteApi
       disponivel: available && minimum_ok,
       status: available && minimum_ok ? 'disponivel' : 'indisponivel',
       motivos: reasons,
-      hospedagem: decimal_to_float(pricing_quote[:total]),
-      hospedagem_formatada: money(pricing_quote[:total]),
+      hospedagem: decimal_to_float(stay_total),
+      hospedagem_formatada: money(stay_total),
       noites: nights_count,
-      minimo_diarias: pricing_quote[:minimum_nights],
+      minimo_diarias: minimum_nights,
       minimo_diarias_ok: minimum_ok,
       servicos: services_payload(cabana.filial)
     }.tap do |payload|
