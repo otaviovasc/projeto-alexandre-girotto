@@ -111,4 +111,60 @@ class PagamentosControllerTest < ActionDispatch::IntegrationTest
     assert_equal "paid", service_purchase.payment_status
     assert_equal BigDecimal("50.0"), service_purchase.service_late_fee_amount
   end
+
+  test "accepts Cielo checkout notification when late fee is its own cart item" do
+    order_code = "PS8931784045NEW"
+    reserva = reservas(:one)
+    late_fee_service = ServicePurchaseLateFeeCart.late_fee_service_for(reserva.cabana.filial)
+
+    CartItem.create!(
+      cart: carts(:one),
+      reserva: reserva,
+      service: services(:one),
+      quantity: 2,
+      service_date: reserva.start_date,
+      payment_status: "waiting_payment",
+      payment_order_code: order_code,
+      unit_price_paid: 1.50,
+      total_paid: 3.00
+    )
+    CartItem.create!(
+      cart: carts(:one),
+      reserva: reserva,
+      service: late_fee_service,
+      quantity: 1,
+      service_date: nil,
+      payment_status: "waiting_payment",
+      payment_order_code: order_code,
+      unit_price_paid: 50.00,
+      total_paid: 50.00
+    )
+    failing_query = Object.new
+    failing_query.define_singleton_method(:find_by_order_number) do |_order_number|
+      raise CieloCheckoutService::Error, "Not Found"
+    end
+    failing_query.define_singleton_method(:find_by_checkout_order_number) do |_checkout_order_number|
+      raise CieloCheckoutService::Error, "Not Found"
+    end
+
+    CieloCheckoutService::TransactionQuery.stub(:new, failing_query) do
+      post cielo_checkout_webhook_path, params: {
+        order_number: order_code,
+        checkout_cielo_order_number: "13b82aa998c94d1ebd07",
+        amount: "5300",
+        payment_status: "2"
+      }
+    end
+
+    assert_response :ok
+
+    service_purchases = ReservaService.where(payment_order_code: order_code).includes(:service).to_a
+    fee_purchase = service_purchases.detect { |purchase| ServicePurchaseLateFeeCart.late_fee_record?(purchase) }
+    regular_purchases = service_purchases.reject { |purchase| ServicePurchaseLateFeeCart.late_fee_record?(purchase) }
+
+    assert_equal 2, service_purchases.size
+    assert_equal 1, regular_purchases.size
+    assert_equal BigDecimal("50.0"), fee_purchase.total_paid
+    assert_nil fee_purchase.service_date
+  end
 end

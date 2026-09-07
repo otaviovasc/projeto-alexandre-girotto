@@ -73,7 +73,9 @@ class GoogleSheetsExportService
   def export_service_purchases(reserva_services)
     return { success: false, error: 'Google Sheets nao configurado' } unless self.class.configured?
 
-    reserva_services = Array(reserva_services).compact
+    reserva_services = Array(reserva_services)
+                       .compact
+                       .reject { |reserva_service| ServicePurchaseLateFeeCart.late_fee_record?(reserva_service) }
     return { success: true, rows_updated: 0, message: 'Nenhuma compra de servico para exportar' } if reserva_services.empty?
 
     begin

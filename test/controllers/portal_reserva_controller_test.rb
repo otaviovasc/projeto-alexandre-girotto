@@ -39,8 +39,8 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     controller = PortalReservaController.new
 
     assert controller.send(:decoration_service_for_observation?, Service.new(name: "Decoração de Pétalas e Luzinhas"))
-    assert controller.send(:decoration_service_for_observation?, Service.new(name: "Espumante"))
     assert controller.send(:decoration_service_for_observation?, Service.new(name: "Fotos Impressas (até 3)"))
+    assert_not controller.send(:decoration_service_for_observation?, Service.new(name: "Espumante"))
     assert_not controller.send(:decoration_service_for_observation?, Service.new(name: "Passeio a Cavalo"))
   end
 
@@ -57,7 +57,7 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
 
   test "does not limit other decoration observations by words" do
     controller = PortalReservaController.new
-    service = Service.new(name: "Espumante")
+    service = Service.new(name: "Fotos Impressas")
 
     assert_nil controller.send(:service_observation_word_limit, service)
     assert_nil controller.send(:service_observation_word_limit_error, service, "Preparar durante o passeio a cavalo perto da entrada")
@@ -304,6 +304,15 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
       quantity: 1,
       service_date: reserva.end_date
     )
+    late_fee_service = ServicePurchaseLateFeeCart.late_fee_service_for(regular_service.filial)
+    late_fee_item = ReservaService.create!(
+      reserva: reserva,
+      service: late_fee_service,
+      quantity: 1,
+      service_date: nil,
+      total_paid: 50,
+      unit_price_paid: 50
+    )
     reserva.update_columns(early_checkin: true, late_checkout: true)
     controller = PortalReservaController.new
 
@@ -314,6 +323,7 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes services, cleaning_item
     assert_not_includes services, evaluation_item
     assert_not_includes services, charge_item
+    assert_not_includes services, late_fee_item
     assert_equal ["Early check-in", "Late checkout"], operational_services.map { |service| service[:name] }
   end
 end

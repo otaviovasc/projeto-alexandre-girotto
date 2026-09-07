@@ -20,7 +20,7 @@ class ReservasExportService
         csv << reserva_row(reserva)
 
         # Linhas dos serviços
-        reserva.reserva_services.each do |rs|
+        exportable_reserva_services(reserva).each do |rs|
           csv << service_row(reserva, rs)
         end
       end
@@ -33,7 +33,7 @@ class ReservasExportService
     @reservas.each do |reserva|
       rows << reserva_row(reserva)
       
-      reserva.reserva_services.each do |rs|
+      exportable_reserva_services(reserva).each do |rs|
         rows << service_row(reserva, rs)
       end
     end
@@ -42,6 +42,12 @@ class ReservasExportService
   end
 
   private
+
+  def exportable_reserva_services(reserva)
+    reserva.reserva_services.reject do |reserva_service|
+      ServicePurchaseLateFeeCart.late_fee_record?(reserva_service)
+    end
+  end
 
   def headers
     [

@@ -553,6 +553,8 @@ class Admin::ReservasController < ApplicationController
         updated_at: Time.current
       )
     end
+    reset_pending_service_checkout
+    sync_service_purchase_late_fee_cart
 
     message = if enabled
                 "Compra de serviços liberada para esta reserva até #{deadline.strftime('%d/%m/%Y')}."
@@ -566,6 +568,8 @@ class Admin::ReservasController < ApplicationController
   def update_service_purchase_late_fee
     waived = ActiveModel::Type::Boolean.new.cast(params[:service_purchase_late_fee_waived])
     @reserva.update_columns(service_purchase_late_fee_waived: waived, updated_at: Time.current)
+    reset_pending_service_checkout
+    sync_service_purchase_late_fee_cart
 
     message = if waived
                 'Taxa administrativa para compra fora do prazo anulada para esta reserva.'
@@ -585,6 +589,8 @@ class Admin::ReservasController < ApplicationController
     end
 
     @reserva.update_columns(service_max_installments: max_installments, updated_at: Time.current)
+    reset_pending_service_checkout
+    sync_service_purchase_late_fee_cart
     redirect_to admin_reserva_path(@reserva), notice: "Parcelamento dos serviços definido em até #{max_installments}x."
   end
 
@@ -848,6 +854,50 @@ class Admin::ReservasController < ApplicationController
     Date.iso8601(params[:service_purchase_override_until].to_s)
   rescue ArgumentError
     nil
+  end
+
+  def sync_service_purchase_late_fee_cart
+    ServicePurchaseLateFeeCart.sync!(reserva: @reserva)
+  rescue => e
+    Rails.logger.warn("Nao foi possivel sincronizar taxa fora do prazo no carrinho: #{e.class}: #{e.message}")
+  end
+
+  def reset_pending_service_checkout
+    pending_items = CartItem.includes(:cart, :service, photo_print_images_attachments: :blob, photo_print_pdf_attachment: :blob)
+                            .where(reserva_id: @reserva.id, item_id: nil, payment_status: "waiting_payment")
+                            .where.not(payment_order_code: nil)
+                            .to_a
+    return if pending_items.empty?
+
+    now = Time.current
+
+    CartItem.transaction do
+      pending_items.reject { |item| ServicePurchaseLateFeeCart.late_fee_cart_item?(item) }.each do |item|
+        replacement = item.cart.cart_items.create!(
+          reserva: item.reserva,
+          item: nil,
+          service: item.service,
+          quantity: item.quantity,
+          service_date: item.service_date,
+          observation: item.observation,
+          payment_status: nil,
+          payment_link_id: nil,
+          payment_link_url: nil,
+          payment_order_code: nil,
+          payment_expires_at: nil,
+          unit_price_paid: nil,
+          total_paid: nil,
+          purchased_after_service_deadline: false,
+          service_late_fee_amount: 0.to_d
+        )
+        replacement.photo_print_images.attach(item.photo_print_images.attachments.map(&:blob)) if item.photo_print_images.attached?
+        replacement.photo_print_pdf.attach(item.photo_print_pdf.blob) if item.photo_print_pdf.attached?
+      end
+
+      pending_items.each { |item| item.update_columns(payment_status: "checkout_replaced", updated_at: now) }
+    end
+  rescue => e
+    Rails.logger.warn("Nao foi possivel limpar checkout pendente de servicos: #{e.class}: #{e.message}")
   end
 
  

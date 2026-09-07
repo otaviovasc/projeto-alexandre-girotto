@@ -206,14 +206,15 @@
         <div class="bg-[#1a2e1a] px-5 py-4 flex items-center justify-between">
           <h2 class="text-white font-bold text-sm">Serviços selecionados</h2>
           <span class="bg-[#c8a96e] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-            <%= @portal_cart_items.count %>
+            <%= @portal_cart_items.reject { |item| service_purchase_late_fee_cart_item?(item) }.count %>
           </span>
         </div>
 
         <div class="divide-y divide-gray-50">
-          <% if @portal_cart_items.any? %>
+          <% regular_cart_items = @portal_cart_items.reject { |item| service_purchase_late_fee_cart_item?(item) } %>
+          <% if regular_cart_items.any? %>
             <% total = 0 %>
-            <% grouped_cart_items = @portal_cart_items.group_by { |rs| [rs.service_id, rs.service_date, ReservaService.visible_observation_text(rs.observation).to_s.strip] } %>
+            <% grouped_cart_items = regular_cart_items.group_by { |rs| [rs.service_id, rs.service_date, ReservaService.visible_observation_text(rs.observation).to_s.strip] } %>
             <% late_fee_amount = @service_purchase_late_fee_amount || 0 %>
             <% grouped_cart_items.each_value do |items| %>
               <% first_item = items.first %>

@@ -22,7 +22,7 @@ class ReservaService < ApplicationRecord
   }
 
   validates :quantity, presence: true, numericality: { greater_than: 0 }
-  validates :service_date, presence: true
+  validates :service_date, presence: true, unless: :free_date_service?
   validate :service_date_within_official_stay, on: :create
 
   before_save :mark_manual_date_override, if: :cleaning_service?
@@ -38,6 +38,8 @@ class ReservaService < ApplicationRecord
   end
 
   def self.free_date_service?(service)
+    return true if ServicePurchaseLateFeeCart.late_fee_service?(service)
+
     normalized_name = I18n.transliterate(service&.name.to_s)
                           .downcase
                           .gsub(/[^a-z0-9]+/, ' ')
@@ -109,11 +111,15 @@ class ReservaService < ApplicationRecord
 
   def service_date_within_official_stay
     return if cleaning_service?
-    return if self.class.free_date_service?(service)
+    return if free_date_service?
     return if reserva.blank? || reserva.start_date.blank? || reserva.end_date.blank? || service_date.blank?
     return if service_date.between?(reserva.start_date, reserva.end_date)
 
     errors.add(:service_date, 'deve estar entre o check-in e o check-out da reserva.')
+  end
+
+  def free_date_service?
+    self.class.free_date_service?(service)
   end
 
   def mark_manual_date_override

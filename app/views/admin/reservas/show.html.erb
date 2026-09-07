@@ -907,17 +907,19 @@
       <div class="services-list" style="margin-top: 1rem;">
         <% @pending_service_payments.group_by(&:payment_order_code).each do |order_code, items| %>
           <% first_item = items.first %>
+          <% regular_items = items.reject { |item| ServicePurchaseLateFeeCart.late_fee_record?(item) } %>
           <% order_total = items.sum do |item|
                unit_price = item.unit_price_paid || item.service&.price_for(@reserva) || 0
                (item.total_paid || (unit_price * (item.quantity || 1))).to_d + (item.service_late_fee_amount || 0).to_d
              end %>
-          <% item_names = items.map { |item| "#{item.service&.name || 'Serviço'} em #{item.service_date&.strftime('%d/%m/%Y') || '-'}" }.join(', ') %>
+          <% item_names = regular_items.map { |item| "#{item.service&.name || 'Serviço'} em #{item.service_date&.strftime('%d/%m/%Y') || '-'}" }.join(', ') %>
+          <% item_names = 'Somente taxa administrativa' if item_names.blank? %>
 
           <div class="service-item">
             <div class="service-info">
               <span class="service-name">Pedido <%= order_code %></span>
               <span class="service-date"><%= first_item.updated_at.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y às %H:%M') %></span>
-              <span class="service-quantity"><%= items.size %> item(ns)</span>
+              <span class="service-quantity"><%= regular_items.size %> serviço(s)<%= items.size > regular_items.size ? ' + taxa' : '' %></span>
               <span class="text-muted"><%= item_names %></span>
             </div>
             <div>
@@ -949,10 +951,11 @@
   <!-- Serviços -->
   <div class="info-card">
     <h3 class="info-card-title">🛎️ Serviços</h3>
-    
-    <% if @reserva.reserva_services.any? %>
+
+    <% visible_reserva_services = @reserva.reserva_services.includes(:service).reject { |rs| ServicePurchaseLateFeeCart.late_fee_record?(rs) } %>
+    <% if visible_reserva_services.any? %>
       <div class="services-list">
-        <% @reserva.reserva_services.includes(:service).each do |rs| %>
+        <% visible_reserva_services.each do |rs| %>
           <div class="service-item <%= rs.cancelled? ? 'cancelled' : '' %>">
             <div class="service-info">
               <span class="service-name"><%= rs.service.name %></span>

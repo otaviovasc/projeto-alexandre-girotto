@@ -1,4 +1,6 @@
 class Service < ApplicationRecord
+  SERVICE_PURCHASE_LATE_FEE_NAME = "Taxa administrativa para compra fora do prazo".freeze
+
   PORTAL_CATEGORY_ORDER = [
     "Refeições",
     "Passeios",
@@ -69,10 +71,22 @@ class Service < ApplicationRecord
     self.class.hidden_from_guest_name?(name)
   end
 
+  def service_purchase_late_fee?
+    self.class.service_purchase_late_fee_name?(name)
+  end
+
   def self.hidden_from_guest_name?(service_name)
     normalized_name = service_name.to_s.parameterize
 
-    normalized_name.include?("enviar") && normalized_name.include?("avaliacao")
+    service_purchase_late_fee_name?(service_name) ||
+      (normalized_name.include?("enviar") && normalized_name.include?("avaliacao"))
+  end
+
+  def self.service_purchase_late_fee_name?(service_name)
+    normalized_name = service_name.to_s.parameterize
+
+    normalized_name == SERVICE_PURCHASE_LATE_FEE_NAME.parameterize ||
+      (normalized_name.include?("taxa-administrativa") && normalized_name.include?("fora-do-prazo"))
   end
 
   def self.ransackable_attributes(auth_object = nil)

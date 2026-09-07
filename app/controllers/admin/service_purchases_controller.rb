@@ -8,6 +8,8 @@ class Admin::ServicePurchasesController < ApplicationController
 
     @service_purchases = ReservaService
                          .includes(:service, reserva: [:user, { cabana: :filial }])
+                         .joins(:service)
+                         .where.not(services: { name: Service::SERVICE_PURCHASE_LATE_FEE_NAME })
                          .where.not(payment_status: nil)
 
     @service_purchases = @service_purchases.where(payment_status: @selected_status) if @selected_status.present?

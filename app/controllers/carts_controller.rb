@@ -50,13 +50,17 @@ class CartsController < ApplicationController
 
   def remove_item
     @cart_item = @cart.cart_items.find(params[:id])
-    @cart_item.destroy
+    unless ServicePurchaseLateFeeCart.late_fee_cart_item?(@cart_item)
+      @cart_item.destroy
+      sync_service_purchase_late_fee_cart_items if service_only_cart?(payable_cart_items)
+    end
     redirect_to checkout_cart_path
   end
 
   # Display checkout page
   def checkout
     discard_closed_service_cart_items
+    sync_service_purchase_late_fee_cart_items if service_only_cart?(payable_cart_items)
     @cart_items = payable_cart_items.includes(:item, :service)
   end
 
@@ -70,6 +74,7 @@ class CartsController < ApplicationController
 
   def checkout_process
     removed_services = discard_closed_service_cart_items
+    sync_service_purchase_late_fee_cart_items if service_only_cart?(payable_cart_items)
 
     pending_payment = active_pending_payment
     if pending_payment.present? && payable_cart_items.empty?
@@ -179,18 +184,10 @@ class CartsController < ApplicationController
 
     payment_expires_at = expires_in.minutes.from_now
     now = Time.current
-    late_fee_amount = cart_service_late_fee_amount(cart_items)
-    late_fee_assigned = false
 
     cart_items.find_each do |cart_item|
       unit_price = cart_item_unit_price(cart_item) || 0
       quantity = cart_item.quantity || 1
-      cart_item_late_fee = if cart_item.service.present? && !late_fee_assigned
-                             late_fee_assigned = true
-                             late_fee_amount
-                           else
-                             0.to_d
-                           end
 
       cart_item.update_columns(
         payment_status: 'waiting_payment',
@@ -200,8 +197,8 @@ class CartsController < ApplicationController
         payment_expires_at: payment_expires_at,
         unit_price_paid: unit_price,
         total_paid: unit_price * quantity,
-        purchased_after_service_deadline: cart_item.service.present? && @reserva.service_purchase_override_used?,
-        service_late_fee_amount: cart_item_late_fee,
+        purchased_after_service_deadline: cart_item.service.present? && !ServicePurchaseLateFeeCart.late_fee_cart_item?(cart_item) && @reserva.service_purchase_override_used?,
+        service_late_fee_amount: 0.to_d,
         updated_at: now
       )
     end
@@ -210,7 +207,7 @@ class CartsController < ApplicationController
   end
 
   def payment_cart_items(cart_items)
-    service_items = cart_items.map do |cart_item|
+    items = cart_items.map do |cart_item|
       product = cart_item.item || cart_item.service
 
       {
@@ -220,31 +217,19 @@ class CartsController < ApplicationController
         quantity: cart_item.quantity
       }
     end
-    late_fee_amount = cart_service_late_fee_amount(cart_items)
-    fee_item = if late_fee_amount.positive?
-                 {
-                   id: "taxa-fora-prazo",
-                   name: @reserva.service_purchase_late_fee_label,
-                   unit_price: late_fee_amount,
-                   quantity: 1
-                 }
-               end
-    items = service_items + Array(fee_item)
 
     return items if items.size <= 10
 
     [{
       id: "cart-#{@cart.id}",
       name: "Itens adicionais - Reserva #{@reserva.id}",
-      unit_price: cart_items.sum { |cart_item| cart_item_unit_price(cart_item) * cart_item.quantity } + late_fee_amount,
+      unit_price: cart_items.sum { |cart_item| cart_item_unit_price(cart_item) * cart_item.quantity },
       quantity: 1
     }]
   end
 
-  def cart_service_late_fee_amount(cart_items)
-    return 0.to_d unless service_only_cart?(cart_items)
-
-    @reserva.service_purchase_late_fee_amount
+  def sync_service_purchase_late_fee_cart_items
+    ServicePurchaseLateFeeCart.sync!(reserva: @reserva, cart: @cart)
   end
 
   def cart_item_unit_price(cart_item)

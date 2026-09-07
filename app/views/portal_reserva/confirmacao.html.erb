@@ -1,6 +1,7 @@
 <% content_for :title, "#{@payment_paid ? 'Compra confirmada' : 'Aguardando pagamento'} - Villaggio Girotto" %>
 
-<% grouped_services = @purchased_services.group_by do |reserva_service|
+<% regular_purchased_services = @purchased_services.reject { |record| service_purchase_late_fee_cart_item?(record) } %>
+<% grouped_services = regular_purchased_services.group_by do |reserva_service|
      [reserva_service.service_id, reserva_service.service_date, reserva_service.visible_observation.to_s.strip]
    end %>
 <% services_total = grouped_services.sum do |_key, items|

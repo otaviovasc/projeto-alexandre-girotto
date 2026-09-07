@@ -1,6 +1,7 @@
 <% content_for :title, "Confirmar serviços - Villaggio Girotto" %>
 
-<% grouped_cart_items = @portal_cart_items.group_by { |item| [item.service_id, item.service_date, ReservaService.visible_observation_text(item.observation).to_s.strip] } %>
+<% regular_cart_items = @portal_cart_items.reject { |item| service_purchase_late_fee_cart_item?(item) } %>
+<% grouped_cart_items = regular_cart_items.group_by { |item| [item.service_id, item.service_date, ReservaService.visible_observation_text(item.observation).to_s.strip] } %>
 <% services_total = grouped_cart_items.sum do |_key, items|
      first_item = items.first
      quantity = items.sum { |item| item.quantity.to_i }

@@ -122,12 +122,18 @@ class PagamentosController < ApplicationController
     when 'paid'
       finalize_paid_cart_items(cart_items.where.not(payment_status: 'paid'))
     when 'waiting_payment', 'pending'
-      cart_items.where.not(payment_status: 'paid').update_all(payment_status: 'waiting_payment', updated_at: Time.current)
+      cart_items_for_non_final_status(cart_items).update_all(payment_status: 'waiting_payment', updated_at: Time.current)
     when 'unpaid', 'refused', 'failed'
-      cart_items.where.not(payment_status: 'paid').update_all(payment_status: 'refused', updated_at: Time.current)
+      cart_items_for_non_final_status(cart_items).update_all(payment_status: 'refused', updated_at: Time.current)
     when 'canceled', 'cancelled'
-      cart_items.where.not(payment_status: 'paid').update_all(payment_status: 'refused', updated_at: Time.current)
+      cart_items_for_non_final_status(cart_items).update_all(payment_status: 'refused', updated_at: Time.current)
     end
+  end
+
+  def cart_items_for_non_final_status(cart_items)
+    cart_items
+      .where.not(payment_status: 'paid')
+      .where('cart_items.payment_status IS NULL OR cart_items.payment_status <> ?', 'checkout_replaced')
   end
 
   def finalize_paid_cart_items(cart_items)
@@ -144,11 +150,12 @@ class PagamentosController < ApplicationController
             quantity: cart_item.quantity
           )
         elsif cart_item.service.present?
+          late_fee_cart_item = ServicePurchaseLateFeeCart.late_fee_cart_item?(cart_item)
           reserva_service = ReservaService.create!(
             reserva: cart_item.reserva,
             service: cart_item.service,
             quantity: cart_item.quantity,
-            service_date: cart_item.service_date || cart_item.reserva.start_date,
+            service_date: late_fee_cart_item ? nil : (cart_item.service_date || cart_item.reserva.start_date),
             status: 'active',
             payment_status: 'paid',
             payment_link_id: cart_item.payment_link_id,
@@ -159,7 +166,7 @@ class PagamentosController < ApplicationController
             total_paid: cart_item.total_paid,
             service_late_fee_amount: cart_item.service_late_fee_amount,
             paid_at: Time.current,
-            observation: cart_item.observation.presence,
+            observation: late_fee_cart_item ? nil : cart_item.observation.presence,
             purchased_after_service_deadline: cart_item.purchased_after_service_deadline?
           )
           copy_photo_print_attachments(cart_item, reserva_service)
@@ -272,7 +279,9 @@ class PagamentosController < ApplicationController
   end
 
   def export_service_purchases_to_sheets(reserva_services)
-    reserva_services = Array(reserva_services).compact
+    reserva_services = Array(reserva_services)
+                       .compact
+                       .reject { |reserva_service| ServicePurchaseLateFeeCart.late_fee_record?(reserva_service) }
     return if reserva_services.empty? || !GoogleSheetsExportService.configured?
 
     result = GoogleSheetsExportService.export_service_purchases(reserva_services)
