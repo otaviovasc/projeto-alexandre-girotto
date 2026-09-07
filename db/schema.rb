@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_31_160000) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_07_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -100,6 +100,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_31_160000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "activated_at"
+    t.string "whatsapp_task_alert_email_1"
+    t.string "whatsapp_task_alert_email_2"
     t.index ["enabled"], name: "index_email_automation_settings_on_enabled"
     t.index ["paused_by_id"], name: "index_email_automation_settings_on_paused_by_id"
   end

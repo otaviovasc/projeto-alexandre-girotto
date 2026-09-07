@@ -10,7 +10,12 @@ class ReservationWhatsappTaskReminder
   def initialize(slot:, date:, recipient:)
     @slot = slot.to_sym
     @date = date
-    @recipient = recipient.presence || ENV['WHATSAPP_TASK_ALERT_EMAIL'].presence || DEFAULT_RECIPIENT
+    @recipients = Array(recipient.presence || EmailAutomationSetting.current.whatsapp_task_alert_emails)
+      .flat_map { |value| value.to_s.split(/[,\s;]+/) }
+      .map(&:strip)
+      .reject(&:blank?)
+      .uniq
+    @recipients = [DEFAULT_RECIPIENT] if @recipients.empty?
   end
 
   def run
@@ -49,11 +54,17 @@ class ReservationWhatsappTaskReminder
   def deliver_email(tasks, messages)
     return { sent: 0, failed: 0 } if tasks.empty?
 
-    UserMailer.whatsapp_task_daily_alert(@recipient, tasks, messages, @date).deliver_now
-    { sent: 1, failed: 0 }
-  rescue => e
-    Rails.logger.error "Erro ao enviar e-mail de WhatsApp para #{@recipient}: #{e.message}"
-    { sent: 0, failed: 1 }
+    result = { sent: 0, failed: 0 }
+    @recipients.each do |recipient|
+      begin
+        UserMailer.whatsapp_task_daily_alert(recipient, tasks, messages, @date).deliver_now
+        result[:sent] += 1
+      rescue => e
+        Rails.logger.error "Erro ao enviar e-mail de WhatsApp para #{recipient}: #{e.message}"
+        result[:failed] += 1
+      end
+    end
+    result
   end
 
   def mark_notified(tasks)

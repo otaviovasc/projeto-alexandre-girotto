@@ -64,6 +64,20 @@ class Admin::ReservationEmailTemplatesController < ApplicationController
     end
   end
 
+  def update_settings
+    setting = EmailAutomationSetting.current
+
+    if setting.update(setting_params)
+      redirect_to admin_reservation_email_templates_path, notice: 'Configurações de alerta atualizadas.'
+    else
+      ReservationEmailTemplate.ensure_defaults!
+      @setting = setting
+      @templates = ReservationEmailTemplate.order(:trigger_anchor, :offset_days, :send_time, :name)
+      flash.now[:alert] = setting.errors.full_messages.to_sentence
+      render :index, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def require_admin!
@@ -85,6 +99,13 @@ class Admin::ReservationEmailTemplatesController < ApplicationController
       :body,
       :whatsapp_body,
       :active
+    )
+  end
+
+  def setting_params
+    params.require(:email_automation_setting).permit(
+      :whatsapp_task_alert_email_1,
+      :whatsapp_task_alert_email_2
     )
   end
 end
