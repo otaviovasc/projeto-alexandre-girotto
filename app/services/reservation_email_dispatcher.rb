@@ -51,9 +51,9 @@ class ReservationEmailDispatcher
       return
     end
 
-    recipient_email = delivery.reserva.reservation_email_recipient_email
+    recipient_email = valid_recipient_email(delivery)
     if recipient_email.blank?
-      delivery.update!(status: 'skipped', error_message: 'E-mail real do hóspede não informado')
+      delivery.update!(status: 'skipped', error_message: 'E-mail da reserva não informado ou removido')
       @result.skipped += 1
       return
     end
@@ -82,6 +82,13 @@ class ReservationEmailDispatcher
     scope = scope.where(trigger_key: @trigger_key) if @trigger_key.present?
     scope = scope.where.not(trigger_key: @exclude_trigger_key) if @exclude_trigger_key.present?
     scope
+  end
+
+  def valid_recipient_email(delivery)
+    email = delivery.recipient_email.to_s.squish.downcase
+    return if email.blank?
+
+    delivery.reserva.reservation_email_recipient_emails.include?(email) ? email : nil
   end
 
   def refresh_delivery_content(delivery, recipient_email)

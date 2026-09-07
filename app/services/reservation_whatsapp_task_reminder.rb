@@ -1,5 +1,5 @@
 class ReservationWhatsappTaskReminder
-  DEFAULT_RECIPIENT = 'flavoloski@gmail.com'.freeze
+  DEFAULT_RECIPIENT = ENV.fetch('WHATSAPP_TASK_ALERT_EMAIL', 'flavoloski@gmail.com')
 
   Result = Struct.new(:pending_count, :messages, :email_sent, :email_failed, keyword_init: true)
 
@@ -10,12 +10,7 @@ class ReservationWhatsappTaskReminder
   def initialize(slot:, date:, recipient:)
     @slot = slot.to_sym
     @date = date
-    @recipients = Array(recipient.presence || EmailAutomationSetting.current.whatsapp_task_alert_emails)
-      .flat_map { |value| value.to_s.split(/[,\s;]+/) }
-      .map(&:strip)
-      .reject(&:blank?)
-      .uniq
-    @recipients = [DEFAULT_RECIPIENT] if @recipients.empty?
+    @recipient = recipient.presence || DEFAULT_RECIPIENT
   end
 
   def run
@@ -26,15 +21,15 @@ class ReservationWhatsappTaskReminder
     messages = grouped.sort_by { |template_name, _| template_name.to_s }.map do |template_name, grouped_tasks|
       "🚨 (#{grouped_tasks.size}) Mensagem de #{template_name} com envio pendente"
     end
-    email_result = deliver_email(tasks, messages)
+    email_sent = tasks.any? ? deliver_email(tasks, messages) : false
 
-    mark_notified(tasks) if email_result.fetch(:sent).positive?
+    mark_notified(tasks) if email_sent
 
     Result.new(
       pending_count: tasks.size,
       messages: messages,
-      email_sent: email_result.fetch(:sent),
-      email_failed: email_result.fetch(:failed)
+      email_sent: email_sent ? 1 : 0,
+      email_failed: tasks.any? && !email_sent ? 1 : 0
     )
   end
 
@@ -52,19 +47,11 @@ class ReservationWhatsappTaskReminder
   end
 
   def deliver_email(tasks, messages)
-    return { sent: 0, failed: 0 } if tasks.empty?
-
-    result = { sent: 0, failed: 0 }
-    @recipients.each do |recipient|
-      begin
-        UserMailer.whatsapp_task_daily_alert(recipient, tasks, messages, @date).deliver_now
-        result[:sent] += 1
-      rescue => e
-        Rails.logger.error "Erro ao enviar e-mail de WhatsApp para #{recipient}: #{e.message}"
-        result[:failed] += 1
-      end
-    end
-    result
+    UserMailer.whatsapp_task_daily_alert(@recipient, tasks, messages, @date).deliver_now
+    true
+  rescue => e
+    Rails.logger.error "Erro ao enviar e-mail de WhatsApp: #{e.message}"
+    false
   end
 
   def mark_notified(tasks)

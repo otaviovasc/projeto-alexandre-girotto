@@ -189,10 +189,18 @@ class ReservaTest < ActiveSupport::TestCase
   test "generic imported email is not treated as real guest email" do
     imported = Reserva.new(user: User.new(email: "airbnb@importado.com"))
     real_guest = Reserva.new(user: User.new(email: "booking@importado.com"), guest_email: "hospede@example.com")
+    secondary_guest = Reserva.new(user: User.new(email: "airbnb@importado.com"), guest_email_secondary: "segundo@example.com")
+    two_emails = Reserva.new(
+      user: User.new(email: "booking@importado.com"),
+      guest_email: "hospede@example.com",
+      guest_email_secondary: "Segundo@Example.com"
+    )
 
     assert imported.missing_real_guest_email?
     assert_not real_guest.missing_real_guest_email?
     assert_equal "hospede@example.com", real_guest.reservation_email_recipient_email
+    assert_equal ["segundo@example.com"], secondary_guest.reservation_email_recipient_emails
+    assert_equal ["hospede@example.com", "segundo@example.com"], two_emails.reservation_email_recipient_emails
   end
 
   test "visible service observation hides automatic notes and keeps manual notes" do

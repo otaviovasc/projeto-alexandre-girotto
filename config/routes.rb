@@ -113,7 +113,6 @@ Rails.application.routes.draw do
     resources :reservation_email_templates, except: [:show] do
       collection do
         post :toggle
-        patch :settings, action: :update_settings
       end
     end
     resources :reservation_whatsapp_tasks, only: [:index, :update], path: 'mensagens_whatsapp'

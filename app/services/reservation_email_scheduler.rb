@@ -18,6 +18,7 @@ class ReservationEmailScheduler
   def schedule
     ReservationEmailTemplate.ensure_defaults!
     return cancel_pending('Reserva cancelada') if @reserva.canceled?
+    cancel_pending_for_removed_recipients
     return unless schedulable_reserva?
 
     setting = EmailAutomationSetting.current
@@ -33,32 +34,51 @@ class ReservationEmailScheduler
       next if before_current_activation?(scheduled_at, setting)
       next if past_non_confirmation_email?(template, scheduled_at)
 
-      delivery = @reserva.reservation_email_deliveries.find_or_initialize_by(
-        reservation_email_template: template
-      )
-      next if delivery.sent?
+      recipient_emails.each do |recipient_email|
+        delivery = @reserva.reservation_email_deliveries.find_or_initialize_by(
+          reservation_email_template: template,
+          recipient_email: recipient_email
+        )
+        next if delivery.sent?
 
-      delivery.assign_attributes(
-        trigger_key: template.trigger_key,
-        recipient_email: recipient_email,
-        subject: template.render_subject(@reserva),
-        body: template.render_body(@reserva),
-        scheduled_at: scheduled_at,
-        status: 'pending',
-        error_message: nil
-      )
-      delivery.save!
+        delivery.assign_attributes(
+          trigger_key: template.trigger_key,
+          subject: template.render_subject(@reserva),
+          body: template.render_body(@reserva),
+          scheduled_at: scheduled_at,
+          status: 'pending',
+          error_message: nil
+        )
+        delivery.save!
+      end
     end
   end
 
   private
 
   def schedulable_reserva?
-    @reserva.integration_ready? && recipient_email.present?
+    @reserva.integration_ready? && recipient_emails.present?
   end
 
-  def recipient_email
-    @recipient_email ||= @reserva.reservation_email_recipient_email
+  def recipient_emails
+    @recipient_emails ||= @reserva.reservation_email_recipient_emails
+  end
+
+  def cancel_pending_for_removed_recipients
+    scope = @reserva.reservation_email_deliveries.pending
+
+    if recipient_emails.present?
+      scope = scope.where.not(recipient_email: recipient_emails)
+      reason = 'E-mail removido da reserva'
+    else
+      reason = 'E-mail real do hóspede não informado'
+    end
+
+    scope.update_all(
+      status: 'canceled',
+      error_message: reason,
+      updated_at: Time.current
+    )
   end
 
   def scheduled_at_for(template)

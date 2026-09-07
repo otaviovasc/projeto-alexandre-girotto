@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_07_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_07_123000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -100,8 +100,6 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_07_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "activated_at"
-    t.string "whatsapp_task_alert_email_1"
-    t.string "whatsapp_task_alert_email_2"
     t.index ["enabled"], name: "index_email_automation_settings_on_enabled"
     t.index ["paused_by_id"], name: "index_email_automation_settings_on_paused_by_id"
   end
@@ -283,7 +281,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_07_120000) do
     t.jsonb "metadata", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["reserva_id", "reservation_email_template_id"], name: "idx_reservation_email_deliveries_unique_template", unique: true
+    t.index ["reserva_id", "reservation_email_template_id", "recipient_email"], name: "idx_reservation_email_deliveries_unique_recipient", unique: true
     t.index ["reserva_id"], name: "index_reservation_email_deliveries_on_reserva_id"
     t.index ["reservation_email_template_id"], name: "idx_reservation_email_deliveries_on_template_id"
     t.index ["scheduled_at"], name: "index_reservation_email_deliveries_on_scheduled_at"
@@ -392,6 +390,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_07_120000) do
     t.string "guest_name"
     t.string "guest_phone"
     t.string "guest_email"
+    t.string "guest_email_secondary"
     t.boolean "blocks_availability", default: true, null: false
     t.datetime "canceled_at"
     t.text "cancellation_reason"

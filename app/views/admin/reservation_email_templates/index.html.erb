@@ -42,39 +42,6 @@
 
   <div class="card shadow-sm mb-4">
     <div class="card-body">
-      <h2 class="h5 mb-2">Alertas das mensagens de WhatsApp</h2>
-      <p class="text-muted mb-3">Quando houver mensagens pendentes para a Flávia, o aviso das 7h30 e 18h pode ser enviado para até dois e-mails.</p>
-
-      <%= form_with model: @setting,
-          url: settings_admin_reservation_email_templates_path,
-          method: :patch,
-          local: true,
-          class: 'row g-3 align-items-end' do |form| %>
-        <div class="col-12 col-md-5">
-          <%= form.label :whatsapp_task_alert_email_1, 'E-mail 1', class: 'form-label' %>
-          <%= form.email_field :whatsapp_task_alert_email_1,
-              class: 'form-control',
-              placeholder: 'flavoloski@gmail.com' %>
-        </div>
-        <div class="col-12 col-md-5">
-          <%= form.label :whatsapp_task_alert_email_2, 'E-mail 2', class: 'form-label' %>
-          <%= form.email_field :whatsapp_task_alert_email_2,
-              class: 'form-control',
-              placeholder: 'opcional' %>
-        </div>
-        <div class="col-12 col-md-2">
-          <%= form.submit 'Salvar alertas', class: 'btn btn-primary w-100' %>
-        </div>
-      <% end %>
-
-      <p class="text-muted small mt-3 mb-0">
-        Se os dois campos ficarem vazios, o sistema usa <%= EmailAutomationSetting::DEFAULT_WHATSAPP_TASK_ALERT_EMAILS.join(', ') %>.
-      </p>
-    </div>
-  </div>
-
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
       <h2 class="h5">Como funciona</h2>
       <p class="mb-2">Cada modelo pode ser ligado/desligado, ter nome, assunto, mensagem, filial e regra de data.</p>
       <p class="mb-0 text-muted">

@@ -69,6 +69,15 @@
       <%= form.select :user_id, options_for_select(user_options, selected_user_id), { prompt: user_prompt }, { class: 'form-select', required: !creating_new_guest, id: 'user_select' } %>
     </div>
 
+    <div class="mb-3">
+      <%= form.label :guest_email_secondary, 'Segundo e-mail do hóspede para lembretes', class: 'form-label' %>
+      <small class="text-muted">(opcional)</small>
+      <%= form.email_field :guest_email_secondary,
+          class: 'form-control',
+          maxlength: 255,
+          placeholder: 'Ex.: outroemail@email.com' %>
+    </div>
+
     <!-- Seleção de cabana -->
     <div class="mb-3">
       <%= form.label :cabana_id, 'Cabana *', class: 'form-label' %>

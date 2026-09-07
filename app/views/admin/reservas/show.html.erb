@@ -372,13 +372,23 @@
           <span class="info-value"><%= @reserva.guest_phone.presence || 'Ainda não informado' %></span>
         </div>
         <div class="info-item">
-          <span class="info-label">E-mail real do hóspede</span>
+          <span class="info-label">E-mails reais do hóspede</span>
           <span class="info-value">
-            <%= @reserva.guest_email.presence || 'Ainda não informado' %>
+            <% real_emails = [@reserva.guest_email, @reserva.guest_email_secondary].filter_map { |email| email.to_s.squish.presence } %>
+            <% if real_emails.any? %>
+              <%= safe_join(real_emails, tag.br) %>
+            <% else %>
+              Ainda não informado
+            <% end %>
             <% if @reserva.missing_real_guest_email? %>
               <span class="badge bg-warning text-dark ms-1">E-mail pendente</span>
             <% end %>
           </span>
+        </div>
+      <% elsif @reserva.guest_email_secondary.present? %>
+        <div class="info-item">
+          <span class="info-label">Segundo e-mail para lembretes</span>
+          <span class="info-value"><%= @reserva.guest_email_secondary %></span>
         </div>
       <% end %>
       <div class="info-item">
