@@ -129,7 +129,8 @@ class GoogleSheetsExportService
       # ... (rest of export logic is fine, authorize is called here)
 
       # Prepara os dados
-      export_service = ReservasExportService.new(reservas)
+      sync_operational_services
+      export_service = ReservasExportService.new(reservas, include_operational_services: true)
       headers = reservas_headers
       rows = export_service.generate_array
 
@@ -227,6 +228,19 @@ class GoogleSheetsExportService
   end
 
   private
+
+  def sync_operational_services
+    return unless defined?(FakeHolmyCleaningSync)
+
+    result = FakeHolmyCleaningSync.run
+    Rails.logger.info(
+      "Limpezas Holmy sincronizadas: #{result.checked_cabanas} cabana(s), " \
+      "#{result.created} criada(s), #{result.reactivated} reativada(s), " \
+      "#{result.cancelled} cancelada(s)."
+    )
+  rescue => e
+    Rails.logger.error "Erro ao sincronizar limpezas Holmy: #{e.message}"
+  end
 
   def reservas_headers
     [

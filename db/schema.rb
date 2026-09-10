@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_07_123000) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_10_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -181,6 +181,26 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_07_123000) do
     t.text "description"
     t.decimal "price"
     t.index ["filial_id"], name: "index_items_on_filial_id"
+  end
+
+  create_table "operational_service_occurrences", force: :cascade do |t|
+    t.bigint "cabana_id", null: false
+    t.bigint "filial_id", null: false
+    t.string "stable_id", null: false
+    t.string "kind", default: "fake_holmy_cleaning", null: false
+    t.string "event_type", null: false
+    t.string "name", null: false
+    t.date "service_date", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "cancelled_at"
+    t.text "cancellation_reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cabana_id", "service_date"], name: "index_operational_services_on_cabana_date"
+    t.index ["cabana_id"], name: "index_operational_service_occurrences_on_cabana_id"
+    t.index ["filial_id"], name: "index_operational_service_occurrences_on_filial_id"
+    t.index ["kind", "status", "service_date"], name: "index_operational_services_on_kind_status_date"
+    t.index ["stable_id"], name: "index_operational_service_occurrences_on_stable_id", unique: true
   end
 
   create_table "price_rules", force: :cascade do |t|
@@ -459,6 +479,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_07_123000) do
   add_foreign_key "ical_reservation_changes", "reservas"
   add_foreign_key "info_da_cabanas", "cabanas"
   add_foreign_key "items", "filials"
+  add_foreign_key "operational_service_occurrences", "cabanas"
+  add_foreign_key "operational_service_occurrences", "filials"
   add_foreign_key "price_rules", "cabanas"
   add_foreign_key "promotions", "cabanas"
   add_foreign_key "reserva_items", "items"

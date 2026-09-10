@@ -24,6 +24,13 @@ class ImportadorDeReservasJob
       end
     end
 
+    begin
+      operational_result = FakeHolmyCleaningSync.run
+      totals[:operational] += 1 if operational_result.changed?
+    rescue => e
+      Rails.logger.error "Erro ao sincronizar limpezas Holmy: #{e.message}"
+    end
+
     if totals.values.sum.zero?
       Rails.logger.info "📊 Nenhuma alteração de reservas via iCal; Google Sheets não sincronizado."
       return

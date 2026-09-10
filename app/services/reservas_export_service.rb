@@ -7,8 +7,9 @@ class ReservasExportService
     new(reservas).generate_csv
   end
 
-  def initialize(reservas)
+  def initialize(reservas, include_operational_services: false)
     @reservas = reservas.includes(:cabana, :user, reserva_services: :service)
+    @include_operational_services = include_operational_services
   end
 
   def generate_csv
@@ -24,6 +25,10 @@ class ReservasExportService
           csv << service_row(reserva, rs)
         end
       end
+
+      operational_service_rows.each do |row|
+        csv << row
+      end
     end
   end
 
@@ -37,7 +42,9 @@ class ReservasExportService
         rows << service_row(reserva, rs)
       end
     end
-    
+
+    rows.concat(operational_service_rows)
+
     rows
   end
 
@@ -47,6 +54,18 @@ class ReservasExportService
     reserva.reserva_services.reject do |reserva_service|
       ServicePurchaseLateFeeCart.late_fee_record?(reserva_service)
     end
+  end
+
+  def operational_service_rows
+    return [] unless @include_operational_services
+    return [] unless defined?(OperationalServiceOccurrence)
+    return [] unless OperationalServiceOccurrence.connection.data_source_exists?(OperationalServiceOccurrence.table_name)
+
+    OperationalServiceOccurrence
+      .exportable
+      .includes(cabana: :filial)
+      .order(:service_date, :stable_id)
+      .map { |occurrence| operational_service_row(occurrence) }
   end
 
   def headers
@@ -138,6 +157,39 @@ class ReservasExportService
       reserva.guest_phone,
       rs.photo_print_pdf_download_url.presence || '-',
       reserva.guest_email
+    ]
+  end
+
+  def operational_service_row(occurrence)
+    cabana = occurrence.cabana
+    filial = occurrence.filial || cabana&.filial
+
+    [
+      'Serviço',
+      occurrence.stable_id,
+      cabana&.name,
+      filial&.name,
+      'Holmy',
+      '-',
+      '-',
+      '-',
+      '-',
+      '-',
+      '-',
+      '-',
+      occurrence.name,
+      format_date(occurrence.service_date),
+      1,
+      occurrence.cancelled? ? 'Cancelado' : 'Ativo',
+      format_currency(0),
+      '-',
+      format_datetime(occurrence.created_at),
+      '-',
+      '-',
+      '-',
+      '-',
+      '-',
+      '-'
     ]
   end
 
