@@ -110,6 +110,7 @@
   .icon-funil { background: #0ea5e9; }
   .icon-services { background: #f59e0b; }
   .icon-purchases { background: #14b8a6; }
+  .icon-maintenance { background: #7c3aed; }
   .icon-home { background: #8b5cf6; }
   .icon-client { background: #64748b; }
 
@@ -334,6 +335,20 @@
         <% end %>
       <% end %>
     </div>
+
+    <% if current_user.admin? %>
+      <!-- Manutenções -->
+      <div class="dash-card">
+        <div class="card-icon icon-maintenance">
+          <i class="bi bi-tools"></i>
+        </div>
+        <h3 class="card-title">Manutenções</h3>
+        <p class="card-description">Agende manutenções recorrentes</p>
+        <%= link_to admin_recurring_maintenance_rules_path, class: 'card-btn card-btn-primary' do %>
+          Acessar →
+        <% end %>
+      </div>
+    <% end %>
   </div>
 
   <!-- Seção: Visualizar como Cliente -->
