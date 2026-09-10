@@ -264,6 +264,22 @@ class PortalReservaControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Envie no máximo 3 fotos.", controller.send(:photo_print_upload_error, service, uploads)
   end
 
+  test "allows heic uploads for printed photos" do
+    controller = PortalReservaController.new
+    service = Service.new(name: "Fotos Impressas")
+    upload = Struct.new(:content_type, :size, :original_filename).new("image/heic", 100, "foto.heic")
+
+    assert_nil controller.send(:photo_print_upload_error, service, [upload])
+  end
+
+  test "allows heic uploads by file extension" do
+    controller = PortalReservaController.new
+    service = Service.new(name: "Fotos Impressas")
+    upload = Struct.new(:content_type, :size, :original_filename).new("application/octet-stream", 100, "foto.heic")
+
+    assert_nil controller.send(:photo_print_upload_error, service, [upload])
+  end
+
   test "shows guest services while hiding internal services" do
     reserva = reservas(:one)
     regular_service = services(:one)

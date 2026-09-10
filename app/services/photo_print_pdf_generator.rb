@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'prawn'
+require 'open3'
 require 'stringio'
 require 'tempfile'
 
@@ -107,13 +108,63 @@ class PhotoPrintPdfGenerator
   end
 
   def with_image_file(attachment)
-    extension = attachment.filename.extension_with_delimiter.to_s
+    extension = attachment.filename.extension_with_delimiter.to_s.downcase
+    extension = '.heic' if extension.empty? && %w[image/heic image/heif].include?(attachment.blob.content_type.to_s.downcase)
     extension = '.jpg' if extension.empty?
 
     Tempfile.create(['photo-print', extension], binmode: true) do |file|
       file.write(attachment.blob.download)
       file.flush
-      yield file
+
+      if heic_attachment?(attachment)
+        with_converted_heic_file(file.path) { |converted_file| yield converted_file }
+      else
+        yield file
+      end
+    end
+  end
+
+  def heic_attachment?(attachment)
+    extension = attachment.filename.extension_with_delimiter.to_s.downcase
+    content_type = attachment.blob.content_type.to_s.downcase
+
+    %w[.heic .heif].include?(extension) || %w[image/heic image/heif].include?(content_type)
+  end
+
+  def with_converted_heic_file(source_path)
+    Tempfile.create(['photo-print-converted', '.jpg'], binmode: true) do |converted_file|
+      converted_file.close
+      convert_heic_to_jpeg!(source_path, converted_file.path)
+      yield converted_file
+    end
+  end
+
+  def convert_heic_to_jpeg!(source_path, destination_path)
+    command = heic_conversion_command(source_path, destination_path)
+    unless command
+      raise Error, 'Não foi possível converter foto HEIC neste servidor. Envie a foto em JPG ou PNG.'
+    end
+
+    _stdout, stderr, status = Open3.capture3(*command)
+    return if status.success? && File.size?(destination_path)
+
+    Rails.logger.warn("HEIC conversion failed: #{stderr}") if defined?(Rails)
+    raise Error, 'Não foi possível converter uma foto HEIC. Envie a foto em JPG ou PNG.'
+  end
+
+  def heic_conversion_command(source_path, destination_path)
+    if executable?('magick')
+      ['magick', "#{source_path}[0]", '-auto-orient', "jpeg:#{destination_path}"]
+    elsif executable?('convert')
+      ['convert', "#{source_path}[0]", '-auto-orient', "jpeg:#{destination_path}"]
+    elsif executable?('sips')
+      ['sips', '-s', 'format', 'jpeg', source_path, '--out', destination_path]
+    end
+  end
+
+  def executable?(name)
+    ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).any? do |path|
+      File.executable?(File.join(path, name))
     end
   end
 
@@ -126,7 +177,7 @@ class PhotoPrintPdfGenerator
       return jpeg_size(file) if file.read(2) == "\xFF\xD8".b
     end
 
-    raise Error, 'Formato de imagem inválido. Envie JPG ou PNG.'
+    raise Error, 'Formato de imagem inválido. Envie JPG, PNG ou HEIC.'
   end
 
   def png_size(file)

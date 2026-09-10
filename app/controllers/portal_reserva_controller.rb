@@ -12,7 +12,8 @@ class PortalReservaController < ApplicationController
                 :service_observation_word_limit, :service_purchase_late_fee_cart_item?
 
   PARTNER_SERVICE_CREDIT_CARD_INTEREST_RATE = 3
-  PHOTO_PRINT_ALLOWED_CONTENT_TYPES = %w[image/jpeg image/png].freeze
+  PHOTO_PRINT_ALLOWED_CONTENT_TYPES = %w[image/jpeg image/png image/heic image/heif].freeze
+  PHOTO_PRINT_ALLOWED_EXTENSIONS = %w[.jpg .jpeg .png .heic .heif].freeze
   PHOTO_PRINT_MAX_FILE_SIZE = 10.megabytes
   PETALS_AND_LIGHTS_OBSERVATION_WORD_LIMIT = 8
   # GET /minha-reserva
@@ -946,8 +947,8 @@ class PortalReservaController < ApplicationController
     return "Envie as fotos para comprar Fotos Impressas." if uploads.empty?
     return "Envie no máximo 3 fotos." if uploads.size > 3
 
-    invalid_type = uploads.any? { |upload| !PHOTO_PRINT_ALLOWED_CONTENT_TYPES.include?(upload.content_type.to_s) }
-    return "Envie fotos em JPG ou PNG." if invalid_type
+    invalid_type = uploads.any? { |upload| !photo_print_upload_allowed?(upload) }
+    return "Envie fotos em JPG, PNG ou HEIC." if invalid_type
 
     oversized = uploads.any? { |upload| upload.respond_to?(:size) && upload.size.to_i > PHOTO_PRINT_MAX_FILE_SIZE }
     return "Cada foto pode ter no máximo 10 MB." if oversized
@@ -967,6 +968,15 @@ class PortalReservaController < ApplicationController
       cart_item.photo_print_images.attach(image_blobs)
       cart_item.photo_print_pdf.attach(pdf_blob)
     end
+  end
+
+  def photo_print_upload_allowed?(upload)
+    content_type = upload.content_type.to_s.downcase
+    filename = upload.respond_to?(:original_filename) ? upload.original_filename.to_s : ""
+    extension = File.extname(filename).downcase
+
+    PHOTO_PRINT_ALLOWED_CONTENT_TYPES.include?(content_type) ||
+      PHOTO_PRINT_ALLOWED_EXTENSIONS.include?(extension)
   end
 
   def service_credit_card_interest_rate

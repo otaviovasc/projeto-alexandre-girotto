@@ -173,10 +173,10 @@
                                 id: "service_#{service.id}_photo_print_images",
                                 multiple: true,
                                 required: true,
-                                accept: "image/jpeg,image/png",
+                                accept: "image/jpeg,image/png,image/heic,image/heif,.heic,.heif",
                                 data: { photo_print_input: true },
                                 class: "w-full bg-white border border-gray-200 text-gray-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] transition file:mr-3 file:rounded file:border-0 file:bg-[#eef2ed] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#1a2e1a]" %>
-                            <p class="text-gray-400 text-[11px] mt-1" data-photo-print-feedback>Envie de 1 a 3 fotos. Com 3 fotos, a terceira será virada para horizontal no PDF.</p>
+                            <p class="text-gray-400 text-[11px] mt-1" data-photo-print-feedback>Envie de 1 a 3 fotos em JPG, PNG ou HEIC. Com 3 fotos, a terceira será virada para horizontal no PDF.</p>
                           </div>
                         <% end %>
 
