@@ -4,6 +4,7 @@ class RecurringMaintenanceSync
   KIND = 'recurring_maintenance'
   EVENT_TYPE = 'maintenance'
   LOOKAHEAD_DAYS = 180
+  CLEANING_ALIGNMENT_WINDOW_DAYS = 7
 
   Result = Struct.new(:checked_rules, :created, :reactivated, :updated, :cancelled, :kept, keyword_init: true) do
     def changed?
@@ -49,8 +50,9 @@ class RecurringMaintenanceSync
       @result.checked_rules += 1
 
       rule.selected_cabanas.find_each do |cabana|
-        rule.next_occurrence_dates(from: start_date, through: end_date).each do |service_date|
-          stable_id = stable_id_for(rule, cabana, service_date)
+        rule.next_occurrence_dates(from: start_date, through: end_date).each do |target_date|
+          service_date = service_date_for(cabana, target_date)
+          stable_id = stable_id_for(rule, cabana, target_date)
           desired[stable_id] = {
             cabana: cabana,
             filial: cabana.filial,
@@ -96,7 +98,7 @@ class RecurringMaintenanceSync
     OperationalServiceOccurrence
       .recurring_maintenance
       .active
-      .where(service_date: start_date..end_date)
+      .where(service_date: start_date..(end_date + CLEANING_ALIGNMENT_WINDOW_DAYS.days))
       .where.not(stable_id: desired_stable_ids)
       .find_each do |occurrence|
         occurrence.cancel!(reason: 'Manutenção recorrente removida, pausada ou alterada.')
@@ -104,7 +106,46 @@ class RecurringMaintenanceSync
       end
   end
 
-  def stable_id_for(rule, cabana, service_date)
-    "recurring-maintenance-rule-#{rule.id}-cabana-#{cabana.id}-#{service_date.iso8601}"
+  def service_date_for(cabana, target_date)
+    nearby_cleaning_dates(cabana, target_date).min_by do |date|
+      [
+        (date - target_date).to_i.abs,
+        date > target_date ? 1 : 0,
+        date
+      ]
+    end || target_date
+  end
+
+  def nearby_cleaning_dates(cabana, target_date)
+    window_start = [target_date - CLEANING_ALIGNMENT_WINDOW_DAYS.days, start_date].max
+    window_end = target_date + CLEANING_ALIGNMENT_WINDOW_DAYS.days
+
+    (real_cleaning_dates(cabana, window_start, window_end) +
+      fake_holmy_cleaning_dates(cabana, window_start, window_end)).uniq
+  end
+
+  def real_cleaning_dates(cabana, window_start, window_end)
+    return [] unless defined?(ReservaService) && defined?(CleaningServicesAssigner)
+
+    ReservaService
+      .joins(:service, reserva: :cabana)
+      .where(reservas: { cabana_id: cabana.id })
+      .where(status: 'active')
+      .where(service_date: window_start..window_end)
+      .select { |reserva_service| CleaningServicesAssigner.cleaning_service?(reserva_service.service) }
+      .map(&:service_date)
+      .compact
+  end
+
+  def fake_holmy_cleaning_dates(cabana, window_start, window_end)
+    OperationalServiceOccurrence
+      .fake_holmy_cleaning
+      .active
+      .where(cabana_id: cabana.id, service_date: window_start..window_end)
+      .pluck(:service_date)
+  end
+
+  def stable_id_for(rule, cabana, target_date)
+    "recurring-maintenance-rule-#{rule.id}-cabana-#{cabana.id}-target-#{target_date.iso8601}"
   end
 end

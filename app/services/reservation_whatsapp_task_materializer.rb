@@ -101,6 +101,7 @@ class ReservationWhatsappTaskMaterializer
     return unless defined?(RecurringMaintenanceSync)
     return unless defined?(RecurringMaintenanceWhatsappTaskSync)
 
+    FakeHolmyCleaningSync.run(start_date: @date) if defined?(FakeHolmyCleaningSync)
     RecurringMaintenanceSync.run(start_date: @date)
     maintenance_result = RecurringMaintenanceWhatsappTaskSync.run(date: @date)
     @result.checked += maintenance_result.checked_occurrences.to_i

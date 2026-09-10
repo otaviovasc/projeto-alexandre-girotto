@@ -90,6 +90,7 @@ class Admin::RecurringMaintenanceRulesController < ApplicationController
   end
 
   def sync_operational_rules
+    FakeHolmyCleaningSync.run if defined?(FakeHolmyCleaningSync)
     RecurringMaintenanceSync.run if defined?(RecurringMaintenanceSync)
     RecurringMaintenanceWhatsappTaskSync.run(date: Date.current) if defined?(RecurringMaintenanceWhatsappTaskSync)
   rescue => e
