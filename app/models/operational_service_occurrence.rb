@@ -10,7 +10,8 @@ class OperationalServiceOccurrence < ApplicationRecord
   validates :stable_id, :kind, :event_type, :name, :service_date, presence: true
   validates :stable_id, uniqueness: true
 
-  scope :fake_holmy_cleaning, -> { where(kind: FakeHolmyCleaningSync::KIND) }
+  scope :fake_holmy_cleaning, -> { where(kind: 'fake_holmy_cleaning') }
+  scope :recurring_maintenance, -> { where(kind: 'recurring_maintenance') }
   scope :exportable, lambda {
     where(status: 'active').where('service_date >= ?', Date.current)
       .or(where(status: 'cancelled').where('service_date >= ?', Date.current - 30.days))

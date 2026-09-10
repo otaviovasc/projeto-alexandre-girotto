@@ -4,6 +4,8 @@ class ReservationWhatsappTaskMaterializerTest < ActiveSupport::TestCase
   setup do
     EmailAutomationSetting.delete_all
     ReservationWhatsappTask.delete_all
+    OperationalServiceOccurrence.delete_all
+    RecurringMaintenanceRule.delete_all
     ReservationEmailTemplate.delete_all
 
     EmailAutomationSetting.create!(enabled: true, activated_at: 1.year.ago)
@@ -72,6 +74,34 @@ class ReservationWhatsappTaskMaterializerTest < ActiveSupport::TestCase
       reserva: reserva,
       trigger_key: ReservationWhatsappTaskMaterializer::SERVICE_PHOTOS_TRIGGER_KEY
     )
+  end
+
+  test "creates whatsapp task for recurring maintenance" do
+    rule = RecurringMaintenanceRule.create!(
+      title: "Olhar estrada",
+      message_body: "Oi {{nome}}, olhar {{titulo}} na {{cabana}} dia {{data_curta}}.",
+      recipients_text: "Bruna | 35999999999",
+      frequency_interval: 1,
+      frequency_unit: "monthly",
+      first_due_on: Date.current + 2.days,
+      cabana_ids: [@cabana_serra.id]
+    )
+
+    ReservationWhatsappTaskMaterializer.run(date: Date.current + 1.day)
+
+    occurrence = OperationalServiceOccurrence.find_by!(
+      kind: "recurring_maintenance",
+      stable_id: "recurring-maintenance-rule-#{rule.id}-cabana-#{@cabana_serra.id}-#{(Date.current + 2.days).iso8601}"
+    )
+    task = ReservationWhatsappTask.find_by!(operational_service_occurrence: occurrence)
+
+    assert_nil task.reserva
+    assert_equal "Manutenção: Olhar estrada", task.template_name
+    assert_equal "Manutenção", task.reservation_label
+    assert_equal "Bruna", task.guest_name
+    assert_equal "35999999999", task.guest_phone
+    assert_equal Date.current + 1.day, task.scheduled_on
+    assert_match "olhar Olhar estrada", task.message_body
   end
 
   private

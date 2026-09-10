@@ -26,7 +26,11 @@ class Admin::ReservationWhatsappTasksController < ApplicationController
   def visible_tasks
     ReservationWhatsappTask
       .visible_on(Date.current)
-      .includes(:reservation_email_template, reserva: [:user, { cabana: :filial }])
+      .includes(
+        :reservation_email_template,
+        { operational_service_occurrence: { cabana: :filial } },
+        reserva: [:user, { cabana: :filial }]
+      )
       .to_a
       .select(&:active_for_whatsapp?)
       .sort_by do |task|

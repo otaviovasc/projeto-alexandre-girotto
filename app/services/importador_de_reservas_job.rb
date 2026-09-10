@@ -31,6 +31,13 @@ class ImportadorDeReservasJob
       Rails.logger.error "Erro ao sincronizar limpezas Holmy: #{e.message}"
     end
 
+    begin
+      maintenance_result = RecurringMaintenanceSync.run if defined?(RecurringMaintenanceSync)
+      totals[:operational] += 1 if maintenance_result&.changed?
+    rescue => e
+      Rails.logger.error "Erro ao sincronizar manutenções recorrentes: #{e.message}"
+    end
+
     if totals.values.sum.zero?
       Rails.logger.info "📊 Nenhuma alteração de reservas via iCal; Google Sheets não sincronizado."
       return

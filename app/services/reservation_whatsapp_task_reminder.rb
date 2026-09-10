@@ -42,7 +42,11 @@ class ReservationWhatsappTaskReminder
       .pending
       .visible_on(@date)
       .where("#{marker_column} IS NULL OR #{marker_column} < ?", @date)
-      .includes(:reservation_email_template, reserva: [:user, { cabana: :filial }])
+      .includes(
+        :reservation_email_template,
+        { operational_service_occurrence: { cabana: :filial } },
+        reserva: [:user, { cabana: :filial }]
+      )
       .select(&:active_for_whatsapp?)
   end
 

@@ -115,6 +115,11 @@ Rails.application.routes.draw do
         post :toggle
       end
     end
+    resources :recurring_maintenance_rules, path: 'manutencoes_recorrentes' do
+      member do
+        patch :toggle
+      end
+    end
     resources :reservation_whatsapp_tasks, only: [:index, :update], path: 'mensagens_whatsapp'
     resource :web_push_subscription, only: [:create]
 

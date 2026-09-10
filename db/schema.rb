@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_10_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_10_123000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -212,6 +212,22 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_10_120000) do
     t.index ["cabana_id"], name: "index_price_rules_on_cabana_id"
   end
 
+  create_table "recurring_maintenance_rules", force: :cascade do |t|
+    t.string "title", null: false
+    t.text "message_body", null: false
+    t.text "recipients_text", null: false
+    t.integer "frequency_interval", default: 1, null: false
+    t.string "frequency_unit", default: "monthly", null: false
+    t.date "first_due_on", null: false
+    t.boolean "all_cabanas", default: false, null: false
+    t.text "cabana_ids_text"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_recurring_maintenance_rules_on_active"
+    t.index ["first_due_on"], name: "index_recurring_maintenance_rules_on_first_due_on"
+  end
+
   create_table "promotions", force: :cascade do |t|
     t.bigint "cabana_id", null: false
     t.date "date"
@@ -328,7 +344,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_10_120000) do
   end
 
   create_table "reservation_whatsapp_tasks", force: :cascade do |t|
-    t.bigint "reserva_id", null: false
+    t.bigint "reserva_id"
     t.bigint "reservation_email_template_id"
     t.string "trigger_key", null: false
     t.string "template_name", null: false
@@ -338,9 +354,14 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_10_120000) do
     t.datetime "completed_at"
     t.date "morning_notified_on"
     t.date "evening_notified_on"
+    t.bigint "operational_service_occurrence_id"
+    t.string "recipient_name"
+    t.string "recipient_phone"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["completed_at"], name: "index_reservation_whatsapp_tasks_on_completed_at"
+    t.index ["operational_service_occurrence_id", "trigger_key", "recipient_phone"], name: "idx_whatsapp_tasks_unique_operational_recipient", unique: true
+    t.index ["operational_service_occurrence_id"], name: "idx_whatsapp_tasks_on_operational_occurrence_id"
     t.index ["reserva_id", "reservation_email_template_id"], name: "idx_reservation_whatsapp_tasks_unique_template", unique: true
     t.index ["reserva_id"], name: "index_reservation_whatsapp_tasks_on_reserva_id"
     t.index ["reservation_email_template_id"], name: "idx_reservation_whatsapp_tasks_on_template_id"
@@ -490,6 +511,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_10_120000) do
   add_foreign_key "reserva_services", "services"
   add_foreign_key "reservation_email_deliveries", "reservas"
   add_foreign_key "reservation_email_deliveries", "reservation_email_templates"
+  add_foreign_key "reservation_whatsapp_tasks", "operational_service_occurrences"
   add_foreign_key "reservation_whatsapp_tasks", "reservas"
   add_foreign_key "reservation_whatsapp_tasks", "reservation_email_templates"
   add_foreign_key "reservas", "cabanas"

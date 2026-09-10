@@ -230,6 +230,11 @@ class GoogleSheetsExportService
   private
 
   def sync_operational_services
+    sync_fake_holmy_cleanings
+    sync_recurring_maintenances
+  end
+
+  def sync_fake_holmy_cleanings
     return unless defined?(FakeHolmyCleaningSync)
 
     result = FakeHolmyCleaningSync.run
@@ -240,6 +245,19 @@ class GoogleSheetsExportService
     )
   rescue => e
     Rails.logger.error "Erro ao sincronizar limpezas Holmy: #{e.message}"
+  end
+
+  def sync_recurring_maintenances
+    return unless defined?(RecurringMaintenanceSync)
+
+    result = RecurringMaintenanceSync.run
+    Rails.logger.info(
+      "Manutenções recorrentes sincronizadas: #{result.checked_rules} regra(s), " \
+      "#{result.created} criada(s), #{result.reactivated} reativada(s), " \
+      "#{result.updated} atualizada(s), #{result.cancelled} cancelada(s)."
+    )
+  rescue => e
+    Rails.logger.error "Erro ao sincronizar manutenções recorrentes: #{e.message}"
   end
 
   def reservas_headers

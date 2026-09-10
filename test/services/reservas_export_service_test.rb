@@ -47,4 +47,28 @@ class ReservasExportServiceTest < ActiveSupport::TestCase
     assert_equal service_date.strftime('%d/%m/%Y'), row[13]
     assert_equal 'Ativo', row[15]
   end
+
+  test 'exports recurring maintenance as maintenance operational service' do
+    service_date = Date.current + 8.days
+    occurrence = OperationalServiceOccurrence.create!(
+      cabana: cabanas(:one),
+      filial: filials(:one),
+      stable_id: "recurring-maintenance-rule-12-cabana-#{cabanas(:one).id}-#{service_date.iso8601}",
+      kind: 'recurring_maintenance',
+      event_type: 'maintenance',
+      name: 'Olhar estrada',
+      service_date: service_date
+    )
+
+    exporter = ReservasExportService.new(Reserva.none, include_operational_services: true)
+    row = exporter.generate_array.find { |exported_row| exported_row[1] == occurrence.stable_id }
+
+    assert row
+    assert_equal 'Serviço', row[0]
+    assert_equal cabanas(:one).name, row[2]
+    assert_equal 'Manutenção', row[4]
+    assert_equal 'Olhar estrada', row[12]
+    assert_equal service_date.strftime('%d/%m/%Y'), row[13]
+    assert_equal 'Ativo', row[15]
+  end
 end

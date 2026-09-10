@@ -118,8 +118,8 @@
       <% @tasks.each do |task| %>
         <% overdue = task.overdue? %>
         <% completed = task.completed? %>
-        <% checkin_date = task.reserva&.start_date %>
-        <% checkout_date = task.reserva&.end_date %>
+        <% checkin_date = task.checkin_date %>
+        <% checkout_date = task.checkout_date %>
         <div class="task-card p-3 p-md-4 <%= 'task-overdue' if overdue %> <%= 'task-completed' if completed %>">
           <div class="row g-3 align-items-center">
             <div class="col-12 col-lg-2">
@@ -142,20 +142,22 @@
 
             <div class="col-6 col-lg-1">
               <div class="task-label">Reserva</div>
-              <div class="fw-bold">#<%= task.reserva_id %></div>
+              <div class="fw-bold"><%= task.reservation_label %></div>
             </div>
 
             <div class="col-6 col-lg-2">
               <div class="stay-date-grid">
                 <div>
-                  <div class="task-label">Check-in</div>
+                  <div class="task-label"><%= task.operational_task? ? 'Data' : 'Check-in' %></div>
                   <div class="fw-bold"><%= checkin_date ? checkin_date.strftime('%d/%m/%y') : '-' %></div>
                 </div>
 
-                <div>
-                  <div class="task-label">Check-out</div>
-                  <div class="fw-bold"><%= checkout_date ? checkout_date.strftime('%d/%m/%y') : '-' %></div>
-                </div>
+                <% unless task.operational_task? %>
+                  <div>
+                    <div class="task-label">Check-out</div>
+                    <div class="fw-bold"><%= checkout_date ? checkout_date.strftime('%d/%m/%y') : '-' %></div>
+                  </div>
+                <% end %>
               </div>
             </div>
 

@@ -1,0 +1,78 @@
+<div class="container py-4">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h1 class="h2 mb-1">Manutenções recorrentes</h1>
+      <p class="text-muted mb-0">
+        Itens operacionais que entram na programação semanal e geram mensagem para a Flávia.
+      </p>
+    </div>
+
+    <%= link_to 'Nova manutenção', new_admin_recurring_maintenance_rule_path, class: 'btn btn-primary' %>
+  </div>
+
+  <% if @rules.any? %>
+    <div class="table-responsive bg-white border rounded shadow-sm">
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Status</th>
+            <th>Título</th>
+            <th>Frequência</th>
+            <th>Primeira data</th>
+            <th>Destinatários</th>
+            <th>Cabanas</th>
+            <th class="text-end">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @rules.each do |rule| %>
+            <tr class="<%= 'table-secondary' unless rule.active? %>">
+              <td>
+                <% if rule.active? %>
+                  <span class="badge bg-success">Ativa</span>
+                <% else %>
+                  <span class="badge bg-secondary">Pausada</span>
+                <% end %>
+              </td>
+              <td class="fw-bold"><%= rule.title %></td>
+              <td><%= rule.frequency_label %></td>
+              <td><%= rule.first_due_on.strftime('%d/%m/%Y') %></td>
+              <td>
+                <% rule.recipients.each do |recipient| %>
+                  <div><%= recipient[:name] %> <span class="text-muted"><%= recipient[:phone] %></span></div>
+                <% end %>
+              </td>
+              <td>
+                <% if rule.all_cabanas? %>
+                  Todas
+                <% else %>
+                  <%= rule.selected_cabanas.map(&:guest_display_name).join(', ') %>
+                <% end %>
+              </td>
+              <td>
+                <div class="d-flex justify-content-end gap-2">
+                  <%= link_to 'Editar', edit_admin_recurring_maintenance_rule_path(rule), class: 'btn btn-sm btn-outline-primary' %>
+                  <%= button_to(rule.active? ? 'Pausar' : 'Ativar',
+                                toggle_admin_recurring_maintenance_rule_path(rule),
+                                method: :patch,
+                                class: 'btn btn-sm btn-outline-secondary') %>
+                  <%= button_to 'Excluir',
+                                admin_recurring_maintenance_rule_path(rule),
+                                method: :delete,
+                                form: { data: { turbo_confirm: 'Excluir esta manutenção recorrente?' } },
+                                class: 'btn btn-sm btn-outline-danger' %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="card border-0 shadow-sm">
+      <div class="card-body py-5 text-center text-muted">
+        Nenhuma manutenção recorrente cadastrada.
+      </div>
+    </div>
+  <% end %>
+</div>

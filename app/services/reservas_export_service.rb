@@ -169,7 +169,7 @@ class ReservasExportService
       occurrence.stable_id,
       cabana&.name,
       filial&.name,
-      'Holmy',
+      operational_guest_name(occurrence),
       '-',
       '-',
       '-',
@@ -182,7 +182,7 @@ class ReservasExportService
       1,
       occurrence.cancelled? ? 'Cancelado' : 'Ativo',
       format_currency(0),
-      '-',
+      occurrence.cancelled? ? occurrence.cancellation_reason.presence || '-' : '-',
       format_datetime(occurrence.created_at),
       '-',
       '-',
@@ -191,6 +191,10 @@ class ReservasExportService
       '-',
       '-'
     ]
+  end
+
+  def operational_guest_name(occurrence)
+    occurrence.kind == 'recurring_maintenance' ? 'Manutenção' : 'Holmy'
   end
 
   def format_date(date)

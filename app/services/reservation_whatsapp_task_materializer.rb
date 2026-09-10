@@ -35,6 +35,7 @@ class ReservationWhatsappTaskMaterializer
     end
 
     materialize_service_tasks
+    materialize_recurring_maintenance_tasks
 
     @result
   end
@@ -94,6 +95,17 @@ class ReservationWhatsappTaskMaterializer
       materialize_bruna_service_task(reserva)
       materialize_photo_service_task(reserva)
     end
+  end
+
+  def materialize_recurring_maintenance_tasks
+    return unless defined?(RecurringMaintenanceSync)
+    return unless defined?(RecurringMaintenanceWhatsappTaskSync)
+
+    RecurringMaintenanceSync.run(start_date: @date)
+    maintenance_result = RecurringMaintenanceWhatsappTaskSync.run(date: @date)
+    @result.checked += maintenance_result.checked_occurrences.to_i
+    @result.created += maintenance_result.created.to_i
+    @result.updated += maintenance_result.updated.to_i + maintenance_result.removed.to_i
   end
 
   def materialize_bruna_service_task(reserva)

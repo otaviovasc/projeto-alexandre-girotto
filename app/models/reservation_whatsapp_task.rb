@@ -1,8 +1,10 @@
 class ReservationWhatsappTask < ApplicationRecord
-  belongs_to :reserva
+  belongs_to :reserva, optional: true
   belongs_to :reservation_email_template, optional: true
+  belongs_to :operational_service_occurrence, optional: true
 
   validates :trigger_key, :template_name, :message_body, :scheduled_at, :scheduled_on, presence: true
+  validate :must_have_reserva_or_operational_occurrence
 
   scope :pending, -> { where(completed_at: nil) }
   scope :visible_on, lambda { |date|
@@ -26,14 +28,46 @@ class ReservationWhatsappTask < ApplicationRecord
   end
 
   def guest_name
+    return recipient_name.to_s if operational_task?
+
     reserva.guest_name.presence || reserva.user&.name.to_s
   end
 
   def guest_phone
+    return recipient_phone.to_s if operational_task?
+
     reserva.guest_phone.presence || reserva.user&.telephone.to_s
   end
 
   def cabana_name
-    reserva.cabana&.guest_display_name.presence || reserva.cabana&.name.to_s
+    cabana = operational_task? ? operational_service_occurrence&.cabana : reserva&.cabana
+
+    cabana&.guest_display_name.presence || cabana&.name.to_s
+  end
+
+  def reservation_label
+    return 'Manutenção' if operational_task?
+
+    reserva_id.present? ? "##{reserva_id}" : '-'
+  end
+
+  def checkin_date
+    operational_task? ? operational_service_occurrence&.service_date : reserva&.start_date
+  end
+
+  def checkout_date
+    operational_task? ? nil : reserva&.end_date
+  end
+
+  def operational_task?
+    operational_service_occurrence_id.present?
+  end
+
+  private
+
+  def must_have_reserva_or_operational_occurrence
+    return if reserva_id.present? || operational_service_occurrence_id.present?
+
+    errors.add(:base, 'Informe uma reserva ou uma manutenção operacional.')
   end
 end
