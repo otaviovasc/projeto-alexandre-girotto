@@ -111,6 +111,7 @@
   .icon-services { background: #f59e0b; }
   .icon-purchases { background: #14b8a6; }
   .icon-maintenance { background: #7c3aed; }
+  .icon-coupons { background: #a855f7; }
   .icon-home { background: #8b5cf6; }
   .icon-client { background: #64748b; }
 
@@ -302,6 +303,18 @@
         <h3 class="card-title">Leads</h3>
         <p class="card-description">Leads capturados pelo site</p>
         <%= link_to admin_funil_mailers_path, class: 'card-btn card-btn-primary' do %>
+          Acessar →
+        <% end %>
+      </div>
+
+      <!-- Cupons de Parceria -->
+      <div class="dash-card">
+        <div class="card-icon icon-coupons">
+          <i class="bi bi-percent"></i>
+        </div>
+        <h3 class="card-title">Cupons de Parceria</h3>
+        <p class="card-description">Crie descontos para o site oficial</p>
+        <%= link_to partnership_discount_coupons_path, class: 'card-btn card-btn-primary' do %>
           Acessar →
         <% end %>
       </div>

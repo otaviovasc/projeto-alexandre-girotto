@@ -209,6 +209,14 @@
         padding: 14px;
       }
 
+      .vg-service-description {
+        display: block;
+        margin-top: 4px;
+        color: var(--vg-muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
       .vg-public-page .hidden {
         display: none !important;
       }
@@ -217,6 +225,20 @@
         width: 20px;
         height: 20px;
         accent-color: var(--vg-brand);
+      }
+
+      .vg-required-agreements {
+        display: grid;
+        gap: 12px;
+      }
+
+      .vg-required-agreement {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        color: #3f4b43;
+        font-size: 14px;
+        line-height: 1.55;
       }
 
       .vg-action-card {
@@ -244,6 +266,18 @@
       .vg-button:hover {
         background: var(--vg-brand-dark);
         border-color: var(--vg-brand-dark);
+      }
+
+      .vg-button:disabled {
+        cursor: not-allowed;
+        border-color: #9aa093;
+        background: #9aa093;
+        color: rgba(255, 255, 255, .78);
+      }
+
+      .vg-button:disabled:hover {
+        border-color: #9aa093;
+        background: #9aa093;
       }
 
       .vg-button.secondary {
@@ -404,5 +438,35 @@
   </head>
   <body class="bg-[#ede5d2]">
     <%= yield %>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll("[data-required-agreement-form]").forEach(function(form) {
+          var checkboxes = Array.prototype.slice.call(form.querySelectorAll("[data-required-agreement]"));
+          var submit = form.querySelector("[data-required-agreement-submit]");
+          if (!checkboxes.length || !submit) return;
+
+          function allRequiredAgreementsAccepted() {
+            return checkboxes.every(function(checkbox) { return checkbox.checked; });
+          }
+
+          function syncSubmitAvailability() {
+            submit.disabled = !allRequiredAgreementsAccepted();
+          }
+
+          checkboxes.forEach(function(checkbox) {
+            checkbox.addEventListener("change", syncSubmitAvailability);
+          });
+
+          form.addEventListener("submit", function(event) {
+            if (allRequiredAgreementsAccepted()) return;
+
+            event.preventDefault();
+            syncSubmitAvailability();
+          });
+
+          syncSubmitAvailability();
+        });
+      });
+    </script>
   </body>
 </html>

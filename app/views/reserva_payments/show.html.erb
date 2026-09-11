@@ -154,7 +154,7 @@
             class: 'vg-button w-full',
             data: { turbo: false } %>
       <% else %>
-        <%= form_with url: accept_reserva_payment_terms_path(token: @reserva_payment.terms_token), method: :post, local: true, class: 'space-y-5' do %>
+        <%= form_with url: accept_reserva_payment_terms_path(token: @reserva_payment.terms_token), method: :post, local: true, class: 'space-y-5', data: { required_agreement_form: true } do %>
           <div>
             <%= label_tag :terms_acceptance_name, 'Nome e Sobrenome do Responsável Pela Reserva', class: 'vg-label' %>
             <%= text_field_tag :terms_acceptance_name,
@@ -165,12 +165,9 @@
                 class: 'vg-input' %>
           </div>
 
-          <label class="flex items-start gap-3 text-sm leading-6 text-[#3f4b43]">
-            <%= check_box_tag :terms_accepted, '1', false, required: true, class: 'vg-checkbox mt-1 shrink-0' %>
-            <span>Declaro que li, compreendi e concordo com os termos de hospedagem do Villaggio Girotto.</span>
-          </label>
+          <%= render 'shared/mandatory_guest_declarations' %>
 
-          <button type="submit" class="vg-button w-full">
+          <button type="submit" class="vg-button w-full" data-required-agreement-submit disabled>
             Aceitar termos e seguir para pagamento
           </button>
         <% end %>

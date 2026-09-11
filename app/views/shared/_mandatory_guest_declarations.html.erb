@@ -1,0 +1,26 @@
+<% field_prefix = local_assigns[:field_prefix].presence %>
+<% declarations = [
+  [:guest_age_confirmed, 'Declaro que todos os hóspedes têm entre 18 e 55 anos.'],
+  [:children_guidance_confirmed, 'Declaro que entendo que a estadia não é indicada para crianças menores de 12 anos.'],
+  [:mobility_awareness_confirmed, 'Declaro que os hóspedes não possuem restrições de mobilidade incompatíveis com a estadia, ou estão cientes das dificuldades de acesso e deslocamento no local.'],
+  [:pregnancy_absence_confirmed, 'Declaro que não haverá gestantes na estadia.'],
+  [:terms_accepted, 'Declaro que li, compreendi e concordo com os termos de hospedagem do Villaggio Girotto.']
+] %>
+
+<div class="vg-required-agreements">
+  <% declarations.each do |key, label| %>
+    <% input_name = field_prefix ? "#{field_prefix}[#{key}]" : key.to_s %>
+    <% input_id = [field_prefix.presence || 'payment', key].join('_').gsub(/[^a-zA-Z0-9_]/, '_') %>
+
+    <label for="<%= input_id %>" class="vg-required-agreement">
+      <%= check_box_tag input_name,
+          '1',
+          false,
+          id: input_id,
+          required: true,
+          class: 'vg-checkbox mt-1 shrink-0',
+          data: { required_agreement: true } %>
+      <span><%= label %></span>
+    </label>
+  <% end %>
+</div>

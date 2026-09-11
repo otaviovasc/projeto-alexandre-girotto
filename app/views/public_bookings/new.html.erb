@@ -1,4 +1,34 @@
 <% content_for :title, "Reserva online - Villaggio Girotto" %>
+<% service_billing_description = lambda do |service_name|
+  normalized_name = I18n.transliterate(service_name.to_s).downcase
+
+  case
+  when normalized_name.include?('cafe') && normalized_name.include?('manha')
+    'valor por diária, para até 2 pessoas.'
+  when normalized_name.include?('almoco')
+    'valor por refeição, para até 2 pessoas.'
+  when normalized_name.include?('jantar')
+    'valor por refeição, para até 2 pessoas.'
+  when normalized_name.include?('piquenique')
+    'valor por piquenique, para até 2 pessoas.'
+  when normalized_name.include?('tabua') && normalized_name.include?('frios')
+    'valor por pedido, para até 2 pessoas.'
+  when normalized_name.include?('fondue')
+    'valor por pedido, para até 2 pessoas.'
+  when normalized_name.include?('espumante')
+    'valor por unidade.'
+  when normalized_name.include?('fotos') && normalized_name.include?('impress')
+    'pacote com até 3 fotos impressas.'
+  when normalized_name.include?('bicicleta')
+    'valor por diária.'
+  when normalized_name.include?('massagem') && (normalized_name.include?('2') || normalized_name.include?('duas'))
+    'valor por sessão, para 2 pessoas.'
+  when normalized_name.include?('massagem')
+    'valor por sessão, para 1 pessoa.'
+  when normalized_name.include?('trilha') || normalized_name.include?('cavalo')
+    'valor por experiência, para até 2 pessoas.'
+  end
+end %>
 
 <main class="vg-public-page">
   <div class="vg-public-shell">
@@ -31,7 +61,7 @@
       </div>
     <% end %>
 
-    <%= form_with url: public_bookings_path, scope: :booking, method: :post, local: true, class: "vg-form", id: "public-booking-form" do |form| %>
+    <%= form_with url: public_bookings_path, scope: :booking, method: :post, local: true, class: "vg-form", id: "public-booking-form", data: { required_agreement_form: true } do |form| %>
       <section class="vg-card">
         <h2 class="vg-card-title">Dados da estadia</h2>
         <p class="vg-card-copy">Escolha a cabana, as datas da estadia e os serviços opcionais disponíveis para a sua reserva.</p>
@@ -98,6 +128,18 @@
                 placeholder: "11999999999",
                 class: "vg-input" %>
           </div>
+
+          <div class="sm:col-span-3">
+            <%= form.label :coupon_code, "Cupom de parceria", class: "vg-label" %>
+            <%= form.text_field :coupon_code,
+                value: @booking_values["coupon_code"],
+                id: "booking-coupon-code",
+                autocomplete: "off",
+                placeholder: "Ex.: CLAU20",
+                class: "vg-input" %>
+            <p class="mt-2 text-sm text-[#637066]">Se tiver um cupom de parceria, informe aqui.</p>
+            <p id="booking-coupon-feedback" class="mt-2 text-sm font-semibold" aria-live="polite"></p>
+          </div>
         </div>
       </section>
 
@@ -117,6 +159,7 @@
             <% service_values = (@booking_values["service_items"] || {})[service.id.to_s] || {} %>
             <% service_selected = ActiveModel::Type::Boolean.new.cast(service_values["selected"]) %>
             <% public_service_price = @service_prices.fetch(service.id, service.price) %>
+            <% billing_description = service_billing_description.call(service.name) %>
             <div class="service-row vg-service-row"
                  data-filial-id="<%= service.filial_id %>"
                  data-service-name="<%= service.name %>"
@@ -126,6 +169,9 @@
                 <span>
                   <span class="block font-semibold text-[#1a2e1a]"><%= service.name %></span>
                   <span class="block text-sm text-[#637066]"><%= number_to_currency(public_service_price, unit: 'R$ ', separator: ',', delimiter: '.') %></span>
+                  <% if billing_description.present? %>
+                    <span class="vg-service-description"><%= billing_description %></span>
+                  <% end %>
                 </span>
               </label>
 
@@ -190,12 +236,9 @@
       </section>
 
       <section class="vg-action-card">
-        <label class="flex items-start gap-3 text-sm leading-6 text-[#3f4b43]">
-          <%= form.check_box :terms_accepted, required: true, class: "vg-checkbox mt-1 shrink-0" %>
-          <span>Declaro que li, compreendi e concordo com os termos de hospedagem do Villaggio Girotto.</span>
-        </label>
+        <%= render 'shared/mandatory_guest_declarations', field_prefix: 'booking' %>
 
-        <button type="submit" class="vg-button w-full">
+        <button type="submit" class="vg-button w-full" data-required-agreement-submit disabled>
           Pré-reservar e seguir para pagamento
         </button>
       </section>
@@ -228,6 +271,8 @@
     var cabanaSelect = document.getElementById("booking-cabana");
     var startInput = document.getElementById("booking-start-date");
     var endInput = document.getElementById("booking-end-date");
+    var couponInput = document.getElementById("booking-coupon-code");
+    var couponFeedback = document.getElementById("booking-coupon-feedback");
     var warning = document.getElementById("services-window-warning");
     var serviceDeadlineModal = document.getElementById("service-deadline-modal");
     var serviceDeadlineTitle = document.getElementById("service-deadline-title");
@@ -243,8 +288,9 @@
     var quoteUrl = <%= raw public_booking_quote_path.to_json %>;
     var whatsappByCabana = <%= raw (@public_booking_whatsapp_by_cabana || {}).to_json %>;
     var quoteRequestId = 0;
+    var couponQuoteTimer = null;
     var continueWithoutServices = false;
-    var bookingQuote = { loading: false, error: null, dailyTotal: null, nights: null };
+    var bookingQuote = blankQuote();
     var holidayBlockMessage = <%= raw ServicePurchaseDatePolicy.holiday_block_message.to_json %>;
     var defaultServiceDeadlineTitle = serviceDeadlineTitle ? serviceDeadlineTitle.textContent : "";
     var defaultServiceDeadlineCopy = serviceDeadlineCopy ? serviceDeadlineCopy.textContent : "";
@@ -256,6 +302,39 @@
         style: "currency",
         currency: "BRL"
       });
+    }
+
+    function blankQuote(overrides) {
+      return Object.assign({
+        loading: false,
+        error: null,
+        dailyTotal: null,
+        discountedDailyTotal: null,
+        discountAmount: 0,
+        coupon: null,
+        couponError: null,
+        nights: null
+      }, overrides || {});
+    }
+
+    function updateCouponFeedback() {
+      if (!couponFeedback) return;
+
+      couponFeedback.textContent = "";
+      couponFeedback.className = "mt-2 text-sm font-semibold";
+
+      if (!couponInput || !couponInput.value.trim()) return;
+
+      if (bookingQuote.couponError) {
+        couponFeedback.textContent = bookingQuote.couponError;
+        couponFeedback.classList.add("text-red-700");
+      } else if (bookingQuote.coupon && bookingQuote.discountAmount > 0) {
+        couponFeedback.textContent = "Cupom aplicado: " + bookingQuote.coupon.code + " (" + bookingQuote.coupon.percent + "%)";
+        couponFeedback.classList.add("text-[#315c37]");
+      } else if (bookingQuote.loading) {
+        couponFeedback.textContent = "Validando cupom...";
+        couponFeedback.classList.add("text-[#637066]");
+      }
     }
 
     function selectedFilialId() {
@@ -460,6 +539,7 @@
         ? formatDateLabel(startInput.value) + " a " + formatDateLabel(endInput.value)
         : "";
       var servicesValue = 0;
+      var lodgingTotal = bookingQuote.discountedDailyTotal !== null ? bookingQuote.discountedDailyTotal : bookingQuote.dailyTotal;
 
       if (summaryCabana) summaryCabana.textContent = cabanaName || "Selecione a cabana";
       if (summaryPeriod) summaryPeriod.textContent = periodText || "Informe entrada e saída";
@@ -485,6 +565,14 @@
           bookingQuote.error || (periodText + (nights ? " · " + nights + (nights === 1 ? " noite" : " noites") : "")),
           lodgingText
         );
+
+        if (bookingQuote.discountAmount > 0 && bookingQuote.coupon) {
+          addSummaryItem(
+            "Cupom " + bookingQuote.coupon.code,
+            "Desconto aplicado na hospedagem",
+            "-" + formatCurrency(bookingQuote.discountAmount)
+          );
+        }
       }
 
       selectedRows.forEach(function(row) {
@@ -510,18 +598,20 @@
 
       if (summaryTotal) {
         if (bookingQuote.dailyTotal !== null && !bookingQuote.error) {
-          summaryTotal.textContent = formatCurrency(bookingQuote.dailyTotal + servicesValue);
+          summaryTotal.textContent = formatCurrency(lodgingTotal + servicesValue);
         } else {
           summaryTotal.textContent = "A calcular";
         }
       }
+
+      updateCouponFeedback();
     }
 
     function fetchBookingQuote() {
       var cabanaId = cabanaSelect.value;
 
       if (!cabanaId || !startInput.value || !endInput.value || !nightsBetween()) {
-        bookingQuote = { loading: false, error: null, dailyTotal: null, nights: null };
+        bookingQuote = blankQuote();
         renderBookingSummary();
         return;
       }
@@ -533,7 +623,11 @@
         end_date: endInput.value
       });
 
-      bookingQuote = { loading: true, error: null, dailyTotal: null, nights: nightsBetween() };
+      if (couponInput && couponInput.value.trim()) {
+        params.append("coupon_code", couponInput.value.trim());
+      }
+
+      bookingQuote = blankQuote({ loading: true, nights: nightsBetween() });
       renderBookingSummary();
 
       fetch(quoteUrl + "?" + params.toString(), {
@@ -552,6 +646,10 @@
             loading: false,
             error: null,
             dailyTotal: parseFloat(data.daily_total || "0"),
+            discountedDailyTotal: parseFloat(data.discounted_daily_total || data.daily_total || "0"),
+            discountAmount: parseFloat(data.discount_amount || "0"),
+            coupon: data.discount_coupon || null,
+            couponError: data.coupon_error || null,
             nights: parseInt(data.nights || nightsBetween() || "0", 10)
           };
           renderBookingSummary();
@@ -559,12 +657,12 @@
         .catch(function(error) {
           if (requestId !== quoteRequestId) return;
 
-          bookingQuote = {
+          bookingQuote = blankQuote({
             loading: false,
             error: error && error.error ? error.error : "Não foi possível calcular a hospedagem.",
             dailyTotal: null,
             nights: nightsBetween()
-          };
+          });
           renderBookingSummary();
         });
     }
@@ -584,6 +682,14 @@
         input.addEventListener("input", renderBookingSummary);
       });
     });
+
+    if (couponInput) {
+      couponInput.addEventListener("input", function() {
+        clearTimeout(couponQuoteTimer);
+        couponQuoteTimer = setTimeout(fetchBookingQuote, 250);
+        updateCouponFeedback();
+      });
+    }
 
     if (form) {
       form.addEventListener("submit", function(event) {

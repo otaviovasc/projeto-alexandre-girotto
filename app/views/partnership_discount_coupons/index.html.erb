@@ -1,0 +1,60 @@
+<div class="container mt-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h1 class="mb-1">Cupons de Parceria</h1>
+      <p class="text-muted mb-0">Descontos usados na reserva online do site oficial.</p>
+    </div>
+    <%= link_to 'Novo Cupom', new_partnership_discount_coupon_path, class: 'btn btn-primary' %>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Cupom</th>
+          <th>Leitura do sistema</th>
+          <th>Desconto</th>
+          <th>Status</th>
+          <th>Criado por</th>
+          <th>Criado em</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if @coupons.any? %>
+          <% @coupons.each do |coupon| %>
+            <tr>
+              <td><strong><%= coupon.code %></strong></td>
+              <td><code><%= coupon.normalized_code %></code></td>
+              <td><%= number_to_percentage(coupon.discount_percent, precision: 2, strip_insignificant_zeros: true) %></td>
+              <td>
+                <% if coupon.active? %>
+                  <span class="badge bg-success">Ativo</span>
+                <% else %>
+                  <span class="badge bg-secondary">Inativo</span>
+                <% end %>
+              </td>
+              <td><%= coupon.created_by&.name || coupon.created_by&.email || '-' %></td>
+              <td><%= coupon.created_at&.in_time_zone('America/Sao_Paulo')&.strftime('%d/%m/%Y - %H:%M') %></td>
+              <td class="d-flex gap-2">
+                <%= link_to 'Editar', edit_partnership_discount_coupon_path(coupon), class: 'btn btn-sm btn-outline-primary' %>
+                <% if coupon.active? %>
+                  <%= button_to 'Desativar',
+                      partnership_discount_coupon_path(coupon),
+                      method: :delete,
+                      class: 'btn btn-sm btn-outline-danger',
+                      form_class: 'd-inline',
+                      data: { turbo_confirm: 'Desativar este cupom?' } %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        <% else %>
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">Nenhum cupom cadastrado.</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

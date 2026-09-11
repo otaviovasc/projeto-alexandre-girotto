@@ -59,6 +59,11 @@ class PublicBookingCheckout
     @guest_email = @params[:guest_email].to_s.strip.downcase
     @guest_phone = @params[:guest_phone].to_s.gsub(/\D/, '')
     @terms_accepted = ActiveModel::Type::Boolean.new.cast(@params[:terms_accepted])
+    @guest_age_confirmed = ActiveModel::Type::Boolean.new.cast(@params[:guest_age_confirmed])
+    @children_guidance_confirmed = ActiveModel::Type::Boolean.new.cast(@params[:children_guidance_confirmed])
+    @mobility_awareness_confirmed = ActiveModel::Type::Boolean.new.cast(@params[:mobility_awareness_confirmed])
+    @pregnancy_absence_confirmed = ActiveModel::Type::Boolean.new.cast(@params[:pregnancy_absence_confirmed])
+    @coupon_code = @params[:coupon_code].to_s.squish
     @selected_services = normalized_service_items
   end
 
@@ -70,7 +75,7 @@ class PublicBookingCheckout
     errors.add(:base, 'Informe nome e sobrenome do responsável pela reserva.') if @guest_name.split(/\s+/).size < 2
     errors.add(:base, 'Informe um e-mail válido.') unless @guest_email.match?(URI::MailTo::EMAIL_REGEXP)
     errors.add(:base, 'Informe um WhatsApp válido.') unless @guest_phone.length.between?(8, 15)
-    errors.add(:base, 'Confirme o aceite dos termos para continuar.') unless @terms_accepted
+    errors.add(:base, 'Confirme todas as declarações obrigatórias para continuar.') unless required_declarations_accepted?
     if @selected_services.any? && ServicePurchaseDatePolicy.blocked_service_period?(@start_date, @end_date, cabana: @cabana)
       errors.add(:base, ServicePurchaseDatePolicy.holiday_block_message)
     end
@@ -80,6 +85,7 @@ class PublicBookingCheckout
     if @cabana.present? && @start_date.present? && @end_date.present? && @end_date > @start_date && !official_quote[:meets_minimum]
       errors.add(:base, official_quote[:minimum_message])
     end
+    errors.add(:base, 'Cupom de parceria inválido ou inativo.') if @coupon_code.present? && discount_coupon.blank?
     validate_selected_services
   end
 
@@ -107,6 +113,14 @@ class PublicBookingCheckout
         errors.add(:base, "#{service.name} não está disponível para o dia do checkout na Fattoria di Brauna.")
       end
     end
+  end
+
+  def required_declarations_accepted?
+    @guest_age_confirmed &&
+      @children_guidance_confirmed &&
+      @mobility_awareness_confirmed &&
+      @pregnancy_absence_confirmed &&
+      @terms_accepted
   end
 
   def find_or_create_user!
@@ -150,6 +164,10 @@ class PublicBookingCheckout
       guest_name: @guest_name,
       guest_phone: @guest_phone,
       guest_email: @guest_email,
+      partnership_discount_coupon: discount_coupon,
+      discount_coupon_code: discount_coupon&.code,
+      discount_percent: discount_coupon&.discount_percent,
+      discount_amount: discount_amount,
       service_max_installments: MAX_INSTALLMENTS
     )
 
@@ -194,11 +212,23 @@ class PublicBookingCheckout
   end
 
   def total_amount
-    @total_amount ||= daily_total + services_total
+    @total_amount ||= discounted_daily_total + services_total
   end
 
   def daily_total
     @daily_total ||= official_quote[:stay_total]
+  end
+
+  def discount_coupon
+    @discount_coupon ||= @coupon_code.present? ? PartnershipDiscountCoupon.find_active_by_code(@coupon_code) : nil
+  end
+
+  def discount_amount
+    @discount_amount ||= discount_coupon.present? ? discount_coupon.discount_amount_for(daily_total) : 0.to_d
+  end
+
+  def discounted_daily_total
+    @discounted_daily_total ||= [daily_total - discount_amount, 0.to_d].max
   end
 
   def services_total
@@ -267,6 +297,12 @@ class PublicBookingCheckout
     {
       source: 'public_booking',
       daily_total: decimal_string(daily_total),
+      discounted_daily_total: decimal_string(discounted_daily_total),
+      discount_amount: decimal_string(discount_amount),
+      discount_coupon: discount_coupon.present? ? {
+        code: discount_coupon.code,
+        percent: decimal_string(discount_coupon.discount_percent)
+      } : nil,
       services_total: decimal_string(services_total),
       customer: {
         name: @guest_name,
@@ -293,7 +329,7 @@ class PublicBookingCheckout
       id: "RES#{@reserva.id}",
       name: "Hospedagem #{@cabana.name}",
       description: "Reserva ##{@reserva.id} - #{@start_date.strftime('%d/%m/%Y')} a #{@end_date.strftime('%d/%m/%Y')}",
-      unit_price: daily_total,
+      unit_price: discounted_daily_total,
       quantity: 1
     }]
 

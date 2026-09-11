@@ -17,6 +17,7 @@ class Reserva < ApplicationRecord
   belongs_to :canceled_by,
              class_name: 'User',
              optional: true
+  belongs_to :partnership_discount_coupon, optional: true
 
   has_many :reserva_services, dependent: :destroy
   has_many :services, through: :reserva_services

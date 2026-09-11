@@ -1,0 +1,33 @@
+<% if @coupon.errors.any? %>
+  <div class="alert alert-danger">
+    <strong>Não foi possível salvar o cupom.</strong>
+    <ul class="mb-0 mt-2">
+      <% @coupon.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: @coupon, local: true do |form| %>
+  <div class="mb-3">
+    <%= form.label :code, 'Cupom', class: 'form-label' %>
+    <%= form.text_field :code, class: 'form-control', placeholder: 'Ex.: CLAU20', required: true %>
+    <div class="form-text">O hóspede pode usar com maiúsculas, minúsculas ou espaços.</div>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :discount_percent, 'Desconto (%)', class: 'form-label' %>
+    <%= form.number_field :discount_percent, class: 'form-control', step: '0.01', min: '0.01', max: '100', required: true %>
+  </div>
+
+  <div class="form-check mb-4">
+    <%= form.check_box :active, class: 'form-check-input' %>
+    <%= form.label :active, 'Ativo', class: 'form-check-label' %>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= form.submit 'Salvar cupom', class: 'btn btn-primary' %>
+    <%= link_to 'Cancelar', partnership_discount_coupons_path, class: 'btn btn-outline-secondary' %>
+  </div>
+<% end %>

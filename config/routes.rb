@@ -31,6 +31,7 @@ Rails.application.routes.draw do
     end
   end
   get 'parcerias/nova-reserva', to: 'partnership/reservas#new', as: :new_partnership_reserva
+  resources :partnership_discount_coupons, path: 'parcerias/cupons', except: [:show]
 
   # Admin namespace for full CRUD operations
   namespace :admin do

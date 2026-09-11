@@ -19,8 +19,8 @@ class ReservaPaymentsController < ApplicationController
       return
     end
 
-    unless ActiveModel::Type::Boolean.new.cast(params[:terms_accepted])
-      flash.now[:alert] = 'Confirme o aceite dos termos para continuar.'
+    unless required_declarations_accepted?
+      flash.now[:alert] = 'Confirme todas as declarações obrigatórias para continuar.'
       render :show, status: :unprocessable_entity
       return
     end
@@ -114,6 +114,16 @@ class ReservaPaymentsController < ApplicationController
       @reserva_payment.expired?
   end
 
+  def required_declarations_accepted?
+    %i[
+      guest_age_confirmed
+      children_guidance_confirmed
+      mobility_awareness_confirmed
+      pregnancy_absence_confirmed
+      terms_accepted
+    ].all? { |key| ActiveModel::Type::Boolean.new.cast(params[key]) }
+  end
+
   def assign_payment_page_details
     @payment_paid = @reserva_payment.paid?
     @payment_open = payment_open?
@@ -175,6 +185,15 @@ class ReservaPaymentsController < ApplicationController
       quantity: 1,
       total: @reserva_payment.public_booking_daily_total
     }]
+
+    if @reserva_payment.public_booking_discount_amount.positive?
+      items << {
+        name: "Cupom #{@reserva_payment.public_booking_discount_coupon_code}",
+        detail: "#{@reserva_payment.public_booking_discount_percent&.to_f&.round(2)}% de desconto na hospedagem",
+        quantity: 1,
+        total: -@reserva_payment.public_booking_discount_amount
+      }
+    end
 
     if materialized_public_booking_services.any?
       materialized_public_booking_services.each do |reserva_service|
@@ -256,7 +275,7 @@ class ReservaPaymentsController < ApplicationController
   def reservation_total
     @reservation_total ||= begin
       if @reserva_payment.public_booking?
-        @reserva_payment.public_booking_daily_total + @reserva_payment.public_booking_services_total
+        @reserva_payment.public_booking_discounted_daily_total + @reserva_payment.public_booking_services_total
       else
         @reserva.pending_payment_checkout_total
       end

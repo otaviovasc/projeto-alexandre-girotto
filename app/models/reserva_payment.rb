@@ -106,6 +106,34 @@ class ReservaPayment < ApplicationRecord
     0.to_d
   end
 
+  def public_booking_discount_amount
+    BigDecimal(public_booking_payload.to_h['discount_amount'].to_s.presence || '0')
+  rescue ArgumentError, TypeError
+    0.to_d
+  end
+
+  def public_booking_discounted_daily_total
+    raw_value = public_booking_payload.to_h['discounted_daily_total']
+    return BigDecimal(raw_value.to_s) if raw_value.present?
+
+    [public_booking_daily_total - public_booking_discount_amount, 0.to_d].max
+  rescue ArgumentError, TypeError
+    public_booking_daily_total
+  end
+
+  def public_booking_discount_coupon_code
+    public_booking_payload.to_h.dig('discount_coupon', 'code').presence || reserva&.discount_coupon_code
+  end
+
+  def public_booking_discount_percent
+    raw_value = public_booking_payload.to_h.dig('discount_coupon', 'percent').presence || reserva&.discount_percent
+    return if raw_value.blank?
+
+    BigDecimal(raw_value.to_s)
+  rescue ArgumentError, TypeError
+    nil
+  end
+
   def public_booking_services_total
     BigDecimal(public_booking_payload.to_h['services_total'].to_s)
   rescue ArgumentError, TypeError

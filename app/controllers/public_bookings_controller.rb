@@ -51,13 +51,25 @@ class PublicBookingsController < ApplicationController
       return
     end
 
+    coupon = active_discount_coupon(params[:coupon_code])
+    coupon_error = params[:coupon_code].to_s.squish.present? && coupon.blank? ? 'Cupom inválido ou inativo.' : nil
+    discount_amount = coupon.present? ? coupon.discount_amount_for(quote[:stay_total]) : 0.to_d
+    discounted_daily_total = [quote[:stay_total] - discount_amount, 0.to_d].max
+
     render json: {
       ok: true,
       cabana_name: cabana.name,
       start_date: start_date.to_s,
       end_date: end_date.to_s,
       nights: quote[:nights_count],
-      daily_total: quote[:stay_total].to_f
+      daily_total: quote[:stay_total].to_f,
+      discounted_daily_total: discounted_daily_total.to_f,
+      discount_amount: discount_amount.to_f,
+      discount_coupon: coupon.present? ? {
+        code: coupon.code,
+        percent: coupon.discount_percent.to_f
+      } : nil,
+      coupon_error: coupon_error
     }
   rescue OfficialSitePricing::Error => e
     render json: { ok: false, error: e.message }, status: :unprocessable_entity
@@ -89,6 +101,11 @@ class PublicBookingsController < ApplicationController
       :guest_name,
       :guest_email,
       :guest_phone,
+      :coupon_code,
+      :guest_age_confirmed,
+      :children_guidance_confirmed,
+      :mobility_awareness_confirmed,
+      :pregnancy_absence_confirmed,
       :terms_accepted,
       service_items: {}
     )
@@ -203,6 +220,15 @@ class PublicBookingsController < ApplicationController
       total: @reserva_payment.public_booking_daily_total
     }]
 
+    if @reserva_payment.public_booking_discount_amount.positive?
+      items << {
+        name: "Cupom #{@reserva_payment.public_booking_discount_coupon_code}",
+        detail: "#{@reserva_payment.public_booking_discount_percent&.to_f&.round(2)}% de desconto na hospedagem",
+        quantity: 1,
+        total: -@reserva_payment.public_booking_discount_amount
+      }
+    end
+
     if materialized_public_booking_services.any?
       materialized_public_booking_services.each do |reserva_service|
         items << {
@@ -248,6 +274,10 @@ class PublicBookingsController < ApplicationController
       "Saída: #{@reserva.end_date.strftime('%d/%m/%Y')}",
       "Total: #{helpers.number_to_currency(@reserva_payment.amount, unit: 'R$ ', separator: ',', delimiter: '.')}"
     ]
+
+    if @reserva_payment.public_booking_discount_amount.positive?
+      lines << "Cupom: #{@reserva_payment.public_booking_discount_coupon_code} (#{helpers.number_to_currency(@reserva_payment.public_booking_discount_amount, unit: 'R$ ', separator: ',', delimiter: '.')} de desconto)"
+    end
 
     service_lines = if materialized_public_booking_services.any?
                       materialized_public_booking_services.map do |reserva_service|
@@ -474,5 +504,11 @@ class PublicBookingsController < ApplicationController
     services.each_with_object({}) do |service, prices|
       prices[service.id] = service.price
     end
+  end
+
+  def active_discount_coupon(value)
+    return if value.to_s.squish.blank?
+
+    PartnershipDiscountCoupon.find_active_by_code(value)
   end
 end

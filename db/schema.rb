@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_10_170000) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_11_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -201,6 +201,18 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_10_170000) do
     t.index ["filial_id"], name: "index_operational_service_occurrences_on_filial_id"
     t.index ["kind", "status", "service_date"], name: "index_operational_services_on_kind_status_date"
     t.index ["stable_id"], name: "index_operational_service_occurrences_on_stable_id", unique: true
+  end
+
+  create_table "partnership_discount_coupons", force: :cascade do |t|
+    t.string "code", null: false
+    t.string "normalized_code", null: false
+    t.decimal "discount_percent", precision: 5, scale: 2, null: false
+    t.boolean "active", default: true, null: false
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_partnership_discount_coupons_on_created_by_id"
+    t.index ["normalized_code"], name: "index_partnership_discount_coupons_on_normalized_code", unique: true
   end
 
   create_table "price_rules", force: :cascade do |t|
@@ -437,6 +449,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_10_170000) do
     t.datetime "canceled_at"
     t.text "cancellation_reason"
     t.bigint "canceled_by_id"
+    t.bigint "partnership_discount_coupon_id"
+    t.string "discount_coupon_code"
+    t.decimal "discount_percent", precision: 5, scale: 2
+    t.decimal "discount_amount", precision: 10, scale: 2, default: "0.0", null: false
     t.index ["cabana_id", "blocks_availability"], name: "index_reservas_on_cabana_and_availability"
     t.index ["canceled_by_id"], name: "index_reservas_on_canceled_by_id"
     t.index ["cabana_id", "origem", "ical_uid"], name: "index_reservas_on_imported_ical"
@@ -448,6 +464,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_10_170000) do
     t.index ["ical_date_change_since"], name: "index_reservas_on_ical_date_change_since"
     t.index ["ical_missing_since"], name: "index_reservas_on_ical_missing_since"
     t.index ["partnership_creator_id"], name: "index_reservas_on_partnership_creator_id"
+    t.index ["partnership_discount_coupon_id"], name: "index_reservas_on_partnership_discount_coupon_id"
     t.index ["user_id"], name: "index_reservas_on_user_id"
   end
 
@@ -503,6 +520,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_10_170000) do
   add_foreign_key "items", "filials"
   add_foreign_key "operational_service_occurrences", "cabanas"
   add_foreign_key "operational_service_occurrences", "filials"
+  add_foreign_key "partnership_discount_coupons", "users", column: "created_by_id"
   add_foreign_key "price_rules", "cabanas"
   add_foreign_key "promotions", "cabanas"
   add_foreign_key "reserva_items", "items"
@@ -515,6 +533,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_10_170000) do
   add_foreign_key "reservation_whatsapp_tasks", "operational_service_occurrences"
   add_foreign_key "reservation_whatsapp_tasks", "reservas"
   add_foreign_key "reservation_whatsapp_tasks", "reservation_email_templates"
+  add_foreign_key "reservas", "partnership_discount_coupons"
   add_foreign_key "reservas", "cabanas"
   add_foreign_key "reservas", "users"
   add_foreign_key "reservas", "users", column: "canceled_by_id"
