@@ -23,26 +23,10 @@ class RecurringMaintenanceWhatsappTaskSync
 
     desired_task_keys = []
 
-    occurrences_scope.find_each do |occurrence|
-      @result.checked_occurrences += 1
-
-      if occurrence.cancelled?
-        remove_pending_tasks(occurrence)
-        next
-      end
-
-      rule = rule_for(occurrence)
-      if rule.blank? || !rule.active?
-        remove_pending_tasks(occurrence)
-        next
-      end
-
-      rule.recipients.each do |recipient|
-        next if recipient[:phone].blank?
-
-        desired_task_keys << task_key_for(occurrence, recipient)
-        upsert_task(occurrence, rule, recipient)
-      end
+    grouped_occurrences.each_value do |group|
+      occurrence = group[:occurrences].first
+      desired_task_keys << task_key_for(occurrence, group[:trigger_key], group[:recipient])
+      upsert_task(occurrence, group[:rule], group[:recipient], group[:occurrences], group[:trigger_key])
     end
 
     remove_obsolete_tasks(desired_task_keys)
@@ -70,18 +54,51 @@ class RecurringMaintenanceWhatsappTaskSync
       .includes(cabana: :filial)
   end
 
-  def upsert_task(occurrence, rule, recipient)
+  def grouped_occurrences
+    groups = {}
+
+    occurrences_scope.find_each do |occurrence|
+      @result.checked_occurrences += 1
+      next if occurrence.cancelled?
+
+      rule = rule_for(occurrence)
+      next if rule.blank? || !rule.active?
+
+      rule.recipients.each do |recipient|
+        next if recipient[:phone].blank?
+
+        trigger_key = trigger_key_for(rule, occurrence, recipient)
+        group_key = [rule.id, occurrence.filial_id, occurrence.service_date, recipient[:phone]]
+        groups[group_key] ||= {
+          rule: rule,
+          recipient: recipient,
+          trigger_key: trigger_key,
+          occurrences: []
+        }
+        groups[group_key][:occurrences] << occurrence
+      end
+    end
+
+    groups.each_value do |group|
+      group[:occurrences].sort_by! { |occurrence| [occurrence.cabana&.name.to_s, occurrence.id] }
+    end
+
+    groups
+  end
+
+  def upsert_task(occurrence, rule, recipient, occurrences, trigger_key)
     task = ReservationWhatsappTask.find_or_initialize_by(
       operational_service_occurrence: occurrence,
-      trigger_key: trigger_key_for(recipient),
+      trigger_key: trigger_key,
       recipient_phone: recipient[:phone]
     )
 
     scheduled_at = scheduled_at_for(occurrence)
-    message_body = render_message(rule.message_body, occurrence, recipient)
+    message_body = render_message(rule.message_body, occurrence, recipient, occurrences)
+    template_name = task_name_for(rule, occurrence)
 
     content_changed = task.persisted? && (
-      task.template_name != task_name_for(occurrence) ||
+      task.template_name != template_name ||
       task.message_body != message_body ||
       task.scheduled_at != scheduled_at ||
       task.scheduled_on != scheduled_at.to_date ||
@@ -92,7 +109,7 @@ class RecurringMaintenanceWhatsappTaskSync
     task.assign_attributes(
       reserva: nil,
       reservation_email_template: nil,
-      template_name: task_name_for(occurrence),
+      template_name: template_name,
       message_body: message_body,
       scheduled_at: scheduled_at,
       scheduled_on: scheduled_at.to_date,
@@ -110,12 +127,6 @@ class RecurringMaintenanceWhatsappTaskSync
 
     task.new_record? ? @result.created += 1 : @result.updated += 1
     task.save!
-  end
-
-  def remove_pending_tasks(occurrence)
-    tasks = ReservationWhatsappTask.pending.where(operational_service_occurrence: occurrence)
-    @result.removed += tasks.size if tasks.exists?
-    tasks.destroy_all
   end
 
   def remove_obsolete_tasks(desired_task_keys)
@@ -145,24 +156,37 @@ class RecurringMaintenanceWhatsappTaskSync
     Time.zone.local(scheduled_date.year, scheduled_date.month, scheduled_date.day, TASK_HOUR, TASK_MINUTE)
   end
 
-  def task_name_for(occurrence)
-    "Manutenção: #{occurrence.name}"
+  def task_name_for(rule, occurrence)
+    filial_name = occurrence.filial&.name.to_s
+    suffix = filial_name.present? ? " - #{filial_name}" : ''
+    "Manutenção: #{rule.title}#{suffix}"
   end
 
-  def task_key_for(occurrence, recipient)
-    [occurrence.id, trigger_key_for(recipient), recipient[:phone]]
+  def task_key_for(occurrence, trigger_key, recipient)
+    [occurrence.id, trigger_key, recipient[:phone]]
   end
 
-  def trigger_key_for(recipient)
-    "#{TRIGGER_KEY_PREFIX}:#{recipient[:phone]}"
+  def trigger_key_for(rule, occurrence, recipient)
+    [
+      TRIGGER_KEY_PREFIX,
+      "rule-#{rule.id}",
+      "filial-#{occurrence.filial_id}",
+      occurrence.service_date.iso8601,
+      recipient[:phone]
+    ].join(':')
   end
 
-  def render_message(template, occurrence, recipient)
-    cabana = occurrence.cabana
-    filial = occurrence.filial || cabana&.filial
+  def render_message(template, occurrence, recipient, occurrences)
+    filial = occurrence.filial || occurrence.cabana&.filial
+    cabanas = occurrences.map { |item| cabana_label(item.cabana) }.reject(&:blank?).uniq
+    cabanas_text = cabanas.join(', ')
+    cabanas_list = cabanas.map { |name| "- #{name}" }.join("\n")
+
     replacements = {
       'titulo' => occurrence.name,
-      'cabana' => cabana&.guest_display_name.presence || cabana&.name.to_s,
+      'cabana' => cabanas_text,
+      'cabanas' => cabanas_text,
+      'cabanas_lista' => cabanas_list,
       'filial' => filial&.name.to_s,
       'data' => occurrence.service_date.strftime('%d/%m/%Y'),
       'data_curta' => occurrence.service_date.strftime('%d/%m'),
@@ -173,5 +197,9 @@ class RecurringMaintenanceWhatsappTaskSync
     replacements.reduce(template.to_s) do |message, (key, value)|
       message.gsub("{{#{key}}}", value)
     end
+  end
+
+  def cabana_label(cabana)
+    cabana&.guest_display_name.presence || cabana&.name.to_s
   end
 end

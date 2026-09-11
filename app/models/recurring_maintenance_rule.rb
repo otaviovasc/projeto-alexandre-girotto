@@ -65,6 +65,10 @@ class RecurringMaintenanceRule < ApplicationRecord
     "A cada #{frequency_interval} #{FREQUENCY_UNITS.fetch(frequency_unit)}"
   end
 
+  def display_control_title
+    control_title.presence || title
+  end
+
   private
 
   def split_recipient(raw)

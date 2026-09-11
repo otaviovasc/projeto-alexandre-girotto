@@ -16,7 +16,8 @@
         <thead class="table-light">
           <tr>
             <th>Status</th>
-            <th>Título</th>
+            <th>Controle</th>
+            <th>Título programação</th>
             <th>Frequência</th>
             <th>Data alvo</th>
             <th>Destinatários</th>
@@ -34,7 +35,8 @@
                   <span class="badge bg-secondary">Pausada</span>
                 <% end %>
               </td>
-              <td class="fw-bold"><%= rule.title %></td>
+              <td class="fw-bold"><%= rule.display_control_title %></td>
+              <td><%= rule.title %></td>
               <td><%= rule.frequency_label %></td>
               <td><%= rule.first_due_on.strftime('%d/%m/%Y') %></td>
               <td>

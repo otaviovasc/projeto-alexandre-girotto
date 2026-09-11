@@ -76,32 +76,48 @@ class ReservationWhatsappTaskMaterializerTest < ActiveSupport::TestCase
     )
   end
 
-  test "creates whatsapp task for recurring maintenance" do
+  test "groups recurring maintenance whatsapp tasks by filial" do
+    cabana_serra_2 = Cabana.create!(name: "Collina - Serra da Mantiqueira", filial: @serra, price: 100)
+    cabana_brauna_2 = Cabana.create!(name: "Vecchio Toro - Fattoria di Brauna", filial: @brauna, price: 100)
+
     rule = RecurringMaintenanceRule.create!(
       title: "Olhar estrada",
-      message_body: "Oi {{nome}}, olhar {{titulo}} na {{cabana}} dia {{data_curta}}.",
+      message_body: "Oi {{nome}}, olhar {{titulo}} em {{filial}} dia {{data_curta}}.\n\n{{cabanas_lista}}",
       recipients_text: "Bruna | 35999999999",
       frequency_interval: 1,
       frequency_unit: "monthly",
       first_due_on: Date.current + 2.days,
-      cabana_ids: [@cabana_serra.id]
+      cabana_ids: [@cabana_serra.id, cabana_serra_2.id, @cabana_brauna.id, cabana_brauna_2.id]
     )
 
     ReservationWhatsappTaskMaterializer.run(date: Date.current + 1.day)
 
-    occurrence = OperationalServiceOccurrence.find_by!(
-      kind: "recurring_maintenance",
-      stable_id: "recurring-maintenance-rule-#{rule.id}-cabana-#{@cabana_serra.id}-#{(Date.current + 2.days).iso8601}"
-    )
-    task = ReservationWhatsappTask.find_by!(operational_service_occurrence: occurrence)
+    occurrences = OperationalServiceOccurrence.recurring_maintenance.where(name: "Olhar estrada")
+    assert_equal 4, occurrences.count
 
-    assert_nil task.reserva
-    assert_equal "Manutenção: Olhar estrada", task.template_name
-    assert_equal "Manutenção", task.reservation_label
-    assert_equal "Bruna", task.guest_name
-    assert_equal "35999999999", task.guest_phone
-    assert_equal Date.current + 1.day, task.scheduled_on
-    assert_match "olhar Olhar estrada", task.message_body
+    tasks = ReservationWhatsappTask
+            .where("trigger_key LIKE ?", "#{RecurringMaintenanceWhatsappTaskSync::TRIGGER_KEY_PREFIX}:%")
+            .order(:template_name)
+
+    assert_equal 2, tasks.count
+
+    serra_task = tasks.detect { |task| task.template_name.include?("Serra da Mantiqueira") }
+    brauna_task = tasks.detect { |task| task.template_name.include?("Fattoria di Brauna") }
+
+    assert serra_task
+    assert brauna_task
+    assert_nil serra_task.reserva
+    assert_equal "Manutenção", serra_task.reservation_label
+    assert_equal "Serra da Mantiqueira", serra_task.cabana_name
+    assert_equal "Bruna", serra_task.guest_name
+    assert_equal "35999999999", serra_task.guest_phone
+    assert_equal Date.current + 1.day, serra_task.scheduled_on
+    assert_match "Cabana Valle", serra_task.message_body
+    assert_match "Cabana Collina", serra_task.message_body
+    assert_no_match "Cabana Zucchero", serra_task.message_body
+    assert_match "Cabana Zucchero", brauna_task.message_body
+    assert_match "Cabana Vecchio Toro", brauna_task.message_body
+    assert_equal "Fattoria di Brauna", brauna_task.cabana_name
   end
 
   private

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_10_123000) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_10_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -214,6 +214,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_10_123000) do
 
   create_table "recurring_maintenance_rules", force: :cascade do |t|
     t.string "title", null: false
+    t.string "control_title"
     t.text "message_body", null: false
     t.text "recipients_text", null: false
     t.integer "frequency_interval", default: 1, null: false

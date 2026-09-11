@@ -18,6 +18,12 @@
       </div>
 
       <div class="mb-3">
+        <%= form.label :control_title, 'Título de controle (só ADM)', class: 'form-label fw-bold' %>
+        <%= form.text_field :control_title, class: 'form-control', placeholder: 'Ex.: Veneno rato - cabanas Serra' %>
+        <div class="form-text">Esse título aparece apenas para organização interna no painel.</div>
+      </div>
+
+      <div class="mb-3">
         <%= form.label :title, 'Título enviado na programação', class: 'form-label fw-bold' %>
         <%= form.text_field :title, class: 'form-control', placeholder: 'Ex.: Olhar estrada' %>
       </div>
@@ -88,9 +94,9 @@
       <%= form.text_area :message_body,
                          class: 'form-control',
                          rows: 8,
-                         placeholder: "Oi {{nome}}, tudo bem?\n\nPode fazer {{titulo}} na {{cabana}} dia {{data_curta}}?" %>
+                         placeholder: "Oi {{nome}}, tudo bem?\n\nPode fazer {{titulo}} nas cabanas abaixo dia {{data_curta}}?\n\n{{cabanas_lista}}" %>
       <div class="form-text">
-        Variáveis disponíveis: {{nome}}, {{titulo}}, {{cabana}}, {{filial}}, {{data}}, {{data_curta}}.
+        Variáveis disponíveis: {{nome}}, {{titulo}}, {{cabana}}, {{cabanas}}, {{cabanas_lista}}, {{filial}}, {{data}}, {{data_curta}}.
       </div>
     </div>
   </div>

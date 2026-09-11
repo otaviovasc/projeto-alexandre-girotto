@@ -4,7 +4,7 @@ class Admin::RecurringMaintenanceRulesController < ApplicationController
   before_action :load_cabanas, only: [:new, :create, :edit, :update]
 
   def index
-    @rules = RecurringMaintenanceRule.order(active: :desc, first_due_on: :asc, title: :asc)
+    @rules = RecurringMaintenanceRule.order(active: :desc, first_due_on: :asc, control_title: :asc, title: :asc)
   end
 
   def new
@@ -78,6 +78,7 @@ class Admin::RecurringMaintenanceRulesController < ApplicationController
   def rule_params
     params.require(:recurring_maintenance_rule).permit(
       :title,
+      :control_title,
       :message_body,
       :recipients_text,
       :frequency_interval,

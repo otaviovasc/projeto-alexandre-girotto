@@ -40,6 +40,11 @@ class ReservationWhatsappTask < ApplicationRecord
   end
 
   def cabana_name
+    if recurring_maintenance_task?
+      filial = operational_service_occurrence&.filial || operational_service_occurrence&.cabana&.filial
+      return filial&.name.to_s
+    end
+
     cabana = operational_task? ? operational_service_occurrence&.cabana : reserva&.cabana
 
     cabana&.guest_display_name.presence || cabana&.name.to_s
@@ -61,6 +66,10 @@ class ReservationWhatsappTask < ApplicationRecord
 
   def operational_task?
     operational_service_occurrence_id.present?
+  end
+
+  def recurring_maintenance_task?
+    operational_task? && trigger_key.to_s.start_with?('recurring_maintenance:')
   end
 
   private
