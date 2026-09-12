@@ -36,6 +36,7 @@ Rails.application.routes.draw do
   # Admin namespace for full CRUD operations
   namespace :admin do
     get 'mensagens', to: 'messages#index', as: :messages
+    get 'mensagens/regras-operacionais', to: 'messages#operational_rules', as: :operational_message_rules
 
     resources :users, only: [:index, :new, :create, :edit, :update, :destroy] do
       member do

@@ -78,34 +78,6 @@
     color: #991b1b;
   }
 
-  .messages-hub .rules-panel {
-    display: none;
-  }
-
-  .messages-hub .rules-panel:target {
-    display: block;
-  }
-
-  .messages-hub .message-template {
-    background: #f8fafc;
-    border: 1px solid #dbe2ea;
-    border-radius: 10px;
-    color: #1f2937;
-    font-size: .9rem;
-    line-height: 1.45;
-    margin: .75rem 0 0;
-    padding: .85rem 1rem;
-    white-space: pre-wrap;
-  }
-
-  .messages-hub .rule-message-title {
-    color: #475569;
-    font-size: .78rem;
-    font-weight: 800;
-    letter-spacing: .12em;
-    margin-top: .85rem;
-    text-transform: uppercase;
-  }
 </style>
 
 <div class="container py-4 messages-hub">
@@ -170,107 +142,7 @@
         <p class="text-muted mb-0">Mensagens geradas automaticamente por serviço comprado.</p>
       </div>
       <div class="mt-auto">
-        <a href="#regras-operacionais" class="btn btn-outline-secondary w-100">Configurar mensagens</a>
-      </div>
-    </div>
-  </div>
-
-  <div id="regras-operacionais" class="rules-panel">
-    <div class="mb-3">
-      <div class="hub-kicker">Regras automáticas</div>
-      <h2 class="h4 mb-2">Mensagens operacionais</h2>
-      <p class="text-muted">
-        Estas mensagens são criadas pelo sistema quando a reserva tem serviços específicos. Elas aparecem para a Flávia na tela de pendências quando chegam na data programada.
-      </p>
-    </div>
-
-    <div class="d-grid gap-3">
-      <div class="rule-card">
-        <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
-          <div>
-            <h3 class="h5 mb-1">Horários com Bruna</h3>
-            <div class="rule-meta">Serra da Mantiqueira · passeio a cavalo, trilha ou massagem · 5 dias antes do check-in às 09:00</div>
-          </div>
-          <span class="status-pill enabled align-self-start">Ativa</span>
-        </div>
-        <hr>
-        <p class="mb-0">
-          Pergunta para a Bruna qual será o horário de cada serviço comprado. Quando houver mais de um serviço na mesma reserva, o sistema junta tudo em uma mensagem só.
-        </p>
-        <div class="rule-message-title">Mensagem enviada</div>
-        <pre class="message-template">Oi Bruna, tudo bem?
-
-O passeio a cavalo dia 10/09 na Cabana Nuvolo, código de reserva #123, será qual horário?
-A trilha dia 11/09 na Cabana Nuvolo, código de reserva #123, será qual horário?
-A massagem para duas pessoas dia 11/09 na Cabana Nuvolo, código de reserva #123, será qual horário?</pre>
-      </div>
-
-      <div class="rule-card">
-        <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
-          <div>
-            <h3 class="h5 mb-1">Fotos impressas com PDF</h3>
-            <div class="rule-meta">5 dias antes do check-in às 09:00</div>
-          </div>
-          <span class="status-pill enabled align-self-start">Ativa</span>
-        </div>
-        <hr>
-        <p class="mb-2">
-          <strong>Braúna:</strong> envia o PDF para a Papelaria Cartoon e cria outro lembrete para o Concierge buscar as fotos.
-        </p>
-        <p class="mb-0">
-          <strong>Serra:</strong> envia o PDF para a Bruna.
-        </p>
-        <div class="rule-message-title">Mensagem para Papelaria Cartoon - Braúna</div>
-        <pre class="message-template">Oi, tudo bem?
-
-Segue PDF para impressão das fotos do Villaggio Girotto.
-
-Reserva: #123
-Cabana: Cabana Zucchero
-Estadia: 10/09 a 12/09
-Serviço: Fotos impressas em 10/09
-PDF: https://...</pre>
-        <div class="rule-message-title">Mensagem para Concierge - Braúna</div>
-        <pre class="message-template">Fotos impressas da reserva #123 (Cabana Zucchero) foram enviadas para a Papelaria Cartoon.
-
-Buscar as fotos para a estadia de 10/09 a 12/09.
-PDF: https://...</pre>
-        <div class="rule-message-title">Mensagem para Bruna - Serra</div>
-        <pre class="message-template">Oi Bruna, tudo bem?
-
-Segue PDF das fotos impressas da reserva #123.
-
-Cabana: Cabana Nuvolo
-Estadia: 10/09 a 12/09
-Serviço: Fotos impressas em 10/09
-PDF: https://...</pre>
-      </div>
-
-      <div class="rule-card">
-        <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
-          <div>
-            <h3 class="h5 mb-1">Fotos impressas sem PDF</h3>
-            <div class="rule-meta">5 dias antes do check-in às 09:00</div>
-          </div>
-          <span class="status-pill enabled align-self-start">Ativa</span>
-        </div>
-        <hr>
-        <p class="mb-2">
-          Cria uma mensagem para o hóspede pedindo as 3 fotos para impressão.
-        </p>
-        <p class="mb-0">
-          Também cria um lembrete para o Concierge acompanhar esse envio.
-        </p>
-        <div class="rule-message-title">Mensagem para o hóspede</div>
-        <pre class="message-template">Oi Maria, como vai?
-
-Para preparar as fotos impressas da sua estadia, precisamos que envie 3 fotos para impressão. Caso fique muito próximo da data, talvez não consigamos entregar as fotos a tempo.
-
-Consegue enviar ainda hoje?</pre>
-        <div class="rule-message-title">Mensagem para Concierge</div>
-        <pre class="message-template">A reserva #123 (Cabana Nuvolo) comprou Fotos Impressas, mas o PDF ainda não foi enviado/gerado.
-
-Acompanhar com o hóspede para receber as 3 fotos em 10/09.</pre>
+        <%= link_to 'Configurar mensagens', admin_operational_message_rules_path, class: 'btn btn-outline-secondary w-100' %>
       </div>
     </div>
   </div>
