@@ -6,6 +6,7 @@ class PublicBookingsController < ApplicationController
   skip_before_action :authenticate_user!
   before_action :load_public_catalog, only: [:new, :create]
   before_action :set_reserva_payment, only: [:confirmation, :status]
+  after_action :allow_public_quote_cors, only: [:quote, :quote_options]
 
   def new
     @booking_values = prefilled_booking_values
@@ -75,6 +76,10 @@ class PublicBookingsController < ApplicationController
     render json: { ok: false, error: e.message }, status: :unprocessable_entity
   end
 
+  def quote_options
+    head :ok
+  end
+
   def confirmation
     refresh_payment_status!
     assign_confirmation_details
@@ -92,6 +97,12 @@ class PublicBookingsController < ApplicationController
   end
 
   private
+
+  def allow_public_quote_cors
+    response.set_header('Access-Control-Allow-Origin', '*')
+    response.set_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+    response.set_header('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+  end
 
   def booking_params
     params.require(:booking).permit(

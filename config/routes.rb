@@ -168,11 +168,13 @@ Rails.application.routes.draw do
   get  'reserva-online', to: 'public_bookings#new', as: :new_public_booking
   post 'reserva-online', to: 'public_bookings#create', as: :public_bookings
   get  'reserva-online/cotacao', to: 'public_bookings#quote', as: :public_booking_quote
+  match 'reserva-online/cotacao', to: 'public_bookings#quote_options', via: :options
   get  'reserva-online/confirmacao/:token', to: 'public_bookings#confirmation', as: :public_booking_confirmation
   get  'reserva-online/confirmacao/:token/status', to: 'public_bookings#status', as: :public_booking_status
   get  'reserva-online-teste', to: 'public_bookings#new'
   post 'reserva-online-teste', to: 'public_bookings#create'
   get  'reserva-online-teste/cotacao', to: 'public_bookings#quote'
+  match 'reserva-online-teste/cotacao', to: 'public_bookings#quote_options', via: :options
   get  'reserva-online-teste/confirmacao/:token', to: 'public_bookings#confirmation'
   get  'reserva-online-teste/confirmacao/:token/status', to: 'public_bookings#status'
   get  'pagamento/:token', to: 'reserva_payments#show', as: :reserva_payment
