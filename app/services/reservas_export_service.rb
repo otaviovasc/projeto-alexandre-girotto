@@ -94,7 +94,8 @@ class ReservasExportService
       'Nome Real do Hóspede',
       'Telefone Real do Hóspede',
       'PDF Fotos',
-      'E-mail Real do Hóspede'
+      'E-mail Real do Hóspede',
+      'Canal da Reserva'
     ]
   end
 
@@ -126,7 +127,8 @@ class ReservasExportService
       reserva.guest_name,
       reserva.guest_phone,
       '-',
-      reserva.guest_email
+      reserva.guest_email,
+      source_channel(reserva)
     ]
   end
 
@@ -156,7 +158,8 @@ class ReservasExportService
       reserva.guest_name,
       reserva.guest_phone,
       rs.photo_print_pdf_download_url.presence || '-',
-      reserva.guest_email
+      reserva.guest_email,
+      source_channel(reserva)
     ]
   end
 
@@ -184,6 +187,7 @@ class ReservasExportService
       format_currency(0),
       occurrence.cancelled? ? occurrence.cancellation_reason.presence || '-' : '-',
       format_datetime(occurrence.created_at),
+      '-',
       '-',
       '-',
       '-',
@@ -225,5 +229,9 @@ class ReservasExportService
 
   def group_created_label(reserva)
     reserva.group_created? ? 'Sim' : 'Não'
+  end
+
+  def source_channel(reserva)
+    reserva.source_channel.presence || reserva.inferred_source_channel
   end
 end

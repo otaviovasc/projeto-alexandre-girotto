@@ -161,6 +161,7 @@ class PublicBookingCheckout
       payment_expires_at: due_at,
       observation: 'Sistema - Site oficial',
       origem: 'sistema',
+      source_channel: 'site_oficial',
       guest_name: @guest_name,
       guest_phone: @guest_phone,
       guest_email: @guest_email,

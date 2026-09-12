@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_11_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_12_093312) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -453,6 +453,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_11_120000) do
     t.string "discount_coupon_code"
     t.decimal "discount_percent", precision: 5, scale: 2
     t.decimal "discount_amount", precision: 10, scale: 2, default: "0.0", null: false
+    t.string "source_channel"
     t.index ["cabana_id", "blocks_availability"], name: "index_reservas_on_cabana_and_availability"
     t.index ["canceled_by_id"], name: "index_reservas_on_canceled_by_id"
     t.index ["cabana_id", "origem", "ical_uid"], name: "index_reservas_on_imported_ical"
@@ -465,6 +466,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_11_120000) do
     t.index ["ical_missing_since"], name: "index_reservas_on_ical_missing_since"
     t.index ["partnership_creator_id"], name: "index_reservas_on_partnership_creator_id"
     t.index ["partnership_discount_coupon_id"], name: "index_reservas_on_partnership_discount_coupon_id"
+    t.index ["source_channel"], name: "index_reservas_on_source_channel"
     t.index ["user_id"], name: "index_reservas_on_user_id"
   end
 

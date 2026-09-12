@@ -45,6 +45,7 @@ class Partnership::ReservasController < ApplicationController
       blocks_availability: !pending,
       observation: partnership_reserva_params[:observation].presence || 'Parceria',
       origem: 'sistema',
+      source_channel: 'parceria',
       partnership_creator: current_user
     ))
     @reserva.total_price = @reserva.calculate_total_price! if @reserva.total_price.blank?

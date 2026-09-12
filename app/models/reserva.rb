@@ -5,6 +5,7 @@ class Reserva < ApplicationRecord
   SERVICE_PURCHASE_BLOCK_DAYS_BEFORE_CHECKIN = 10
   SERVICE_PURCHASE_LATE_FEE = BigDecimal("50")
   SERVICE_PURCHASE_LATE_FEE_LABEL = "taxa administrativa para compra fora do prazo"
+  SOURCE_CHANNELS = %w[site_oficial whatsapp airbnb booking holmy parceria outro].freeze
 
   attr_accessor :include_breakfast, :breakfast_quantity
 
@@ -44,6 +45,7 @@ class Reserva < ApplicationRecord
             format: { with: URI::MailTo::EMAIL_REGEXP },
             allow_blank: true
   validates :service_max_installments, inclusion: { in: 1..12 }
+  validates :source_channel, inclusion: { in: SOURCE_CHANNELS }, allow_blank: true
   validate :service_purchase_override_until_within_stay
 
   enum payment_status: {
@@ -66,6 +68,7 @@ class Reserva < ApplicationRecord
 
   before_create :set_default_fields
   before_create :set_default_payment_status
+  before_validation :assign_source_channel
   before_validation :normalize_guest_details
   after_create :ensure_required_cleaning_services
   after_update :shift_reservation_services_after_start_date_change, if: :saved_change_to_start_date?
@@ -358,6 +361,27 @@ class Reserva < ApplicationRecord
       I18n.transliterate(observation.to_s).downcase.include?('parceria')
   end
 
+  def assign_source_channel
+    self.source_channel = inferred_source_channel if source_channel.blank?
+  end
+
+  def inferred_source_channel
+    normalized_origin = origem.to_s.downcase
+
+    return 'parceria' if partnership_reservation?
+    return normalized_origin if %w[airbnb booking holmy].include?(normalized_origin)
+    return 'site_oficial' if public_booking_reservation?
+    return 'whatsapp' if normalized_origin.blank? || normalized_origin == 'sistema'
+
+    'outro'
+  end
+
+  def public_booking_reservation?
+    return false unless persisted?
+
+    reserva_payments.where("public_booking_payload ->> 'source' = ?", 'public_booking').exists?
+  end
+
   def fnrh_eligible?
     group_created? && integration_ready? && end_date.present? && end_date >= Date.current && !partnership_reservation?
   end
@@ -525,6 +549,7 @@ class Reserva < ApplicationRecord
   def set_default_fields
     self.observation ||= 'Sistema'
     self.origem ||= 'sistema'
+    self.source_channel ||= inferred_source_channel
   end
 
   def set_default_payment_status

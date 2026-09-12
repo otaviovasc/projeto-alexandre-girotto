@@ -82,6 +82,7 @@ class IcalReservationImporter
           user: user,
           cabana: @cabana,
           origem: @platform,
+          source_channel: @platform.to_s.downcase,
           payment_status: 'paid',
           total_price: 0.0,
           observation: "Importado via #{@platform.capitalize} - #{@cabana.name}"

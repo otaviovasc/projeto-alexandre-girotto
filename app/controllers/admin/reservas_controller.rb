@@ -85,6 +85,7 @@ class Admin::ReservasController < ApplicationController
 
     @reserva.user = @user
     @reserva.observation = @user.partner? ? 'Parceria' : @reserva.observation.presence || 'Sistema'
+    @reserva.source_channel = @user.partner? ? 'parceria' : 'whatsapp'
 
     pending_reservation = params[:reservation_state] == 'pending'
     pending_hold_hours = pending_payment_hold_hours
