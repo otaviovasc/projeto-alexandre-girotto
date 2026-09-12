@@ -442,11 +442,19 @@ class PublicBookingsController < ApplicationController
     values['cabana_id'] = cabana.id.to_s if cabana.present?
     values['start_date'] = start_date.to_s if start_date.present?
     values['end_date'] = end_date.to_s if end_date.present?
+    values['coupon_code'] = public_prefill_coupon_code if public_prefill_coupon_code.present?
 
     service_items = public_prefill_service_items(cabana, start_date)
     values['service_items'] = service_items if service_items.present?
 
     values
+  end
+
+  def public_prefill_coupon_code
+    params[:coupon_code].presence ||
+      params[:coupon].presence ||
+      params[:cupom].presence ||
+      params[:discount_coupon].presence
   end
 
   def public_prefill_cabana
