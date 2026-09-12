@@ -35,6 +35,8 @@ Rails.application.routes.draw do
 
   # Admin namespace for full CRUD operations
   namespace :admin do
+    get 'mensagens', to: 'messages#index', as: :messages
+
     resources :users, only: [:index, :new, :create, :edit, :update, :destroy] do
       member do
         get :partner_status

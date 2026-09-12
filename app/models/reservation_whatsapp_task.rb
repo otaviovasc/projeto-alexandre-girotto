@@ -28,13 +28,15 @@ class ReservationWhatsappTask < ApplicationRecord
   end
 
   def guest_name
-    return recipient_name.to_s if operational_task?
+    return recipient_name.to_s if recipient_name.present?
+    return operational_service_occurrence&.name.to_s if operational_task?
 
     reserva.guest_name.presence || reserva.user&.name.to_s
   end
 
   def guest_phone
-    return recipient_phone.to_s if operational_task?
+    return recipient_phone.to_s if recipient_phone.present?
+    return '' if operational_task?
 
     reserva.guest_phone.presence || reserva.user&.telephone.to_s
   end

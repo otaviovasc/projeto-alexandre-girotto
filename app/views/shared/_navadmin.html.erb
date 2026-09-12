@@ -37,7 +37,7 @@
               <% end %>
             </li>
             <li class="nav-item">
-              <%= link_to admin_reservation_whatsapp_tasks_path, class: 'nav-link' do %>
+              <%= link_to(current_user.admin? ? admin_messages_path : admin_reservation_whatsapp_tasks_path, class: 'nav-link') do %>
                 <i class="bi bi-chat-dots-fill me-1"></i>Mensagens
               <% end %>
             </li>

@@ -1,0 +1,206 @@
+<style>
+  .messages-hub {
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .messages-hub .hub-kicker {
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: #64748b;
+    font-size: .78rem;
+    font-weight: 700;
+  }
+
+  .messages-hub .hub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+
+  .messages-hub .hub-card,
+  .messages-hub .rule-card {
+    border: 1px solid #dbe2ea;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+  }
+
+  .messages-hub .hub-card {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+  }
+
+  .messages-hub .hub-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.35rem;
+  }
+
+  .messages-hub .icon-whatsapp { background: #16a34a; }
+  .messages-hub .icon-email { background: #2563eb; }
+  .messages-hub .icon-ops { background: #f59e0b; }
+  .messages-hub .icon-config { background: #475569; }
+
+  .messages-hub .rule-card {
+    padding: 1rem 1.25rem;
+  }
+
+  .messages-hub .rule-meta {
+    color: #64748b;
+    font-size: .85rem;
+  }
+
+  .messages-hub .status-pill {
+    border-radius: 999px;
+    display: inline-flex;
+    padding: .25rem .65rem;
+    font-size: .78rem;
+    font-weight: 700;
+    background: #e2e8f0;
+    color: #334155;
+  }
+
+  .messages-hub .status-pill.enabled {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .messages-hub .status-pill.paused {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+</style>
+
+<div class="container py-4 messages-hub">
+  <div class="mb-4">
+    <div class="hub-kicker">Administração</div>
+    <h1 class="h2 mb-2">Mensagens</h1>
+    <p class="text-muted mb-0">
+      Central de mensagens para WhatsApp, e-mails automáticos e avisos operacionais.
+    </p>
+  </div>
+
+  <div class="hub-grid mb-4">
+    <div class="hub-card">
+      <div class="hub-icon icon-whatsapp"><i class="bi bi-chat-dots-fill"></i></div>
+      <div>
+        <h2 class="h5 mb-1">Pendentes da Flávia</h2>
+        <p class="text-muted mb-0">Mensagens de WhatsApp prontas para copiar e marcar como enviadas.</p>
+      </div>
+      <div class="mt-auto">
+        <div class="mb-3">
+          <span class="status-pill"><%= @pending_whatsapp_count.to_i %> pendente(s)</span>
+        </div>
+        <%= link_to 'Abrir pendências', admin_reservation_whatsapp_tasks_path, class: 'btn btn-success w-100' %>
+      </div>
+    </div>
+
+    <div class="hub-card">
+      <div class="hub-icon icon-email"><i class="bi bi-envelope-paper-fill"></i></div>
+      <div>
+        <h2 class="h5 mb-1">E-mails automáticos</h2>
+        <p class="text-muted mb-0">Configure os textos, prazos, filiais e pause o envio geral se precisar.</p>
+      </div>
+      <div class="mt-auto">
+        <% if @email_setting.present? %>
+          <% enabled = @email_setting.enabled? %>
+          <div class="mb-3">
+            <span class="status-pill <%= enabled ? 'enabled' : 'paused' %>">
+              <%= enabled ? 'Envio ativo' : 'Envio pausado' %>
+            </span>
+            <span class="status-pill ms-1"><%= @active_email_templates_count.to_i %> modelo(s) ativo(s)</span>
+          </div>
+        <% end %>
+        <%= link_to 'Configurar e-mails', admin_reservation_email_templates_path, class: 'btn btn-primary w-100' %>
+      </div>
+    </div>
+
+    <div class="hub-card">
+      <div class="hub-icon icon-ops"><i class="bi bi-tools"></i></div>
+      <div>
+        <h2 class="h5 mb-1">Manutenções recorrentes</h2>
+        <p class="text-muted mb-0">Crie lembretes operacionais que entram na programação e na lista da Flávia.</p>
+      </div>
+      <div class="mt-auto">
+        <%= link_to 'Abrir manutenções', admin_recurring_maintenance_rules_path, class: 'btn btn-warning w-100' %>
+      </div>
+    </div>
+
+    <div class="hub-card">
+      <div class="hub-icon icon-config"><i class="bi bi-list-check"></i></div>
+      <div>
+        <h2 class="h5 mb-1">Regras operacionais</h2>
+        <p class="text-muted mb-0">Mensagens geradas automaticamente por serviço comprado.</p>
+      </div>
+      <div class="mt-auto">
+        <a href="#regras-operacionais" class="btn btn-outline-secondary w-100">Ver regras</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="regras-operacionais" class="mb-3">
+    <div class="hub-kicker">Regras automáticas</div>
+    <h2 class="h4 mb-2">Mensagens operacionais</h2>
+    <p class="text-muted">
+      Estas mensagens são criadas pelo sistema quando a reserva tem serviços específicos. Elas aparecem para a Flávia na tela de pendências quando chegam na data programada.
+    </p>
+  </div>
+
+  <div class="d-grid gap-3">
+    <div class="rule-card">
+      <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+        <div>
+          <h3 class="h5 mb-1">Horários com Bruna</h3>
+          <div class="rule-meta">Serra da Mantiqueira · passeio a cavalo, trilha ou massagem · 5 dias antes do check-in às 09:00</div>
+        </div>
+        <span class="status-pill enabled align-self-start">Ativa</span>
+      </div>
+      <hr>
+      <p class="mb-0">
+        Pergunta para a Bruna qual será o horário de cada serviço comprado. Quando houver mais de um serviço na mesma reserva, o sistema junta tudo em uma mensagem só.
+      </p>
+    </div>
+
+    <div class="rule-card">
+      <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+        <div>
+          <h3 class="h5 mb-1">Fotos impressas com PDF</h3>
+          <div class="rule-meta">5 dias antes do check-in às 09:00</div>
+        </div>
+        <span class="status-pill enabled align-self-start">Ativa</span>
+      </div>
+      <hr>
+      <p class="mb-2">
+        <strong>Braúna:</strong> envia o PDF para a Papelaria Cartoon e cria outro lembrete para o Concierge buscar as fotos.
+      </p>
+      <p class="mb-0">
+        <strong>Serra:</strong> envia o PDF para a Bruna.
+      </p>
+    </div>
+
+    <div class="rule-card">
+      <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+        <div>
+          <h3 class="h5 mb-1">Fotos impressas sem PDF</h3>
+          <div class="rule-meta">5 dias antes do check-in às 09:00</div>
+        </div>
+        <span class="status-pill enabled align-self-start">Ativa</span>
+      </div>
+      <hr>
+      <p class="mb-2">
+        Cria uma mensagem para o hóspede pedindo as 3 fotos para impressão.
+      </p>
+      <p class="mb-0">
+        Também cria um lembrete para o Concierge acompanhar esse envio.
+      </p>
+    </div>
+  </div>
+</div>

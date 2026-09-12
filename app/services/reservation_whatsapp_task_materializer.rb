@@ -3,9 +3,26 @@ class ReservationWhatsappTaskMaterializer
 
   EXCLUDED_TRIGGER_KEYS = ['reservation_confirmed'].freeze
   SERVICE_BRUNA_TRIGGER_KEY = 'service_bruna_schedule'.freeze
-  SERVICE_PHOTOS_TRIGGER_KEY = 'service_printed_photos'.freeze
+  SERVICE_PHOTOS_LEGACY_TRIGGER_KEY = 'service_printed_photos'.freeze
+  SERVICE_PHOTOS_GUEST_TRIGGER_KEY = 'service_printed_photos_guest_missing'.freeze
+  SERVICE_PHOTOS_CONCIERGE_PENDING_TRIGGER_KEY = 'service_printed_photos_concierge_missing'.freeze
+  SERVICE_PHOTOS_CARTOON_TRIGGER_KEY = 'service_printed_photos_cartoon'.freeze
+  SERVICE_PHOTOS_CONCIERGE_PICKUP_TRIGGER_KEY = 'service_printed_photos_concierge_pickup'.freeze
+  SERVICE_PHOTOS_BRUNA_TRIGGER_KEY = 'service_printed_photos_bruna'.freeze
+  SERVICE_PHOTOS_TRIGGER_KEYS = [
+    SERVICE_PHOTOS_LEGACY_TRIGGER_KEY,
+    SERVICE_PHOTOS_GUEST_TRIGGER_KEY,
+    SERVICE_PHOTOS_CONCIERGE_PENDING_TRIGGER_KEY,
+    SERVICE_PHOTOS_CARTOON_TRIGGER_KEY,
+    SERVICE_PHOTOS_CONCIERGE_PICKUP_TRIGGER_KEY,
+    SERVICE_PHOTOS_BRUNA_TRIGGER_KEY
+  ].freeze
   SERVICE_TASK_HOUR = 9
   SERVICE_TASK_MINUTE = 0
+  PAPELARIA_CARTOON_NAME = 'Papelaria Cartoon'.freeze
+  PAPELARIA_CARTOON_PHONE = '+55 18 99163-6225'.freeze
+  CONCIERGE_NAME = 'Concierge'.freeze
+  CONCIERGE_PHONE = '+55 35 91003-3417'.freeze
 
   BRUNA_SERVICE_MATCHERS = [
     ['O passeio a cavalo', ->(name) { name.include?('passeio') && name.include?('cavalo') }],
@@ -126,15 +143,18 @@ class ReservationWhatsappTaskMaterializer
 
   def materialize_photo_service_task(reserva)
     services = photo_services(reserva)
-    return remove_service_task(reserva, SERVICE_PHOTOS_TRIGGER_KEY) if services.empty?
+    return remove_service_tasks(reserva, SERVICE_PHOTOS_TRIGGER_KEYS) if services.empty?
 
-    upsert_service_task(
-      reserva: reserva,
-      trigger_key: SERVICE_PHOTOS_TRIGGER_KEY,
-      template_name: 'Fotos para impressão',
-      message_body: photo_service_message(reserva),
-      scheduled_at: service_task_scheduled_at(reserva)
-    )
+    scheduled_at = service_task_scheduled_at(reserva)
+    return remove_service_tasks(reserva, SERVICE_PHOTOS_TRIGGER_KEYS) if scheduled_at.blank?
+
+    pdf_service = services.detect { |reserva_service| reserva_service.photo_print_pdf.attached? }
+
+    if pdf_service.present?
+      materialize_photo_pdf_tasks(reserva, pdf_service, scheduled_at)
+    else
+      materialize_photo_missing_tasks(reserva, services.first, scheduled_at)
+    end
   end
 
   def upsert_service_task(reserva:, trigger_key:, template_name:, message_body:, scheduled_at:)
@@ -172,10 +192,64 @@ class ReservationWhatsappTaskMaterializer
     task.save!
   end
 
+  def upsert_service_recipient_task(reserva:, trigger_key:, template_name:, message_body:, scheduled_at:, recipient_name:, recipient_phone:)
+    return remove_service_task(reserva, trigger_key) if scheduled_at.blank?
+
+    scope = ReservationWhatsappTask.where(reserva: reserva, trigger_key: trigger_key)
+    signature = recipient_signature(recipient_name, recipient_phone)
+    existing_tasks = scope.to_a
+    task = existing_tasks.find do |candidate|
+      recipient_signature(candidate.recipient_name, candidate.recipient_phone) == signature
+    end || ReservationWhatsappTask.new(reserva: reserva, trigger_key: trigger_key)
+
+    existing_tasks.each do |candidate|
+      next if candidate == task
+      next unless recipient_signature(candidate.recipient_name, candidate.recipient_phone) == signature
+
+      candidate.destroy
+      @result.updated += 1
+    end
+
+    content_changed = task.persisted? && (
+      task.template_name != template_name ||
+      task.message_body != message_body ||
+      task.scheduled_at != scheduled_at ||
+      task.scheduled_on != scheduled_at.to_date ||
+      task.recipient_name != recipient_name ||
+      task.recipient_phone != recipient_phone
+    )
+
+    task.assign_attributes(
+      reservation_email_template: nil,
+      trigger_key: trigger_key,
+      template_name: template_name,
+      message_body: message_body,
+      scheduled_at: scheduled_at,
+      scheduled_on: scheduled_at.to_date,
+      recipient_name: recipient_name,
+      recipient_phone: recipient_phone
+    )
+
+    if content_changed
+      task.completed_at = nil
+      task.morning_notified_on = nil
+      task.evening_notified_on = nil
+    end
+
+    return unless task.changed?
+
+    task.new_record? ? @result.created += 1 : @result.updated += 1
+    task.save!
+  end
+
   def remove_service_task(reserva, trigger_key)
     tasks = ReservationWhatsappTask.where(reserva: reserva, trigger_key: trigger_key)
     @result.updated += tasks.size if tasks.exists?
     tasks.destroy_all
+  end
+
+  def remove_service_tasks(reserva, trigger_keys)
+    trigger_keys.each { |trigger_key| remove_service_task(reserva, trigger_key) }
   end
 
   def bruna_service_entries(reserva)
@@ -206,6 +280,85 @@ class ReservationWhatsappTaskMaterializer
     items.select(&:active?)
   end
 
+  def materialize_photo_pdf_tasks(reserva, reserva_service, scheduled_at)
+    remove_service_tasks(
+      reserva,
+      [
+        SERVICE_PHOTOS_LEGACY_TRIGGER_KEY,
+        SERVICE_PHOTOS_GUEST_TRIGGER_KEY,
+        SERVICE_PHOTOS_CONCIERGE_PENDING_TRIGGER_KEY
+      ]
+    )
+
+    if brauna_reserva?(reserva)
+      remove_service_task(reserva, SERVICE_PHOTOS_BRUNA_TRIGGER_KEY)
+
+      upsert_service_recipient_task(
+        reserva: reserva,
+        trigger_key: SERVICE_PHOTOS_CARTOON_TRIGGER_KEY,
+        template_name: 'Fotos para impressão - papelaria',
+        message_body: photo_print_shop_message(reserva, reserva_service),
+        scheduled_at: scheduled_at,
+        recipient_name: PAPELARIA_CARTOON_NAME,
+        recipient_phone: PAPELARIA_CARTOON_PHONE
+      )
+
+      upsert_service_recipient_task(
+        reserva: reserva,
+        trigger_key: SERVICE_PHOTOS_CONCIERGE_PICKUP_TRIGGER_KEY,
+        template_name: 'Fotos para impressão - buscar',
+        message_body: photo_concierge_pickup_message(reserva, reserva_service),
+        scheduled_at: scheduled_at,
+        recipient_name: CONCIERGE_NAME,
+        recipient_phone: CONCIERGE_PHONE
+      )
+    else
+      remove_service_tasks(reserva, [SERVICE_PHOTOS_CARTOON_TRIGGER_KEY, SERVICE_PHOTOS_CONCIERGE_PICKUP_TRIGGER_KEY])
+
+      upsert_service_recipient_task(
+        reserva: reserva,
+        trigger_key: SERVICE_PHOTOS_BRUNA_TRIGGER_KEY,
+        template_name: 'Fotos para impressão - Bruna',
+        message_body: photo_bruna_message(reserva, reserva_service),
+        scheduled_at: scheduled_at,
+        recipient_name: 'Bruna',
+        recipient_phone: nil
+      )
+    end
+  end
+
+  def materialize_photo_missing_tasks(reserva, reserva_service, scheduled_at)
+    remove_service_tasks(
+      reserva,
+      [
+        SERVICE_PHOTOS_LEGACY_TRIGGER_KEY,
+        SERVICE_PHOTOS_CARTOON_TRIGGER_KEY,
+        SERVICE_PHOTOS_CONCIERGE_PICKUP_TRIGGER_KEY,
+        SERVICE_PHOTOS_BRUNA_TRIGGER_KEY
+      ]
+    )
+
+    upsert_service_recipient_task(
+      reserva: reserva,
+      trigger_key: SERVICE_PHOTOS_GUEST_TRIGGER_KEY,
+      template_name: 'Fotos para impressão - hóspede',
+      message_body: photo_guest_missing_message(reserva),
+      scheduled_at: scheduled_at,
+      recipient_name: reserva.guest_name.presence || reserva.user&.name.to_s,
+      recipient_phone: reserva.guest_phone.presence || reserva.user&.telephone.to_s
+    )
+
+    upsert_service_recipient_task(
+      reserva: reserva,
+      trigger_key: SERVICE_PHOTOS_CONCIERGE_PENDING_TRIGGER_KEY,
+      template_name: 'Fotos para impressão - acompanhar',
+      message_body: photo_concierge_missing_message(reserva, reserva_service),
+      scheduled_at: scheduled_at,
+      recipient_name: CONCIERGE_NAME,
+      recipient_phone: CONCIERGE_PHONE
+    )
+  end
+
   def bruna_service_message(reserva, entries)
     lines = entries.sort_by { |reserva_service, label| [reserva_service.service_date || reserva.start_date, label] }.map do |reserva_service, label|
       service_date = reserva_service.service_date || reserva.start_date
@@ -215,10 +368,40 @@ class ReservationWhatsappTaskMaterializer
     "Oi Bruna, tudo bem?\n\n#{lines.join("\n")}"
   end
 
-  def photo_service_message(reserva)
+  def photo_guest_missing_message(reserva)
     "Oi #{reserva.guest_name.presence || reserva.user&.name}, como vai?\n\n" \
-      "Precisamos que envie 3 fotos para impressão. Caso fique muito próximo da data, talvez não consigamos entregar as fotos a tempo.\n\n" \
+      "Para preparar as fotos impressas da sua estadia, precisamos que envie 3 fotos para impressão. Caso fique muito próximo da data, talvez não consigamos entregar as fotos a tempo.\n\n" \
       "Consegue enviar ainda hoje?"
+  end
+
+  def photo_print_shop_message(reserva, reserva_service)
+    "Oi, tudo bem?\n\n" \
+      "Segue PDF para impressão das fotos do Villaggio Girotto.\n\n" \
+      "Reserva: ##{reserva.id}\n" \
+      "Cabana: #{cabana_name(reserva)}\n" \
+      "Estadia: #{format_short_date(reserva.start_date)} a #{format_short_date(reserva.end_date)}\n" \
+      "Serviço: Fotos impressas#{service_date_text(reserva_service)}\n" \
+      "PDF: #{reserva_service.photo_print_pdf_download_url}"
+  end
+
+  def photo_concierge_pickup_message(reserva, reserva_service)
+    "Fotos impressas da reserva ##{reserva.id} (#{cabana_name(reserva)}) foram enviadas para a #{PAPELARIA_CARTOON_NAME}.\n\n" \
+      "Buscar as fotos para a estadia de #{format_short_date(reserva.start_date)} a #{format_short_date(reserva.end_date)}.\n" \
+      "PDF: #{reserva_service.photo_print_pdf_download_url}"
+  end
+
+  def photo_bruna_message(reserva, reserva_service)
+    "Oi Bruna, tudo bem?\n\n" \
+      "Segue PDF das fotos impressas da reserva ##{reserva.id}.\n\n" \
+      "Cabana: #{cabana_name(reserva)}\n" \
+      "Estadia: #{format_short_date(reserva.start_date)} a #{format_short_date(reserva.end_date)}\n" \
+      "Serviço: Fotos impressas#{service_date_text(reserva_service)}\n" \
+      "PDF: #{reserva_service.photo_print_pdf_download_url}"
+  end
+
+  def photo_concierge_missing_message(reserva, reserva_service)
+    "A reserva ##{reserva.id} (#{cabana_name(reserva)}) comprou Fotos Impressas, mas o PDF ainda não foi enviado/gerado.\n\n" \
+      "Acompanhar com o hóspede para receber as 3 fotos#{service_date_text(reserva_service)}."
   end
 
   def service_task_scheduled_at(reserva)
@@ -234,8 +417,28 @@ class ReservationWhatsappTaskMaterializer
     normalized_filial.include?('serra') || normalized_filial.include?('mantiqueira')
   end
 
+  def brauna_reserva?(reserva)
+    normalized_filial = normalize(reserva.cabana&.filial&.name)
+    normalized_cabana = normalize(reserva.cabana&.name)
+
+    normalized_filial.include?('brauna') || normalized_cabana.include?('fattoria') || normalized_cabana.include?('brauna')
+  end
+
   def cabana_name(reserva)
     reserva.cabana&.guest_display_name.presence || reserva.cabana&.name.to_s
+  end
+
+  def service_date_text(reserva_service)
+    return '' if reserva_service&.service_date.blank?
+
+    " em #{format_short_date(reserva_service.service_date)}"
+  end
+
+  def recipient_signature(name, phone)
+    normalized_phone = phone.to_s.gsub(/\D+/, '')
+    return "phone:#{normalized_phone}" if normalized_phone.present?
+
+    "name:#{normalize(name)}"
   end
 
   def format_short_date(date)
