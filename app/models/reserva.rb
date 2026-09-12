@@ -32,6 +32,7 @@ class Reserva < ApplicationRecord
   has_many :fnrh_events, dependent: :destroy
   has_many :reservation_email_deliveries, dependent: :destroy
   has_many :reservation_whatsapp_tasks, dependent: :destroy
+  has_many :guest_portal_events, dependent: :destroy
 
   validate :start_date_cannot_be_in_the_past
   validate :end_date_after_start_date

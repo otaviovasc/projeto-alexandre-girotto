@@ -160,6 +160,8 @@ Rails.application.routes.draw do
   post 'pagamentos/cielo_checkout', to: 'pagamentos#cielo_checkout', as: 'cielo_checkout_webhook'
 
   get 'api/dashboard/unfinished_reservations', to: 'api/dashboard#unfinished_reservations'
+  get 'api/analytics/service_purchase_funnel', to: 'api/analytics#service_purchase_funnel'
+  match 'api/analytics/service_purchase_funnel', to: 'api/analytics#options', via: :options
   get 'api/cotacao', to: 'api/quotes#show'
   match 'api/cotacao', to: 'api/quotes#options', via: :options
   get 'api/servicos', to: 'api/services#index'

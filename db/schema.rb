@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_12_093312) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_12_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -134,6 +134,18 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_12_093312) do
     t.string "email"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "guest_portal_events", force: :cascade do |t|
+    t.bigint "reserva_id", null: false
+    t.string "event_name", null: false
+    t.datetime "occurred_at", null: false
+    t.json "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_name", "occurred_at"], name: "index_guest_portal_events_on_event_name_and_occurred_at"
+    t.index ["reserva_id", "event_name", "occurred_at"], name: "index_guest_portal_events_on_reserva_event_time"
+    t.index ["reserva_id"], name: "index_guest_portal_events_on_reserva_id"
   end
 
   create_table "holidays", force: :cascade do |t|
@@ -517,6 +529,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_12_093312) do
   add_foreign_key "carts", "users"
   add_foreign_key "email_automation_settings", "users", column: "paused_by_id"
   add_foreign_key "fnrh_events", "reservas"
+  add_foreign_key "guest_portal_events", "reservas"
   add_foreign_key "ical_reservation_changes", "reservas"
   add_foreign_key "info_da_cabanas", "cabanas"
   add_foreign_key "items", "filials"

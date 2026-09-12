@@ -131,6 +131,7 @@ class PortalReservaController < ApplicationController
                        .reject(&:hidden_from_guests?)
 
     expire_stale_portal_cart_items(@reserva)
+    track_guest_portal_event(GuestPortalEvent::OPENED_SERVICES_PAGE)
 
     if (pending_payment = active_pending_portal_payment(@reserva))
       redirect_to portal_reserva_confirmacao_path(codigo: pending_payment.payment_order_code) and return
@@ -226,6 +227,13 @@ class PortalReservaController < ApplicationController
 
     if success
       sync_service_purchase_late_fee_cart_item(@reserva)
+      track_guest_portal_event(
+        GuestPortalEvent::ADDED_SERVICE_TO_CART,
+        service_id: service.id,
+        service_name: service.name,
+        service_dates: created_cart_items.map { |cart_item| cart_item.service_date&.iso8601 }.compact,
+        cart_items_count: created_cart_items.size
+      )
       flash[:notice] = "\"#{service.name}\" adicionado com sucesso!"
     else
       flash[:alert] = "Houve um erro ao adicionar alguns dias deste serviço."
@@ -690,6 +698,17 @@ class PortalReservaController < ApplicationController
 
   def regular_portal_cart_items(items)
     Array(items).reject { |item| service_purchase_late_fee_cart_item?(item) }
+  end
+
+  def track_guest_portal_event(event_name, metadata = {})
+    GuestPortalEvent.create!(
+      reserva: @reserva,
+      event_name: event_name,
+      occurred_at: Time.current,
+      metadata: metadata.compact
+    )
+  rescue => e
+    Rails.logger.warn("Unable to track guest portal event #{event_name}: #{e.class} - #{e.message}")
   end
 
   def active_pending_portal_payment(reserva)
