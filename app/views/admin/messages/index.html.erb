@@ -78,8 +78,12 @@
     color: #991b1b;
   }
 
-  .messages-hub .rules-panel[hidden] {
+  .messages-hub .rules-panel {
     display: none;
+  }
+
+  .messages-hub .rules-panel:target {
+    display: block;
   }
 
   .messages-hub .message-template {
@@ -162,22 +166,16 @@
     <div class="hub-card">
       <div class="hub-icon icon-config"><i class="bi bi-list-check"></i></div>
       <div>
-        <h2 class="h5 mb-1">Regras operacionais</h2>
+        <h2 class="h5 mb-1">Mensagens Operacionais</h2>
         <p class="text-muted mb-0">Mensagens geradas automaticamente por serviço comprado.</p>
       </div>
       <div class="mt-auto">
-        <button type="button"
-                class="btn btn-outline-secondary w-100"
-                data-operational-rules-toggle
-                aria-expanded="false"
-                aria-controls="regras-operacionais">
-          Ver regras
-        </button>
+        <a href="#regras-operacionais" class="btn btn-outline-secondary w-100">Configurar mensagens</a>
       </div>
     </div>
   </div>
 
-  <div id="regras-operacionais" class="rules-panel" hidden>
+  <div id="regras-operacionais" class="rules-panel">
     <div class="mb-3">
       <div class="hub-kicker">Regras automáticas</div>
       <h2 class="h4 mb-2">Mensagens operacionais</h2>
@@ -277,27 +275,3 @@ Acompanhar com o hóspede para receber as 3 fotos em 10/09.</pre>
     </div>
   </div>
 </div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var button = document.querySelector('[data-operational-rules-toggle]');
-    var panel = document.getElementById('regras-operacionais');
-
-    if (!button || !panel) return;
-
-    button.addEventListener('click', function() {
-      var willOpen = panel.hasAttribute('hidden');
-
-      if (willOpen) {
-        panel.removeAttribute('hidden');
-        button.textContent = 'Ocultar regras';
-        button.setAttribute('aria-expanded', 'true');
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        panel.setAttribute('hidden', '');
-        button.textContent = 'Ver regras';
-        button.setAttribute('aria-expanded', 'false');
-      }
-    });
-  });
-</script>
