@@ -85,7 +85,7 @@ class PublicBookingCheckout
     if @cabana.present? && @start_date.present? && @end_date.present? && @end_date > @start_date && !official_quote[:meets_minimum]
       errors.add(:base, official_quote[:minimum_message])
     end
-    errors.add(:base, 'Cupom de parceria inválido ou inativo.') if @coupon_code.present? && discount_coupon.blank?
+    errors.add(:base, 'Cupom de desconto inválido ou inativo.') if @coupon_code.present? && discount_coupon.blank?
     validate_selected_services
   end
 

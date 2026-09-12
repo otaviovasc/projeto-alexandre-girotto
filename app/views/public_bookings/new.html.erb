@@ -130,14 +130,14 @@ end %>
           </div>
 
           <div class="sm:col-span-3">
-            <%= form.label :coupon_code, "Cupom de parceria", class: "vg-label" %>
+            <%= form.label :coupon_code, "Cupom de desconto", class: "vg-label" %>
             <%= form.text_field :coupon_code,
                 value: @booking_values["coupon_code"],
                 id: "booking-coupon-code",
                 autocomplete: "off",
                 placeholder: "Ex.: CLAU20",
                 class: "vg-input" %>
-            <p class="mt-2 text-sm text-[#637066]">Se tiver um cupom de parceria, informe aqui.</p>
+            <p class="mt-2 text-sm text-[#637066]">Se tiver um cupom de desconto, informe aqui.</p>
             <p id="booking-coupon-feedback" class="mt-2 text-sm font-semibold" aria-live="polite"></p>
           </div>
         </div>
