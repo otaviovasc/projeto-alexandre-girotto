@@ -34,6 +34,8 @@ class OfficialQuoteApi
         disponibilidade: 'Render',
         servicos: 'Render'
       },
+      cupom_consultado: @coupon_code.presence,
+      cupom_erro: coupon_error,
       cabanas: cabanas.map { |cabana| quote_for(cabana) }
     }
   end
@@ -59,6 +61,7 @@ class OfficialQuoteApi
     @checkin = parse_date(value_for(:checkin, :entrada, :start_date))
     @checkout = parse_date(value_for(:checkout, :saida, :end_date))
     @details = truthy?(value_for(:detalhes, :details))
+    @coupon_code = value_for(:coupon_code, :coupon, :cupom, :discount_coupon).to_s.squish
   end
 
   def value_for(*keys)
@@ -95,6 +98,8 @@ class OfficialQuoteApi
 
     available = available_for_range?(cabana)
     stay_total = pricing_quote[:stay_total] || pricing_quote[:total]
+    discount_amount = discount_coupon.present? ? discount_coupon.discount_amount_for(stay_total) : 0.to_d
+    discounted_stay_total = [stay_total.to_d - discount_amount, 0.to_d].max
     minimum_nights = pricing_quote[:minimum] || pricing_quote[:minimum_nights]
     minimum_ok = pricing_quote[:meets_minimum] != false
     reasons = []
@@ -112,6 +117,16 @@ class OfficialQuoteApi
       motivos: reasons,
       hospedagem: decimal_to_float(stay_total),
       hospedagem_formatada: money(stay_total),
+      hospedagem_original: decimal_to_float(stay_total),
+      hospedagem_original_formatada: money(stay_total),
+      hospedagem_com_desconto: decimal_to_float(discounted_stay_total),
+      hospedagem_com_desconto_formatada: money(discounted_stay_total),
+      hospedagem_final: decimal_to_float(discounted_stay_total),
+      hospedagem_final_formatada: money(discounted_stay_total),
+      desconto_cupom: decimal_to_float(discount_amount),
+      desconto_cupom_formatado: money(discount_amount),
+      cupom: coupon_payload,
+      cupom_erro: coupon_error,
       noites: nights_count,
       minimo_diarias: minimum_nights,
       minimo_diarias_ok: minimum_ok,
@@ -136,6 +151,27 @@ class OfficialQuoteApi
         preco_formatado: money(service[:preco])
       )
     end
+  end
+
+  def discount_coupon
+    return if @coupon_code.blank?
+
+    @discount_coupon ||= PartnershipDiscountCoupon.find_active_by_code(@coupon_code)
+  end
+
+  def coupon_error
+    return if @coupon_code.blank? || discount_coupon.present?
+
+    'Cupom inválido ou inativo.'
+  end
+
+  def coupon_payload
+    return unless discount_coupon.present?
+
+    {
+      codigo: discount_coupon.code,
+      percentual: decimal_to_float(discount_coupon.discount_percent)
+    }
   end
 
   def nights_payload(nights)
